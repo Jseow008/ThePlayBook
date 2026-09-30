@@ -2727,3 +2727,79 @@ Do not weaken those checks. No production selector code changed in this experime
 full frozen quality and database-backed integration evidence remain outstanding.
 Typecheck, targeted harness lint, no-network plan and diff checks passed. No new
 accounts, database writes, infrastructure or additional production AI requests.
+
+### Provider-boundary instrumentation — 1 October 2026
+
+Branch `codex/selector-provider-boundary`, worktree
+`/private/tmp/netflux-provider-boundary`, based on freshly fetched `5cb80ea5`.
+User directed boundary measurement before further provider optimization. This change
+adds no model calls, prompt/schema/model changes, candidate reduction, retries or
+spending/security changes. Rejected response-format experiments remain separate.
+
+The selector supplies a request-local fetch adapter to the existing provider SDK.
+It passes the original fetch arguments/signal unchanged, forwards response status,
+headers and body bytes, preserves body errors/cancellation, and does not pre-read or
+clone the body. Outside Ask Notes timing scope the original fetch is used unchanged.
+Fixed-name numeric spans use the existing private/no-store Server-Timing and timing
+log path; no URLs, headers, credentials, prompts, bodies, IDs or provider errors are
+recorded. Partial reads/errors retain incomplete markers, not false zero success.
+
+Boundaries:
+- `selection_sdk_prepare`: SDK invocation to fetch dispatch (SDK preparation,
+  scheduling and request serialization, not isolated serialization CPU).
+- `selection_headers`: fetch dispatch to fetch resolution/rejection; on success this
+  is headers available. Includes network/provider wait, not pure network RTT.
+- `selection_first_byte`: fetch dispatch to the first nonempty chunk observed by
+  the SDK's body reader. Intentionally overlaps headers/body spans; never add it
+  into total time. Consumer scheduling/buffering may affect it.
+- `selection_body_read`: headers available to body EOF. Includes body waiting,
+  transfer and SDK consumption/backpressure; not pure transfer throughput.
+- `selection_sdk_finish`: body EOF to generateText completion/failure, including
+  JSON/structured-output validation and SDK work, not isolated CPU time.
+
+Installed Anthropic SDK uses `stream: false` for this generateText path. First
+response bytes may therefore arrive only after full generation: this is NOT time
+to first generated token and cannot independently distinguish provider queueing,
+inference, DNS/TLS or network travel. No streaming switch is included. The existing
+`selection_provider` remains the enclosing metric. Timings do not prove a speedup.
+
+48 focused tests passed, including actual SDK structured-output parsing against a
+synthetic local fetch, delayed headers/chunks, payload preservation, untouched
+request identity, failure/cancellation, private-data exclusion and no-op outside
+scope. Typecheck and full lint passed. Full unit suite: 1,618 passed, 277 database-only or otherwise conditional tests skipped as configured. No paid requests or production
+changes performed. Next: required CI, deploy the instrumentation through normal
+PR gates, then use ordinary authenticated usage to attribute the wait before any
+new optimization. Do not run a paid quality benchmark for unchanged model inputs,
+repeat previous format experiments, or close #28. One implementing agent.
+
+Rollout monitor, 1 October 2026 01:15 SGT: #209 at `71469ba3` passed validate,
+PR scope and Vercel preview. Security Validation failed at dependency audit before
+runtime checks: installed Next.js 16.3.3 is affected by GHSA-vcvr-r3jv-pc5j
+(Node.js next/og ImageResponse RCE with attacker-controlled SVG values). Advisory
+lists 16.3.6 as patched; npm audit recommends available 16.3.8. No instrumentation
+failure was reported. This does not establish exploitability of Netflux's routes.
+#208 remains open; no existing dependency repair PR was found. A separate narrow
+framework security patch is required before the rollout can proceed; do not waive
+the audit or fold a general dependency upgrade into instrumentation. No production
+or paid-provider actions were performed. This monitor append is intentionally
+uncommitted until the prerequisite is resolved and the branch is refreshed.
+Advisory: https://github.com/advisories/GHSA-vcvr-r3jv-pc5j
+
+Security prerequisite prepared after explicit user instruction to proceed:
+PR #210, `b524428a`, branch `codex/next-security-patch`, worktree
+`/private/tmp/netflux-next-security`, based on fresh `origin/main` (`5cb80ea5`).
+Only package.json/package-lock.json changed: Next.js + matching lint package and
+Next.js transitive packages 16.3.3 -> 16.3.6. Production audit zero vulnerabilities;
+1,613 unit tests and 34 capacity-harness tests passed (277 conditional skips),
+full lint/typecheck/build including Sharp traces and critical-CSS checks passed.
+No application/model/database changes or paid calls. PR checks pending. Merge #210
+through existing gates, then refresh #208/#209 from patched main, preserving both
+checkpoint sections and this intentional local append. Verify deployment only after
+#209 merges; ordinary authenticated usage still supplies the new phase measurements.
+
+Manual continuation after timers were paused: #210 merged successfully at
+`b07432bb` with required checks passing. Refreshing #209 onto patched main and
+committing the preserved monitor append with this existing release update.
+Instrumentation implementation is unchanged from `71469ba3`; no additional paid
+calls or production-data work. #208's evidence branch is being refreshed separately.
+The recurring monitor remains PAUSED at the user's request; do not reactivate it.

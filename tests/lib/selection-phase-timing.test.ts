@@ -27,7 +27,7 @@ describe("real selector generator timing boundaries", () => {
             expect(result.model).toBe("test-model");
             return new Response("unchanged");
         });
-        expect(response.headers.get("server-timing")).toBe("selection;dur=150, selection_reserve;dur=20, selection_provider;dur=100, selection_settle;dur=30, response_ready;dur=150");
+        expect(response.headers.get("server-timing")).toBe("selection;dur=150, selection_reserve;dur=20, selection_provider;dur=100, selection_sdk_prepare;dur=100, selection_settle;dur=30, response_ready;dur=150");
         expect(await response.text()).toBe("unchanged");
         expect(mocks.record).toHaveBeenCalledWith({ outputTokens: 12 });
         expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0, maxOutputTokens: 1600, prompt: "private question" }));
@@ -56,6 +56,6 @@ describe("real selector generator timing boundaries", () => {
         mocks.generate.mockRejectedValue(failure);
         await expect(withAskNotesTiming(async () => { await generatePersonalEvidenceSelection(request()); return new Response(); })).rejects.toBe(failure);
         expect(mocks.record).not.toHaveBeenCalled();
-        expect(Object.keys(JSON.parse(vi.mocked(console.info).mock.calls[0][0]).phases)).toEqual(["selection_reserve", "selection_provider"]);
+        expect(Object.keys(JSON.parse(vi.mocked(console.info).mock.calls[0][0]).phases)).toEqual(["selection_reserve", "selection_provider", "selection_sdk_prepare"]);
     });
 });

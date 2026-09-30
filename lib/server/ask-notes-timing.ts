@@ -1,25 +1,35 @@
 import "server-only";
 import { AsyncLocalStorage } from "node:async_hooks";
 
-const phases = ["client", "auth", "rate_limit", "session", "quota", "embedding", "search", "load_evidence", "selection", "selection_reserve", "selection_provider", "selection_settle", "revalidate_evidence", "revalidate_search", "revalidate_auth"] as const;
+const phases = ["client", "auth", "rate_limit", "session", "quota", "embedding", "search", "load_evidence", "selection", "selection_reserve", "selection_provider", "selection_settle", "selection_sdk_prepare", "selection_headers", "selection_first_byte", "selection_body_read", "selection_sdk_finish", "revalidate_evidence", "revalidate_search", "revalidate_auth"] as const;
 type Phase = typeof phases[number];
 type Timing = { ms: number; active: Map<symbol, number> };
 const storage = new AsyncLocalStorage<Map<Phase, Timing>>();
 
-/** No-op outside Ask Notes. Records elapsed waits, never payloads or errors. */
-export async function measureAskNotesPhase<T>(phase: Phase, work: () => PromiseLike<T>): Promise<T> {
+export function hasAskNotesTiming(): boolean { return Boolean(storage.getStore()); }
+
+/** Captures the request-local span; completion is idempotent and payload-free. */
+export function beginAskNotesPhase(phase: Phase): () => void {
     const timings = storage.getStore();
-    if (!timings || !phases.includes(phase)) return work();
+    if (!timings || !phases.includes(phase)) return () => {};
     const value = timings.get(phase) ?? { ms: 0, active: new Map<symbol, number>() };
     timings.set(phase, value);
     const start = performance.now();
     const invocation = Symbol();
     value.active.set(invocation, start);
-    try { return await work(); }
-    finally {
+    let completed = false;
+    return () => {
+        if (completed) return;
+        completed = true;
         value.active.delete(invocation);
         value.ms += performance.now() - start;
-    }
+    };
+}
+
+/** No-op outside Ask Notes. Records elapsed waits, never payloads or errors. */
+export async function measureAskNotesPhase<T>(phase: Phase, work: () => PromiseLike<T>): Promise<T> {
+    const finish = beginAskNotesPhase(phase);
+    try { return await work(); } finally { finish(); }
 }
 
 /** Response-ready time, not stream completion or browser-perceived latency. */
