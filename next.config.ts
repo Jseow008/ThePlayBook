@@ -132,7 +132,12 @@ function getPostHogProxyRewrites(proxyPath: string) {
 }
 
 const nextConfig: NextConfig = {
-  experimental: { optimizePackageImports: ["@phosphor-icons/react"] },
+  experimental: {
+    optimizePackageImports: ["@phosphor-icons/react"],
+    // Deliver render-blocking styles with HTML rather than competing with JS
+    // downloads on first visits. Keep cold/warm browser evidence for this tradeoff.
+    inlineCss: true,
+  },
   devIndicators: isPlaywrightTest ? false : undefined,
   distDir: isPlaywrightTest ? ".next-playwright" : ".next",
   outputFileTracingIncludes: {

@@ -2344,3 +2344,67 @@ No additional load or paid AI testing occurred. This reduces speculative work;
 the larger first-load JavaScript/CSS bottleneck is not declared solved. Next:
 required PR checks and squash auto-merge of #200; #28 remains open. This final
 checkpoint is documentation-only and retains the measured application tree.
+
+### Critical first-paint follow-up — 30 September 2026
+
+#200 merged as `73b8ad81`. Current branch `codex/critical-first-paint`, worktree
+`/private/tmp/netflux-critical-paint`, based on that merge. User authorized follow-up
+implementation and deployment verification; no AI calls or capacity test needed.
+
+Same-production constrained-browser diagnosis found CSS completion immediately
+before paint. Normal versus diagnostic script blocking: Home FCP 2800/1300ms,
+Browse 3120/1468ms, reader 3836/1552ms. Script blocking is an attribution experiment,
+not a deployable fix. Raw evidence: `/private/tmp/netflux-critical-evidence/diagnostic.json`.
+
+Candidate uses Next's experimental inlineCss to deliver CSS with HTML. This keeps
+styles, scripts, analytics and error monitoring intact, but increases HTML and
+sacrifices independent CSS caching on hard visits. Local Next documentation flags
+RSC duplication and experimental status. Do not merge on the diagnosis alone.
+
+Next: built-preview comparison against immutable #200 preview with the same env,
+three cold and warm samples per Home/Browse/reader, alternating order. Require
+meaningful cold-paint improvement and examine warm navigation/HTML costs before
+accepting the tradeoff. Keep every sample, including slow ones; do not rerun until
+favorable. A reusable browser check also asserts inline styles and no stylesheet
+dependency on hard loads. #28 remains open. AI wait time is a separate workstream.
+
+First candidate `887e315f` completed all 36 fixed cold/warm navigations. Median cold
+FCP: Home 2336→712ms, Browse 2912→756ms, reader 3564→1536ms. Warm FCP changes were
++148/+96/+68ms. However Browse LCP regressed 3252→3892ms: its first hero image now
+competes with shelf images that begin loading as soon as the earlier layout paints.
+This candidate is not accepted as-is. One targeted refinement gives the initial
+hero image explicit high fetch priority; all images/quality/layout remain unchanged.
+Next: verify the actual hero request priority and repeat the affected Browse
+comparison only; reuse unchanged Home/reader evidence. Build-time output guard
+checks rendered production HTML rather than merely checking the configuration flag.
+The initial guard test loader failed to resolve a data-URL module; replacing it
+with a normal module import fixed the fixture (three tests pass).
+
+Refinement `c41f96aa`: actual browser requests confirm High priority for the initial
+hero. Across three more cold/warm Browse pairs, median cold FCP 2920→768ms; warm
+368→512ms. Cold LCP 3264→3384ms, warm 740→780ms. The first candidate LCP was 5096ms
+versus baseline 3588ms; retain this slow result. Navigation smoke overlapped part
+of that comparison, so main-thread timings may include local contention. This is
+strong evidence for removing the blank-screen CSS dependency, not a proven hero
+image speedup or a guarantee about every user's total loading time.
+
+Desktop/mobile Home→Browse→Preview navigation and final heading typography/geometry
+passed. An initial smoke assertion checked before route content arrived; waiting
+for the visible heading corrected that fixture. One early screenshot missed the
+animated heading; a constrained follow-up observed its opacity reach 1 at 1.63s
+(candidate) versus 3.40s (baseline), with no later opacity reset. Final screenshots
+match the existing design. Existing analytics, scripts and error monitoring remain.
+
+Evidence retained in `docs/evidence/first-paint-20260930.json`; raw screenshots and
+heading samples remain `/private/tmp/netflux-critical-evidence/`. The application
+change is accepted for the large first-paint improvement, with the explicit larger
+HTML, experimental-framework and slower warm-reload tradeoffs. No global JavaScript
+performance or tail-latency closure is claimed. A build-output guard prevents the
+CSS waterfall from silently returning and caps critical CSS at 320 KiB (currently
+about 256 KiB uncompressed). Repeat the browser script for relevant framework or
+critical-style changes, not every unrelated edit. The source-scan narrowing probe
+saved only 161 compressed bytes and was discarded.
+
+Next: final required CI and squash merge of #201, then verify the production build
+identity, inline CSS, hero priority and navigation. Production follow-up is explicitly
+requested; do not stop at merge. No further capacity run or paid AI call is planned.
