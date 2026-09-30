@@ -296,3 +296,17 @@ retained in [mixed evidence](capacity-ai-mixed-20260930.json) and the
 [checkpoint](../PHASE_1_PERSONAL_RETRIEVAL.md). No automatic rerun is planned.
 #28 remains open at the user's explicit request; do not treat this observation as
 a clean acceptance pass or a six-sample AI percentile proof.
+
+
+### Authorized corrected repeat — 30 September 2026
+
+After 28 local harness tests, the single user-authorized repeat passed: six real AI
+responses in 7.8–12.3s alongside 123 successful core HTTP requests, 90/90 scheduled
+actions and zero drops/failures. Exactly six AI calls, no new AI preflight/retries.
+Global settled-cost delta $0.016964; outstanding reservations are separate from
+billed cost. Cleanup restored original production counts and healthy status.
+See [confirmation evidence](capacity-ai-confirmation-20260930.json).
+
+This completes the bounded AI coexistence check only. #28 remains open explicitly
+for the user's questions and unproven larger-catalog scope. Preserve both prior
+unsuccessful harness records; do not relabel them. No further paid test is planned.
