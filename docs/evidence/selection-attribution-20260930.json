@@ -1,0 +1,37 @@
+{
+  "production_commit": "066a672f69507cd9038306c96df3092c2a1dc141",
+  "deployment": "dpl_CV2gUmX5BTXknXErWbxFqHEtnh9j",
+  "request_count": 1,
+  "status": 200,
+  "region": "bom1",
+  "cache_control": "no-store",
+  "browser_request_ms_rounded": 13360,
+  "content_download_ms": 3.08,
+  "response_ready_ms": 11705,
+  "phases_ms": {
+    "client": 7,
+    "auth": 110,
+    "rate_limit": 854,
+    "session": 40,
+    "quota": 390,
+    "embedding": 626,
+    "search": 72,
+    "load_evidence": 92,
+    "selection": 8246,
+    "selection_reserve": 218,
+    "selection_provider": 7596,
+    "selection_settle": 428,
+    "revalidate_evidence": 1071,
+    "revalidate_search": 81,
+    "revalidate_auth": 102
+  },
+  "outcome": "completed evidence response visible",
+  "limitations": [
+    "One request, not percentiles or a controlled before/after comparison",
+    "Selection child timings are nested within parent; do not sum both",
+    "Provider includes remote/network and SDK processing, not pure inference",
+    "Browser request time excludes pre-request UI work and post-response rendering",
+    "Actual billed amount unavailable; one paid application request used"
+  ],
+  "privacy": "No question, excerpt, account/session identifiers, cookies or evidence URLs retained"
+}

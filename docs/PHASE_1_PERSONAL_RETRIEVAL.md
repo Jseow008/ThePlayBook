@@ -2610,3 +2610,69 @@ No paid model calls for this implementation. Next: required CI and deployment, t
 one authenticated request to resolve provider versus bookkeeping attribution. Use
 that result to pick a bounded optimization; no broad benchmark or model swap yet.
 Browse image/font attribution remains the next first-load task. #28 remains open.
+
+Heartbeat 30 September 2026 14:57 UTC: #204 merged as `5cf985b3`. #205 required
+validation was still running and GitHub reported a documentation append conflict.
+Rebased #205 onto fresh main, retaining both checkpoint sections. Compared all
+three implementation/test files against `c7580441`: identical. Refreshed head
+`978e7682`; four-file scope unchanged. Pushed with force-with-lease; required checks
+must run on refreshed head. No paid request or production action. This local
+checkpoint append is deferred to final evidence documentation, avoiding a second
+application CI run solely for status text. Next: check exact-head CI/merge and
+production identity, then perform the one authorized authenticated attribution
+request only after the new timing fields are deployed.
+
+Post-merge follow-up 30 September 2026: #205 merged as `066a672f` after passing
+required PR checks. Production alias still serves #204 (`5cf985b3`, deployment
+`dpl_9DEVbc4u1AWtW7SBZWfQpZKmXj5U`). Merge CI `36735447856` and Security Gates
+`36735447763` remain in progress. Do not spend the one authorized authenticated
+measurement on this older build. Monitor remains active; next action is confirm
+new deployment identity, then capture the three selection subphases once.
+
+Heartbeat 30 September 2026 15:36 UTC: production now serves #205 merge `066a672f`
+on READY deployment `dpl_CV2gUmX5BTXknXErWbxFqHEtnh9j`. Merge Security Gates passed;
+merge CI was still running when inspected. Attempted to open Notes in Opera, but
+computer-use tool stopped on concurrent user activity; refreshed state remained
+on the user's other page. No AI request sent. Asked user to open Netflux Notes and
+reply ready when convenient; do not repeatedly interrupt their active browser.
+The single paid attribution request remains unspent. Next: user-ready session,
+measure once, record sanitized subphases and concrete recommendation.
+
+
+### Selection attribution measured in production — 30 September 2026
+
+#205 is deployed as `066a672f`, deployment `dpl_CV2gUmX5BTXknXErWbxFqHEtnh9j`.
+Required PR and merge checks passed. After the user signaled ready, exactly one
+additional authenticated Ask Notes request was submitted in Opera. HTTP200,
+`bom1`, `no-store`, and the completed evidence response were observed.
+
+Browser request duration: 13.36s; server response-ready: 11.705s. Selection total:
+8.246s, including reservation 218ms, provider/SDK 7596ms, settlement 428ms.
+Provider/SDK accounts for about 92% of selection and 65% of measured server time.
+The three children overlap the selection parent; never sum both levels. The
+provider measurement includes remote queue/network, inference and SDK parsing;
+it does not isolate pure inference. This is attribution, not proof of a speedup:
+#205 changes instrumentation only, and one sample cannot establish percentiles.
+
+Other measured work: rate limiting 854ms, embedding 626ms, evidence revalidation
+1071ms; initial index search 72ms. Browser-minus-server time is about 1.65s,
+including uninstrumented startup/platform/network work. Download took 3.08ms.
+Keep security and spending enforcement; they are not the dominant measured delay.
+
+Next bounded optimization: inspect selector input/output size and propose a compact
+assessment representation or lossless candidate deduplication, then evaluate one
+candidate on a separate small development fixture before the existing held-out
+relevance/exclusion gate. No model swap, removed constraint checking, smaller recall
+pool or caching of private evidence is justified by this latency sample alone.
+Do not rerun the full paid benchmark until a credible candidate exists. Preserve
+all quality thresholds and failed cases. Browse image/font work remains next in
+first-load performance; #28 stays open.
+
+Sanitized evidence: `docs/evidence/selection-attribution-20260930.json`. No private
+question, excerpt, account ID, cookie or citation link is included. The one-request
+attribution allowance is consumed; no more paid requests for this measurement.
+Worktree `/private/tmp/netflux-selection-attribution`, branch
+`codex/selection-attribution-evidence`, base `066a672f`. This documentation-only
+follow-up carries the deferred checkpoint history. Next: merge the evidence PR
+through required gates and remove the completed attribution monitor; further
+optimization is separate work, not a claim that the AI wait is resolved.
