@@ -2238,3 +2238,20 @@ Branch `codex/capacity-ai-mixed`, worktree
 `/Users/j/.codex/worktrees/library-latency-timing/Lifebook`, base `9e8d31bc`.
 Next: publish this evidence-only update, then answer the user's questions before
 any further capacity testing or closure. No production test remains running.
+
+### PR #198 merge blocker — 30 September 2026
+
+PR #198 remains open: validate, scope, catalog evidence, and Vercel passed, but
+Security Validation failed the production dependency audit. The existing
+brace-expansion 5.0.9 override is covered by high-severity denial-of-service
+advisories; its Sentry/minimatch dependency chain was flagged. This is unrelated
+to the capacity tests and requires no paid AI or production benchmark repeat.
+
+A separate repair on `codex/brace-security`, based on `6f5e35ae`, updates only the
+existing 5.x override and its two lockfile entries to 5.0.12, plus this checkpoint.
+Worktree: `/private/tmp/netflux-brace-security`. Clean locked installation and
+production dependency audit pass (zero production vulnerabilities); brace matching
+through both affected dependency chains passes. Required CI will gate the repair.
+Next: merge the repair after checks, update #198 from patched main, and confirm its
+required checks and merge. #28 remains open. No application or database changes,
+production testing, model calls, or spending-policy changes are needed.
