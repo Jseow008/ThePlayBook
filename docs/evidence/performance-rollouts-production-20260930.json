@@ -1,0 +1,55 @@
+{
+  "verifiedAt": "2026-09-30T09:53:00Z",
+  "firstLoad": {
+    "identity": {
+      "id": "dpl_AALPfWoh2ECz45qm6z1vKNuf86kp",
+      "sha": "278ed105adcd83b03ef39cf3d5d2f827cc052940",
+      "state": "READY"
+    },
+    "results": [
+      {
+        "mobile": false,
+        "home": {
+          "inline": true,
+          "external": 0,
+          "opacity": "1",
+          "overflow": false
+        },
+        "heroPriority": "high",
+        "navigation": "Home\u2192Browse\u2192Preview passed"
+      },
+      {
+        "mobile": true,
+        "home": {
+          "inline": true,
+          "external": 0,
+          "opacity": "1",
+          "overflow": false
+        },
+        "heroPriority": "high",
+        "navigation": "Home\u2192Browse\u2192Preview passed"
+      }
+    ]
+  },
+  "askNotes": {
+    "identity": {
+      "id": "dpl_GGNWZgnjRZ4dbBnrthwHScq37rgb",
+      "sha": "40091c98248792000d1d2bbb77bb6ea1f3709792",
+      "state": "READY"
+    },
+    "status": 401,
+    "code": "UNAUTHORIZED",
+    "execution": [
+      "sin1",
+      "bom1"
+    ],
+    "timings": "client;dur=6, auth;dur=1, response_ready;dur=11",
+    "cache": "no-store"
+  },
+  "limitations": [
+    "Single test location; not a multinational latency comparison.",
+    "The unauthenticated request stops before retrieval and model work; its timings cannot represent an AI answer.",
+    "First-paint performance tradeoffs and image-tail variation remain as documented."
+  ],
+  "paidAiCalls": 0
+}
