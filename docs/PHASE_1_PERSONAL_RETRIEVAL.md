@@ -2408,3 +2408,38 @@ saved only 161 compressed bytes and was discarded.
 Next: final required CI and squash merge of #201, then verify the production build
 identity, inline CSS, hero priority and navigation. Production follow-up is explicitly
 requested; do not stop at merge. No further capacity run or paid AI call is planned.
+### Ask Notes region and phase timing — 30 September 2026
+
+Branch `codex/ask-notes-timing`, worktree `/private/tmp/netflux-ask-timing`, base
+`73b8ad81`. Separate from first-paint PR #201. User authorized implementation and
+production follow-up, with ordinary usage rather than repeated paid benchmarks.
+
+Fresh unauthenticated production POST returned 401 and `sin1::iad1` execution;
+Supabase project metadata reports `ap-south-1` (Mumbai). Scope: add the existing
+`vercel.json` per-function `bom1` pattern for `/api/chat/notes`, and request-local
+phase timing. No schema, provider/model, prompts, quota or security-order changes.
+
+Durations cover client setup, initial auth, rate limit, live-session check, quota,
+embedding, index search, evidence loading, selection, evidence recheck, repeat
+index search and final auth. Provider phase durations include existing spending
+bookkeeping; they are not pure model-inference times. `response_ready` includes
+route preparation through deadline/spending wrappers, excludes module/cold-start
+initialization before entry, network transit and stream consumption, and must not
+be described as browser end-to-end latency. Unmeasured synchronous work remains
+in total. Skipped phases are absent; timed-out in-flight phases are incomplete.
+
+One fixed-shape `ask_notes_timing` log and a no-store `Server-Timing` header contain
+only allowlisted phase names, numeric elapsed time, completion flags, status and
+(in logs) execution region. No questions, evidence, account/session IDs, exceptions,
+provider URLs or credentials. Headers permit ordinary-request inspection even
+while Vercel historical-log access is billing-limited. Concurrent requests isolate
+measurements; telemetry does not change security checks, original request identity,
+response protocol/body or deadlines. Other retrieval callers collect no telemetry.
+
+Targeted tests initially caught an unnecessary cache-header spelling change;
+restore the existing `no-store` contract. Next: final focused tests/typecheck/lint,
+built preview 401 probe confirming actual `bom1` execution and timing headers,
+required checks and merge, then production verification. No paid AI call or new
+Supabase project is necessary. Placement correction removes a known network
+penalty; a seconds-saved claim and remaining bottleneck attribution require a
+normal authenticated request after deployment. #28 remains open.

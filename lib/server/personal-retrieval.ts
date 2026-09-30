@@ -1,4 +1,5 @@
 import "server-only";
+import { measureAskNotesPhase } from "./ask-notes-timing";
 
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -88,7 +89,7 @@ export async function retrievePersonalEvidence(options: {
     const quoteField = detected === "highlightedText" && options.scope.itemType === "reflection" ? "reflectionText"
         : detected === "highlightedText" && options.scope.itemType === "note" ? "noteBody" : detected;
     const semanticQuestion = options.semanticQuestion ?? options.question;
-    const queryEmbedding = options.queryEmbedding ?? (await createGooglePersonalEvidenceEmbedder(process.env.GEMINI_API_KEY ?? "")([semanticQuestion], { signal }))[0];
+    const queryEmbedding = options.queryEmbedding ?? (await measureAskNotesPhase("embedding", () => createGooglePersonalEvidenceEmbedder(process.env.GEMINI_API_KEY ?? "")([semanticQuestion], { signal })))[0];
     if (queryEmbedding?.length !== PERSONAL_EMBEDDING_DIMENSIONS || !queryEmbedding.every(Number.isFinite) || Math.hypot(...queryEmbedding) === 0) {
         throw new Error("Invalid personal retrieval query embedding");
     }
@@ -107,9 +108,9 @@ export async function retrievePersonalEvidence(options: {
         if (result.pending_records || result.failed_records || result.ready_records !== result.total_records) throw new Error("Incomplete personal evidence index");
         return result;
     };
-    const result = await search();
+    const result = await measureAskNotesPhase("search", search);
     const selected = [...new Map(result.matches.map((match) => [`${match.evidence_type}:${match.evidence_id}`, { type: match.evidence_type, id: match.evidence_id }])).values()];
-    const candidates = await loadSelectedPersonalEvidence({ ...options, selected, signal });
+    const candidates = await measureAskNotesPhase("load_evidence", () => loadSelectedPersonalEvidence({ ...options, selected, signal }));
     const ranked: RankedPersonalEvidence[] = candidates.map((evidence) => {
         const matches = result.matches.filter((match) => match.evidence_type === evidence.type && match.evidence_id === evidence.id);
         const spans = matches.map((match) => {
@@ -121,20 +122,20 @@ export async function retrievePersonalEvidence(options: {
         if (!relevant.length) throw new Error("Indexed evidence has no answer span");
         return { evidence, spans, score: Math.max(...relevant.map((span) => span.score)), exactQuote: null };
     }).sort((a, b) => b.score - a.score || a.evidence.evidenceId.localeCompare(b.evidence.evidenceId));
-    const selection = options.deferSelection ? null : await selectPersonalEvidence({
+    const selection = options.deferSelection ? null : await measureAskNotesPhase("selection", () => selectPersonalEvidence({
         question: semanticQuestion, candidates: personalSelectionCandidates(ranked), exactQuote: Boolean(quoteField),
         signal, generate: options.selectionGenerator,
-    });
+    }));
     const formatted = selection
         ? formatRankedPersonalEvidence(materializePersonalSelection(ranked, selection.ids, quoteField))
         : { items: ranked, contextText: "", omittedByLimit: 0, omittedByContext: 0, contextBytes: 0 };
-    await recheckPersonalEvidenceCandidates({ ...options, candidates: formatted.items.map((item) => item.evidence), signal });
-    const current = await search();
+    await measureAskNotesPhase("revalidate_evidence", () => recheckPersonalEvidenceCandidates({ ...options, candidates: formatted.items.map((item) => item.evidence), signal }));
+    const current = await measureAskNotesPhase("revalidate_search", search);
     if (formatted.items.some((item) => {
         const previous = result.matches.find((match) => `${match.evidence_type}:${match.evidence_id}` === item.evidence.evidenceId);
         return !current.matches.some((match) => match.evidence_type === previous?.evidence_type && match.evidence_id === previous.evidence_id && match.revision === previous.revision);
     })) throw new Error("Personal index changed during retrieval");
-    const { data: { user }, error } = await options.supabase.auth.getUser();
+    const { data: { user }, error } = await measureAskNotesPhase("revalidate_auth", () => options.supabase.auth.getUser());
     signal.throwIfAborted();
     if (error || user?.id !== options.userId) throw new Error("RETRIEVAL_AUTH_CHANGED");
     return {

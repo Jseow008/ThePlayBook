@@ -1,3 +1,4 @@
+import { withAskNotesTiming } from "@/lib/server/ask-notes-timing";
 import { structuralSelectionOutput } from "@/tests/fixtures/retrieval/selection-output";
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadSelectedPersonalEvidence, recheckPersonalEvidenceCandidates } from '@/lib/server/personal-evidence-candidates';
@@ -29,6 +30,23 @@ beforeEach(() => {
 });
 
 describe('indexed personal retrieval orchestration', () => {
+    it('measures actual retrieval and authorization phases without changing results', async () => {
+        abortSignal.mockResolvedValue({ data: ready([match()]), error: null });
+        vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([reflection]);
+        const response = await withAskNotesTiming(async () => {
+            const result = await retrievePersonalEvidence(request('What patterns appear?'));
+            return Response.json({ text: result.contextText });
+        });
+        const timing = response.headers.get('server-timing');
+        for (const phase of ['search', 'load_evidence', 'selection', 'revalidate_evidence', 'revalidate_search', 'revalidate_auth']) {
+            expect(timing).toContain(`${phase};dur=`);
+        }
+        expect((await response.json()).text).toContain('Stored answer.');
+        expect(rpc).toHaveBeenCalledTimes(2);
+        expect(getUser).toHaveBeenCalledTimes(1);
+        expect(timing).not.toContain('Stored answer');
+    });
+
     it('queries the complete index scope and materializes only server-ranked records', async () => {
         abortSignal.mockResolvedValue({ data: ready([match()]), error: null });
         vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([reflection]);

@@ -1,3 +1,4 @@
+import { measureAskNotesPhase, withAskNotesTiming } from "@/lib/server/ask-notes-timing";
 import { withChatDeadline } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse } from "@/lib/server/ai-spending";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
@@ -76,7 +77,7 @@ function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{
 }
 
 export async function POST(req: NextRequest) {
-    return withChatDeadline(req, (originalRequest, signal) => withAiSpendingScope(originalRequest, "ask-notes", () => handlePost(originalRequest, signal)));
+    return withAskNotesTiming(() => withChatDeadline(req, (originalRequest, signal) => withAiSpendingScope(originalRequest, "ask-notes", () => handlePost(originalRequest, signal))));
 }
 
 async function handlePost(req: NextRequest, signal: AbortSignal) {
@@ -84,11 +85,11 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
     const protocol = req.headers.get("x-evidence-protocol") === "ui" ? "ui" : "text";
 
     try {
-        const supabase = await createClient();
+        const supabase = await measureAskNotesPhase("client", () => createClient());
         const {
             data: { user },
             error: authError,
-        } = await supabase.auth.getUser();
+        } = await measureAskNotesPhase("auth", () => supabase.auth.getUser());
         signal.throwIfAborted();
 
         if (authError || !user) {
@@ -97,7 +98,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
 
         markAiSpendingAuthenticated();
 
-        const rl = await aiRateLimit(req, user.id);
+        const rl = await measureAskNotesPhase("rate_limit", () => aiRateLimit(req, user.id));
         if (!rl.success) {
             return rateLimitFailureResponseWithTelemetry({
                 request: req,
@@ -114,7 +115,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         // getUser can accept a revoked but unexpired JWT. Verify the live
         // session before quota admission, usage charging, or provider work.
         try {
-            await assertActiveChatSession({ supabase, signal });
+            await measureAskNotesPhase("session", () => assertActiveChatSession({ supabase, signal }));
         } catch (error) {
             if (error instanceof ChatSessionValidationError && error.code === "UNAUTHORIZED") {
                 return apiError("UNAUTHORIZED", "Your chat session has ended. Please sign in again.", 401, requestId);
@@ -203,7 +204,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         const questionContext = contextualizeUserQuestion(messages);
         if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, protocol);
 
-        const quota = await admitAiUsage(user.id, "ask-notes", signal);
+        const quota = await measureAskNotesPhase("quota", () => admitAiUsage(user.id, "ask-notes", signal));
         if (!quota.allowed) {
             recordAiRouteAbuse({
                 signal: "ai_quota_exhausted",
