@@ -2298,3 +2298,49 @@ PR #198 is now rebased onto that patched main, preserving the confirmation evide
 and regression tests. The conflict was confined to appended checkpoint sections;
 both histories were retained. Next: required checks and squash auto-merge of #198.
 No paid AI calls or production capacity reruns were performed for this update.
+
+### First-load resource correction — 30 September 2026
+
+User scoped this change to first-page loading; AI routing/timings and #28 closure
+remain out of scope. Branch `codex/first-load-resources`, worktree
+`/private/tmp/netflux-first-load`, based on main `aeb24f9a`. Preserve layout, copy,
+font families, image quality and navigation semantics.
+
+The small candidate disables global Outfit font preloading (font still loads where
+used), gives fixed-width shelf cards their actual 176px/240px image sizes, and
+prefetches card links on hover/focus instead of automatically for every card.
+Other card layouts retain their existing image sizing; hero priority is unchanged.
+Local typecheck and focused card/lane tests pass. Next: compare production and the
+built preview on desktop/mobile, including keyboard/hover navigation, font use,
+image resolution, request counts and constrained-network rendering. Do not claim
+latency improvement solely from reduced resources or a single timing sample.
+Baseline diagnostic artifacts remain `/private/tmp/netflux-ux-diagnostic/`.
+No paid AI calls, database changes, analytics removal, or typography redesign.
+
+PR #200 application commit `dfb7cd0a` completed the bounded browser comparison:
+12 cold-cache navigations across Home, Browse and one reader, production versus
+the built preview, desktop and constrained mobile (1.6 Mbps, 150ms, 4x CPU).
+The welcome tour was dismissed in both contexts. These are returning-visitor
+page measurements, not first-ever-visitor or real-user averages. The initial
+fixture stopped when the existing tour intercepted navigation; that setup failure
+is preserved separately in `comparison-initial.json` in the artifact directory.
+
+- Font preloads: three to two everywhere. Home/reader font transfer: 120,020 to
+  87,492 bytes; Browse still uses Outfit and downloads it on demand.
+- Browse initial RSC requests: desktop 30 to 20; mobile 24 to 21. Hover/focus
+  followed by card navigation passed for both targets and device configurations.
+- All pages had no horizontal overflow; screenshot review found the same layout
+  and typography. Browse's rotating hero prevents pixel-identical screenshots.
+- Shelf image sizing is correct, but this sample did not establish image-byte
+  savings. Production/preview analytics differ, so total JavaScript differences
+  are not attributable to this patch.
+- Constrained-mobile LCP, baseline to preview: Home 2812 to 2976ms, Browse 3356
+  to 3260ms, reader 3912 to 3792ms. Desktop results were also mixed. One sample
+  per case and different deployment/cache conditions do not prove a speedup.
+
+Local typecheck, focused lint and 33 card/lane/standards tests passed. Browser raw
+evidence: `comparison-pages.json` and paired screenshots in the artifact directory.
+No additional load or paid AI testing occurred. This reduces speculative work;
+the larger first-load JavaScript/CSS bottleneck is not declared solved. Next:
+required PR checks and squash auto-merge of #200; #28 remains open. This final
+checkpoint is documentation-only and retains the measured application tree.

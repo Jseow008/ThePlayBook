@@ -44,6 +44,7 @@ interface ContentCardProps {
     navigationMode?: "preview" | "resume";
     titleDensity?: "default" | "app-compact";
     priority?: boolean;
+    imageSizes?: string;
     showDesktopQuickActions?: boolean;
     desktopQuickAction?: "default" | "resume";
     reflectionState?: "empty" | "saved";
@@ -172,11 +173,13 @@ function BaseContentCard({
     href = `/preview/${item.id}`,
     titleDensity = "default",
     priority = false,
+    imageSizes = CONTENT_CARD_IMAGE_SIZES,
     showDesktopQuickActions = false,
     desktopQuickAction = "default",
     reflectionState = "empty",
     onReflectionClick,
 }: BaseContentCardProps) {
+    const [prefetchOnIntent, setPrefetchOnIntent] = useState(false);
     const [isCoverLoaded, setIsCoverLoaded] = useState(false);
     const [isRemoveMenuOpen, setIsRemoveMenuOpen] = useState(false);
     const removeMenuRef = useRef<HTMLDivElement>(null);
@@ -226,11 +229,11 @@ function BaseContentCard({
     }, [isRemoveMenuOpen]);
 
     return (
-        <div className={cn(
+        <div onMouseEnter={() => setPrefetchOnIntent(true)} onFocus={() => setPrefetchOnIntent(true)} className={cn(
             "content-card-motion-surface group relative block w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 max-md:active:scale-[0.98] max-md:active:ring-white/30 max-md:active:shadow-[0_8px_20px_rgba(0,0,0,0.38)] max-md:duration-150 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)] motion-reduce:active:scale-100 motion-reduce:transition-none",
             CONTENT_CARD_ASPECT_CLASS
         )}>
-            <Link href={href} className="absolute inset-0 z-10 rounded-md focus-ring">
+            <Link prefetch={prefetchOnIntent ? null : false} href={href} className="absolute inset-0 z-10 rounded-md focus-ring">
                 <span className="sr-only">{linkLabel}</span>
             </Link>
 
@@ -253,7 +256,7 @@ function BaseContentCard({
                             "content-card-motion-image brightness-[1.08] object-cover transition-[opacity,transform] duration-300 md:group-hover:scale-[1.035] md:group-focus-within:scale-[1.035] motion-reduce:transition-none",
                             isCoverLoaded ? "opacity-100" : "opacity-0",
                         )}
-                        sizes={CONTENT_CARD_IMAGE_SIZES}
+                        sizes={imageSizes}
                         priority={priority}
                         onLoad={() => setIsCoverLoaded(true)}
                         fallback={
@@ -418,6 +421,7 @@ function BaseContentCard({
                             <div className="pointer-events-auto absolute inset-0 hidden items-end gap-1.5 opacity-0 transition-opacity duration-200 md:flex md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none">
                                 {desktopQuickAction === "resume" ? (
                                     <Link
+                                        prefetch={prefetchOnIntent ? null : false}
                                         href={buildReadPath(item)}
                                         aria-label={`Resume reading: ${item.title}`}
                                         className="focus-ring flex h-7 w-full items-center justify-center gap-1 rounded-sm bg-white px-2 text-[10px] font-bold text-black shadow-sm transition-colors hover:bg-white/90 motion-reduce:transition-none"
@@ -428,6 +432,7 @@ function BaseContentCard({
                                 ) : (
                                     <>
                                         <Link
+                                            prefetch={prefetchOnIntent ? null : false}
                                             href={buildReadPath(item)}
                                             aria-label={`Read summary: ${item.title}`}
                                             className="focus-ring flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-sm bg-white px-2 text-[10px] font-bold text-black shadow-sm transition-colors hover:bg-white/90 motion-reduce:transition-none"
@@ -436,6 +441,7 @@ function BaseContentCard({
                                             <span>Read</span>
                                         </Link>
                                         <Link
+                                            prefetch={prefetchOnIntent ? null : false}
                                             href={`/preview/${item.id}`}
                                             aria-label={`Preview takeaways for ${item.title}`}
                                             className="focus-ring flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-sm border border-white/25 bg-black/45 px-2 text-[10px] font-semibold text-white shadow-sm backdrop-blur-sm transition-colors hover:border-white/45 hover:bg-black/65 motion-reduce:transition-none"

@@ -3,6 +3,8 @@ export const CONTENT_CARD_ASPECT_CLASS = "aspect-[2/3]";
 export const CONTENT_CARD_IMAGE_SIZES =
     "(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw";
 
+export const COMPACT_SHELF_IMAGE_SIZES = "(max-width: 767px) 176px, 240px";
+
 export const COMPACT_SHELF_CARD_CLASS =
     "w-[176px] min-w-[176px] snap-start md:w-[240px] md:min-w-[240px]";
 
