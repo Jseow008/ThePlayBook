@@ -2443,3 +2443,81 @@ required checks and merge, then production verification. No paid AI call or new
 Supabase project is necessary. Placement correction removes a known network
 penalty; a seconds-saved claim and remaining bottleneck attribution require a
 normal authenticated request after deployment. #28 remains open.
+
+PR #202 is open at `7b7b8703`. Built preview
+`dpl_6TPffSvwXtQYNvmqKKoqgQVsixkq` returned 401/UNAUTHORIZED from `sin1::bom1`,
+`Server-Timing: client;dur=20, auth;dur=1, response_ready;dur=34`, and `no-store`.
+No selection/provider phase ran. Evidence: `/private/tmp/netflux-ask-evidence/preview.json`.
+61 focused tests and 67 related general/author-chat tests passed; typecheck/lint
+passed. Scope is seven intended files. Required CI gates release; PR #201 was still
+open at the last check. Next: finish #201, update #202 from merged main if required
+(preserve both appended checkpoint sections), then merge and verify production
+identity, bom1 execution, 401 and headers. The combined rollout monitor handles
+both. This local checkpoint append is intentionally deferred to the final
+production-evidence documentation PR to avoid another full application CI cycle.
+
+Heartbeat 30 September 2026 09:05 UTC: #201 merged as `278ed105` with required PR
+checks passed. Production still serves `aeb24f9a` on
+`dpl_1jfJEcSs8o9CXy3eHsznUbGr1L2p`; #201 Vercel status explicitly waits for checks.
+Merge CI run `36692350316` is in progress; Security Gates passed. Do not smoke-test
+the old build as if it contained #201.
+
+#202's original head passed all required checks but was behind main. Preserved the
+intentional local checkpoint in a targeted stash and `/private/tmp/netflux-ask-evidence/checkpoint.patch`,
+rebased onto `278ed105`, resolved only appended documentation sections retaining
+both, compared all six non-document files against `7b7b8703` (identical), pushed
+with force-with-lease and restored the local checkpoint. New head `4e705077`;
+GitHub scope is exactly the same seven intended files and PR scope passed. Fresh
+required checks are running; auto-merge remains enabled. No benchmark, AI call or
+production change occurred. Next heartbeat: inspect #201 merge CI/deployment and
+#202 refreshed checks, then carry out the already specified production smoke and
+combined documentation follow-up when deployment identities are ready.
+
+Heartbeat 30 September 2026 09:21 UTC: #201 production verification completed.
+Alias www.netflux.blog serves READY deployment `dpl_AALPfWoh2ECz45qm6z1vKNuf86kp`,
+commit `278ed105`. Public desktop/mobile smoke confirmed application CSS inline,
+zero external stylesheet links on initial Home load, visible heading at opacity 1,
+no horizontal overflow, high-priority Browse hero, and Home→Browse→Preview navigation.
+Evidence: `/private/tmp/netflux-critical-evidence/production-smoke.json` (includes
+verified identity). This is functional rollout proof, not a new latency benchmark
+or multi-country proof. #202's refreshed validation is still running E2E; its other
+required checks passed. Next: confirm #202 merge/deployment, perform its one free
+401 region/timing probe, then publish the combined documentation-only evidence PR.
+
+Heartbeat 30 September 2026 09:37 UTC: #202 merged as `40091c98`; refreshed required
+PR checks all passed. Production still serves verified #201 (`278ed105`). #202's
+Vercel status is explicitly “Waiting for checks to complete”; merge CI
+`36696033204` is running and merge Security Gates passed. No production AI probe
+was sent to the older build. Next: once the alias serves `40091c98` or a descendant,
+perform the single 401/bom1/Server-Timing probe, then publish both rollout records
+and the preserved local checkpoint in one documentation-only PR. Monitor remains
+active; no failure or user decision currently requires a notification.
+
+
+### Performance rollouts verified — 30 September 2026
+
+Both rollouts are merged and production-verified. #201 is `278ed105`; #202 is
+`40091c98`. Production now serves READY deployment `dpl_GGNWZgnjRZ4dbBnrthwHScq37rgb`
+at `40091c98`, which contains both changes. Required PR and merge checks passed.
+
+#201's desktop/mobile public smoke passed at its deployed identity, including
+inline application CSS, absence of external stylesheet links on the initial Home
+load, visible headings, no horizontal overflow, high-priority Browse hero and
+Home→Browse→Preview navigation. #202's production unauthenticated POST returned
+401/UNAUTHORIZED from `sin1::bom1`, no-store caching, and client/auth/response-ready
+timings (6/1/11ms). No embedding or selection phase ran. Those numbers measure an
+unauthenticated rejection, not a successful AI answer or a speedup claim.
+
+Sanitized evidence: `docs/evidence/performance-rollouts-production-20260930.json`.
+These checks establish rollout correctness from one test location, not global
+latency or multi-country experience. Keep first-paint tradeoffs (larger HTML,
+experimental inline CSS, warm-reload overhead, image-tail variability). The AI
+region mismatch is corrected; remaining AI bottleneck attribution still needs
+phase timings from ordinary authenticated usage. No paid AI calls, account creation,
+production data changes, database migration or repeated capacity benchmark occurred.
+#28 remains open.
+
+This documentation-only follow-up uses branch `codex/performance-rollout-evidence`
+in `/private/tmp/netflux-rollout-evidence`, based on `40091c98`, and carries the
+intentionally preserved local checkpoint history above. Next: merge this evidence
+PR through normal required checks, then remove the completed rollout monitor.
