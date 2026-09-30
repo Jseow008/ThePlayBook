@@ -1,0 +1,218 @@
+{
+  "production_commit": "2080c578f35f19a2e8fe45c9446c581c64a597f1",
+  "deployment": "dpl_2FZnxz2TfzDbgZ5HuxNZEv5NmqT5",
+  "first_load": {
+    "conditions": {
+      "viewport": "390x844",
+      "download_bytes_per_second": 200000,
+      "added_latency_ms": 150,
+      "cpu_slowdown": 4,
+      "repetitions": 3,
+      "routes": 3,
+      "cache": "fresh browser context then same-context reload",
+      "location": "one local runner; not multi-country",
+      "baseline": "historical #201 comparison only; not a fresh paired baseline",
+      "limitations": [
+        "Opera sign-in/UI activity overlapped part of synthetic run; host contention possible",
+        "Warm cache residency varied; some HTML re-transferred",
+        "LCP observer sampled through load plus 2 seconds; not an interaction-readiness metric"
+      ]
+    },
+    "summary": [
+      {
+        "route": "/",
+        "cache": "cold",
+        "n": 3,
+        "fcp_median_ms": 608,
+        "fcp_range_ms": [
+          604,
+          796
+        ],
+        "lcp_median_ms": 2248,
+        "lcp_range_ms": [
+          2220,
+          2752
+        ],
+        "ttfb_median_ms": 41,
+        "external_stylesheets": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "route": "/",
+        "cache": "warm",
+        "n": 3,
+        "fcp_median_ms": 412,
+        "fcp_range_ms": [
+          340,
+          612
+        ],
+        "lcp_median_ms": 412,
+        "lcp_range_ms": [
+          396,
+          612
+        ],
+        "ttfb_median_ms": 11,
+        "external_stylesheets": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "route": "/browse",
+        "cache": "cold",
+        "n": 3,
+        "fcp_median_ms": 632,
+        "fcp_range_ms": [
+          616,
+          816
+        ],
+        "lcp_median_ms": 3304,
+        "lcp_range_ms": [
+          3016,
+          3312
+        ],
+        "ttfb_median_ms": 33,
+        "external_stylesheets": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "route": "/browse",
+        "cache": "warm",
+        "n": 3,
+        "fcp_median_ms": 336,
+        "fcp_range_ms": [
+          336,
+          340
+        ],
+        "lcp_median_ms": 700,
+        "lcp_range_ms": [
+          660,
+          708
+        ],
+        "ttfb_median_ms": 7,
+        "external_stylesheets": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "route": "reader",
+        "cache": "cold",
+        "n": 3,
+        "fcp_median_ms": 1008,
+        "fcp_range_ms": [
+          732,
+          1444
+        ],
+        "lcp_median_ms": 2956,
+        "lcp_range_ms": [
+          2784,
+          3108
+        ],
+        "ttfb_median_ms": 34,
+        "external_stylesheets": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "route": "reader",
+        "cache": "warm",
+        "n": 3,
+        "fcp_median_ms": 936,
+        "fcp_range_ms": [
+          936,
+          1188
+        ],
+        "lcp_median_ms": 1288,
+        "lcp_range_ms": [
+          1284,
+          1580
+        ],
+        "ttfb_median_ms": 10,
+        "external_stylesheets": [
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "ask_notes": {
+    "conditions": {
+      "browser": "Opera 135 / Chromium 151",
+      "network": "unthrottled",
+      "account": "existing signed-in account",
+      "requests": 2,
+      "followup": "different related question in the same conversation; not an identical repeat",
+      "spend": "Two application requests used paid embedding/selection paths; actual billed amount not measured",
+      "privacy": "No questions, excerpts, account identifiers, session tokens or evidence links retained"
+    },
+    "samples": [
+      {
+        "sample": 1,
+        "http_status": 200,
+        "browser_request_ms_rounded": 15770,
+        "content_download_ms": 0.95,
+        "execution_region": "bom1",
+        "cache_control": "no-store",
+        "response_ready_ms": 14218,
+        "phases_ms": {
+          "client": 7,
+          "auth": 123,
+          "rate_limit": 834,
+          "session": 38,
+          "quota": 355,
+          "embedding": 592,
+          "search": 116,
+          "load_evidence": 112,
+          "selection": 10897,
+          "revalidate_evidence": 1040,
+          "revalidate_search": 56,
+          "revalidate_auth": 33
+        },
+        "outcome": "verified evidence extracts visible"
+      },
+      {
+        "sample": 2,
+        "http_status": 200,
+        "browser_request_ms_rounded": 14940,
+        "content_download_ms": 2.65,
+        "execution_region": "bom1",
+        "cache_control": "no-store",
+        "response_ready_ms": 14171,
+        "phases_ms": {
+          "client": 2,
+          "auth": 757,
+          "rate_limit": 827,
+          "session": 318,
+          "quota": 371,
+          "embedding": 612,
+          "search": 67,
+          "load_evidence": 141,
+          "selection": 10541,
+          "revalidate_evidence": 421,
+          "revalidate_search": 65,
+          "revalidate_auth": 42
+        },
+        "outcome": "verified evidence extracts visible"
+      }
+    ],
+    "limitations": [
+      "Two observations identify dominant measured phase, not production percentiles",
+      "Browser request duration excludes pre-request UI work and post-response render time",
+      "Selection phase includes spend reservation, provider request, parsing and settlement; not pure inference",
+      "No same-query before/after baseline; no seconds-saved claim",
+      "Browser-minus-server duration includes uninstrumented startup/platform/network work; cannot attribute to distance alone"
+    ]
+  }
+}

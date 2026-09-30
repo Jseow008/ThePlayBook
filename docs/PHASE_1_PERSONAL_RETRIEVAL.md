@@ -2521,3 +2521,68 @@ This documentation-only follow-up uses branch `codex/performance-rollout-evidenc
 in `/private/tmp/netflux-rollout-evidence`, based on `40091c98`, and carries the
 intentionally preserved local checkpoint history above. Next: merge this evidence
 PR through normal required checks, then remove the completed rollout monitor.
+
+
+### Post-rollout bottleneck measurements — 30 September 2026
+
+User requested measurements before expanding to worldwide performance. #201,
+#202 and their evidence PR #203 are merged. Production identity confirmed as
+`2080c578`, READY deployment `dpl_2FZnxz2TfzDbgZ5HuxNZEv5NmqT5`. The completed
+rollout automation has been removed. #28 remains open.
+
+Worktree `/private/tmp/netflux-performance-measurement`, branch
+`codex/performance-measurement-followup`, based on freshly fetched `2080c578`.
+Scope is evidence/documentation only. No application, model, prompt, authorization,
+quota, schema or infrastructure changes.
+
+First-load: reused #201's harness for three sequential cold/warm samples each of
+Home, Browse and the same public reader route. Slowed mobile conditions remain
+390x844, 200KB/s, 150ms added latency and 4x CPU slowdown. Median cold FCP:
+Home 608ms, Browse 632ms, reader 1008ms; median cold LCP: 2248/3304/2956ms.
+All 18 loads had inline application CSS and zero external stylesheets; overflow
+and Browse hero-priority assertions passed. Warm medians FCP: 412/336/936ms;
+LCP: 412/700/1288ms. Full ranges and conditions are retained in the evidence.
+
+The original CSS-blocked first paint is removed in these samples. This does not
+establish that the complete page becomes interactive at FCP, or that all first-load
+bottlenecks are resolved. Browse's largest element remained an image; in the first
+sample, the high-priority image response ended at 2989ms and LCP occurred at 3016ms.
+Home's final LCP was a paragraph, with fonts arriving late in the resource waterfall.
+JS transfer and long tasks continued after first paint. Those are the next specific
+first-load candidates, not reasons to repeat capacity testing or upgrade hosting.
+Historical baseline comparisons are contextual, not new controlled speedup estimates.
+Opera activity overlapped part of this run, so host contention is a limitation.
+
+Ask Notes: production log lookup first timed out; deployment-scoped retries returned
+no matching logs, so used browser Network timings instead. The user signed into
+Opera. Two related, ordinary questions returned HTTP200, displayed verified extracts,
+and executed in `bom1` with `no-store`. Browser request durations were 15.77s and
+14.94s; response-ready times 14.218s and 14.171s. Selection consumed 10.897s and
+10.541s (roughly 74–77% of measured server time). Embedding took 592/612ms; index
+search 116/67ms. Rate limiting took 834/827ms. Revalidation remained enabled.
+Content download was below 3ms. No extra paid requests are needed to identify the
+current dominant measured phase.
+
+The region mismatch is corrected, but the AI wait is not resolved. Selection wraps
+spend reservation, the provider call, structured-output parsing and settlement;
+these timings do not isolate pure model inference. The two different questions
+are not a controlled cold/warm experiment or a p95 sample. Browser request time
+also excludes pre-request UI work and final rendering. Do not compare these with
+the old 7.8–12.3s range as proof of either regression or improvement: requests,
+account state and measurement boundaries differ.
+
+Next recommendation: split selection timing into spending reservation, provider and
+settlement before changing the relevance model/prompt. Evaluate one bounded
+optimization against the existing relevance/exclusion contract. Keep security
+checks and evidence validation intact. For first-load work, use a focused image/font
+attribution experiment; preserve typography and design. Worldwide testing should
+follow these local findings, not replace fixing the dominant measured work.
+
+Evidence: `docs/evidence/performance-followup-20260930.json`. Raw public first-load
+results and the exact adapted harness are in `/private/tmp/netflux-post-rollout/`.
+Only sanitized timings are committed; no personal questions, saved excerpts,
+credentials or citation links. Two paid application requests were made; exact cost
+is unavailable. The Vercel CLI credential was unavailable for direct API inspection;
+the connector supplied deployment identity. No database changes or new accounts.
+Next action: publish this two-file evidence PR through normal gates, then use this
+checkpoint for the targeted optimization decision. No recurring monitor is needed.
