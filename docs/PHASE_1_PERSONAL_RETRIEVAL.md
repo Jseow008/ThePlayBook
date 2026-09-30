@@ -2586,3 +2586,27 @@ is unavailable. The Vercel CLI credential was unavailable for direct API inspect
 the connector supplied deployment identity. No database changes or new accounts.
 Next action: publish this two-file evidence PR through normal gates, then use this
 checkpoint for the targeted optimization decision. No recurring monitor is needed.
+
+### Selection phase attribution — 30 September 2026
+
+Branch `codex/selection-phase-timing`, worktree `/private/tmp/netflux-selection-timing`,
+based on freshly fetched `2080c578`. Follow-up production measurements are preserved
+separately in PR #204. Two successful authenticated responses measured roughly
+10.5–10.9s selection inside 14.2s response-ready time. Do not call this pure provider
+latency: the phase includes spending reservation and settlement.
+
+Adds three fixed-name subphases: `selection_reserve`, `selection_provider`,
+`selection_settle`. They are nested within existing `selection`, so never add them
+to that parent when calculating total time. Provider timing includes SDK request,
+response and parsing, not pure inference. No prompt/model, candidate selection,
+spending enforcement, security order, response protocol or UI changes. No-op outside
+Ask Notes request timing. Logs contain only existing allowlisted timing metadata.
+
+Focused tests cover the actual generator with mocked provider/spending boundaries,
+parent/child duration semantics, unchanged output, private-data exclusion, reservation
+failure, cancellation before provider work, and provider failure. Existing timing
+concurrency/deadline tests and frozen selector contracts remain in the targeted suite.
+No paid model calls for this implementation. Next: required CI and deployment, then
+one authenticated request to resolve provider versus bookkeeping attribution. Use
+that result to pick a bounded optimization; no broad benchmark or model swap yet.
+Browse image/font attribution remains the next first-load task. #28 remains open.

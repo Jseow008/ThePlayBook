@@ -1,7 +1,7 @@
 import "server-only";
 import { AsyncLocalStorage } from "node:async_hooks";
 
-const phases = ["client", "auth", "rate_limit", "session", "quota", "embedding", "search", "load_evidence", "selection", "revalidate_evidence", "revalidate_search", "revalidate_auth"] as const;
+const phases = ["client", "auth", "rate_limit", "session", "quota", "embedding", "search", "load_evidence", "selection", "selection_reserve", "selection_provider", "selection_settle", "revalidate_evidence", "revalidate_search", "revalidate_auth"] as const;
 type Phase = typeof phases[number];
 type Timing = { ms: number; active: Map<symbol, number> };
 const storage = new AsyncLocalStorage<Map<Phase, Timing>>();
