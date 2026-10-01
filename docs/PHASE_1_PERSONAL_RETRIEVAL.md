@@ -3244,3 +3244,45 @@ status changes only at request boundaries. Timers are component-local, cleaned
 up on finish/error/unmount, not recurring verification automations.
 Focused delayed/error/retry, page/sidebar/mobile and scope-switch tests passed.
 No additional paid model evaluation or database migration required. #28 open.
+
+### First-load completion follow-up — 1 October 2026
+
+User requested closing the unfinished original objective before more AI experiments.
+Active worktree /Users/j/.codex/worktrees/first-load-completion/Lifebook,
+branch codex/first-load-completion, refreshed onto origin/main23bdaf05. No agents
+were spawned, paid calls made, database changes performed or monitors enabled.
+#28 remains open. #218 merged as23bdaf05; production still served e9276438 at the
+latest deployment check. Its intentional local continuity append in ask-progress
+is superseded here without restarting that application CI.
+
+Fresh public mobile trace reproduces late fonts/focal image while initial JS shares
+bandwidth. The largest production chunk contained Sentry; existing removal of
+unused tracing applied only to Webpack, while production builds use Turbopack.
+Candidate applies the same false tracing/debug constants through compiler.define,
+preserving error reporting. It also supplies400px device and256px image variants,
+keeping layout, fonts, source artwork, quality75 and access behavior unchanged.
+Compressed initial Home JS dropped18243bytes in matched build output. Synthetic
+uncaught errors were intercepted locally: built Sentry capture works on390/1440px,
+no transaction event; Home→Browse→Preview and overflow checks pass.
+
+Production builds, typecheck, focused lint and18 tests pass. Initial external
+node_modules symlink was rejected by Turbopack; replaced with a local copy before
+building. No application workaround was added. Three sequential cold/warm paired
+local samples per Home/Browse (24 loads) retained in local artifacts:
+/private/tmp/netflux-first-load-completion. Summary is
+[evidence](evidence/first-load-completion-development-20261001.json).
+Home cold median LCP1284→1272ms is effectively unchanged; Browse1424→964ms is not
+alone proof of faster usable artwork: its oversized blur background may become
+LCP before the focal image. The shared browser harness now records focal-image
+completion/response timing/width independently for the hosted comparison.
+Do not present local HTTP measurements as Vercel/global performance proof.
+
+STATUS.md and #25/#28 register rows now distinguish current evidence from older
+historical failures and still-open acceptance. #7/#11/#19/#29/#30–32 need evidence
+reconciliation; product experiments and full history remain deferred. No audit
+finding is silently closed by this performance change.
+
+Next: publish the focused candidate, inspect its built preview against the pinned
+production baseline with explicit hero completion and early navigation, verify
+#218's deployment and controlled wait UI without a paid request, retain gates,
+then record what is actually improved and the remaining first-load limitations.

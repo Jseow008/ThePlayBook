@@ -132,6 +132,14 @@ function getPostHogProxyRewrites(proxyPath: string) {
 }
 
 const nextConfig: NextConfig = {
+  compiler: {
+    // Production uses Turbopack, so webpack.treeshake alone does not remove
+    // disabled tracing. Keep error reporting; match the zero tracing sample rate.
+    define: {
+      __SENTRY_DEBUG__: false,
+      __SENTRY_TRACING__: false,
+    },
+  },
   experimental: {
     optimizePackageImports: ["@phosphor-icons/react"],
     // Deliver render-blocking styles with HTML rather than competing with JS
@@ -151,11 +159,11 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ["sharp"],
   images: {
-    deviceSizes: [640, 768, 1024, 1280],
+    deviceSizes: [400, 640, 768, 1024, 1280],
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    imageSizes: [32, 48, 96, 112, 150, 224, 700],
+    imageSizes: [32, 48, 96, 112, 150, 224, 256, 700],
     localPatterns: [
       { pathname: "/images/**" },
     ],
