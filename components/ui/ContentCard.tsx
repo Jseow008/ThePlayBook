@@ -253,8 +253,7 @@ function BaseContentCard({
                         fill
                         surface="content-card"
                         className={cn(
-                            "content-card-motion-image brightness-[1.08] object-cover transition-[opacity,transform] duration-300 md:group-hover:scale-[1.035] md:group-focus-within:scale-[1.035] motion-reduce:transition-none",
-                            isCoverLoaded ? "opacity-100" : "opacity-0",
+                            "content-card-motion-image brightness-[1.08] object-cover opacity-100 transition-transform duration-300 md:group-hover:scale-[1.035] md:group-focus-within:scale-[1.035] motion-reduce:transition-none",
                         )}
                         sizes={imageSizes}
                         priority={priority}

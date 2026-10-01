@@ -1,7 +1,7 @@
 import { ContentCard } from "@/components/ui/ContentCard";
 import { SearchAnalyticsTracker } from "@/app/(public)/search/SearchAnalyticsTracker";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
-import { CatalogSearchError, searchCatalog, type CatalogSearchResult } from "@/lib/server/catalog-search";
+import { CatalogSearchError, searchCatalog, type CatalogSearchResponse, type CatalogSearchResult } from "@/lib/server/catalog-search";
 import type { ContentItem, ContentType } from "@/types/database";
 import { ArrowLeft, ArrowRight, Clock3, Search } from "lucide-react";
 import Link from "next/link";
@@ -10,6 +10,12 @@ const CONTENT_CARD_SELECT = "id, type, title, author, category, cover_image_url,
 const CATALOG_PAGE_SIZE = 20;
 const SEARCHABLE_TYPES: ContentType[] = ["book", "podcast", "article"];
 type CatalogSort = "recent" | "popular";
+
+type RecentCatalogPage = {
+    items: ContentItem[];
+    totalItems: number;
+    totalPages: number;
+};
 
 export function normalizeType(type?: string): ContentType | undefined {
     if (!type || type.toLowerCase() === "all") {
@@ -86,17 +92,15 @@ export function buildSearchHref({
     return search ? `/search?${search}` : "/search";
 }
 
-export async function RecentCatalog({
-    categoryLabel,
+export async function getRecentCatalogPage({
     categoryValues,
     type,
     page,
 }: {
-    categoryLabel?: string;
     categoryValues?: string[];
     type?: ContentType;
     page: number;
-}) {
+}): Promise<RecentCatalogPage> {
     const supabase = createPublicServerClient();
     const normalizedCategoryValues = categoryValues?.filter(Boolean) ?? [];
     const offset = (page - 1) * CATALOG_PAGE_SIZE;
@@ -123,6 +127,24 @@ export async function RecentCatalog({
     const items = (data || []) as ContentItem[];
     const totalItems = count ?? items.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / CATALOG_PAGE_SIZE));
+
+    return { items, totalItems, totalPages };
+}
+
+export async function RecentCatalog({
+    categoryLabel,
+    categoryValues,
+    type,
+    page,
+    preloadedPage,
+}: {
+    categoryLabel?: string;
+    categoryValues?: string[];
+    type?: ContentType;
+    page: number;
+    preloadedPage?: Promise<RecentCatalogPage>;
+}) {
+    const { items, totalItems, totalPages } = await (preloadedPage ?? getRecentCatalogPage({ categoryValues, type, page }));
 
     return (
         <div className="animate-in fade-in duration-500">
@@ -260,12 +282,14 @@ export async function SearchResults({
     categoryValues,
     type,
     cursor,
+    preloadedResponse,
 }: {
     query?: string;
     categoryLabel?: string;
     categoryValues?: string[];
     type?: string;
     cursor?: string;
+    preloadedResponse?: Promise<CatalogSearchResponse>;
 }) {
     const normalizedType = normalizeType(type);
     const trimmedQuery = query?.trim() ?? "";
@@ -274,12 +298,12 @@ export async function SearchResults({
     const filtersCount = Number(normalizedCategoryValues.length > 0) + Number(Boolean(normalizedType));
 
     try {
-        const response = await searchCatalog({
+        const response = await (preloadedResponse ?? searchCatalog({
             query: trimmedQuery,
             categories: normalizedCategoryValues,
             type: normalizedType ?? null,
             cursor: cursor ?? null,
-        });
+        }));
 
         return renderSearchResults({
             results: response.results,
