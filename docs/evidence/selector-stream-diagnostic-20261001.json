@@ -1,0 +1,41 @@
+{
+  "version": "selector-stream-diagnostic-v1",
+  "model": "claude-haiku-4-5-20251001",
+  "caseId": "eight-greenhouse-procedures",
+  "candidateCount": 8,
+  "fixtureHash": "725a545d950f357bfe5486f409e375c1c1a6f5defb99d223a34498dcd1e92b17",
+  "requestHash": "361b31f72c07a8fa66fb9d6cd838d1d1bbd147078b2fd250d18485caca4954c3",
+  "maximumCalls": 1,
+  "retries": 0,
+  "environment": "local macOS; not Mumbai production",
+  "limitations": [
+    "One synthetic observation, no controlled production speed comparison.",
+    "First text delta includes network, queueing, preparation and initial generation.",
+    "Later deltas include generation and delivery; not isolated inference time.",
+    "Direct diagnostic uses a one-call cap outside application admission/spend accounting.",
+    "No personal content; output is validated before acceptance."
+  ],
+  "startedAt": "2026-10-01T04:30:34.063Z",
+  "mode": "paid",
+  "outcome": "complete",
+  "calls": 1,
+  "httpStatus": 200,
+  "timingHeaderPresent": false,
+  "usage": {
+    "inputTokens": 3055,
+    "outputTokens": 906,
+    "totalTokens": 3961
+  },
+  "selectedCount": 8,
+  "expectedCount": 8,
+  "expectedMembershipPassed": true,
+  "timingMs": {
+    "dispatchMs": 10.083667000000105,
+    "headersMs": 1246.6945839999998,
+    "firstTextMs": 1273.4783750000001,
+    "lastTextMs": 6009.474167,
+    "streamEndMs": 6019.336792,
+    "validatedMs": 6020.479334
+  },
+  "harnessSha256": "9f2c55bdef58e6a5834e2fe0b627d3384e773deaa6dbd1ca784c7fdf7919d2ce"
+}
