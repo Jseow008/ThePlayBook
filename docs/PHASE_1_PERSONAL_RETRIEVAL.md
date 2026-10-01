@@ -3511,3 +3511,141 @@ speedup. Next: publish the focused change through required gates, verify deploye
 mobile/desktop behavior, and retain the original objective as open until useful
 user-visible readiness evidence supports closure. Do not repeat rejected font or
 SDK packaging experiments or infer all pre-paint layout came from these hooks.
+
+
+### 1 October 2026 — bounded Home/Browse acceptance assessment
+
+Branch codex/home-browse-assessment in
+/Users/j/.codex/worktrees/home-browse-assessment/Lifebook, based on d804d33f.
+#223 merged with required checks passing; production deployment metadata resolves
+to d804d33f. Production built-runtime smoke confirms mobile0/desktop22 lane resize
+targets, mobile scrolling, desktop arrows, breakpoint transitions and keyboard
+Preview navigation. This supersedes the pending #223 handoff.
+
+Targets fixed before measurement: three cold browser contexts per page/profile;
+visible-content readiness median≤2500ms, max≤4000ms; Home→Browse navigation to
+visible heading median≤2000ms, max≤3000ms. Desktop1440x900 at1x CPU and mobile
+390x844 at4x CPU, both150ms latency/200000bytes per second download. This is a
+bounded working acceptance target, not a worldwide p75 or INP claim. Anonymous
+returning-visitor profile dismisses onboarding; first-time onboarding and logged-in
+journeys are not covered. Cold contexts do not imply cold CDN/image transforms.
+
+Readiness requires first-contentful-paint, a viewport-visible h1 and first-screen
+action through the ancestor opacity/visibility chain; Browse additionally requires
+its high-priority focal image loaded. A further animation frame is awaited. It is
+a painted-frame proxy, not proof of each pixel or an accessibility audit. Navigation
+measures automation click through destination heading visibility and two frames,
+after initial Home load; it does not measure clicking during hydration.
+
+Harness corrections retained transparently: an initial launch stopped before any
+samples because the functional smoke was still running; then an initial timing
+pass was invalidated because DOM eligibility plus RAF could precede FCP. Its raw
+observations remain in /private/tmp/netflux-home-browse-assessment/invalid-before-paint.log.
+The corrected pass requires FCP, with unchanged thresholds. No favorable-result
+reruns are authorized. Final evidence and verdict follow below.
+
+
+Corrected production results (milliseconds; all 12 samples retained in
+[evidence](evidence/home-browse-acceptance-20261001.json)):
+
+| Profile/page | Readiness samples | Median | Maximum | Verdict |
+|---|---|---:|---:|---|
+| Mobile Home | 645, 631, 632 | 632 | 645 | Pass |
+| Mobile Browse | 1463, 1574, 1554 | 1554 | 1574 | Pass |
+| Desktop Home | 697, 700, 678 | 697 | 700 | Pass |
+| Desktop Browse | 4660, 4678, 4693 | 4678 | 4693 | Fail |
+
+Home→Browse navigation passes: mobile median1463/max1473ms; desktop
+median1125/max1293ms. Every valid sample has zero failed critical assets.
+The desktop failure is retained; no acceptance thresholds were changed.
+
+One desktop diagnostic separates heading/action readiness (~1548ms) from the
+hero image (~4834ms). Its 1024px optimized image transfers82236bytes and is already
+requested early (~361ms) with high priority. Concurrent script/font downloads
+finish around the same time. Image completion is the remaining readiness gate;
+this does not establish image encoding alone as the cause of the entire delay.
+
+An offline encoding preflight at width1024 and quality75 produced WebP81936bytes
+and AVIF137531bytes (local encode103/350ms). Reject the same-quality format switch;
+these quality numbers are not perceptually equivalent and no global conclusion
+about AVIF follows. No configuration change was made.
+
+A single extra diagnostic aborted256px card-image requests to probe contention,
+but ResilientImage retries original sources on errors. Its ~4091ms hero result is
+not a clean deferral comparison, not acceptance evidence, and not a candidate
+speedup. Preserve that unsuccessful diagnostic without repeating the benchmark.
+Raw script/output: /private/tmp/netflux-home-browse-assessment/
+desktop-without-card-images.cjs and desktop-without-card-images-diagnostic.json.
+
+Decision: Home/Browse is not fully accepted, and Preview→Reader optimization is
+not started. Next implementation investigation should use a faithful development
+candidate for offscreen card-image deferral (including horizontal lanes), retaining
+first-screen images, fallback behavior, scrolling and accessibility. First inspect
+which images are outside the viewport; do not suppress all cards or defer analytics.
+Only a credible candidate warrants an affected-page comparison. If its benefit is
+insufficient, report the remaining shared script/font cost rather than restarting
+rejected packaging or font experiments. No application changes, paid AI requests,
+production data writes, infrastructure purchases or timers in this assessment.
+#28 remains open. Documentation-only handoff; no permanent/global speed guarantee.
+
+
+#### Follow-up: offscreen card delivery preflight
+
+Continued on 1 October, preserving the fixed failed desktop verdict. Production
+inspection at1440x900 found all20 lane covers loaded: first row y698, second row
+y1202, with four cards per row entirely to the right of the viewport. Native
+loading=lazy uses a preload distance, not strict viewport intersection.
+
+One additional diagnostic replaced all256px optimized cover responses with valid
+one-pixel image responses inside the test browser. This avoids the failed abort
+probe's direct-source retries; it intentionally also replaces visible covers, so
+it is not a shippable candidate. Hero readiness was3917ms; heading/action1428ms.
+Concurrent shared script downloads still finish around3.7–4.2seconds. Retained in
+the existing evidence JSON. This single observation is not an acceptance pass, a
+statistical speedup, or a strict causal upper bound: request interception and
+run-to-run variance remain confounders.
+
+Decision: do not add custom card intersection/loading machinery on this evidence.
+Removing even visible cover payloads did not meet the2500ms median target in this
+probe. JavaScript-gated loading could also delay visible images until hydration,
+while conservative server-rendered image allowances limit possible byte savings.
+No application changes were made; existing native lazy loading, image quality,
+layout, analytics and fallback behavior remain intact.
+
+Next action: inspect the shared initial JavaScript dependency graph for one safe,
+optional import boundary that competes with the desktop hero. Do not repeat the
+rejected analytics packaging/font experiments or disable short-visit analytics.
+If no credible boundary is found within a bounded inspection, present the remaining
+performance/design tradeoff before another comparison. Preview→Reader and #28
+remain open. Investigation worktree codex/browse-card-delivery is clean atd804d33f;
+results are carried in the existing codex/home-browse-assessment documentation PR.
+No paid AI calls, data changes, application rollout or recurring timer was used.
+
+
+#### Follow-up: bounded shared startup dependency inspection
+
+Read the deployed chunk URLs from the pinned d804d33f diagnostic and inspected
+public static JavaScript plus repository imports. Largest groups are React DOM,
+Next.js runtime/navigation, Supabase client/authentication, PostHog and Sentry.
+The largest mixed chunk includes a ~200.7KB raw/~63.3KB individually gzipped React
+DOM module group and a ~61.7KB raw/~21.5KB Sentry group. Supabase group is ~55KB
+gzipped; PostHog ~67.8KB. These recompressed module sizes are not additive to
+transmitted chunks; minified signatures/registrations are not full source maps.
+Sanitized chunk/module inspection retained in the existing evidence JSON.
+
+AppOnboardingTour is already dynamically imported. The shared chunk containing
+reading progress and snapshot hydration is ~10.1KB gzipped in total; extracting
+its small verifier alone does not demonstrate a material opportunity. Immediate
+authentication, short-visit analytics, error capture and navigation are active
+requirements, not optional hidden widgets. No substantial safe optional import
+boundary was demonstrated within this inspection. No application code changed,
+no new build/benchmark/provider request was needed, and no speedup is claimed.
+
+Decision checkpoint: stop small bundle experiments. The declared desktop Browse
+readiness target remains failed; Home/mobile Browse/navigation remain accepted
+only within their recorded local simulation. Next requires an explicit scope
+choice: a larger loading-architecture investigation with clear authentication/
+interaction safeguards, or accepting the residual desktop hero delay for now and
+moving to Preview→Reader. Do not silently loosen the target or claim this delay
+is fundamentally irreducible. This documentation follow-up remains in PR #224 on
+codex/home-browse-assessment; the application worktree remains clean. #28 stays open.
