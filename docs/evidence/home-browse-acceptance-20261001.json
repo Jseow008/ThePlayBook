@@ -473,5 +473,329 @@
     "Card-image abort diagnostic triggered direct retries; not a clean deferral comparison and not acceptance evidence.",
     "Hero image completion is the remaining readiness gate, but concurrent font/script/image delivery contributes; no isolated causal attribution to image size."
   ],
-  "verdict": "Home/mobile Browse/navigation pass working targets; desktop Browse fails. No application optimization shipped in this assessment."
+  "verdict": "Home/mobile Browse/navigation pass working targets; desktop Browse fails. No application optimization shipped in this assessment.",
+  "cardPayloadDiagnostic": {
+    "stages": {
+      "heading": 1428.3999999761581,
+      "action": 1428.3999999761581,
+      "image": 3917.300000011921
+    },
+    "hero": [
+      {
+        "src": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1775816291510-d8e62c89-c337-4e0b-9f3a-1bf2372ec7f9.jpg&w=1024&q=75",
+        "width": 935.671875
+      }
+    ],
+    "resources": [
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/media/2a65768255d6b625-s.p.2r-cuu_7locvx.woff2",
+        "start": 236.5,
+        "end": 2802.599999964237,
+        "bytes": 38760
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/media/83afe278b6a6bb3c-s.p.45535valc9rzk.woff2",
+        "start": 237,
+        "end": 3161.699999988079,
+        "bytes": 48732
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=%2Fimages%2Fnetflux-logo.png&w=96&q=75",
+        "start": 237.39999997615814,
+        "end": 687.3000000119209,
+        "bytes": 1054
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1775816291510-d8e62c89-c337-4e0b-9f3a-1bf2372ec7f9.jpg&w=1024&q=75",
+        "start": 237.5,
+        "end": 3905.800000011921,
+        "bytes": 82236
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/1d77oyp3tjh59.js",
+        "start": 443,
+        "end": 1078,
+        "bytes": 4464
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/0rl78fyhvu_07.js",
+        "start": 443.5,
+        "end": 2344.300000011921,
+        "bytes": 18587
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/0n6sm91auab6k.js",
+        "start": 443.69999998807907,
+        "end": 1699.3999999761581,
+        "bytes": 9192
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/0ep9r9fvcyozp.js",
+        "start": 443.69999998807907,
+        "end": 4174.899999976158,
+        "bytes": 122199
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/turbopack-13kj81667agm6.js",
+        "start": 443.80000001192093,
+        "end": 1272.0999999642372,
+        "bytes": 4837
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/04yr_vly89jp_.js",
+        "start": 443.80000001192093,
+        "end": 3410.5,
+        "bytes": 43787
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/3o18yq6mrlncg.js",
+        "start": 443.80000001192093,
+        "end": 3890.5,
+        "bytes": 70211
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/2v5h9zqa3cd7c.js",
+        "start": 443.89999997615814,
+        "end": 927.3999999761581,
+        "bytes": 1893
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/1uc4efc2mzz3j.js",
+        "start": 443.89999997615814,
+        "end": 1100.800000011921,
+        "bytes": 3868
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/0-2qn8kkkoy9a.js",
+        "start": 443.89999997615814,
+        "end": 2007.800000011921,
+        "bytes": 12342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/2k7qb02bk1ya_.js",
+        "start": 443.89999997615814,
+        "end": 2128.099999964237,
+        "bytes": 14468
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/2f2mm2sk50wo8.js",
+        "start": 443.89999997615814,
+        "end": 3717.5,
+        "bytes": 57194
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/42jbyix166qht.js",
+        "start": 444,
+        "end": 994.5999999642372,
+        "bytes": 527
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/1puqz9dhpfp6m.js",
+        "start": 444,
+        "end": 1151.5,
+        "bytes": 2308
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/3q0vc459gj48i.js",
+        "start": 444,
+        "end": 1474.8999999761581,
+        "bytes": 7243
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/2_r65eghmcs9h.js",
+        "start": 444,
+        "end": 1888.0999999642372,
+        "bytes": 11959
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/3_fu9dr5bcfty.js",
+        "start": 444,
+        "end": 2023.0999999642372,
+        "bytes": 10808
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/2di1xjh9etahh.js",
+        "start": 444,
+        "end": 2143,
+        "bytes": 12254
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/42bzy3ffck305.js",
+        "start": 444.0999999642372,
+        "end": 764.5,
+        "bytes": 1432
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/0uax1gzgih1kb.js",
+        "start": 444.0999999642372,
+        "end": 816.5,
+        "bytes": 657
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/2yj-3vv-a0vlm.js",
+        "start": 444.0999999642372,
+        "end": 1504.300000011921,
+        "bytes": 7263
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/1esjx7fydtnwa.js",
+        "start": 444.0999999642372,
+        "end": 2030.300000011921,
+        "bytes": 13481
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/0e3-p_c11_7n8.js",
+        "start": 444.0999999642372,
+        "end": 2308.300000011921,
+        "bytes": 16037
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/2eg7gxl3ojayp.js",
+        "start": 444.19999998807907,
+        "end": 1902.5,
+        "bytes": 11594
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/media/1b99372b3eaef0c8-s.1ay-qk1u8nydy.woff2",
+        "start": 1408.5,
+        "end": 3311.699999988079,
+        "bytes": 32528
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1775816291510-d8e62c89-c337-4e0b-9f3a-1bf2372ec7f9.jpg&w=256&q=75",
+        "start": 1436,
+        "end": 1440.199999988079,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1789549045331-38ddece6-e5c0-46b7-9d44-0cfb167609ac.jpg&w=256&q=75",
+        "start": 1436,
+        "end": 1440.300000011921,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1789545970780-065a215b-c088-42c9-8e7b-2493b50b5021.jpg&w=256&q=75",
+        "start": 1436,
+        "end": 1440.300000011921,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1789545842649-050c4598-0b16-4d6d-8021-bb9f8e632786.jpg&w=256&q=75",
+        "start": 1436.0999999642372,
+        "end": 1443,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1789545399508-42b6de84-04e2-40f4-8ddc-c70380ea69ee.jpg&w=256&q=75",
+        "start": 1436.0999999642372,
+        "end": 1443.0999999642372,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1789544172677-ce8c9769-ce73-4bee-aede-139d920797a8.jpg&w=256&q=75",
+        "start": 1436.0999999642372,
+        "end": 1443.199999988079,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1789544010532-3aa3bdf1-f46f-432d-9c88-86d5af24316d.jpg&w=256&q=75",
+        "start": 1436.0999999642372,
+        "end": 1443.199999988079,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1789538483752-d7b04c4a-fdfa-4b00-b930-5f3395d3a8e2.jpg&w=256&q=75",
+        "start": 1436.199999988079,
+        "end": 1443.300000011921,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1789538245842-a67db05c-6d94-436f-b0c8-d3a701bbe213.jpg&w=256&q=75",
+        "start": 1436.199999988079,
+        "end": 1443.3999999761581,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1787727198985-a2bea235-d95f-4f77-b190-8fde1c3a39f9.jpg&w=256&q=75",
+        "start": 1436.199999988079,
+        "end": 1443.699999988079,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1787211948992-0e246c66-82df-428d-b977-e00e32cc0d29.jpg&w=256&q=75",
+        "start": 1436.300000011921,
+        "end": 1444,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1787211254890-5355eb03-125f-4c8d-bb5b-bfb02b06a234.jpg&w=256&q=75",
+        "start": 1436.300000011921,
+        "end": 1444.199999988079,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1787211492421-93813650-6714-4286-95d1-9650ba199517.jpg&w=256&q=75",
+        "start": 1436.300000011921,
+        "end": 1444.3999999761581,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1787209985721-8e642cba-b4b5-46bd-bdbf-fa94b2789c9c.jpg&w=256&q=75",
+        "start": 1436.300000011921,
+        "end": 1444.3999999761581,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1787726273841-f78e75d2-1571-4d86-a82e-c8635f5df8e4.jpg&w=256&q=75",
+        "start": 1436.3999999761581,
+        "end": 1444.699999988079,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1786525512812-a13bbf21-7aee-43be-8024-0dfdddc13a92.jpg&w=256&q=75",
+        "start": 1436.3999999761581,
+        "end": 1444.699999988079,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1784712942979-07a412d3-8990-4ab7-83fe-bd852735df38.jpg&w=256&q=75",
+        "start": 1436.3999999761581,
+        "end": 1444.8999999761581,
+        "bytes": 342
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/3ts2oxrjl5b81.js",
+        "start": 4306,
+        "end": 4572.399999976158,
+        "bytes": 10161
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/2gqjikewdhh_e.js",
+        "start": 5292.300000011921,
+        "end": 5524.899999976158,
+        "bytes": 5048
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/2t-xrbiots0po.js",
+        "start": 5292.5,
+        "end": 5607.899999976158,
+        "bytes": 11683
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/0s9ch-uzpdi7r.js",
+        "start": 5352.599999964237,
+        "end": 5561.5,
+        "bytes": 946
+      },
+      {
+        "url": "https://www.netflux.blog/_next/static/immutable/chunks/3zfc3hxnuvbol.js",
+        "start": 5352.699999988079,
+        "end": 5577.699999988079,
+        "bytes": 3840
+      }
+    ],
+    "substituted": 17,
+    "limitations": "Diagnostic only: all 256px cover responses replaced with valid one-pixel images, no abort/error fallback; includes visible cards so not a shippable candidate or acceptance result.",
+    "interpretation": "Single diagnostic, no shippable change. Hero ~3917ms still exceeds 2500ms target even when visible and offscreen cover payloads are replaced. Not a statistical speedup or strict causal upper bound; comparison includes run variance and interception."
+  }
 }

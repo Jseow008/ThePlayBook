@@ -3587,3 +3587,36 @@ insufficient, report the remaining shared script/font cost rather than restartin
 rejected packaging or font experiments. No application changes, paid AI requests,
 production data writes, infrastructure purchases or timers in this assessment.
 #28 remains open. Documentation-only handoff; no permanent/global speed guarantee.
+
+
+#### Follow-up: offscreen card delivery preflight
+
+Continued on 1 October, preserving the fixed failed desktop verdict. Production
+inspection at1440x900 found all20 lane covers loaded: first row y698, second row
+y1202, with four cards per row entirely to the right of the viewport. Native
+loading=lazy uses a preload distance, not strict viewport intersection.
+
+One additional diagnostic replaced all256px optimized cover responses with valid
+one-pixel image responses inside the test browser. This avoids the failed abort
+probe's direct-source retries; it intentionally also replaces visible covers, so
+it is not a shippable candidate. Hero readiness was3917ms; heading/action1428ms.
+Concurrent shared script downloads still finish around3.7–4.2seconds. Retained in
+the existing evidence JSON. This single observation is not an acceptance pass, a
+statistical speedup, or a strict causal upper bound: request interception and
+run-to-run variance remain confounders.
+
+Decision: do not add custom card intersection/loading machinery on this evidence.
+Removing even visible cover payloads did not meet the2500ms median target in this
+probe. JavaScript-gated loading could also delay visible images until hydration,
+while conservative server-rendered image allowances limit possible byte savings.
+No application changes were made; existing native lazy loading, image quality,
+layout, analytics and fallback behavior remain intact.
+
+Next action: inspect the shared initial JavaScript dependency graph for one safe,
+optional import boundary that competes with the desktop hero. Do not repeat the
+rejected analytics packaging/font experiments or disable short-visit analytics.
+If no credible boundary is found within a bounded inspection, present the remaining
+performance/design tradeoff before another comparison. Preview→Reader and #28
+remain open. Investigation worktree codex/browse-card-delivery is clean atd804d33f;
+results are carried in the existing codex/home-browse-assessment documentation PR.
+No paid AI calls, data changes, application rollout or recurring timer was used.
