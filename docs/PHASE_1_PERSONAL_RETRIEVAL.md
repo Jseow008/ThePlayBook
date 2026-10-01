@@ -3620,3 +3620,32 @@ performance/design tradeoff before another comparison. Preview→Reader and #28
 remain open. Investigation worktree codex/browse-card-delivery is clean atd804d33f;
 results are carried in the existing codex/home-browse-assessment documentation PR.
 No paid AI calls, data changes, application rollout or recurring timer was used.
+
+
+#### Follow-up: bounded shared startup dependency inspection
+
+Read the deployed chunk URLs from the pinned d804d33f diagnostic and inspected
+public static JavaScript plus repository imports. Largest groups are React DOM,
+Next.js runtime/navigation, Supabase client/authentication, PostHog and Sentry.
+The largest mixed chunk includes a ~200.7KB raw/~63.3KB individually gzipped React
+DOM module group and a ~61.7KB raw/~21.5KB Sentry group. Supabase group is ~55KB
+gzipped; PostHog ~67.8KB. These recompressed module sizes are not additive to
+transmitted chunks; minified signatures/registrations are not full source maps.
+Sanitized chunk/module inspection retained in the existing evidence JSON.
+
+AppOnboardingTour is already dynamically imported. The shared chunk containing
+reading progress and snapshot hydration is ~10.1KB gzipped in total; extracting
+its small verifier alone does not demonstrate a material opportunity. Immediate
+authentication, short-visit analytics, error capture and navigation are active
+requirements, not optional hidden widgets. No substantial safe optional import
+boundary was demonstrated within this inspection. No application code changed,
+no new build/benchmark/provider request was needed, and no speedup is claimed.
+
+Decision checkpoint: stop small bundle experiments. The declared desktop Browse
+readiness target remains failed; Home/mobile Browse/navigation remain accepted
+only within their recorded local simulation. Next requires an explicit scope
+choice: a larger loading-architecture investigation with clear authentication/
+interaction safeguards, or accepting the residual desktop hero delay for now and
+moving to Preview→Reader. Do not silently loosen the target or claim this delay
+is fundamentally irreducible. This documentation follow-up remains in PR #224 on
+codex/home-browse-assessment; the application worktree remains clean. #28 stays open.

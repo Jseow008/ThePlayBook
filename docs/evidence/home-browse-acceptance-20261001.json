@@ -797,5 +797,315 @@
     "substituted": 17,
     "limitations": "Diagnostic only: all 256px cover responses replaced with valid one-pixel images, no abort/error fallback; includes visible cards so not a shippable candidate or acceptance result.",
     "interpretation": "Single diagnostic, no shippable change. Hero ~3917ms still exceeds 2500ms target even when visible and offscreen cover payloads are replaced. Not a statistical speedup or strict causal upper bound; comparison includes run variance and interception."
+  },
+  "sharedStartupInspection": {
+    "method": "Read production chunk URLs from existing pinned diagnostic, retrieve static public JavaScript, parse top-level Turbopack module registrations using TypeScript AST, inspect repository import boundaries. No browser benchmark rerun.",
+    "chunks": [
+      {
+        "file": "1d77oyp3tjh59.js",
+        "transferBytes": 4464,
+        "gzipBytes": 3968,
+        "markers": []
+      },
+      {
+        "file": "0rl78fyhvu_07.js",
+        "transferBytes": 18587,
+        "gzipBytes": 17337,
+        "markers": []
+      },
+      {
+        "file": "0n6sm91auab6k.js",
+        "transferBytes": 9192,
+        "gzipBytes": 8538,
+        "markers": [
+          "react.dev/errors"
+        ]
+      },
+      {
+        "file": "0ep9r9fvcyozp.js",
+        "transferBytes": 122199,
+        "gzipBytes": 118701,
+        "markers": [
+          "sentry.javascript",
+          "react.dev/errors",
+          "Arrow"
+        ]
+      },
+      {
+        "file": "04yr_vly89jp_.js",
+        "transferBytes": 43787,
+        "gzipBytes": 42894,
+        "markers": [
+          "react.dev/errors"
+        ]
+      },
+      {
+        "file": "3o18yq6mrlncg.js",
+        "transferBytes": 70211,
+        "gzipBytes": 67863,
+        "markers": [
+          "PostHog"
+        ]
+      },
+      {
+        "file": "turbopack-13kj81667agm6.js",
+        "transferBytes": 4837,
+        "gzipBytes": 4343,
+        "markers": []
+      },
+      {
+        "file": "2k7qb02bk1ya_.js",
+        "transferBytes": 14468,
+        "gzipBytes": 13480,
+        "markers": [
+          "QueryClient",
+          "captureAnalyticsEvent"
+        ]
+      },
+      {
+        "file": "0-2qn8kkkoy9a.js",
+        "transferBytes": 12342,
+        "gzipBytes": 11604,
+        "markers": [
+          "PostHog",
+          "QueryClient"
+        ]
+      },
+      {
+        "file": "2f2mm2sk50wo8.js",
+        "transferBytes": 57194,
+        "gzipBytes": 55947,
+        "markers": [
+          "GoTrueClient"
+        ]
+      },
+      {
+        "file": "1puqz9dhpfp6m.js",
+        "transferBytes": 2308,
+        "gzipBytes": 1918,
+        "markers": []
+      },
+      {
+        "file": "42jbyix166qht.js",
+        "transferBytes": 527,
+        "gzipBytes": 207,
+        "markers": []
+      },
+      {
+        "file": "2v5h9zqa3cd7c.js",
+        "transferBytes": 1893,
+        "gzipBytes": 1522,
+        "markers": []
+      },
+      {
+        "file": "1uc4efc2mzz3j.js",
+        "transferBytes": 3868,
+        "gzipBytes": 3394,
+        "markers": []
+      },
+      {
+        "file": "3_fu9dr5bcfty.js",
+        "transferBytes": 10808,
+        "gzipBytes": 10102,
+        "markers": [
+          "useReadingProgress",
+          "ReadingProgressProvider",
+          "QueryClient",
+          "netflux.account-data-snapshot",
+          "captureAnalyticsEvent"
+        ]
+      },
+      {
+        "file": "3q0vc459gj48i.js",
+        "transferBytes": 7243,
+        "gzipBytes": 6776,
+        "markers": []
+      },
+      {
+        "file": "2_r65eghmcs9h.js",
+        "transferBytes": 11959,
+        "gzipBytes": 11023,
+        "markers": [
+          "useReadingProgress"
+        ]
+      },
+      {
+        "file": "2di1xjh9etahh.js",
+        "transferBytes": 12254,
+        "gzipBytes": 11330,
+        "markers": [
+          "sonner"
+        ]
+      },
+      {
+        "file": "0uax1gzgih1kb.js",
+        "transferBytes": 657,
+        "gzipBytes": 284,
+        "markers": []
+      },
+      {
+        "file": "42bzy3ffck305.js",
+        "transferBytes": 1432,
+        "gzipBytes": 1093,
+        "markers": []
+      },
+      {
+        "file": "1esjx7fydtnwa.js",
+        "transferBytes": 13481,
+        "gzipBytes": 12558,
+        "markers": [
+          "netflux_guest_onboarding"
+        ]
+      },
+      {
+        "file": "0e3-p_c11_7n8.js",
+        "transferBytes": 16037,
+        "gzipBytes": 15097,
+        "markers": []
+      },
+      {
+        "file": "2yj-3vv-a0vlm.js",
+        "transferBytes": 7263,
+        "gzipBytes": 6537,
+        "markers": [
+          "useReadingProgress"
+        ]
+      },
+      {
+        "file": "2eg7gxl3ojayp.js",
+        "transferBytes": 11594,
+        "gzipBytes": 10706,
+        "markers": [
+          "useReadingProgress",
+          "QueryClient"
+        ]
+      },
+      {
+        "file": "3ts2oxrjl5b81.js",
+        "transferBytes": 10161,
+        "gzipBytes": 9357,
+        "markers": [
+          "sonner"
+        ]
+      }
+    ],
+    "largestModuleGroups": [
+      {
+        "file": "2f2mm2sk50wo8.js",
+        "ids": [
+          "920755",
+          "445145"
+        ],
+        "raw": 215197,
+        "gzip": 54960,
+        "signals": [
+          "GoTrueClient",
+          "createBrowserClient"
+        ]
+      },
+      {
+        "file": "3o18yq6mrlncg.js",
+        "ids": [
+          "604570"
+        ],
+        "raw": 207953,
+        "gzip": 67814,
+        "signals": [
+          "PostHog"
+        ]
+      },
+      {
+        "file": "0ep9r9fvcyozp.js",
+        "ids": [
+          "146480"
+        ],
+        "raw": 200698,
+        "gzip": 63269,
+        "signals": [
+          "react.dev/errors",
+          "hydrateRoot"
+        ]
+      },
+      {
+        "file": "0ep9r9fvcyozp.js",
+        "ids": [
+          "471217"
+        ],
+        "raw": 61677,
+        "gzip": 21503,
+        "signals": [
+          "sentry.javascript"
+        ]
+      },
+      {
+        "file": "0rl78fyhvu_07.js",
+        "ids": [
+          "662537",
+          "591401",
+          "225304",
+          "923288",
+          "901020",
+          "272598",
+          "453288",
+          "951497",
+          "111139",
+          "936032",
+          "45968",
+          "821593",
+          "682564",
+          "605394",
+          "341041",
+          "318746",
+          "373382",
+          "821061",
+          "301263",
+          "250804",
+          "519988",
+          "602309",
+          "10008",
+          "454300",
+          "812024",
+          "170637",
+          "759075",
+          "776710",
+          "242222",
+          "339435",
+          "132584",
+          "304661",
+          "373250",
+          "728469",
+          "473753",
+          "286564",
+          "67486",
+          "869766",
+          "804478",
+          "14177",
+          "541193",
+          "580611",
+          "571993",
+          "213186"
+        ],
+        "raw": 50467,
+        "gzip": 17137,
+        "signals": []
+      },
+      {
+        "file": "0ep9r9fvcyozp.js",
+        "ids": [
+          "197399"
+        ],
+        "raw": 28674,
+        "gzip": 8532,
+        "signals": [
+          "addBasePath"
+        ]
+      }
+    ],
+    "limitations": [
+      "String signatures and minified registration groups provide attribution, not a complete source-map dependency graph.",
+      "Individually recompressed module sizes are not additive to transmitted chunk sizes.",
+      "No application change or latency improvement is established."
+    ],
+    "decision": "No substantial optional import boundary demonstrated in this bounded inspection. Do not weaken analytics/auth/error capture or repeat rejected packaging experiments. Larger loading architecture or explicit acceptance of remaining desktop delay requires a product decision."
   }
 }
