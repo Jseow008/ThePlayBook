@@ -1,0 +1,864 @@
+{
+  "version": "selector-concise-reasoning-development-v1",
+  "modelConfig": {
+    "version": "personal-evidence-selector-model-v2",
+    "promptVersion": "personal-evidence-selector-v4",
+    "provider": "anthropic",
+    "model": "claude-haiku-4-5-20251001",
+    "maxOutputTokens": 1600,
+    "maxRetries": 0,
+    "temperature": "provider default"
+  },
+  "moduleSha256": "c15bed13ade210af8fe8b6ee187bf7fc539679e5a59dbb8f5cd7b325fe5bf9ec",
+  "fixtures": [
+    {
+      "name": "selector-precision-v1.json",
+      "sha256": "1b647ca4da960d44608767b51e8bc3d4d2d933f1160157288e25b5908dfeb41f"
+    },
+    {
+      "name": "selector-capacity-v1.json",
+      "sha256": "725a545d950f357bfe5486f409e375c1c1a6f5defb99d223a34498dcd1e92b17"
+    }
+  ],
+  "maximumCalls": 14,
+  "retries": 0,
+  "earlyStop": "Stop at first quality failure; no retries",
+  "conciseInstruction": "\n\nKeep the required relevance analysis, but express its output concisely. For requestedFacets and requestedFacet, use a short label retaining every material entity and constraint. For supportSummary, use a short clause naming the specific support or missing relationship; do not restate the passage. For constraintCheck, use a short clause naming the decisive constraint match or failure. Aim for at most 12 words per explanatory field, but retain necessary distinctions even when longer. No generic filler. Do not change verdict rules, omit a required comparison side, or omit a relevant record to shorten the response.",
+  "hypothesis": "Append concision instructions only; preserve schema, IDs, model, evidence, reasoning fields and relevance rules.",
+  "decision": "Reject on any extra/missing expected IDs or structured-output error. Advance only with at least 20% lower total output tokens, lower total input plus output tokens, and lower median provider-call duration; no release without frozen quality gates.",
+  "limitations": [
+    "Synthetic development only; one pair per case, not percentiles.",
+    "Deterministic UUID-shaped IDs replace toy IDs in both arms; fields and expected membership unchanged.",
+    "No production captures; no tuning against held-out corpus.",
+    "Direct development calls outside application spending scope; hard14-call cap and20s deadline, no retry.",
+    "Token usage measured; billed dollar cost unavailable."
+  ],
+  "requests": [
+    {
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "variant": "baseline",
+      "candidateCount": 4,
+      "inputHash": "eef80a08a7f89072b90da5d37c3d93c532ab3a94661692b0623fca72bccf057f",
+      "promptBytes": 1473,
+      "systemBytes": 7224
+    },
+    {
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "variant": "concise-reasoning",
+      "candidateCount": 4,
+      "inputHash": "12e50b3d4acd4a16d903681c1c2734e44c233ad1c909835e5c168a17c410fe45",
+      "promptBytes": 1473,
+      "systemBytes": 7844
+    },
+    {
+      "caseId": "same-name-different-profession",
+      "variant": "concise-reasoning",
+      "candidateCount": 3,
+      "inputHash": "4d9c39f2b0f9f58834ab2ee1beb5dc39797a109407961dad06e6ed020efce2e3",
+      "promptBytes": 1101,
+      "systemBytes": 7844
+    },
+    {
+      "caseId": "same-name-different-profession",
+      "variant": "baseline",
+      "candidateCount": 3,
+      "inputHash": "98ed744e8f055b4874a68fe02a6d1b78708689354360f26daf2a329cd05d6e04",
+      "promptBytes": 1101,
+      "systemBytes": 7224
+    },
+    {
+      "caseId": "named-organization-not-established",
+      "variant": "baseline",
+      "candidateCount": 3,
+      "inputHash": "fb06b09f9e22e8b3a7ee0706d8e118e16877eb0dcb67f0b8a0ec559abf9c6c5f",
+      "promptBytes": 1046,
+      "systemBytes": 7224
+    },
+    {
+      "caseId": "named-organization-not-established",
+      "variant": "concise-reasoning",
+      "candidateCount": 3,
+      "inputHash": "67ae6668b78ef000a005f60c978225771bca1a6114d77063b4c0de4ea161ecf8",
+      "promptBytes": 1046,
+      "systemBytes": 7844
+    },
+    {
+      "caseId": "unsupported-causal-connection",
+      "variant": "concise-reasoning",
+      "candidateCount": 3,
+      "inputHash": "f924c05d979dd5e187e305997c1f930842cae0d58e9caf5aa2e40b7f96e695b6",
+      "promptBytes": 1130,
+      "systemBytes": 7844
+    },
+    {
+      "caseId": "unsupported-causal-connection",
+      "variant": "baseline",
+      "candidateCount": 3,
+      "inputHash": "d18de64231afcbe630345db62dc90c45d0512702dc7f63b4a41ee30551b621c7",
+      "promptBytes": 1130,
+      "systemBytes": 7224
+    },
+    {
+      "caseId": "three-requested-comparison-facets",
+      "variant": "baseline",
+      "candidateCount": 4,
+      "inputHash": "0efe0862e2d4ead74491fd765aaae7a19505fb8dc866f2855f3a6271a1792fb4",
+      "promptBytes": 1626,
+      "systemBytes": 7224
+    },
+    {
+      "caseId": "three-requested-comparison-facets",
+      "variant": "concise-reasoning",
+      "candidateCount": 4,
+      "inputHash": "d3ca3980a22f06d177769cdea950f459af9184c544c97e0ea7e2967631fffc94",
+      "promptBytes": 1626,
+      "systemBytes": 7844
+    },
+    {
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "variant": "concise-reasoning",
+      "candidateCount": 4,
+      "inputHash": "80c4ffdaee567dc202a49de4e5470af9350c951bd50f501be589f8071b6b1337",
+      "promptBytes": 1466,
+      "systemBytes": 7844
+    },
+    {
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "variant": "baseline",
+      "candidateCount": 4,
+      "inputHash": "d736f2e6117c4d7ca3ebf85b7d278692b1b9dd70302ac6cfbaf9c2c08e079e30",
+      "promptBytes": 1466,
+      "systemBytes": 7224
+    },
+    {
+      "caseId": "eight-greenhouse-procedures",
+      "variant": "baseline",
+      "candidateCount": 8,
+      "inputHash": "361b31f72c07a8fa66fb9d6cd838d1d1bbd147078b2fd250d18485caca4954c3",
+      "promptBytes": 2908,
+      "systemBytes": 7224
+    },
+    {
+      "caseId": "eight-greenhouse-procedures",
+      "variant": "concise-reasoning",
+      "candidateCount": 8,
+      "inputHash": "031aa48d14888aff29f707dada5f63e45eed075d5bb88c5a904da17acda93251",
+      "promptBytes": 2908,
+      "systemBytes": 7844
+    }
+  ],
+  "outcome": "complete",
+  "attempted": 14,
+  "records": [
+    {
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "variant": "baseline",
+      "passed": true,
+      "durationMs": 3731.8520409999996,
+      "usage": {
+        "inputTokens": 2489,
+        "outputTokens": 169,
+        "totalTokens": 2658,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [
+        "highlight:e4921f39-f41e-70d6-6889-00fd1a2a1deb"
+      ],
+      "expectedIds": [
+        "highlight:e4921f39-f41e-70d6-6889-00fd1a2a1deb"
+      ],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "procedure saved for reducing odor in compost bin without changing collection schedule"
+        ],
+        "assessments": [
+          {
+            "id": "highlight:e4921f39-f41e-70d6-6889-00fd1a2a1deb",
+            "requestedFacet": "procedure saved for reducing odor in compost bin without changing collection schedule",
+            "supportSummary": "Describes a specific odor-reduction procedure: maintaining the same collection day while adding dry cardboard layer over food scraps and mixing upper layer for aeration to prevent wet, airless pockets that cause odors.",
+            "constraintCheck": "The procedure explicitly maintains the collection day (does not change the schedule) and directly addresses odor reduction through documented technique.",
+            "verdict": "direct"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "variant": "concise-reasoning",
+      "passed": true,
+      "durationMs": 3667.6458329999996,
+      "usage": {
+        "inputTokens": 2625,
+        "outputTokens": 408,
+        "totalTokens": 3033,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [
+        "highlight:e4921f39-f41e-70d6-6889-00fd1a2a1deb"
+      ],
+      "expectedIds": [
+        "highlight:e4921f39-f41e-70d6-6889-00fd1a2a1deb"
+      ],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "procedure saved for reducing odor in compost bin without changing collection schedule"
+        ],
+        "assessments": [
+          {
+            "id": "highlight:e4921f39-f41e-70d6-6889-00fd1a2a1deb",
+            "requestedFacet": "procedure saved for reducing odor in compost bin without changing collection schedule",
+            "supportSummary": "describes covering food scraps with dry cardboard and mixing upper layer to admit air, explicitly keeping same collection day",
+            "constraintCheck": "directly addresses odor reduction while maintaining collection schedule",
+            "verdict": "direct"
+          },
+          {
+            "id": "source_segment:ad4af9e8-dcd6-bbb3-2014-75a72920aed6",
+            "requestedFacet": "procedure saved for reducing odor in compost bin without changing collection schedule",
+            "supportSummary": "discusses changing collection frequency to reduce time scraps spend in bins, contradicting the no-schedule-change constraint",
+            "constraintCheck": "proposes collection schedule change, violating constraint",
+            "verdict": "contradicts_requested_claim"
+          },
+          {
+            "id": "reflection:4f2b011e-9379-1dcd-a683-9392aff3a32f",
+            "requestedFacet": "procedure saved for reducing odor in compost bin without changing collection schedule",
+            "supportSummary": "describes relocating bin but does not address odor reduction",
+            "constraintCheck": "missing odor reduction focus",
+            "verdict": "not_established"
+          },
+          {
+            "id": "source_segment:7a6a611b-65dc-2e4b-6b42-be2a400474ea",
+            "requestedFacet": "procedure saved for reducing odor in compost bin without changing collection schedule",
+            "supportSummary": "general information on compost benefits and container sizing",
+            "constraintCheck": "does not address odor reduction or collection schedule",
+            "verdict": "adjacent"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "same-name-different-profession",
+      "variant": "concise-reasoning",
+      "passed": true,
+      "durationMs": 2257.3250420000004,
+      "usage": {
+        "inputTokens": 2474,
+        "outputTokens": 151,
+        "totalTokens": 2625,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [
+        "source_segment:7d417dd4-fd79-da27-00fb-2d92d49a5c3d"
+      ],
+      "expectedIds": [
+        "source_segment:7d417dd4-fd79-da27-00fb-2d92d49a5c3d"
+      ],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "Harbor engineer Rowan Pike's queue rule recommendation for single loading berth allocation"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:7d417dd4-fd79-da27-00fb-2d92d49a5c3d",
+            "requestedFacet": "Harbor engineer Rowan Pike's queue rule recommendation for single loading berth allocation",
+            "supportSummary": "Harbor engineer Rowan Pike assigns the loading berth based on vessel readiness and tug slot confirmation, with arrival time breaking ties.",
+            "constraintCheck": "Directly matches requested harbor engineer Rowan Pike and single loading berth allocation rule.",
+            "verdict": "direct"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "same-name-different-profession",
+      "variant": "baseline",
+      "passed": true,
+      "durationMs": 3090.0781669999997,
+      "usage": {
+        "inputTokens": 2338,
+        "outputTokens": 184,
+        "totalTokens": 2522,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [
+        "source_segment:7d417dd4-fd79-da27-00fb-2d92d49a5c3d"
+      ],
+      "expectedIds": [
+        "source_segment:7d417dd4-fd79-da27-00fb-2d92d49a5c3d"
+      ],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "queue rule that harbor engineer Rowan Pike recommended for allocating a single loading berth"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:7d417dd4-fd79-da27-00fb-2d92d49a5c3d",
+            "requestedFacet": "queue rule that harbor engineer Rowan Pike recommended for allocating a single loading berth",
+            "supportSummary": "Harbor engineer Rowan Pike assigns the loading berth using a two-tier rule: ready cargo and confirmed tug slot are primary conditions, with arrival time as a tiebreaker.",
+            "constraintCheck": "The source identifies the correct person (harbor engineer Rowan Pike) and directly states the allocation rule applied to the loading berth. All requested facets and constraints are satisfied.",
+            "verdict": "direct"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "named-organization-not-established",
+      "variant": "baseline",
+      "passed": true,
+      "durationMs": 4513.596874999999,
+      "usage": {
+        "inputTokens": 2354,
+        "outputTokens": 335,
+        "totalTokens": 2689,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [],
+      "expectedIds": [],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "application deadline for Eastbank Ceramic Guild's 2027 apprentice program"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:7d0f4169-429a-7022-0c1d-07f7a0b5162d",
+            "requestedFacet": "application deadline for Eastbank Ceramic Guild's 2027 apprentice program",
+            "supportSummary": "States an application deadline of 14 March for a 2027 apprentice program, but attributes it to the Eastbank Ceramic Museum, not the Guild.",
+            "constraintCheck": "The question asks specifically for the Eastbank Ceramic Guild's deadline. This source names the Eastbank Ceramic Museum as the administrator. The user's reflection acknowledges uncertainty about whether these are the same entity. Without confirmation they are identical, the organizational identity constraint is not met.",
+            "verdict": "not_established"
+          },
+          {
+            "id": "highlight:b3cadca3-8e27-c6c4-12e1-8c0942cf7c8a",
+            "requestedFacet": "application deadline for Eastbank Ceramic Guild's 2027 apprentice program",
+            "supportSummary": "Provides a deadline (19 April) for a 2027 apprentice program, but for the Westbank Ceramic Guild, not Eastbank.",
+            "constraintCheck": "The question specifies Eastbank; this source addresses Westbank. The organizational constraint is not satisfied.",
+            "verdict": "not_established"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "named-organization-not-established",
+      "variant": "concise-reasoning",
+      "passed": true,
+      "durationMs": 3164.140166000001,
+      "usage": {
+        "inputTokens": 2490,
+        "outputTokens": 348,
+        "totalTokens": 2838,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [],
+      "expectedIds": [],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "Eastbank Ceramic Guild 2027 apprentice program application deadline"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:7d0f4169-429a-7022-0c1d-07f7a0b5162d",
+            "requestedFacet": "Eastbank Ceramic Guild 2027 apprentice program application deadline",
+            "supportSummary": "States deadline of 14 March for 2027 apprentice program applications.",
+            "constraintCheck": "Names Eastbank Ceramic Museum, not Guild; institution identity does not match request.",
+            "verdict": "not_established"
+          },
+          {
+            "id": "highlight:b3cadca3-8e27-c6c4-12e1-8c0942cf7c8a",
+            "requestedFacet": "Eastbank Ceramic Guild 2027 apprentice program application deadline",
+            "supportSummary": "States 19 April deadline for 2027 apprentice program applications.",
+            "constraintCheck": "Names Westbank Ceramic Guild, not Eastbank; institution identity does not match request.",
+            "verdict": "not_established"
+          },
+          {
+            "id": "reflection:78382728-8259-9d87-48b4-6785124b3bbd",
+            "requestedFacet": "Eastbank Ceramic Guild 2027 apprentice program application deadline",
+            "supportSummary": "Reflection expresses uncertainty about Eastbank institution and museum-guild connection.",
+            "constraintCheck": "No deadline information provided; reflects unresolved question rather than answer.",
+            "verdict": "not_established"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "unsupported-causal-connection",
+      "variant": "concise-reasoning",
+      "passed": true,
+      "durationMs": 4013.6197089999987,
+      "usage": {
+        "inputTokens": 2479,
+        "outputTokens": 317,
+        "totalTokens": 2796,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [],
+      "expectedIds": [],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "saved note claiming lighting change caused increase in visitor donations"
+        ],
+        "assessments": [
+          {
+            "id": "reflection:eac668f6-1afc-1b0a-4135-8c7da79c608e",
+            "requestedFacet": "saved note claiming lighting change caused increase in visitor donations",
+            "supportSummary": "reflection states donations increased in June and changes occurred, but explicitly denies evidence of causation",
+            "constraintCheck": "reflection explicitly contradicts the requested causal claim by stating no evidence shows which change caused the increase",
+            "verdict": "contradicts_requested_claim"
+          },
+          {
+            "id": "highlight:4d7a641e-6255-5bb4-16b4-b32313e69772",
+            "requestedFacet": "saved note claiming lighting change caused increase in visitor donations",
+            "supportSummary": "highlight describes lighting change; attached note addresses readability only, not donations or causation",
+            "constraintCheck": "highlight and note do not establish causal claim linking lighting to donation increase",
+            "verdict": "not_established"
+          },
+          {
+            "id": "source_segment:05f71c19-e792-4d5b-071f-cad4ed65317e",
+            "requestedFacet": "saved note claiming lighting change caused increase in visitor donations",
+            "supportSummary": "editorial source mentions lighting comfort and donation influences separately without causal link",
+            "constraintCheck": "source does not establish that lighting change caused the donation increase",
+            "verdict": "adjacent"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "unsupported-causal-connection",
+      "variant": "baseline",
+      "passed": true,
+      "durationMs": 3209.2378329999992,
+      "usage": {
+        "inputTokens": 2343,
+        "outputTokens": 301,
+        "totalTokens": 2644,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [],
+      "expectedIds": [],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "A saved note claiming that changing the museum's lighting caused the increase in visitor donations"
+        ],
+        "assessments": [
+          {
+            "id": "reflection:eac668f6-1afc-1b0a-4135-8c7da79c608e",
+            "requestedFacet": "A saved note claiming that changing the museum's lighting caused the increase in visitor donations",
+            "supportSummary": "The reflection observes that visitor donations increased in June and that several changes happened together, but explicitly states the user has no evidence showing which change caused the increase.",
+            "constraintCheck": "The reflection directly addresses the causal claim requested but explicitly denies establishing causation between lighting and donations. The user's own statement contradicts the premise of the question.",
+            "verdict": "contradicts_requested_claim"
+          },
+          {
+            "id": "highlight:4d7a641e-6255-5bb4-16b4-b32313e69772",
+            "requestedFacet": "A saved note claiming that changing the museum's lighting caused the increase in visitor donations",
+            "supportSummary": "The highlighted text reports a lighting change in June. The attached note observes an improvement in label readability but does not address visitor donations.",
+            "constraintCheck": "Neither the highlighted passage nor the note makes a claim connecting the lighting change to increased donations. The note addresses a different effect (readability).",
+            "verdict": "not_established"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "three-requested-comparison-facets",
+      "variant": "baseline",
+      "passed": true,
+      "durationMs": 3740.548999999999,
+      "usage": {
+        "inputTokens": 2531,
+        "outputTokens": 401,
+        "totalTokens": 2932,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [
+        "source_segment:950ba3c9-3ea2-6ce5-8702-34d2b70989a0",
+        "highlight:9bf1d641-b0ef-b46b-1315-468eff6fb17b",
+        "reflection:f026ab50-18e7-eed4-3937-65b087d3c549"
+      ],
+      "expectedIds": [
+        "source_segment:950ba3c9-3ea2-6ce5-8702-34d2b70989a0",
+        "highlight:9bf1d641-b0ef-b46b-1315-468eff6fb17b",
+        "reflection:f026ab50-18e7-eed4-3937-65b087d3c549"
+      ],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "current guide's tire-pressure rule",
+          "user's objection in the attached note",
+          "user's experience on a rainy commute"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:950ba3c9-3ea2-6ce5-8702-34d2b70989a0",
+            "requestedFacet": "current guide's tire-pressure rule",
+            "supportSummary": "Editorial source directly states the tire-pressure rule: use the upper end of the manufacturer's permitted pressure range for every paved-road commute, regardless of rain.",
+            "constraintCheck": "Establishes the complete requested facet from the current guide.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:9bf1d641-b0ef-b46b-1315-468eff6fb17b",
+            "requestedFacet": "user's objection in the attached note",
+            "supportSummary": "The user's noteBody explicitly disagrees with the universal rule, claiming that on wet cobblestones lower permitted pressure provides better control, and that the safe choice depends on load and tire width.",
+            "constraintCheck": "Directly captures the user's stated objection to the guide's rule, including the specific context and reasoning.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:f026ab50-18e7-eed4-3937-65b087d3c549",
+            "requestedFacet": "user's experience on a rainy commute",
+            "supportSummary": "Reflection describes the user's Tuesday rainy commute experience: reduced pressure within the manufacturer's range and observed that the bicycle felt less skittish over cobblestones, though the user did not measure grip or stopping distance.",
+            "constraintCheck": "Directly documents the user's rainy commute experience and the observed effect of reduced pressure.",
+            "verdict": "direct"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "three-requested-comparison-facets",
+      "variant": "concise-reasoning",
+      "passed": true,
+      "durationMs": 3934.3368340000015,
+      "usage": {
+        "inputTokens": 2667,
+        "outputTokens": 370,
+        "totalTokens": 3037,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [
+        "source_segment:950ba3c9-3ea2-6ce5-8702-34d2b70989a0",
+        "highlight:9bf1d641-b0ef-b46b-1315-468eff6fb17b",
+        "reflection:f026ab50-18e7-eed4-3937-65b087d3c549"
+      ],
+      "expectedIds": [
+        "source_segment:950ba3c9-3ea2-6ce5-8702-34d2b70989a0",
+        "highlight:9bf1d641-b0ef-b46b-1315-468eff6fb17b",
+        "reflection:f026ab50-18e7-eed4-3937-65b087d3c549"
+      ],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "Current guide's tire-pressure rule for commutes",
+          "User's objection to that rule in attached note",
+          "User's experience on rainy commute"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:950ba3c9-3ea2-6ce5-8702-34d2b70989a0",
+            "requestedFacet": "Current guide's tire-pressure rule for commutes",
+            "supportSummary": "States rule: upper end of manufacturer's permitted pressure for every paved-road commute, regardless of rain.",
+            "constraintCheck": "Directly establishes the current guide's stated rule without constraint exceptions.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:9bf1d641-b0ef-b46b-1315-468eff6fb17b",
+            "requestedFacet": "User's objection to that rule in attached note",
+            "supportSummary": "User's attached note disputes universal application; argues wet cobblestones require lower permitted pressure for control; notes decision depends on load and tire width.",
+            "constraintCheck": "Attached noteBody directly expresses user's disagreement with the guide's universal recommendation.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:f026ab50-18e7-eed4-3937-65b087d3c549",
+            "requestedFacet": "User's experience on rainy commute",
+            "supportSummary": "User reduced pressure within manufacturer's range during Tuesday rain; felt bicycle was less skittish over cobblestones; did not measure grip or stopping distance.",
+            "constraintCheck": "Directly describes user's actual rainy commute experience and perceived handling change.",
+            "verdict": "direct"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "variant": "concise-reasoning",
+      "passed": true,
+      "durationMs": 2870.227209000004,
+      "usage": {
+        "inputTokens": 2606,
+        "outputTokens": 264,
+        "totalTokens": 2870,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [
+        "source_segment:2e7d2ecf-cfbb-02bd-15ad-ec25daae0e5f",
+        "highlight:0b8800ff-a29b-12f7-3098-e46f74902be3"
+      ],
+      "expectedIds": [
+        "source_segment:2e7d2ecf-cfbb-02bd-15ad-ec25daae0e5f",
+        "highlight:0b8800ff-a29b-12f7-3098-e46f74902be3"
+      ],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "How user's attached note qualifies current author's rule about refusing every unscheduled repair request"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:2e7d2ecf-cfbb-02bd-15ad-ec25daae0e5f",
+            "requestedFacet": "How user's attached note qualifies current author's rule about refusing every unscheduled repair request",
+            "supportSummary": "States the author's rule: reject every unscheduled repair request with no exceptions until booked jobs finish.",
+            "constraintCheck": "Establishes the current author's absolute rule that the user's note qualifies.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:0b8800ff-a29b-12f7-3098-e46f74902be3",
+            "requestedFacet": "How user's attached note qualifies current author's rule about refusing every unscheduled repair request",
+            "supportSummary": "User's attached note proposes exception for failed wheelchair brake based on immediate safety priority over booking order.",
+            "constraintCheck": "Directly answers how the user's note qualifies the rule by identifying a specific exception condition.",
+            "verdict": "direct"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "variant": "baseline",
+      "passed": true,
+      "durationMs": 3077.2106669999994,
+      "usage": {
+        "inputTokens": 2470,
+        "outputTokens": 312,
+        "totalTokens": 2782,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [
+        "source_segment:2e7d2ecf-cfbb-02bd-15ad-ec25daae0e5f",
+        "highlight:0b8800ff-a29b-12f7-3098-e46f74902be3"
+      ],
+      "expectedIds": [
+        "source_segment:2e7d2ecf-cfbb-02bd-15ad-ec25daae0e5f",
+        "highlight:0b8800ff-a29b-12f7-3098-e46f74902be3"
+      ],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "How does the user's attached note qualify the current author's rule about refusing every unscheduled repair request?"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:2e7d2ecf-cfbb-02bd-15ad-ec25daae0e5f",
+            "requestedFacet": "How does the user's attached note qualify the current author's rule about refusing every unscheduled repair request?",
+            "supportSummary": "Establishes the current author's stated rule: reject every unscheduled repair request until booked jobs are finished, with no exceptions allowed.",
+            "constraintCheck": "Provides the baseline rule that the user's note qualifies. The rule is explicitly stated with the constraint that the author allows no exceptions.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:0b8800ff-a29b-12f7-3098-e46f74902be3",
+            "requestedFacet": "How does the user's attached note qualify the current author's rule about refusing every unscheduled repair request?",
+            "supportSummary": "User's attached note proposes an exception: failed wheelchair brake should be treated immediately because immediate safety takes priority over booking order.",
+            "constraintCheck": "Directly answers the question by showing how the user's note qualifies the author's absolute rule. The note introduces a safety-based exception to the no-exceptions rule.",
+            "verdict": "direct"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "eight-greenhouse-procedures",
+      "variant": "baseline",
+      "passed": true,
+      "durationMs": 6165.404957999999,
+      "usage": {
+        "inputTokens": 3055,
+        "outputTokens": 988,
+        "totalTokens": 4043,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [
+        "highlight:69d9d0aa-942d-4f58-68ff-015b6fae2f45",
+        "highlight:4405bf5f-a9c2-bec4-af9d-a64494aee6d7",
+        "highlight:6824cf97-47c6-7db4-269b-38c460b9a3cc",
+        "highlight:e2ccf02b-c65e-14f6-d1d0-b45be2af96bc",
+        "highlight:83c0ca33-63df-d0d0-ecac-90711b38fc1b",
+        "highlight:a1eeaf66-96a5-5170-59dc-9bcb657f33a9",
+        "highlight:f7c05a4a-2760-e1f3-861c-61cc3a4b1fa9",
+        "highlight:aad63ea6-9990-22be-12c9-9e0eda742c67"
+      ],
+      "expectedIds": [
+        "highlight:69d9d0aa-942d-4f58-68ff-015b6fae2f45",
+        "highlight:4405bf5f-a9c2-bec4-af9d-a64494aee6d7",
+        "highlight:6824cf97-47c6-7db4-269b-38c460b9a3cc",
+        "highlight:e2ccf02b-c65e-14f6-d1d0-b45be2af96bc",
+        "highlight:83c0ca33-63df-d0d0-ecac-90711b38fc1b",
+        "highlight:a1eeaf66-96a5-5170-59dc-9bcb657f33a9",
+        "highlight:f7c05a4a-2760-e1f3-861c-61cc3a4b1fa9",
+        "highlight:aad63ea6-9990-22be-12c9-9e0eda742c67"
+      ],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "Summarize pump priming procedure",
+          "Summarize door-hinge lubrication procedure",
+          "Summarize roof-gutter clearing procedure",
+          "Summarize thermostat calibration procedure",
+          "Summarize tray cleaning procedure",
+          "Summarize drain flushing procedure",
+          "Summarize fan-guard cleaning procedure",
+          "Summarize vent-latch inspection procedure"
+        ],
+        "assessments": [
+          {
+            "id": "highlight:69d9d0aa-942d-4f58-68ff-015b6fae2f45",
+            "requestedFacet": "Summarize pump priming procedure",
+            "supportSummary": "Describes switching off pump, filling priming chamber with clean water, closing chamber cap, restarting pump, and checking water flow.",
+            "constraintCheck": "Directly establishes the saved pump priming procedure with step-by-step instructions.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:4405bf5f-a9c2-bec4-af9d-a64494aee6d7",
+            "requestedFacet": "Summarize door-hinge lubrication procedure",
+            "supportSummary": "Describes wiping grit from hinge pins, applying one drop of light machine oil, moving door through full travel, and wiping excess oil.",
+            "constraintCheck": "Directly establishes the saved door-hinge lubrication procedure with step-by-step instructions.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:6824cf97-47c6-7db4-269b-38c460b9a3cc",
+            "requestedFacet": "Summarize roof-gutter clearing procedure",
+            "supportSummary": "Describes clearing gutter from stable platform, removing leaves with scoop into bucket, and running water through downpipe to check flow.",
+            "constraintCheck": "Directly establishes the saved roof-gutter clearing procedure with step-by-step instructions.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:e2ccf02b-c65e-14f6-d1d0-b45be2af96bc",
+            "requestedFacet": "Summarize thermostat calibration procedure",
+            "supportSummary": "Describes placing reference thermometer beside sensor for thirty minutes, recording temperature difference, and adjusting thermostat offset per manual.",
+            "constraintCheck": "Directly establishes the saved thermostat calibration procedure with step-by-step instructions.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:83c0ca33-63df-d0d0-ecac-90711b38fc1b",
+            "requestedFacet": "Summarize tray cleaning procedure",
+            "supportSummary": "Describes brushing out dry soil, washing with warm soapy water, rinsing thoroughly, drying before storage, and inspecting for cracks during washing.",
+            "constraintCheck": "Directly establishes the saved tray cleaning procedure with step-by-step instructions.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:a1eeaf66-96a5-5170-59dc-9bcb657f33a9",
+            "requestedFacet": "Summarize drain flushing procedure",
+            "supportSummary": "Describes lifting grate, removing visible debris, pouring bucket of clean water, refitting grate, and confirming no water remains pooled on floor.",
+            "constraintCheck": "Directly establishes the saved drain flushing procedure with step-by-step instructions.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:f7c05a4a-2760-e1f3-861c-61cc3a4b1fa9",
+            "requestedFacet": "Summarize fan-guard cleaning procedure",
+            "supportSummary": "Describes disconnecting power, waiting for blades to stop, removing dust with soft brush, refitting securely, and reconnecting power.",
+            "constraintCheck": "Directly establishes the saved fan-guard cleaning procedure with step-by-step instructions.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:aad63ea6-9990-22be-12c9-9e0eda742c67",
+            "requestedFacet": "Summarize vent-latch inspection procedure",
+            "supportSummary": "Describes opening and closing latch by hand, checking catch engagement, tightening loose mounting screws, and marking bent latch for replacement.",
+            "constraintCheck": "Directly establishes the saved vent-latch inspection procedure with step-by-step instructions.",
+            "verdict": "direct"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "eight-greenhouse-procedures",
+      "variant": "concise-reasoning",
+      "passed": true,
+      "durationMs": 5115.297291000003,
+      "usage": {
+        "inputTokens": 3191,
+        "outputTokens": 872,
+        "totalTokens": 4063,
+        "cachedInputTokens": 0
+      },
+      "selectedIds": [
+        "highlight:69d9d0aa-942d-4f58-68ff-015b6fae2f45",
+        "highlight:4405bf5f-a9c2-bec4-af9d-a64494aee6d7",
+        "highlight:6824cf97-47c6-7db4-269b-38c460b9a3cc",
+        "highlight:e2ccf02b-c65e-14f6-d1d0-b45be2af96bc",
+        "highlight:83c0ca33-63df-d0d0-ecac-90711b38fc1b",
+        "highlight:a1eeaf66-96a5-5170-59dc-9bcb657f33a9",
+        "highlight:f7c05a4a-2760-e1f3-861c-61cc3a4b1fa9",
+        "highlight:aad63ea6-9990-22be-12c9-9e0eda742c67"
+      ],
+      "expectedIds": [
+        "highlight:69d9d0aa-942d-4f58-68ff-015b6fae2f45",
+        "highlight:4405bf5f-a9c2-bec4-af9d-a64494aee6d7",
+        "highlight:6824cf97-47c6-7db4-269b-38c460b9a3cc",
+        "highlight:e2ccf02b-c65e-14f6-d1d0-b45be2af96bc",
+        "highlight:83c0ca33-63df-d0d0-ecac-90711b38fc1b",
+        "highlight:a1eeaf66-96a5-5170-59dc-9bcb657f33a9",
+        "highlight:f7c05a4a-2760-e1f3-861c-61cc3a4b1fa9",
+        "highlight:aad63ea6-9990-22be-12c9-9e0eda742c67"
+      ],
+      "rawSyntheticOutput": {
+        "requestedFacets": [
+          "pump priming procedure",
+          "door-hinge lubrication procedure",
+          "roof-gutter clearing procedure",
+          "thermostat calibration procedure",
+          "tray cleaning procedure",
+          "drain flushing procedure",
+          "fan-guard cleaning procedure",
+          "vent-latch inspection procedure"
+        ],
+        "assessments": [
+          {
+            "id": "highlight:69d9d0aa-942d-4f58-68ff-015b6fae2f45",
+            "requestedFacet": "pump priming procedure",
+            "supportSummary": "Describes switching off pump, filling priming chamber with clean water, closing cap, restarting, and checking water flow.",
+            "constraintCheck": "Directly addresses pump priming with complete procedural steps.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:4405bf5f-a9c2-bec4-af9d-a64494aee6d7",
+            "requestedFacet": "door-hinge lubrication procedure",
+            "supportSummary": "Describes wiping grit from pins, adding one drop of light machine oil, moving door through full travel, and wiping excess.",
+            "constraintCheck": "Directly addresses door-hinge lubrication with complete procedural steps.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:6824cf97-47c6-7db4-269b-38c460b9a3cc",
+            "requestedFacet": "roof-gutter clearing procedure",
+            "supportSummary": "Describes clearing from stable platform, removing leaves with scoop, collecting in bucket, and running water through downpipe.",
+            "constraintCheck": "Directly addresses roof-gutter clearing with complete procedural steps.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:e2ccf02b-c65e-14f6-d1d0-b45be2af96bc",
+            "requestedFacet": "thermostat calibration procedure",
+            "supportSummary": "Describes placing reference thermometer beside sensor for thirty minutes, recording difference, and adjusting offset per manual.",
+            "constraintCheck": "Directly addresses thermostat calibration with complete procedural steps.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:83c0ca33-63df-d0d0-ecac-90711b38fc1b",
+            "requestedFacet": "tray cleaning procedure",
+            "supportSummary": "Describes brushing out dry soil, washing with warm soapy water, rinsing thoroughly, drying, and inspecting for cracks.",
+            "constraintCheck": "Directly addresses tray cleaning with complete procedural steps.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:a1eeaf66-96a5-5170-59dc-9bcb657f33a9",
+            "requestedFacet": "drain flushing procedure",
+            "supportSummary": "Describes lifting grate, removing visible debris, pouring bucket of clean water, refitting grate, and confirming no pooled water.",
+            "constraintCheck": "Directly addresses drain flushing with complete procedural steps.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:f7c05a4a-2760-e1f3-861c-61cc3a4b1fa9",
+            "requestedFacet": "fan-guard cleaning procedure",
+            "supportSummary": "Describes disconnecting power, waiting for blades to stop, removing dust with soft brush, refitting securely, and reconnecting power.",
+            "constraintCheck": "Directly addresses fan-guard cleaning with complete procedural steps.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:aad63ea6-9990-22be-12c9-9e0eda742c67",
+            "requestedFacet": "vent-latch inspection procedure",
+            "supportSummary": "Describes opening and closing latch by hand, checking catch engagement, tightening loose screws, and marking bent latch for replacement.",
+            "constraintCheck": "Directly addresses vent-latch inspection with complete procedural steps.",
+            "verdict": "direct"
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "passed": 7,
+      "cases": 7,
+      "medianMs": 3731.8520409999996,
+      "inputTokens": 17580,
+      "outputTokens": 2690
+    },
+    "concise-reasoning": {
+      "passed": 7,
+      "cases": 7,
+      "medianMs": 3667.6458329999996,
+      "inputTokens": 18532,
+      "outputTokens": 2730
+    }
+  },
+  "decisionResult": "rejected: output tokens and total tokens increased; the predeclared 20% output reduction criterion failed"
+}
