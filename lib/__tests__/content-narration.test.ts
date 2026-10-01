@@ -181,8 +181,8 @@ describe("AI narration helpers", () => {
         const body = JSON.parse(options.body);
         expect(body.reference_id).toBe("03647a8ad0e04a0ea11ec99c4e9da5a7");
         expect(body.text).toBe("[speak in a calm, grounded conversational tone, with natural pauses and understated emphasis] A brief test passage.");
-        expect(body.temperature).toBe(0.5);
-        expect(body.top_p).toBe(0.7);
+        expect(body.temperature).toBe(0.7);
+        expect(body.top_p).toBe(0.85);
         expect(body.format).toBe("wav");
     });
 
