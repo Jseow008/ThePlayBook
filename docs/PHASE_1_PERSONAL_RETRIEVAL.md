@@ -3015,3 +3015,44 @@ the requested latency objective. Do not keep cycling models without a new bounde
 decision. User-visible factual progress or eliminating demonstrated non-provider
 serial work are distinct next options; neither resolves provider generation time.
 Publish this negative result through normal gates. #28 stays open, timers paused.
+
+### Luna structured-output failure diagnosis — 1 October 2026
+
+User authorized a narrow diagnosis of #215's failed quality run. Fresh-main
+branch `codex/luna-failure-diagnosis`, worktree `/private/tmp/netflux-luna-diagnosis`,
+base `12d7c4a5`. #215 still holds the original failed evaluation independently.
+
+One paid request for the identical synthetic `comparison-larch` logical input and
+candidate configuration. Frozen capture validation and candidate hash match
+`0fb4fee2daf4cc762f5fba6082fa7f4836e8f5e2775788a90779be43f17e44fb`.
+Prompt, model, schema, reasoning none,1600output cap,20s deadline unchanged.
+No provider retry or full benchmark. Captured only synthetic response body, not
+request headers/keys. Offline planning, typecheck and focused lint passed.
+
+Diagnostic succeeded in5373ms. HTTP completed response, finish stop, no provider
+error/incomplete details, one message and zero hidden reasoning tokens. All
+required fixture evidence selected, no ineligible selections. Replaying the exact
+response through the same SDK and application validator passed offline (zero
+network calls); wire-hash equality was enforced. This disproves a consistently
+failing SDK/schema path for this input, not the original intermittent failure.
+
+Usage10625input (10622cached)/342output; standard price estimate$0.00027752,
+not an invoice. Cache hit makes this unsuitable for cold performance comparison.
+Raw original failed response was never retained and cannot be reconstructed.
+Its different788output tokens cannot establish what text or failure occurred.
+**Root cause remains unknown; original frozen evaluation remains failed/incomplete.**
+No successful diagnostic may be spliced into it or used to authorize a model switch.
+
+Harness `scripts/experiments/luna-failure-diagnostic.ts` supports explicit capture
+and failed-evaluation paths and offline replay of its local artifact. Evidence
+`docs/evidence/luna-failure-diagnostic-20261001.json` preserves the synthetic raw
+provider response, parsed assessment, usage, config and offline replay result.
+Raw local artifacts `/private/tmp/netflux-luna-failure-diagnostic-v1.json` and
+`/private/tmp/netflux-luna-failure-replay-v1.json`. Exactly one paid call, no retries,
+one agent, no production data/DB/infrastructure/model change; timers paused.
+
+Next: do not run another full quality attempt merely because this diagnostic
+succeeded. Luna remains held. Any reliability change (for example a bounded retry
+of transient structured-output failures) is a distinct latency/cost/failure-policy
+decision that needs explicit recorded semantics and validation without hiding
+first-attempt failures. No such behavior is added by this evidence PR. #28 open.

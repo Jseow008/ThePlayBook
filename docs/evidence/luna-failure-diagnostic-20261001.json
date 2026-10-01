@@ -1,0 +1,345 @@
+{
+  "version": "luna-failure-diagnostic-v1",
+  "config": {
+    "model": "gpt-6-luna",
+    "provider": "openai",
+    "reasoningEffort": "none",
+    "forceReasoning": true,
+    "store": false,
+    "maxOutputTokens": 1600,
+    "maxRetries": 0
+  },
+  "candidateHash": "0fb4fee2daf4cc762f5fba6082fa7f4836e8f5e2775788a90779be43f17e44fb",
+  "caseId": "comparison-larch",
+  "startedAt": "2026-10-01T05:10:20.633Z",
+  "mode": "single-paid-diagnostic",
+  "maxCalls": 1,
+  "evidencePurpose": "Diagnosis only; never replaces failed frozen evaluation",
+  "outcome": "complete",
+  "wireHash": "de19868b0e4b56bbdd99a4df50f2feb1f7ec246a453c359d5749b49725001a55",
+  "httpStatus": 200,
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 10625,
+    "inputTokenDetails": {
+      "noCacheTokens": 3,
+      "cacheReadTokens": 10622
+    },
+    "outputTokens": 342,
+    "outputTokenDetails": {
+      "textTokens": 342,
+      "reasoningTokens": 0
+    },
+    "totalTokens": 10967,
+    "raw": {
+      "input_tokens": 10625,
+      "input_tokens_details": {
+        "cached_tokens": 10622
+      },
+      "output_tokens": 342,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    },
+    "reasoningTokens": 0,
+    "cachedInputTokens": 10622
+  },
+  "parsedOutput": {
+    "requestedFacets": [
+      "Larch current editorial source: its first step, keeping source authorship distinct.",
+      "Larch highlighted sample-card instruction, keeping user-selected text distinct from editorial advice.",
+      "The blotter incident in the user's reflection, keeping personal experience distinct from source content."
+    ],
+    "assessments": [
+      {
+        "id": "source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2",
+        "requestedFacet": "Larch current editorial first step",
+        "supportSummary": "The editorial passage says to rule the practice card before choosing an ink.",
+        "constraintCheck": "Matches Larch and establishes the current source's first step.",
+        "verdict": "direct"
+      },
+      {
+        "id": "highlight:4bf3d469-a3c2-4a71-8ad5-2cb2c9e19489",
+        "requestedFacet": "Exact sample-card instruction the user highlighted",
+        "supportSummary": "The highlighted text instructs keeping the ink sample on a separate card with a specified marking, and not marking the finished invitation.",
+        "constraintCheck": "A Larch highlight containing the requested sample-card instruction; it is user-selected text, not editorial authorship.",
+        "verdict": "direct"
+      },
+      {
+        "id": "reflection:777d4e9a-d710-4f43-8af5-b0a44988ec85",
+        "requestedFacet": "Blotter incident in the user's reflection",
+        "supportSummary": "The reflection recounts a folded blotter touching the invitation and leaving a dark crescent; the blotter was stored separately.",
+        "constraintCheck": "The personal incident is explicitly in the Larch reflection; it is the user's account, not source advice.",
+        "verdict": "direct"
+      }
+    ]
+  },
+  "selectedFixtureIds": [
+    "0de6abf3-5c68-5781-9dc3-968784af49d5",
+    "108dc5a0-091c-570d-8942-f2a44618588e",
+    "d77925f0-d7a3-552b-91c8-e93d774a2bc6"
+  ],
+  "durationMs": 5372.982542,
+  "networkCalls": 1,
+  "providerResponse": {
+    "id": "resp_0a901a91ddabe427016abdeb3d3fa087d0aa1181abad327bc4",
+    "object": "response",
+    "created_at": 1790831421,
+    "status": "completed",
+    "access_programs": null,
+    "background": false,
+    "billing": {
+      "payer": "developer"
+    },
+    "completed_at": 1790831425,
+    "error": null,
+    "frequency_penalty": 0.0,
+    "incomplete_details": null,
+    "instructions": null,
+    "max_output_tokens": 1600,
+    "max_tool_calls": null,
+    "model": "gpt-6-luna",
+    "moderation": null,
+    "output": [
+      {
+        "id": "msg_0a901a91ddabe427016abdeb3f44d087d0a08b127744ea5cdf",
+        "type": "message",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "annotations": [],
+            "logprobs": [],
+            "text": "{\"requestedFacets\":[\"Larch current editorial source: its first step, keeping source authorship distinct.\",\"Larch highlighted sample-card instruction, keeping user-selected text distinct from editorial advice.\",\"The blotter incident in the user's reflection, keeping personal experience distinct from source content.\"],\"assessments\":[{\"id\":\"source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2\",\"requestedFacet\":\"Larch current editorial first step\",\"supportSummary\":\"The editorial passage says to rule the practice card before choosing an ink.\",\"constraintCheck\":\"Matches Larch and establishes the current source's first step.\",\"verdict\":\"direct\"},{\"id\":\"highlight:4bf3d469-a3c2-4a71-8ad5-2cb2c9e19489\",\"requestedFacet\":\"Exact sample-card instruction the user highlighted\",\"supportSummary\":\"The highlighted text instructs keeping the ink sample on a separate card with a specified marking, and not marking the finished invitation.\",\"constraintCheck\":\"A Larch highlight containing the requested sample-card instruction; it is user-selected text, not editorial authorship.\",\"verdict\":\"direct\"},{\"id\":\"reflection:777d4e9a-d710-4f43-8af5-b0a44988ec85\",\"requestedFacet\":\"Blotter incident in the user's reflection\",\"supportSummary\":\"The reflection recounts a folded blotter touching the invitation and leaving a dark crescent; the blotter was stored separately.\",\"constraintCheck\":\"The personal incident is explicitly in the Larch reflection; it is the user's account, not source advice.\",\"verdict\":\"direct\"}]}"
+          }
+        ],
+        "phase": "final_answer",
+        "role": "assistant"
+      }
+    ],
+    "parallel_tool_calls": true,
+    "presence_penalty": 0.0,
+    "previous_response_id": null,
+    "prompt_cache_key": null,
+    "prompt_cache_retention": "24h",
+    "reasoning": {
+      "context": "all_turns",
+      "effort": "none",
+      "mode": "standard",
+      "summary": null
+    },
+    "safety_identifier": null,
+    "service_tier": "default",
+    "store": false,
+    "temperature": 1.0,
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "description": null,
+        "name": "response",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "requestedFacets": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "minItems": 1,
+              "maxItems": 8
+            },
+            "assessments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "enum": [
+                      "reflection:777d4e9a-d710-4f43-8af5-b0a44988ec85",
+                      "highlight:4bf3d469-a3c2-4a71-8ad5-2cb2c9e19489",
+                      "highlight:a10d0aca-4d70-4165-8b3d-39ae9e49c44b",
+                      "highlight:eaca1123-bc2e-49da-81c4-76a56dceb4fd",
+                      "reflection:c1cdb268-cd2d-4391-8237-c27d10d8b01a",
+                      "highlight:4270c6fa-d39f-44d1-8245-52fc37e19a11",
+                      "reflection:57ea029e-f673-43f7-8c80-5280380bb6b4",
+                      "reflection:51f6eb85-4259-4972-824d-2d27e8fe1e67",
+                      "highlight:aba5084f-686d-400e-8888-6354575faf84",
+                      "highlight:cba18e3a-9b6b-42fa-8198-c23009071a78",
+                      "highlight:7415777f-c920-4db5-8616-44d17f019a37",
+                      "reflection:6c56cee5-3b3d-4312-8d73-628697f261bd",
+                      "highlight:3b394e91-4500-43af-893f-8306d14b74a5",
+                      "highlight:13370262-56d9-49a6-887a-8334106b47ab",
+                      "reflection:b57ad0b5-198a-4e67-8208-fff91d1be2bd",
+                      "reflection:7925f861-d843-45af-85db-32b3ebc4eec9",
+                      "highlight:5ce8f0ad-1c33-4fc9-8801-bbd536b93618",
+                      "highlight:008222a9-2cdc-4a22-83b7-ba485ea21a2c",
+                      "highlight:0097c2c6-0f8c-4281-8769-0589cc23a983",
+                      "highlight:00ddc480-7e6d-4dbd-8bc9-41a3199bb349",
+                      "highlight:010b9589-bb75-4155-858a-7ad23ba7d495",
+                      "highlight:011ac173-f032-4cee-824f-61dcc990a913",
+                      "highlight:01227144-7a7b-433e-8125-6bb76b60e128",
+                      "highlight:01296f63-719e-46c8-817d-ba0d8d56fd0a",
+                      "highlight:0161f9b9-97a3-439f-8a8f-3ff9e8c23da8",
+                      "highlight:018a63b3-6b6e-46ec-8a3c-46e8ac700314",
+                      "highlight:019d9f44-d4eb-4856-89f4-8cf55dd9c530",
+                      "highlight:01b8a65c-c4b6-4abc-833b-9c8ee368cfcb",
+                      "highlight:01be44a4-f1c2-4eeb-8330-b598146d48e3",
+                      "highlight:01cc4f19-960c-464f-87c8-c79dc22f26bf",
+                      "highlight:02c4c388-21ab-41ec-8230-676343f03796",
+                      "highlight:0338006b-7504-41c1-84fb-761a0d38fe61",
+                      "highlight:033e5883-1093-4348-877b-0f5362393f94",
+                      "highlight:0349a82f-c40d-4656-8bd7-1db1da1866ff",
+                      "highlight:0358ff97-6b01-4746-85e9-4bd105c1ba6e",
+                      "highlight:041ca382-f774-4ecd-8e05-cca7258bf9cf",
+                      "highlight:0422a2f6-2275-4581-8d8c-a131ce9e3c02",
+                      "highlight:04496255-1fb6-418b-89ef-35aaf1ba880e",
+                      "highlight:04baf8bf-7745-4b2d-83db-0d603f1255f7",
+                      "reflection:0000390f-9bb9-419f-8708-b65cdd6e2afe",
+                      "reflection:00108d24-680d-4ae6-8a27-8e1b39a38120",
+                      "reflection:00465f71-22da-483c-83c3-7cb2910b2862",
+                      "reflection:008b7022-b39f-4b44-8d69-ef29f63d883d",
+                      "reflection:00d24927-c13e-4b13-81c6-add81eca0427",
+                      "reflection:0211f29d-48d6-45e2-8369-cfc38f0b62b1",
+                      "reflection:022853d1-747b-4fa5-89c6-84b4ad6a3a8a",
+                      "reflection:034ed60d-eb29-4802-8945-6d0f8fd08e07",
+                      "reflection:0390678d-f72e-4c2e-8efb-2bf9e330b3c7",
+                      "reflection:03ef2863-6841-4d86-8a3f-0375da239d84",
+                      "reflection:041c26dc-6cac-4251-8b35-729a3563a55c",
+                      "reflection:047c0e59-9875-4e84-8df7-5aa0d26b29d1",
+                      "reflection:04f08aaa-fce9-4281-85e2-afd7e4931412",
+                      "reflection:0502c165-d0f5-4e9c-85c1-4d004d54761d",
+                      "reflection:0513cb8a-1165-4d85-82b2-1d2732915b42",
+                      "reflection:052d9593-7e40-426f-849b-6d1df375f219",
+                      "reflection:057b8811-4e74-4a20-8485-832f6c0aff49",
+                      "reflection:05b99ca2-9b31-476e-8f0a-1e8b326b167e",
+                      "reflection:05bbf1e8-1320-437d-8858-14b42820199e",
+                      "reflection:05c5263a-fa1d-46d5-8ccf-1e06bd9a8e85",
+                      "reflection:063be219-be24-484c-8326-30c328bd128f",
+                      "reflection:0652c18f-5ca3-47ae-8f39-02b66cb0d83b",
+                      "reflection:065d2787-d3ba-4f96-8a18-13526dd29ba2",
+                      "reflection:066c90e2-d0c7-4877-8dd4-e668bd5dfd06",
+                      "reflection:0676e97b-c44e-4ad4-84b4-3bac7a81ed8b",
+                      "source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2",
+                      "source_segment:35767104-c253-4eb8-89ec-b407c5a330de",
+                      "source_segment:3fe0a800-3073-4c6a-843f-5b174279007a",
+                      "source_segment:4ae9a5ed-6807-4600-873e-08305d149c67",
+                      "source_segment:f22e697c-a7f8-401c-811b-d81c2df95444",
+                      "source_segment:4253037d-2325-4c51-8d1c-90fb59c3d024",
+                      "source_segment:7a4726a3-962c-429f-89f5-c4dd37af158b",
+                      "source_segment:e4e344c7-632b-439b-85c7-316e6d98a007",
+                      "source_segment:f0bc4c56-2d86-49cc-8a01-4aaa8c6c1c92",
+                      "source_segment:913d1d1e-a098-4e17-88a9-bed07abb7c42",
+                      "source_segment:3ab64e93-5ef1-4e48-834c-1f07ad456461",
+                      "source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9",
+                      "source_segment:ed8a479f-82df-4aa9-888d-027a61af0dfa",
+                      "source_segment:79216a57-5325-487c-8508-24d6ff284646",
+                      "source_segment:1b1763b1-21a1-449d-80cc-9f7651da3271",
+                      "source_segment:9f746696-c238-4973-8d51-e3cf7957abbf",
+                      "source_segment:45e9099d-8403-4328-8d8c-c85f1ba6db59",
+                      "source_segment:9b103a36-05c3-4d54-8d56-40f2ad0f75f9",
+                      "source_segment:5f18cc9d-e62b-40d6-8cab-0f63df0ee8f4"
+                    ]
+                  },
+                  "requestedFacet": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "supportSummary": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "constraintCheck": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "verdict": {
+                    "type": "string",
+                    "enum": [
+                      "direct",
+                      "adjacent",
+                      "not_established",
+                      "contradicts_requested_claim"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "requestedFacet",
+                  "supportSummary",
+                  "constraintCheck",
+                  "verdict"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 8
+            }
+          },
+          "required": [
+            "requestedFacets",
+            "assessments"
+          ],
+          "additionalProperties": false
+        },
+        "strict": true
+      },
+      "verbosity": "medium"
+    },
+    "tool_choice": "auto",
+    "tool_usage": {
+      "image_gen": {
+        "input_tokens": 0,
+        "input_tokens_details": {
+          "image_tokens": 0,
+          "text_tokens": 0
+        },
+        "output_tokens": 0,
+        "output_tokens_details": {
+          "image_tokens": 0,
+          "text_tokens": 0
+        },
+        "total_tokens": 0
+      },
+      "web_search": {
+        "num_requests": 0
+      }
+    },
+    "tools": [],
+    "top_logprobs": 0,
+    "top_p": 0.98,
+    "truncation": "disabled",
+    "usage": {
+      "input_tokens": 10625,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 10622
+      },
+      "output_tokens": 342,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 10967
+    },
+    "user": null,
+    "metadata": {}
+  },
+  "offlineReplay": {
+    "outcome": "complete",
+    "networkCalls": 0,
+    "finishReason": "stop",
+    "durationMs": 39.515499999999975,
+    "wireHash": "de19868b0e4b56bbdd99a4df50f2feb1f7ec246a453c359d5749b49725001a55"
+  },
+  "interpretation": {
+    "originalFailure": "unresolved; original response unavailable",
+    "caseQuality": "required evidence present, no ineligible selections",
+    "release": "not approved; diagnostic is not replacement evidence",
+    "cacheLimitation": "10622 cached input tokens; not comparable cold latency or a paired speed result",
+    "standardEstimatedUsd": 0.00027751999999999996
+  }
+}
