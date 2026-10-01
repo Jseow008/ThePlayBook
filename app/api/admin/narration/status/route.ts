@@ -23,6 +23,7 @@ export async function GET() {
                 },
                 processingJobs: status.processingJobs,
                 staleProcessingJobs: status.staleProcessingJobs,
+                failedJobs: status.failedJobs,
                 batchSize: NARRATION_PROCESS_BATCH_SIZE,
             },
         });

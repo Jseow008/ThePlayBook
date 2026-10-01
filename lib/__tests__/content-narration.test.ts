@@ -252,6 +252,7 @@ describe("AI narration helpers", () => {
             arrayBuffer: async () => arrayBuffer,
         }) as any;
 
+        const onSegmentProgress = vi.fn().mockResolvedValue(undefined);
         const result = await generateNarrationAudio({
             title: "Deep Work",
             author: "Cal Newport",
@@ -261,11 +262,12 @@ describe("AI narration helpers", () => {
                     markdown_body: "Deep work compounds.",
                 },
             ],
-        });
+        }, onSegmentProgress);
 
         expect(result.extension).toBe("wav");
         expect(result.contentType).toBe("audio/wav");
         expect(result.audioBuffer.toString("ascii", 0, 4)).toBe("RIFF");
+        expect(onSegmentProgress.mock.calls).toEqual([[0, 1], [1, 1]]);
         expect(result.segmentTimings).toEqual([
             {
                 id: null,

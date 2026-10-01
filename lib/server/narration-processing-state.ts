@@ -19,11 +19,25 @@ export interface NarrationProcessingJob {
     startedAt: string | null;
     ageMs: number;
     isStale: boolean;
+    completedSegments: number;
+    totalSegments: number | null;
+    progressAt: string | null;
+    progressAgeMs: number | null;
+}
+
+export interface NarrationFailedJob {
+    id: string;
+    title: string;
+    error: string | null;
+    failedAt: string | null;
+    completedSegments: number;
+    totalSegments: number | null;
 }
 
 export interface NarrationQueueStatus extends NarrationQueueSummary {
     processingJobs: NarrationProcessingJob[];
     staleProcessingJobs: NarrationProcessingJob[];
+    failedJobs: NarrationFailedJob[];
 }
 
 interface NarrationProcessingJobRow {
@@ -32,6 +46,9 @@ interface NarrationProcessingJobRow {
     author: string | null;
     narration_requested_at: string | null;
     narration_started_at: string | null;
+    narration_segments_completed: number;
+    narration_segments_total: number | null;
+    narration_progress_at: string | null;
 }
 
 function toNarrationProcessingJob(row: NarrationProcessingJobRow, nowMs: number): NarrationProcessingJob {
@@ -46,6 +63,12 @@ function toNarrationProcessingJob(row: NarrationProcessingJobRow, nowMs: number)
         startedAt: row.narration_started_at,
         ageMs,
         isStale: !Number.isNaN(startedAtMs) && ageMs >= STALE_NARRATION_PROCESSING_MAX_AGE_MS,
+        completedSegments: row.narration_segments_completed,
+        totalSegments: row.narration_segments_total,
+        progressAt: row.narration_progress_at,
+        progressAgeMs: row.narration_progress_at
+            ? Math.max(nowMs - new Date(row.narration_progress_at).getTime(), 0)
+            : null,
     };
 }
 
@@ -56,7 +79,7 @@ async function loadProcessingNarrationJobs(options?: {
     const supabase = getAdminClient();
     let query = supabase
         .from("content_item")
-        .select("id, title, author, narration_requested_at, narration_started_at")
+        .select("id, title, author, narration_requested_at, narration_started_at, narration_segments_completed, narration_segments_total, narration_progress_at")
         .eq("status", "verified")
         .eq("narration_status", "processing")
         .is("deleted_at", null)
@@ -117,16 +140,35 @@ export async function getNarrationQueueSummary(): Promise<NarrationQueueSummary>
 
 export async function getNarrationQueueStatus(): Promise<NarrationQueueStatus> {
     const nowMs = Date.now();
-    const [summary, processingRows] = await Promise.all([
+    const [summary, processingRows, failedResult] = await Promise.all([
         getNarrationQueueSummary(),
         loadProcessingNarrationJobs(),
+        getAdminClient()
+            .from("content_item")
+            .select("id, title, narration_error, narration_completed_at, narration_segments_completed, narration_segments_total")
+            .eq("status", "verified")
+            .eq("narration_status", "failed")
+            .is("deleted_at", null)
+            .order("narration_completed_at", { ascending: false, nullsFirst: false })
+            .limit(5),
     ]);
+    if (failedResult.error) {
+        throw failedResult.error;
+    }
     const processingJobs = processingRows.map((row) => toNarrationProcessingJob(row, nowMs));
 
     return {
         ...summary,
         processingJobs,
         staleProcessingJobs: processingJobs.filter((job) => job.isStale),
+        failedJobs: (failedResult.data ?? []).map((row) => ({
+            id: row.id,
+            title: row.title,
+            error: row.narration_error,
+            failedAt: row.narration_completed_at,
+            completedSegments: row.narration_segments_completed,
+            totalSegments: row.narration_segments_total,
+        })),
     };
 }
 
