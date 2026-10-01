@@ -2966,3 +2966,48 @@ experiments remain rejected. A smaller required reasoning output is a possible n
 quality/latency tradeoff, not authorized for release by this one fixture. Alternatively
 retain output and improve factual progress feedback while production timing accrues.
 Do not repeat this request to obtain favorable timing. #28 stays open; timers paused.
+
+### Cost-focused Luna quality evaluation — 1 October 2026
+
+User explicitly accepted evaluating Luna for cost despite its prior speed rejection,
+keeping quality requirements unchanged. Branch `codex/luna-quality-evaluation`,
+worktree `/private/tmp/netflux-luna-quality`, base `7d844fb1`. Reused completed7/7
+development comparison; no repeat development calls. Production stays on Haiku.
+
+Prepared56 captured model-dependent cases across3runs (168planned calls), with
+revoked/empty deterministic cases reserved for later database replay. Reused
+unchanged captured synthetic inputs from the committed v4 selection artifact,
+validated against frozen corpus, vectors, baseline configuration and input hashes.
+Each new candidate record separately hashes the logical request and explicit Luna
+provider/model/reasoning-none/store-false configuration. No historical model
+responses accepted as new evaluation results. Existing schema, final validation,
+1600output cap,20s deadline and frozen quality floors preserved.
+
+Evaluation stopped at call39: run1 `comparison-larch` failed structured output.
+38completed calls passed required-ID membership and eligible-only selection.
+NoObjectGeneratedError usage was captured with parsed output null: failed call
+10625input/788output tokens,6734ms. **Incomplete, blocked; not a release pass.**
+129planned calls were not attempted. No paid retries or gate weakening.
+
+Harness capture defect: it used the existing safe output-failure helper but did
+not persist that helper's raw text/hash fields. Therefore the exact malformed or
+empty response cannot be reconstructed; no claim about the exact provider cause.
+The follow-up harness now retains bounded synthetic failed text, byte count,
+hash and failure type. This does not repair or relabel the original run. Evidence
+retains the exact executed harness source matching its recorded hash, as well as
+the complete observed results. Partial metric denominators include unexecuted
+cases; never present those partial rates as a completed quality score.
+
+Observed usage183031input/6833output tokens across39calls; standard Luna token-rate
+estimate$0.0217196, not an invoice. One agent; no model retries, accounts, production
+data, deployment, database project, sudo or timer. Typecheck and focused lint passed
+before execution; repeated after the small failure-capture correction.
+Evidence: `docs/evidence/luna-frozen-quality-attempt1-20261001.json`.
+Raw `/private/tmp/netflux-luna-quality-v1.json`; input capture sibling `.inputs.json`.
+
+Next: hold Luna integration and contingent progress changes. A further attempt
+needs a concrete diagnosis/contract-compatible correction; do not silently rerun
+the failed gate hoping to pass or expose partial model assessments to users.
+Production switch still requires full three-run model quality, database replay,
+extract/citation checks, bounded spending configuration and normal release gates.
+#28 remains open. Recurring monitors remain paused.
