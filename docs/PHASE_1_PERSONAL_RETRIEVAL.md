@@ -3856,3 +3856,58 @@ exact commit, freeze URLs/identities and a three-observation per page/profile
 paired plan. Reverse order across repetitions/profiles; retain all failures and
 report Home/Browse regressions alongside Preview/Reader gains. No paid AI calls,
 accounts, production settings, database work, timers or production promotion.
+
+
+#### Matched hosted result — 1 October 2026
+
+PR #226 is held, auto-merge off, on `codex/content-delivery-control` in
+`/Users/j/.codex/worktrees/content-delivery-control/Lifebook`. Both preview builds
+are READY from the same measured commit `31a51e066fa80cba4ea3c05f5e209defbd7a2556`;
+project, Node version and preview environment match. Their deployment IDs and
+immutable URLs are in the evidence JSON. Production was not changed.
+
+Completed the frozen 48-observation plan once: three fresh-context samples for
+four pages, two viewport/CPU profiles and two CSS modes, alternating variant
+order. Network simulation remains150ms latency/200KB/s down. Values below are
+useful-content readiness medians, not first paint or real-user percentiles.
+
+| Page | Mobile inline → external | Desktop inline → external |
+| --- | ---: | ---: |
+| Home |748 →2418ms|744 →2438ms|
+| Browse |1702 →2230ms|4777 →4719ms|
+| Preview |2730 →3387ms|2254 →3222ms|
+| Reader |2260 →3949ms|3545 →3944ms|
+
+**Reject the global external-CSS rollout.** Seven of eight medians became slower;
+the58ms desktop Browse difference is too small to justify the regressions.
+The local improvement did not reproduce on matched hosted builds. Smaller HTML
+alone does not establish a faster experience: external stylesheet delivery moves
+work onto the blocking path. Retain current inline CSS. The mobile Preview and
+desktop Browse/Reader inline medians still exceed the2500ms target; desktop Browse
+also exceeds the4000ms maximum. Do not call the overall bottleneck resolved.
+
+All48 timed observations completed, without HTTP>=400 font/image/script/style
+responses. This harness did not capture CSP/network requestfailed events, so this
+is not a claim of zero browser errors. HTML end/size values recorded before stream
+completion may be zero. Application CSS is identical after concatenating the two
+external files and normalizing only generated font URL prefixes; initial per-file
+hash comparison failed on the packaging difference and was corrected before timing.
+
+Separate navigation/section smoke: initial hidden Read-link selector failed and
+was preserved; corrected visible-link smoke passed mobile both variants and
+desktop external with no horizontal overflow. Desktop inline stopped on a duplicate
+h1 strict-selector error. Keep that baseline smoke limitation; do not repeat the
+performance run or spend more validating a rejected candidate. Screenshots were
+captured locally; no redesign, account writes, paid AI, database work or timers.
+
+At measurement completion: PR scope, Security Validation, catalog evidence and
+Vercel passed on31a51e06; validate was still pending. This appended evidence does
+not validate a different application commit. Seven local contract tests, typecheck
+and focused lint passed before deployment. One agent; no additional paid model
+calls or benchmark repeats. Codex token usage unavailable.
+
+Next: retain inline CSS and keep #226 unmerged. Decide whether to archive the
+preview-only experiment as a documentation-only result, then resume narrowly
+measuring font/image contention on the remaining slow pages. Do not ship the
+global switch or repeat this comparison hoping for a favorable outcome. #28 remains
+open. The hosted evidence and this checkpoint are the intentional follow-up changes.
