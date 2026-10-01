@@ -2890,3 +2890,79 @@ from this sample. Do not tune prompts/models before that distinction. Publish th
 two-file evidence record through normal gates; no documentation deployment wait or
 additional paid probe is needed. Worktree `/private/tmp/netflux-provider-boundary-evidence`,
 branch `codex/provider-boundary-evidence`, base `76e05f6b`. #28 remains open.
+
+### Provider metadata investigation — 1 October 2026
+
+Read-only follow-up after #211 merged `5261cd3e`. No provider calls, production
+changes or timers. Inspected the deployed selector source and official Anthropic
+API overview, streaming and structured-output documentation. Documented response
+headers identify requests/workspaces and rate limits; no documented per-request
+queue/prefill/generation breakdown was found. Existing application timing logs
+retain numeric local spans only, not upstream headers; the captured production
+observation cannot recover those discarded headers. Token usage is settled, but
+usage counts do not establish phase durations.
+
+A concrete additional hypothesis: the selector builds its output ID enum from
+each request's candidate IDs. Anthropic documents first-use grammar compilation
+and schema caching. This makes request-varying schema compilation a plausible
+contributor, not a measured diagnosis. Source inspection alone cannot establish
+cache misses or their cost. References:
+https://platform.claude.com/docs/en/api/overview
+https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+https://platform.claude.com/docs/en/build-with-claude/streaming
+
+Next bounded diagnostic: a single streaming observation measuring dispatch,
+headers, first nonempty text delta, final delta and complete validated result,
+with the existing model/prompt/evidence/schema and zero retries. Initial protocol
+events must not be called first-token output. Preserve authorization, spending,
+final validation and no partial user-visible evidence. A local synthetic probe
+would not reproduce Mumbai production network timing; record its location and
+limits if chosen. Do not infer pure network/queue/prefill separation or compare
+this as a controlled speedup against a different earlier request. No streaming
+implementation or paid observation was performed in this read-only pass.
+
+This is an intentional uncommitted checkpoint append in
+`/private/tmp/netflux-provider-boundary-evidence`, branch
+`codex/provider-boundary-evidence` (merged PR #211). Carry into the next focused
+follow-up rather than reopening the merged application/evidence scope. #28 open.
+
+### Single streaming diagnostic — 1 October 2026
+
+User explicitly authorized a paid diagnostic. Fresh-main worktree
+`/private/tmp/netflux-stream-diagnostic`, branch `codex/selector-stream-diagnostic`,
+base `5261cd3e`. Carried the intentional read-only checkpoint above. No application
+code changes, deployment, data writes, timer or agent delegation.
+
+Harness: `scripts/experiments/selector-stream-diagnostic.ts`. Reuses the existing
+synthetic eight-greenhouse-procedures development fixture with the same deterministic
+UUID-shaped IDs used in earlier development runs, unchanged production model, prompt,
+schema builder and final selection validation. Only generation transport is streaming.
+One direct development call outside application spending accounting, 20s selector
+deadline, maxRetries0 and one-fetch cap; exclusive output creation prevents overwriting
+evidence accidentally. Secrets loaded without printing. No personal evidence used.
+
+Offline real-SDK/SSE plumbing check, typecheck and focused lint passed. Initial
+offline invocation omitted Node's react-server condition and failed before any
+provider call; rerun with that condition passed. This is harness setup, not a
+product failure or paid retry. No broad quality gate: no production candidate.
+
+Paid observation: HTTP200; dispatch10ms, headers1247ms, first actual text1273ms,
+last text6009ms, stream end6019ms, validated6020ms. All eight expected records
+selected with no extras. Input3055/output906 tokens (3961total); exact billed cost
+unavailable. No server-timing header present. Exactly one paid call, no retry.
+Sanitized evidence: `docs/evidence/selector-stream-diagnostic-20261001.json`.
+
+Inference limited to this local synthetic observation: approximately4.75s (79%)
+elapsed after first text, so response generation/delivery dominates this sample.
+Early headers/text do not support a many-second pre-generation stall here. Neither
+interval isolates inference from network; this does not establish why the different
+Mumbai production request took11.8s. No cold/warm schema comparison or pure network
+measurement was made. Streaming alone does not make fully validated evidence ready
+earlier; partial structured output remains unsuitable for user-visible evidence.
+
+Next decision: avoid further transport-only optimization on this evidence. Any
+response-generation change must earn quality acceptance; the three rejected format
+experiments remain rejected. A smaller required reasoning output is a possible new
+quality/latency tradeoff, not authorized for release by this one fixture. Alternatively
+retain output and improve factual progress feedback while production timing accrues.
+Do not repeat this request to obtain favorable timing. #28 stays open; timers paused.
