@@ -3159,3 +3159,88 @@ the production OpenAI configuration before enabling the selector override, then
 perform a bounded production smoke. Factual progress UI is still outstanding and
 will follow the qualified model change. No model/provider output is streamed as
 evidence before validation. No production changes yet, timers paused, #28 open.
+
+Rollout checkpoint: PR #217 https://github.com/Jseow008/ThePlayBook/pull/217,
+head efda11aa, published from this worktree. GitHub20-file scope matches the
+inspected local scope; PR scope passed; squash auto-merge enabled. Full required
+validation/security and preview are running. Vercel CLI62.1.0 authenticates as the
+existing project owner; production OPENAI_API_KEY presence confirmed through env
+metadata, without retrieving its secret. PERSONAL_EVIDENCE_SELECTOR_MODEL is not
+yet configured. No production action so far. An additional offline provenance
+regression passed after the full suite (1634 total current tests including it).
+This paragraph is an intentional uncommitted continuity append, not a reason to
+rerun application CI. artifacts/ contains local replay inputs/results only.
+Next: resolve only actionable CI failures; after gates pass enable the production
+selector override and verify the deployed commit/config and one real Ask Notes
+request. No additional full paid evaluation is needed. Preserve this append in a
+subsequent evidence update.
+
+Latest release state: Security Validation passed (6m16s), Catalog Search Evidence
+and Vercel preview passed. validate is in Test (E2E); no actionable failure known.
+Offline actual-production-generator smoke also passed: one fake transport call,
+no network, correct low/store:false/1600/json_schema wire settings, explicit
+commentary removed and selected IDs unchanged. Artifact:
+artifacts/luna-production-wire-smoke.json. The disposable selector DB was stopped
+with its data retained; other local Supabase projects untouched. Estimated standard
+cost for168 calls with observed600379 cached input tokens is$0.049935; uncached
+estimate$0.103970. These are token-price estimates, not billing records.
+Production rollback reference saved at /private/tmp/netflux-luna-pre-rollout.json:
+dpl_EJoZbx9WBYgfBuU6C1uUQYsCvSJK. Production model override remains UNSET; Haiku
+still active. CLI inspect summary omits commit metadata: use the deployment API
+for commit identity before claiming rollout. Opera Ask page is available, but
+fresh authenticated smoke must occur only after the qualified deployment.
+No recurring monitor was created or resumed.
+
+Status check after merge: #217 merged as e92764382f44126e879f34404d745e7bb599da5e
+at2026-10-01T07:15:37Z; all PR required checks passed. Production alias still
+serves f3910621 (dpl_EJoZbx9WBYgfBuU6C1uUQYsCvSJK), override absent. Post-merge
+Security Validation passed, but Catalog Search Evidence failed before testing:
+Docker could not bind runner port54322 (address already in use); artifact-upload
+failure is downstream of setup. Run36829303959 failed jobs retried once under
+standing release authorization; no application change, paid call or gate bypass.
+Post-merge CI also remains in progress. Next: check this bounded retry and deployment
+before the previously authorized production model enablement/smoke.
+
+Confirmed follow-up: run36829303959 attempt2 succeeded, including Catalog Search
+Evidence and Security Validation; post-merge CI also succeeded. Production alias
+www.netflux.blog serves e92764382f44126e879f34404d745e7bb599da5e, deployment
+ dpl_8RWj4fZD6bG2fcbC3wxAc77YrCgT READY. Production OPENAI_API_KEY exists, but
+PERSONAL_EVIDENCE_SELECTOR_MODEL remains absent. Therefore #217 code is deployed,
+while the existing Haiku selector remains active. Next authorized step: enable
+production-only Luna override, deploy that configuration through normal gates,
+and perform one authenticated smoke; then address factual progress feedback.
+No further full paid benchmark needed; no production mutation during this check.
+
+### Luna production rollout and factual wait feedback — 1 October 2026
+
+Authorized production-only PERSONAL_EVIDENCE_SELECTOR_MODEL=gpt-6-luna setting
+added. Redeployed already-gated merge e9276438 as
+dpl_NuQhhxkKA2QYK1h62wxLicgK3deF; www.netflux.blog now serves that READY deployment.
+One ordinary signed-in Ask Notes request returned200 with an attributed extract
+and a passage link; opening that link resolved to Verified passage. No saved
+notes were created/edited; the request exists in the ordinary chat history.
+
+Response metadata: no-store; bom1 execution (sin1 ingress); response_ready9585ms,
+selection_provider5158ms, selection_reserve385ms, selection_settle169ms,
+selection_headers5122ms, SDK preparation18ms and completion15ms, body-read3ms.
+Browser Network panel showed roughly11.8s overall. This is one smoke sample,
+not a controlled speed comparison or worldwide performance proof.
+Read-only spending-ledger verification: provider openai, model gpt-6-luna,
+1891input/288output tokens,211200microUSD conservative reserve settled to334
+microUSD ($0.000334 accounting estimate, not provider invoice).
+
+The console observer was NOT installed: browser paste protection prevented it.
+Used the ordinary Network panel instead, without bypassing that protection.
+Only sanitized status/timings/counts are retained; no credentials, excerpts or
+citation tokens are stored in evidence. Diagnostic tab closed afterward.
+
+UI follow-up in Codex worktree
+/Users/j/.codex/worktrees/ask-progress/Lifebook, branch codex/ask-progress:
+preserves layout and models, shows actual submitted/receiving status plus elapsed
+client wait, and keeps feedback visible through an empty assistant stream start.
+No inferred backend stages, ETA, partial model judgments or progressive evidence
+delivery. Elapsed seconds are hidden from screen-reader announcements; the polite
+status changes only at request boundaries. Timers are component-local, cleaned
+up on finish/error/unmount, not recurring verification automations.
+Focused delayed/error/retry, page/sidebar/mobile and scope-switch tests passed.
+No additional paid model evaluation or database migration required. #28 open.

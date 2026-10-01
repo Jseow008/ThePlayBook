@@ -32,6 +32,27 @@ import {
 import { useVerifiedChatSession } from "@/hooks/useVerifiedChatSession";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 
+function notesRequestStatus(status: string) {
+    return status === "streaming" ? "Receiving your response…" : "Searching your saved notes…";
+}
+
+/** Elapsed client wait only: no estimated completion time or inferred provider phase. */
+function NotesRequestProgress({ status }: { status: string }) {
+    const [startedAt] = useState(() => performance.now());
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
+    useEffect(() => {
+        const timer = window.setInterval(() => setElapsedSeconds(Math.floor((performance.now() - startedAt) / 1000)), 1000);
+        return () => window.clearInterval(timer);
+    }, [startedAt]);
+    return (
+        <div data-testid="notes-request-progress" className="min-w-0 text-sm text-muted-foreground">
+            <p className="font-medium">{notesRequestStatus(status)}</p>
+            <p className="mt-1 text-xs">Results appear after evidence checks finish.</p>
+            <p aria-hidden="true" className="mt-1 text-xs tabular-nums">{elapsedSeconds}s elapsed</p>
+        </div>
+    );
+}
+
 const chatTransport = new DefaultChatTransport({ api: "/api/chat/notes", headers: { "x-evidence-protocol": "ui" } });
 
 const FALLBACK_CHAT_ERROR = "Something went wrong. Please try asking again.";
@@ -408,13 +429,16 @@ function VerifiedNotesAskPanel({
         status,
     });
 
+    const latestQuestionId = [...displayMessages].reverse().find((message) => message.role === "user")?.id;
+    const awaitingResponseText = isStreaming && (lastDisplayMessage?.role !== "assistant" || !lastDisplayMessage.content.trim());
+
     const latestAssistantMessageId = [...displayMessages]
         .reverse()
         .find((message) => message.role === "assistant")?.id;
     // Announce state changes once, not every streamed token, without moving focus.
     const responseStatus = (
         <p role="status" aria-label="Notes response status" aria-live="polite" aria-atomic="true" className="sr-only">
-            {isStreaming ? "Searching your saved notes."
+            {isStreaming ? notesRequestStatus(status)
                 : error ? `Request failed. ${displayErrorMessage}`
                     : latestAssistantMessageId ? "Response ready. Review it in the Notes conversation." : ""}
         </p>
@@ -548,16 +572,14 @@ function VerifiedNotesAskPanel({
                                     );
                                 })}
 
-                                {isStreaming && displayMessages[displayMessages.length - 1]?.role === "user" && (
+                                {awaitingResponseText && (
                                     <div className="flex w-full gap-3 animate-in fade-in">
                                         <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/20">
                                             <Bot className="size-4 text-primary" />
                                         </div>
                                         <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-border/50 bg-card px-4 py-3.5">
                                             <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                                            <span className="text-[0.9rem] font-medium text-muted-foreground sm:text-sm">
-                                                Reading these notes...
-                                            </span>
+                                            <NotesRequestProgress key={latestQuestionId} status={status} />
                                         </div>
                                     </div>
                                 )}
@@ -882,16 +904,14 @@ function VerifiedNotesAskPanel({
                         );
                     })}
 
-                    {isStreaming && displayMessages[displayMessages.length - 1]?.role === "user" && (
+                    {awaitingResponseText && (
                         <div className="flex w-full gap-3 animate-in fade-in">
                             <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/20">
                                 <Bot className="size-4 text-primary" />
                             </div>
                             <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-border/50 bg-card px-4 py-3">
                                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                                <span className="text-sm font-medium text-muted-foreground">
-                                    Reading these notes...
-                                </span>
+                                <NotesRequestProgress key={latestQuestionId} status={status} />
                             </div>
                         </div>
                     )}
