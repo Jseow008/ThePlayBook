@@ -2803,3 +2803,49 @@ committing the preserved monitor append with this existing release update.
 Instrumentation implementation is unchanged from `71469ba3`; no additional paid
 calls or production-data work. #208's evidence branch is being refreshed separately.
 The recurring monitor remains PAUSED at the user's request; do not reactivate it.
+### Response-design reassessment — 1 October 2026
+
+Fresh-main branch `codex/selector-facet-references` at
+`/private/tmp/netflux-selector-facet-refs` began from `5cb80ea5` after explicit user
+authorization to reassess following two rejected candidates. The failed compact-ID
+and fixed-slot implementations remain held on `codex/selector-compact-production`
+(final fixed-slot checkpoint `32429800`); neither is production code.
+
+Inspection of the fixed-slot comparison's baseline output found repeated facet text
+represented 1,219 / 11,678 serialized output characters (~10.4%). Tested a different,
+development-only response representation: replace repeated requestedFacet text with
+a zero-based reference into the existing requestedFacets list, restoring the exact
+text before the normal validator. Original evidence IDs, candidate passages/order,
+reasoning fields, model and relevance rules were preserved. Facet bounds, duplicates,
+unknown evidence IDs, strict fields and exact-quote/eight-assessment limits are still
+validated. This does not fix the provider's array-bound weakness and does not claim
+to. No application code, UI, database or deployment configuration changed.
+
+Frozen development decision: all expected evidence with no extras, >=10% reduction
+in total output tokens, lower combined tokens and lower median call duration. Used
+the same independent seven development cases, fresh paired calls with alternating
+arm order, 14-call cap, zero retries, existing 20s deadline. No held-out tuning.
+
+Both arms passed all seven cases. Baseline: 17,580 input + 2,870 output tokens,
+median 4,098ms. Facet references: 18,014 input + 2,626 output tokens, median 6,752ms.
+Output reduction was only 8.5%; total tokens increased from 20,450 to 20,640.
+**Reject under the predeclared rule.** The small timing sample is not proof of a
+universal slowdown, but cannot justify a production speedup. No full 168-call gate,
+paid retry, production request, new account or infrastructure action was performed.
+
+Evidence: `docs/evidence/selector-facet-references-development-20261001.json`.
+Harness and adapter are under `scripts/experiments/selector-facet-*.ts`; adapter hash
+is retained with evidence. Three boundary tests, typecheck and focused lint passed.
+Exactly 14 paid calls used 41,090 observed application-provider tokens in this pass;
+actual dollars and Codex billing unavailable. One agent. Raw local artifact:
+`/private/tmp/netflux-facet-development-v1.json`.
+
+Next: keep the existing production response contract and stop protocol experiments.
+The current evidence supports provider work as the dominant measured delay, but no
+proposed format change has earned release. A further optimization needs a different
+measured mechanism, such as stable versus request-varying provider schema overhead;
+inspect actual serialized requests without sending them before proposing a bounded
+comparison. Do not infer schema-compilation time from total provider duration or
+claim that fewer output tokens guarantee lower latency. Publish this experiment and
+its negative result through ordinary PR gates; no production smoke or deployment
+wait is needed because application behavior is unchanged. #28 remains open.
