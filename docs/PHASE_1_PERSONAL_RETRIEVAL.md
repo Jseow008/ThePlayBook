@@ -3649,3 +3649,76 @@ interaction safeguards, or accepting the residual desktop hero delay for now and
 moving to Preview→Reader. Do not silently loosen the target or claim this delay
 is fundamentally irreducible. This documentation follow-up remains in PR #224 on
 codex/home-browse-assessment; the application worktree remains clean. #28 stays open.
+
+
+### 1 October 2026 — Preview→Reader bounded readiness assessment
+
+User accepted leaving the remaining desktop Browse hero delay open while moving
+to Preview→Reader. PR #224 merged at85fc2cb7; application tree unchanged from
+production d804d33f. Branch codex/preview-reader-readiness at85fc2cb7 in
+/Users/j/.codex/worktrees/preview-reader-readiness/Lifebook. Read-only deployment
+metadata at start identifies d804d33f. No code changes before measurement.
+
+Frozen plan: /private/tmp/netflux-preview-reader/plan.json. Three fresh contexts
+per page/profile on one public summary (The Singapore Story), 390x844/4x CPU and
+1440x900/1x CPU,150ms network latency,200000B/s download,93750B/s upload. Readiness
+requires FCP, visible title and loaded cover, plus a visible Read link on Preview
+or visible Big Idea text on Reader, followed by an animation frame. Targets:
+readiness median≤2500/max≤4000ms; post-load Preview→Reader navigation
+median≤2000/max≤3000ms. First section expansion is additionally checked for
+rendered text, with working median≤1000/max≤2000ms. No audio or AI calls.
+Anonymous guest interactions may update isolated browser-local progress; no
+account creation or authenticated writes. Results do not cover worldwide p75,
+INP, first-time onboarding, all content types, or authenticated journeys.
+
+Preflight proved canonical Reader link and section selectors before timing.
+All samples, critical resource failures and errors are retained as they occur;
+no favorable-result reruns. Raw harness/results live under the plan directory.
+Assessment running; next: inspect complete fixed sample set, diagnose material
+failures, and implement only a credible bounded correction with affected checks.
+
+
+Production fixed-set results (milliseconds):
+
+| Profile/page | Readiness samples | Median | Maximum |
+|---|---|---:|---:|
+| Mobile Preview |3031,3152,3015|3031|3152|
+| Mobile Reader |2050,2909,3320|2909|3320|
+| Desktop Preview |2930,3018,2913|2930|3018|
+| Desktop Reader |3436,3617,3487|3487|3617|
+
+All four readiness medians miss2500ms, all maxima stay below4000ms. Navigation
+mobile2071,2089,1722ms (median2071); desktop2138,1893,2048ms (median2048) narrowly
+miss2000ms medians, all below3000ms. Section expansion46–152ms passes; zero failed
+critical assets or harness errors across the12 valid observations. No result is
+relabeled as accepted. [Evidence](evidence/preview-reader-readiness-20261001.json).
+
+One subsequent desktop diagnostic per route found cover requests begin atLow
+priority then promote toHigh. Preview title1648ms/cover2520ms; Reader
+title2724ms/cover3132ms. Covers are7930-byte224px responses, discovered at1428ms
+and2498ms respectively; delivery priority is only one candidate and cannot fix
+late discovery alone. Reader's ~78.5KB page-specific chunk includes Markdown
+parsing/rendering; deferral could worsen the currently responsive section opening.
+
+Candidate adds fetchPriority=high to both existing priority covers. No layout,
+quality, dimensions, auth, analytics or fallback changes. Production build,
+focused lint and21 existing component tests pass; local built Preview renders and
+navigates without an error overlay. A small built baseline/candidate comparison
+runs before deciding whether this change is credible. Baseline application tree
+8f30ae8f matches d804d33f outside documentation. Both local environments lack
+hosted Vercel telemetry endpoints (404); retain those failures as a limitation,
+not production acceptance. Do not infer a speedup from priority alone.
+
+
+Development comparison complete (one observation per page/profile/build):
+mobile Preview3421→2975ms, mobile Reader3180→3062ms, desktop Preview3284→3010ms,
+desktop Reader3270→3200ms. Navigation and section opening remain functional.
+Candidate cover fetchpriority=high confirmed in built DOM, baseline unset. This
+is enough to advance the tiny priority correction through required checks, not
+statistical latency proof or target acceptance. All telemetry404 records retained.
+
+Next: publish two application-line changes plus this evidence/checkpoint through
+normal PR gates, verify hosted image request priority and affected journey, then
+record production identity/limited verification. Targets remain unmet in the
+production baseline; no broad refactor, model call or data migration is authorized
+by this correction. No repeated full-site/capacity benchmark is needed.
