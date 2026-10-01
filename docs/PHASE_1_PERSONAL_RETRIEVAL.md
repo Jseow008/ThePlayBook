@@ -3953,3 +3953,57 @@ samples do not establish a safe implementation for that yet. Next investigation,
 if continued: isolate initial script-transfer contention using a bounded diagnostic
 before considering a specific module boundary; do not reopen CSS/priority experiments.
 #28 stays open. These findings are appended to the existing held PR, not deployed.
+
+
+#### Continuous follow-through and final disposition — 1 October 2026
+
+User authorized necessary follow-ups without repeated proceed requests. Completed
+one bounded script-contention diagnostic and one concrete Reader candidate; no
+subagents, paid model calls, database work, accounts or recurring timers.
+
+Holding all script requests until visual readiness reduced Browse medians from
+4856ms to2390ms and Reader3607ms to2282ms (two each, reversed order). This establishes
+substantial script competition in the simulation, not a shippable solution: it
+delays hydration/interaction and short-visit analytics. Reused the previously
+inspected shared dependency map rather than repeating its bundle audit.
+
+Implemented one safe-to-evaluate boundary: extract the Markdown/highlight/sanitize
+engine unchanged into a dynamic module used when a Reader section first opens.
+Preserved visited text mounting, anchors, layout, fonts, auth and analytics. The
+experimental code is retained locally at95c7fd1699dd3f774d946324e9c49a72d2122bb4 on
+`codex/reader-markdown-loading` in
+`/Users/j/.codex/worktrees/reader-markdown-loading/Lifebook`; it is NOT deployed.
+19 focused tests, typecheck, lint, production build, CSS/sharp guards passed.
+Initial dependency symlink build failure and asynchronous assertion updates are
+recorded in evidence. No change to the sanitization or highlight algorithm.
+
+Eight local paired observations (two per viewport/variant) showed:
+
+| Metric | Original | Lazy Markdown |
+| --- | ---: | ---: |
+| Mobile useful-content median |3326ms|3211ms|
+| Desktop useful-content median |3274ms|3277ms|
+| Mobile first-section median |210ms|950ms|
+| Desktop first-section median |75ms|904ms|
+
+Initial compressed JavaScript fell by about117–118KB, but that did not establish
+an appreciable first-screen improvement and moved waiting to section opening.
+Reject this candidate; no hosted benchmark, PR or production rollout is justified.
+Existing local baseline85fc2cb7 has identical app/components/lib/hooks/config/package
+inputs to candidate base05e444a0 (documentation-only intervening commit).
+Browser preflight passed visually; local telemetry404 retained. Detailed results,
+including original failures/limits, are in the existing evidence JSON.
+
+**Finish this bounded pass, without claiming the bottleneck resolved.** The tested
+CSS/font/image/JavaScript tradeoffs do not support a further safe user-visible win
+under the current constraints. Do not schedule another round automatically. A
+larger shared-client/server-boundary redesign would be separate scoped work, not
+an endless extension of these micro-optimizations. Real-user field evidence would
+help determine whether that larger investment is justified; it has not been
+collected here and worldwide performance remains unproven. #28 remains open.
+
+PR #226 is now converted to a documentation-only record: remove the preview switch,
+its test and all CSS-gate changes from the final diff; preserve experimental commit
+history/evidence. It may merge through normal required gates without any application
+behavior change. The current checkpoint/evidence are the only intended final files.
+No need to repeat application performance measurements for this documentation change.

@@ -6765,5 +6765,447 @@
       "Image eligibility taken from fixed1440x900 baseline positions, only below viewport; not a responsive scroll implementation."
     ],
     "decision": "No production change justified by these diagnostics. Below-viewport deferral saves about367ms but stays above4000ms maximum. Font-only diagnostic also stays above4000ms and changes initial typography. Reader fonts are not the dominant delay in this sample."
+  },
+  "scriptContentionAndMarkdownTrial": {
+    "scriptDiagnostic": {
+      "commit": "31a51e066fa80cba4ea3c05f5e209defbd7a2556",
+      "variants": {
+        "inline": "normal",
+        "external": "same inline build; hold script requests until visual readiness, then release"
+      },
+      "results": [
+        {
+          "run": 1,
+          "profile": "desktop",
+          "path": "/browse",
+          "variant": "inline",
+          "failed": [
+            {
+              "type": "script",
+              "path": "/_next-live/feedback/feedback.js",
+              "error": "csp"
+            },
+            {
+              "type": "script",
+              "path": "/flux/array/[redacted]/config.js",
+              "error": "csp"
+            }
+          ],
+          "readyMs": 4904.5,
+          "fcp": 1608,
+          "stages": {
+            "title": 1566.5,
+            "action": 1566.5,
+            "fontsReady": 4320.199999988079,
+            "cover": 4888.099999964237
+          }
+        },
+        {
+          "run": 1,
+          "profile": "desktop",
+          "path": "/browse",
+          "variant": "external",
+          "failed": [
+            {
+              "type": "script",
+              "path": "/_next-live/feedback/feedback.js",
+              "error": "csp"
+            },
+            {
+              "type": "script",
+              "path": "/flux/array/[redacted]/config.js",
+              "error": "csp"
+            }
+          ],
+          "readyMs": 2265.100000023842,
+          "fcp": 1084,
+          "stages": {
+            "title": 1052.5,
+            "action": 1052.5,
+            "fontsReady": 2130,
+            "cover": 2244.399999976158
+          }
+        },
+        {
+          "run": 1,
+          "profile": "desktop",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "inline",
+          "failed": [
+            {
+              "type": "script",
+              "path": "/_next-live/feedback/feedback.js",
+              "error": "csp"
+            },
+            {
+              "type": "script",
+              "path": "/flux/array/[redacted]/config.js",
+              "error": "csp"
+            }
+          ],
+          "readyMs": 3668.300000011921,
+          "fcp": 1176,
+          "stages": {
+            "title": 3260.699999988079,
+            "action": 3260.699999988079,
+            "cover": 3651.800000011921,
+            "fontsReady": 3730.699999988079
+          }
+        },
+        {
+          "run": 1,
+          "profile": "desktop",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "external",
+          "failed": [
+            {
+              "type": "media",
+              "path": "/storage/v1/object/public/audio/generated/0a52c5c8-f330-4ada-a164-05047b852444/ai-narration-20260421T0228445920000.mp3",
+              "error": "net::ERR_ABORTED"
+            },
+            {
+              "type": "script",
+              "path": "/_next-live/feedback/feedback.js",
+              "error": "csp"
+            },
+            {
+              "type": "script",
+              "path": "/flux/array/[redacted]/config.js",
+              "error": "csp"
+            }
+          ],
+          "readyMs": 1801.300000011921,
+          "fcp": 1152,
+          "stages": {
+            "title": 1543.800000011921,
+            "action": 1543.800000011921,
+            "fontsReady": 1546.300000011921,
+            "cover": 1784.6000000238419
+          }
+        },
+        {
+          "run": 2,
+          "profile": "desktop",
+          "path": "/browse",
+          "variant": "external",
+          "failed": [
+            {
+              "type": "script",
+              "path": "/_next-live/feedback/feedback.js",
+              "error": "csp"
+            },
+            {
+              "type": "script",
+              "path": "/flux/array/[redacted]/config.js",
+              "error": "csp"
+            }
+          ],
+          "readyMs": 2515.199999988079,
+          "fcp": 1336,
+          "stages": {
+            "title": 1305.800000011921,
+            "action": 1305.800000011921,
+            "fontsReady": 2361.199999988079,
+            "cover": 2498.300000011921
+          }
+        },
+        {
+          "run": 2,
+          "profile": "desktop",
+          "path": "/browse",
+          "variant": "inline",
+          "failed": [
+            {
+              "type": "script",
+              "path": "/_next-live/feedback/feedback.js",
+              "error": "csp"
+            },
+            {
+              "type": "script",
+              "path": "/flux/array/[redacted]/config.js",
+              "error": "csp"
+            }
+          ],
+          "readyMs": 4806.699999988079,
+          "fcp": 1592,
+          "stages": {
+            "title": 1557.699999988079,
+            "action": 1557.800000011921,
+            "fontsReady": 4266.099999964237,
+            "cover": 4790.300000011921
+          }
+        },
+        {
+          "run": 2,
+          "profile": "desktop",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "external",
+          "failed": [
+            {
+              "type": "media",
+              "path": "/storage/v1/object/public/audio/generated/0a52c5c8-f330-4ada-a164-05047b852444/ai-narration-20260421T0228445920000.mp3",
+              "error": "net::ERR_ABORTED"
+            },
+            {
+              "type": "script",
+              "path": "/_next-live/feedback/feedback.js",
+              "error": "csp"
+            },
+            {
+              "type": "script",
+              "path": "/flux/array/[redacted]/config.js",
+              "error": "csp"
+            }
+          ],
+          "readyMs": 2762.100000023842,
+          "fcp": 936,
+          "stages": {
+            "fontsReady": 1330.300000011921,
+            "title": 2565.5,
+            "action": 2565.5,
+            "cover": 2745
+          }
+        },
+        {
+          "run": 2,
+          "profile": "desktop",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "inline",
+          "failed": [
+            {
+              "type": "script",
+              "path": "/_next-live/feedback/feedback.js",
+              "error": "csp"
+            },
+            {
+              "type": "script",
+              "path": "/flux/array/[redacted]/config.js",
+              "error": "csp"
+            },
+            {
+              "type": "media",
+              "path": "/storage/v1/object/public/audio/generated/0a52c5c8-f330-4ada-a164-05047b852444/ai-narration-20260421T0228445920000.mp3",
+              "error": "net::ERR_ABORTED"
+            }
+          ],
+          "readyMs": 3547.400000035763,
+          "fcp": 1328,
+          "stages": {
+            "fontsReady": 1443.5,
+            "title": 3075.699999988079,
+            "action": 3075.699999988079,
+            "cover": 3530.900000035763
+          }
+        }
+      ],
+      "limitations": "Delays hydration and analytics, not a shipping candidate. Two samples per page/variant, no statistical/general speed claim."
+    },
+    "markdownTrial": {
+      "candidateCommit": "95c7fd1699dd3f774d946324e9c49a72d2122bb4",
+      "baselineCommit": "85fc2cb7",
+      "candidateBase": "05e444a0",
+      "baselineApplicationMatchesCandidateBase": true,
+      "variants": {
+        "inline": "original renderer",
+        "external": "on-demand Markdown renderer; still inline CSS"
+      },
+      "results": [
+        {
+          "run": 1,
+          "profile": "mobile",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "inline",
+          "failed": [
+            {
+              "path": "/_vercel/insights/script.js",
+              "status": 404
+            },
+            {
+              "path": "/_vercel/speed-insights/script.js",
+              "status": 404
+            }
+          ],
+          "readyMs": 3486.599999964237,
+          "fcp": 724,
+          "sectionMs": 246,
+          "reopened": true,
+          "initialScriptBytes": 618154,
+          "additionalScriptBytes": 0
+        },
+        {
+          "run": 1,
+          "profile": "mobile",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "external",
+          "failed": [
+            {
+              "path": "/_vercel/insights/script.js",
+              "status": 404
+            },
+            {
+              "path": "/_vercel/speed-insights/script.js",
+              "status": 404
+            }
+          ],
+          "readyMs": 3218.099999964237,
+          "fcp": 568,
+          "sectionMs": 944,
+          "reopened": true,
+          "initialScriptBytes": 500776,
+          "additionalScriptBytes": 116836
+        },
+        {
+          "run": 1,
+          "profile": "desktop",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "external",
+          "failed": [
+            {
+              "path": "/_vercel/insights/script.js",
+              "status": 404
+            },
+            {
+              "path": "/_vercel/speed-insights/script.js",
+              "status": 404
+            }
+          ],
+          "readyMs": 3282.600000023842,
+          "fcp": 560,
+          "sectionMs": 1045,
+          "reopened": true,
+          "initialScriptBytes": 500731,
+          "additionalScriptBytes": 136091
+        },
+        {
+          "run": 1,
+          "profile": "desktop",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "inline",
+          "failed": [
+            {
+              "path": "/_vercel/insights/script.js",
+              "status": 404
+            },
+            {
+              "path": "/_vercel/speed-insights/script.js",
+              "status": 404
+            }
+          ],
+          "readyMs": 3271.5,
+          "fcp": 556,
+          "sectionMs": 74,
+          "reopened": true,
+          "initialScriptBytes": 637286,
+          "additionalScriptBytes": 0
+        },
+        {
+          "run": 2,
+          "profile": "mobile",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "external",
+          "failed": [
+            {
+              "path": "/_vercel/insights/script.js",
+              "status": 404
+            },
+            {
+              "path": "/_vercel/speed-insights/script.js",
+              "status": 404
+            }
+          ],
+          "readyMs": 3203.900000035763,
+          "fcp": 572,
+          "sectionMs": 956,
+          "reopened": true,
+          "initialScriptBytes": 500730,
+          "additionalScriptBytes": 116836
+        },
+        {
+          "run": 2,
+          "profile": "mobile",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "inline",
+          "failed": [
+            {
+              "path": "/_vercel/insights/script.js",
+              "status": 404
+            },
+            {
+              "path": "/_vercel/speed-insights/script.js",
+              "status": 404
+            }
+          ],
+          "readyMs": 3164.899999976158,
+          "fcp": 568,
+          "sectionMs": 173,
+          "reopened": true,
+          "initialScriptBytes": 617915,
+          "additionalScriptBytes": 0
+        },
+        {
+          "run": 2,
+          "profile": "desktop",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "inline",
+          "failed": [
+            {
+              "path": "/_vercel/insights/script.js",
+              "status": 404
+            },
+            {
+              "path": "/_vercel/speed-insights/script.js",
+              "status": 404
+            }
+          ],
+          "readyMs": 3276.599999964237,
+          "fcp": 544,
+          "sectionMs": 76,
+          "reopened": true,
+          "initialScriptBytes": 637116,
+          "additionalScriptBytes": 0
+        },
+        {
+          "run": 2,
+          "profile": "desktop",
+          "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+          "variant": "external",
+          "failed": [
+            {
+              "path": "/_vercel/insights/script.js",
+              "status": 404
+            },
+            {
+              "path": "/_vercel/speed-insights/script.js",
+              "status": 404
+            }
+          ],
+          "readyMs": 3270.400000035763,
+          "fcp": 560,
+          "sectionMs": 763,
+          "reopened": true,
+          "initialScriptBytes": 537319,
+          "additionalScriptBytes": 99593
+        }
+      ],
+      "checks": {
+        "unitTests": 19,
+        "typecheck": "passed",
+        "focusedLint": "passed",
+        "productionBuild": "passed",
+        "sharpTrace": "passed",
+        "criticalCss": "passed",
+        "extractedRendererIdenticalExceptExport": true
+      },
+      "limitations": [
+        "Two local observations per viewport/variant; not hosted acceptance.",
+        "Local telemetry404 retained; no application asset failures.",
+        "Initial failed build used an out-of-root node_modules symlink. Rebuilt successfully with isolated cloned dependencies.",
+        "Eight original synchronous assertions initially failed on asynchronous rendering. Updated them to await actual content/highlights, retaining their assertions; added sanitization coverage.",
+        "Candidate measured as working tree then committed unchanged; test modifications do not change runtime bundle.",
+        "One mistaken sharp guard script filename failed; actual package build guard ran and passed."
+      ],
+      "decision": "Reject: mobile readiness median3326\u21923211ms, desktop3274\u21923277ms; first-section medians210\u2192950ms mobile,75\u2192904ms desktop. Compressed initial script reduction~117\u2013118KB did not establish a worthwhile first-screen gain. No hosted rollout/benchmark justified."
+    },
+    "disposition": "All application experiments rejected; PR226 converted to documentation only. Keep production unchanged; stop this bounded optimization pass. Targets remain unresolved. No additional paid AI, database, account changes, subagents or recurring timers."
   }
 }
