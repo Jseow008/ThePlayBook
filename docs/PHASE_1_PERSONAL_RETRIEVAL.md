@@ -2966,3 +2966,52 @@ experiments remain rejected. A smaller required reasoning output is a possible n
 quality/latency tradeoff, not authorized for release by this one fixture. Alternatively
 retain output and improve factual progress feedback while production timing accrues.
 Do not repeat this request to obtain favorable timing. #28 stays open; timers paused.
+
+### Faster-model comparison — 1 October 2026
+
+User authorized the bounded comparison. Worktree `/private/tmp/netflux-model-comparison`,
+branch `codex/selector-model-comparison`, initially fresh-main `5261cd3e`, refreshed
+to `7d844fb1` after #212 merged. No application changes; #213 remains a separate
+negative prompt experiment record. One agent, no timer or production-data work.
+
+Confirmed frozen corpus-v2 thresholds before calls: overall/class recall95%/90%;
+per-run overall/class90%/85%; irrelevant rejection and abstention95%, each90%
+per run; quote fidelity and forbidden-evidence exclusion100%; three independent
+runs per case. Also retain complete extract grounding/attribution/coverage and
+no unexplained regression. Passing seven development cases never releases a model.
+
+Provider model-list GET verified GPT-6 Luna available; official model documentation
+describes focused high-volume use and supports reasoning none. Installed SDK
+requires explicit forceReasoning for this newer model: an offline intercepted
+request confirmed model, reasoning none, store false and strict JSON schema,
+without networking. Haiku remains the production baseline. Logical prompt,
+candidate passages/IDs, schema and final selector validation unchanged.
+Candidate provider-native schema encoding can differ; this is a model/provider
+configuration comparison, not isolated pure-model throughput.
+
+Harness `scripts/experiments/selector-model-comparison.ts` reuses seven synthetic
+development cases; alternating fresh baseline/candidate calls,14 maximum, no
+retries,20s deadline and stop on first quality failure. Predeclared advance rule:
+all expected IDs and no extras in all cases, median at least20% faster, faster in
+at least5/7 pairs, no higher estimated token cost. No held-out corpus tuning.
+Typecheck, focused lint and offline request preflight passed.
+
+Completed14calls, both arms7/7 valid correct selections. Haiku median3967.94ms,
+17580input/2928output tokens. Luna median4814.98ms,13223input/2487output tokens;
+faster in3/7 pairs only. **Reject for latency objective:** median21.35% slower.
+Standard token-price estimates: Haiku$0.032220, Luna$0.0025658, combined$0.0347858;
+actual billed invoice unavailable. Rates and source links recorded in evidence;
+no cache-read tokens observed. Total observed provider tokens36,218.
+
+Evidence: `docs/evidence/selector-model-comparison-development-20261001.json`;
+raw artifact `/private/tmp/netflux-model-comparison-v1.json`. All responses are
+synthetic, not private user content. Slower calls retained. No repeated favorable
+sampling, full168-call evaluation, release model change or production probe.
+These are seven local pairs, not production percentiles or all-times provider
+speed conclusions. No numerical acceptance thresholds changed.
+
+Next: retain Haiku. This candidate offers lower estimated cost but did not satisfy
+the requested latency objective. Do not keep cycling models without a new bounded
+decision. User-visible factual progress or eliminating demonstrated non-provider
+serial work are distinct next options; neither resolves provider generation time.
+Publish this negative result through normal gates. #28 stays open, timers paused.
