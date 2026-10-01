@@ -137,7 +137,6 @@ export function ContentPreview({
                                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                                     sizes={READER_COVER_IMAGE_SIZES}
                                     priority
-                                    fetchPriority="high"
                                     fallback={
                                         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary via-card to-background">
                                             <BookOpen className="size-12 text-muted-foreground" />

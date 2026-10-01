@@ -3722,3 +3722,34 @@ normal PR gates, verify hosted image request priority and affected journey, then
 record production identity/limited verification. Targets remain unmet in the
 production baseline; no broad refactor, model call or data migration is authorized
 by this correction. No repeated full-site/capacity benchmark is needed.
+
+
+#### Hosted candidate decision — priority-only change rejected
+
+PR #225 candidate f2f3ed1a reached a ready hosted preview. Frozen12-observation
+candidate run retained in evidence; Preview medians mobile2814/desktop2977ms,
+Reader medians mobile3127/desktop3613ms. Outliers include mobile Preview4228ms
+and desktop Reader6676ms. Desktop224px image requests startedHigh, confirming the
+mechanism, but this does not establish an overall speedup or target acceptance.
+Hosted preview CSP blocks feedback.js and PostHog config; one Reader interaction
+check failed when scrollIntoViewIfNeeded encountered a detached node. These do
+not prove a product regression: preview configuration differs from production,
+there is no paired hosted baseline, and the patch changed only priority attrs.
+No rerun was used to replace those observations. Security/CSP and DOM causes are
+not claimed resolved by source inspection. Existing21 component tests and built
+functional checks pass, but cannot override the failed acceptance evidence.
+
+Auto-merge was disabled on discovery. Remove the two application lines and retain
+PR #225 as documentation only; do not ship a speculative performance fix. Production
+remains unchanged by this work. Candidate f2f3ed1a remains available in Git history;
+there are no discarded samples, infrastructure changes or paid provider calls.
+
+Conclusion: the representative journey is functional and section interaction is
+fast, but readiness/nav median working targets remain missed. Image priority is
+not a demonstrated solution, and late image discovery/shared delivery remain.
+A larger rendering/streaming investigation would need its own hypothesis and a
+matched hosted baseline before changing code. No further small priority, font,
+analytics-packaging or favorable-result benchmark experiments are justified by
+this run. Preserve the known limits rather than declare Preview/Reader complete.
+Local servers/browser sessions stopped; no timers created. PR #224 merged;
+#28 and residual Home/Browse desktop readiness remain open.

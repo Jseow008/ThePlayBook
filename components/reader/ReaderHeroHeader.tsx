@@ -103,7 +103,6 @@ export function ReaderHeroHeader({
                                 fill
                                 sizes={READER_COVER_IMAGE_SIZES}
                                 priority
-                                fetchPriority="high"
                                 surface="reader-hero"
                                 className="object-cover"
                                 fallback={

@@ -565,5 +565,326 @@
       }
     ],
     "limitations": "One observation per page/profile/build, baseline then candidate; not statistical proof. Local telemetry404 retained. No absolute production acceptance. Baseline and candidate app differ only in cover fetchPriority; deployment field in copied plan identifies source application baseline, not a local deployment."
+  },
+  "hostedCandidate": {
+    "commit": "f2f3ed1a416606e18d79369cb8518b31805ef6b9",
+    "samples": [
+      {
+        "run": 0,
+        "profile": "mobile",
+        "page": "preview",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 4228.299999952316,
+        "fcp": 2780,
+        "ttfb": 86.29999995231628,
+        "coverPriority": "high",
+        "imageRequests": [],
+        "navigationMs": 3125,
+        "sectionMs": 129
+      },
+      {
+        "run": 0,
+        "profile": "mobile",
+        "page": "reader",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 2016,
+        "fcp": 1288,
+        "ttfb": 81,
+        "coverPriority": "high",
+        "imageRequests": [],
+        "error": "locator.scrollIntoViewIfNeeded: Element is not attached to the DOM\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n"
+      },
+      {
+        "run": 0,
+        "profile": "desktop",
+        "page": "preview",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 2977,
+        "fcp": 904,
+        "ttfb": 40.40000003576279,
+        "coverPriority": "high",
+        "imageRequests": [
+          {
+            "priority": "High"
+          },
+          {
+            "priority": "High"
+          },
+          {
+            "priority": "High"
+          },
+          {
+            "priority": "High"
+          }
+        ],
+        "navigationMs": 3133,
+        "sectionMs": 46
+      },
+      {
+        "run": 0,
+        "profile": "desktop",
+        "page": "reader",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 3612.699999988079,
+        "fcp": 1520,
+        "ttfb": 203.89999997615814,
+        "coverPriority": "high",
+        "imageRequests": [
+          {
+            "priority": "High"
+          },
+          {
+            "priority": "High"
+          }
+        ],
+        "error": "locator.scrollIntoViewIfNeeded: Element is not attached to the DOM\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n"
+      },
+      {
+        "run": 1,
+        "profile": "mobile",
+        "page": "preview",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 2813.800000011921,
+        "fcp": 980,
+        "ttfb": 30.400000035762787,
+        "coverPriority": "high",
+        "imageRequests": [],
+        "navigationMs": 2263,
+        "sectionMs": 81
+      },
+      {
+        "run": 1,
+        "profile": "mobile",
+        "page": "reader",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 3333.5,
+        "fcp": 1084,
+        "ttfb": 106.09999996423721,
+        "coverPriority": "high",
+        "imageRequests": [],
+        "sectionMs": 361
+      },
+      {
+        "run": 1,
+        "profile": "desktop",
+        "page": "preview",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 3668,
+        "fcp": 1676,
+        "ttfb": 32.09999996423721,
+        "coverPriority": "high",
+        "imageRequests": [
+          {
+            "priority": "High"
+          },
+          {
+            "priority": "High"
+          },
+          {
+            "priority": "High"
+          },
+          {
+            "priority": "High"
+          }
+        ],
+        "navigationMs": 2708,
+        "sectionMs": 46
+      },
+      {
+        "run": 1,
+        "profile": "desktop",
+        "page": "reader",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 3536.099999964237,
+        "fcp": 992,
+        "ttfb": 98.69999998807907,
+        "coverPriority": "high",
+        "imageRequests": [
+          {
+            "priority": "High"
+          },
+          {
+            "priority": "High"
+          }
+        ],
+        "error": "locator.scrollIntoViewIfNeeded: Element is not attached to the DOM\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n"
+      },
+      {
+        "run": 2,
+        "profile": "mobile",
+        "page": "preview",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 2771.2999999523163,
+        "fcp": 876,
+        "ttfb": 50.59999996423721,
+        "coverPriority": "high",
+        "imageRequests": [],
+        "navigationMs": 2738,
+        "sectionMs": 84
+      },
+      {
+        "run": 2,
+        "profile": "mobile",
+        "page": "reader",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 3127.099999964237,
+        "fcp": 1536,
+        "ttfb": 78.30000001192093,
+        "coverPriority": "high",
+        "imageRequests": [],
+        "error": "locator.scrollIntoViewIfNeeded: Element is not attached to the DOM\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n"
+      },
+      {
+        "run": 2,
+        "profile": "desktop",
+        "page": "preview",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 2739.7000000476837,
+        "fcp": 1164,
+        "ttfb": 38.700000047683716,
+        "coverPriority": "high",
+        "imageRequests": [
+          {
+            "priority": "High"
+          },
+          {
+            "priority": "High"
+          },
+          {
+            "priority": "High"
+          },
+          {
+            "priority": "High"
+          }
+        ],
+        "navigationMs": 2897,
+        "sectionMs": 44
+      },
+      {
+        "run": 2,
+        "profile": "desktop",
+        "page": "reader",
+        "failed": [
+          {
+            "path": "/_next-live/feedback/feedback.js",
+            "error": "csp"
+          },
+          {
+            "path": "/flux/array/[public-project-token]/config.js",
+            "error": "csp"
+          }
+        ],
+        "readyMs": 6676.100000023842,
+        "fcp": 1576,
+        "ttfb": 54.30000001192093,
+        "coverPriority": "high",
+        "imageRequests": [
+          {
+            "priority": "High"
+          }
+        ],
+        "sectionMs": 87
+      }
+    ],
+    "verdict": "Not accepted as a performance fix. No matched hosted baseline, CSP-blocked preview scripts, one detached-element interaction check, and readiness outliers. No causal regression or speedup established. Priority alone does not address late image discovery. Candidate removed; production unchanged."
   }
 }
