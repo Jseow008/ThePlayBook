@@ -1,0 +1,4698 @@
+{
+  "version": "luna-final-phase-quality-v1",
+  "candidate": {
+    "model": "gpt-6-luna",
+    "provider": "openai",
+    "reasoningEffort": "none",
+    "forceReasoning": true,
+    "store": false,
+    "maxOutputTokens": 1600,
+    "maxRetries": 0
+  },
+  "corpusSha256": "dd866de9d24c712e929085f240ca5a47760cab74ef15f4a60d829bc937d58608",
+  "baselineSha256": "645a5d6572c0135cfd376f0759d2bcff19a239e3ff5bae85ad2b02c796e1f079",
+  "captureSha256": "14df14825f5ecdd4656d9ae87537d5c19447f2f059860252515f56dde78e31c4",
+  "vectorSha256": "a60a1359fbe3eea7d713aca274b8bfa78bf01e02fc7d50e96775f3259b5a715c",
+  "adapterSha256": "5ff22801be170dfb1433d0f7d61fcbadf2af45e897502622a1b0bb50bc4172c3",
+  "harnessSha256": "259d17ad30e99263470d43e0d8e7b753a3b053dab9b622a6650261155c434635",
+  "frozenThresholds": {
+    "recallMacro": 0.95,
+    "recallPerClass": 0.9,
+    "recallPerRunMacro": 0.9,
+    "recallPerRunClass": 0.85,
+    "irrelevantRejection": 0.95,
+    "abstention": 0.95,
+    "rejectionAndAbstentionPerRun": 0.9,
+    "exactQuoteFidelity": 1,
+    "forbiddenEvidenceExclusion": 1,
+    "independentModelRuns": 3
+  },
+  "cases": 56,
+  "runs": 3,
+  "maxCalls": 168,
+  "maxInputTokens": 2000000,
+  "stopRule": "No retries. Stop on provider/structure/deadline failure or wrong exact-quote target (100% gate cannot recover). Preserve all results.",
+  "objective": "Lower cost with unchanged quality gates; retain 20s per-call deadline. Prior latency rejection is not relabeled a speed pass.",
+  "boundaries": [
+    "Synthetic fixture-only historical production input capture validated against frozen corpus and vectors.",
+    "Candidate wire identity binds logical request plus model/provider/reasoning/store settings; historical model responses are not reused.",
+    "Selection-only evidence; full database replay, extract attribution and release gates required before production.",
+    "Direct evaluation outside application spend ledger, bounded to168 calls; no accounts, DB writes or production requests."
+  ],
+  "startedAt": "2026-10-01T06:25:17.834Z",
+  "updatedAt": "2026-10-01T06:30:49.826Z",
+  "complete": false,
+  "totals": {
+    "calls": 104,
+    "inputTokens": 540443,
+    "outputTokens": 18208
+  },
+  "failure": "PROVIDER_OR_VALIDATION_FAILURE",
+  "records": [
+    {
+      "caseId": "library-cedar",
+      "run": 1,
+      "inputSha256": "a7697ad06507624b7db506e858ca03e89d045902fdc0ce062184f11d7b796e4a",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:1b1763b1-21a1-449d-80cc-9f7651da3271"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3952.575834,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim current editorial passage about identifying Cedar drying batches at the rack."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:1b1763b1-21a1-449d-80cc-9f7651da3271",
+            "requestedFacet": "Verbatim current editorial passage about identifying Cedar drying batches at the rack.",
+            "supportSummary": "The current Cedar print room passage states where drying batches are identified and instructs placing a dated tag at each rack’s left end.",
+            "constraintCheck": "Matches the requested Cedar subject, rack procedure, and editorial source; stored text is available for exact quotation.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3317,
+        "outputTokens": 138,
+        "totalTokens": 3455,
+        "inputTokenDetails": {
+          "noCacheTokens": 3317,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 138,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-cedar",
+      "run": 1,
+      "inputSha256": "3ea2a57a24ad65d15b8be9d5c19336c2838f3db088fb3bcaeb6c05f1dff6cc7a",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:cb58295e-d372-4f8f-8be8-579030f883ea"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3630.6242919999995,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim quote from the user's attached Cedar note explaining why individual print flags were used instead of rack tags."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:cb58295e-d372-4f8f-8be8-579030f883ea",
+            "requestedFacet": "Verbatim quote from the user's attached Cedar note explaining why individual print flags were used instead of rack tags.",
+            "supportSummary": "The attached note says the user used a removable paper flag on each print because rack tags fell off when the rack was moved.",
+            "constraintCheck": "This is the Cedar note and directly states the requested choice and reason; its stored noteBody is the exact quote target.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2124,
+        "outputTokens": 156,
+        "totalTokens": 2280,
+        "inputTokenDetails": {
+          "noCacheTokens": 2124,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 156,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-cedar",
+      "run": 1,
+      "inputSha256": "760cf6459935e8f9c0bc72e39a47e19da914d24d0d6e830bb3a14ff79b7cb3fa",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:17cb26c2-2623-4f88-8381-d9f5c5ecd15d"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2421.8248330000006,
+      "providerOutput": {
+        "requestedFacets": [
+          "Exact verbatim text of the user's Cedar reflection about curved lower print edges staying damp"
+        ],
+        "assessments": [
+          {
+            "id": "reflection:17cb26c2-2623-4f88-8381-d9f5c5ecd15d",
+            "requestedFacet": "Exact verbatim text of the user's Cedar reflection about curved lower print edges staying damp",
+            "supportSummary": "The reflection text states that the curved lower edges stayed damp after the centers felt dry and describes checking them before stacking prints.",
+            "constraintCheck": "This is the Cedar reflection and directly matches the requested content; its stored text is the exact-quote target.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5162,
+        "outputTokens": 142,
+        "totalTokens": 5304,
+        "inputTokenDetails": {
+          "noCacheTokens": 5162,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 142,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-birch",
+      "run": 1,
+      "inputSha256": "fe0aa3438886bb554b64ba1e17e9fee6f3aca39fb649b95daa3b0618efddfa93",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:7a4726a3-962c-429f-89f5-c4dd37af158b"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2321.6292080000003,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim current Birch editorial source passage about fitting numbered track sections before arranging scenery"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:7a4726a3-962c-429f-89f5-c4dd37af158b",
+            "requestedFacet": "Verbatim current Birch editorial source passage about fitting numbered track sections before arranging scenery",
+            "supportSummary": "The Birch source passage directly states the order for fitting numbered track sections and arranging scenery.",
+            "constraintCheck": "Matches the requested Birch source and topic; stored source text is available for exact quotation.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3312,
+        "outputTokens": 128,
+        "totalTokens": 3440,
+        "inputTokenDetails": {
+          "noCacheTokens": 3312,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 128,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-birch",
+      "run": 1,
+      "inputSha256": "01bd43a1cef27af6d4db2e9f612892e8403dc200f54e873bcbe5b74b4a359055",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:aba5084f-686d-400e-8888-6354575faf84"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2195.804542,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim highlighted passage from Birch miniature railway about paper tabs beneath track joints for section numbers"
+        ],
+        "assessments": [
+          {
+            "id": "highlight:aba5084f-686d-400e-8888-6354575faf84",
+            "requestedFacet": "Verbatim highlighted passage from Birch miniature railway about paper tabs beneath track joints for section numbers",
+            "supportSummary": "The highlighted text directly gives the requested instruction and matches the Birch miniature railway title.",
+            "constraintCheck": "The stored highlight matches the requested topic and source; exact-quote mode requires selecting the target without reproducing or modifying its text.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4672,
+        "outputTokens": 135,
+        "totalTokens": 4807,
+        "inputTokenDetails": {
+          "noCacheTokens": 4672,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 135,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-birch",
+      "run": 1,
+      "inputSha256": "2faf9db5fb99342ed4f87e7d4546c445f4863a33282ec3a2b78ead6afc00830c",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:4adcee31-328e-48b0-8648-f218ce8ae908"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3219.935040999999,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim text of the user's Birch reflection about removing the station building to reach joint six."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:4adcee31-328e-48b0-8648-f218ce8ae908",
+            "requestedFacet": "Verbatim text of the user's Birch reflection about removing the station building to reach joint six.",
+            "supportSummary": "The reflection text directly describes arranging the Birch scenery, being unable to reach joint six, and removing the small station building to restore access.",
+            "constraintCheck": "Matches the Birch reflection and requested idea; it is the user's reflection text, not a paraphrase.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4302,
+        "outputTokens": 141,
+        "totalTokens": 4443,
+        "inputTokenDetails": {
+          "noCacheTokens": 4302,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 141,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-larch",
+      "run": 1,
+      "inputSha256": "d80b4f6ffde4d2be3945b3d8c419a22ad82c76cc37eac2569df90437c22ba559",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2186.3131250000006,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim quote of the current Larch editorial passage stating that the ink sample should be kept on a separate marked card rather than on the finished invitation."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2",
+            "requestedFacet": "Verbatim quote of the specified current Larch editorial passage.",
+            "supportSummary": "The Larch source text directly states that the ink sample belongs on a separate card marked “墨色 🖋️” and that the finished invitation should not be marked.",
+            "constraintCheck": "Matches the requested source, action, and contrast; stored passage supports the exact-quote request.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3556,
+        "outputTokens": 159,
+        "totalTokens": 3715,
+        "inputTokenDetails": {
+          "noCacheTokens": 3556,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 159,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-larch",
+      "run": 1,
+      "inputSha256": "9a0d1d6145b5ce5ae83dac09ac38fddd26da24d08014ba6f1bf8cdc71858415c",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:4bf3d469-a3c2-4a71-8ad5-2cb2c9e19489"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2248.714874999998,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim stored text from the highlighted Larch passage about keeping the ink sample on a separate marked card rather than marking the finished invitation."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:4bf3d469-a3c2-4a71-8ad5-2cb2c9e19489",
+            "requestedFacet": "Verbatim stored text from the highlighted Larch passage about keeping the ink sample on a separate marked card rather than marking the finished invitation.",
+            "supportSummary": "The highlighted text contains the requested instruction and is from the Larch lettering archive.",
+            "constraintCheck": "Matches the requested passage and authorship type (highlight); supports exact-quote retrieval.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4646,
+        "outputTokens": 151,
+        "totalTokens": 4797,
+        "inputTokenDetails": {
+          "noCacheTokens": 4646,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 151,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-larch",
+      "run": 1,
+      "inputSha256": "575d7edda39e2f41210b5c21d1232272bfbe7db2abd71224d76c99c2332dd355",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:777d4e9a-d710-4f43-8af5-b0a44988ec85"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3010.093041,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim stored wording from the user's Larch reflection about the blotter leaving a dark crescent and where it was stored afterward."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:777d4e9a-d710-4f43-8af5-b0a44988ec85",
+            "requestedFacet": "Verbatim stored wording from the user's Larch reflection about the blotter leaving a dark crescent and where it was stored afterward.",
+            "supportSummary": "The reflection mentions the folded blotter leaving a dark crescent and being stored in a separate envelope.",
+            "constraintCheck": "This is the Larch reflection and its stored text contains both requested details; it is the exact-quote target.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5115,
+        "outputTokens": 156,
+        "totalTokens": 5271,
+        "inputTokenDetails": {
+          "noCacheTokens": 5115,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 156,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-elm",
+      "run": 1,
+      "inputSha256": "067264aaa31bcf47aad6cd231b283c22369878a7ba090f20b6a81be76e0fe827",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:4ae9a5ed-6807-4600-873e-08305d149c67"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2002.2019580000015,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim quotation from the current Elm editorial passage specifying a two-millimeter spacer between tiles."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:4ae9a5ed-6807-4600-873e-08305d149c67",
+            "requestedFacet": "Verbatim quotation from the current Elm editorial passage specifying a two-millimeter spacer between tiles.",
+            "supportSummary": "The current Elm editorial sourceText specifies a two-millimeter wooden spacer between tiles.",
+            "constraintCheck": "Matches the requested source, measurement, and topic; stored passage is available for exact-quote retrieval.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3868,
+        "outputTokens": 136,
+        "totalTokens": 4004,
+        "inputTokenDetails": {
+          "noCacheTokens": 3868,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 136,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-elm",
+      "run": 1,
+      "inputSha256": "2ce84f2e5a616ce578bf41baa34a1bdef93614fa80b3f9f530d8a3d63479b828",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:48e03cef-52c2-42ed-871b-ba38043efd75"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2892.5451250000006,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim text of the user's attached Elm note stating the three-millimeter spacing used on the uneven wall."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:48e03cef-52c2-42ed-871b-ba38043efd75",
+            "requestedFacet": "Verbatim text of the user's attached Elm note stating the three-millimeter spacing used on the uneven wall.",
+            "supportSummary": "The attached note describes using a three-millimeter spacer on the uneven Elm wall instead of the specified two-millimeter spacer.",
+            "constraintCheck": "The note is the requested personal attachment and directly matches the Elm wall and spacing details; its stored wording is available.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2016,
+        "outputTokens": 150,
+        "totalTokens": 2166,
+        "inputTokenDetails": {
+          "noCacheTokens": 2016,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 150,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-elm",
+      "run": 1,
+      "inputSha256": "be5e83efa12370518db07d9b233b1d79c5ed335ebbf3672d047ea6f3783b37d8",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:298b0564-4c9e-4c4c-87bc-f2b9eb73f87c"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1981.4417919999978,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim quote of the user's reflection about changing the uneven Elm wall spacing from two millimeters to three millimeters."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:298b0564-4c9e-4c4c-87bc-f2b9eb73f87c",
+            "requestedFacet": "Verbatim quote of the specified reflection.",
+            "supportSummary": "The reflection directly describes changing the uneven Elm wall tile spacing from two millimeters to three millimeters.",
+            "constraintCheck": "Matches the requested subject and exact reflection authorship; the stored reflection text is the quote target.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5314,
+        "outputTokens": 134,
+        "totalTokens": 5448,
+        "inputTokenDetails": {
+          "noCacheTokens": 5314,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 134,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-willow",
+      "run": 1,
+      "inputSha256": "b6d3e495b3b4ba7c2105af3bdf69914c415ffbeec2034cba37f8beb9e440b8f1",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:45e9099d-8403-4328-8d8c-c85f1ba6db59"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3494.9901669999963,
+      "providerOutput": {
+        "requestedFacets": [
+          "What the current Willow editorial checklist uses to assign each prop its place"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:45e9099d-8403-4328-8d8c-c85f1ba6db59",
+            "requestedFacet": "What the current Willow editorial checklist uses to assign each prop its place",
+            "supportSummary": "The Willow source says each prop is assigned a traced outline on the table and should be matched to it during the pre-show check.",
+            "constraintCheck": "Directly identifies the current Willow source and its prop-placement method.",
+            "verdict": "direct"
+          },
+          {
+            "id": "source_segment:dc58bcdb-cda3-4af6-8e77-d6ce5da3f095",
+            "requestedFacet": "What the current Willow editorial checklist uses to assign each prop its place",
+            "supportSummary": "This Willow source explicitly says it lists no pre-show check or assignment method.",
+            "constraintCheck": "Same source, but it denies the requested method rather than establishing what the checklist uses.",
+            "verdict": "contradicts_requested_claim"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4813,
+        "outputTokens": 223,
+        "totalTokens": 5036,
+        "inputTokenDetails": {
+          "noCacheTokens": 4813,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 223,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-willow",
+      "run": 1,
+      "inputSha256": "a7d1dd66d99c6e9483b78f8195395aeeced736706264dad4883ee8f1443f7199",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:3b394e91-4500-43af-893f-8306d14b74a5"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2735.4229169999962,
+      "providerOutput": {
+        "requestedFacets": [
+          "Why the user added number cards in their attached Willow prop-table note"
+        ],
+        "assessments": [
+          {
+            "id": "highlight:3b394e91-4500-43af-893f-8306d14b74a5",
+            "requestedFacet": "Why the user added number cards in their attached Willow prop-table note",
+            "supportSummary": "The user's note says they added a small numbered card to each outline because two silver cups had indistinguishable shapes.",
+            "constraintCheck": "Directly identifies the Willow note and gives the stated reason.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2120,
+        "outputTokens": 124,
+        "totalTokens": 2244,
+        "inputTokenDetails": {
+          "noCacheTokens": 2120,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 124,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-willow",
+      "run": 1,
+      "inputSha256": "a6172e6722ad48e202f0d4169bfccbab12f09c5a5432839faef52d39b3c346f0",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:1405d277-bc00-4db8-8a5f-4afd24027377"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3525.0184169999993,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the mix-up that the user's Willow reflection says the number cards caught."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:1405d277-bc00-4db8-8a5f-4afd24027377",
+            "requestedFacet": "The mix-up caught by the number cards in the Willow reflection",
+            "supportSummary": "The reflection says cup four was placed on cup seven’s outline, and the number cards caught the swap before the first entrance.",
+            "constraintCheck": "Directly identifies the mix-up in the user's Willow reflection.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3227,
+        "outputTokens": 125,
+        "totalTokens": 3352,
+        "inputTokenDetails": {
+          "noCacheTokens": 3227,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 125,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-aspen",
+      "run": 1,
+      "inputSha256": "47d36c60db96f78e16ced1ee9b3e408493af131eeb85acc28f3822ec0c781140",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:3fe0a800-3073-4c6a-843f-5b174279007a"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3058.534999999996,
+      "providerOutput": {
+        "requestedFacets": [
+          "The event that triggers a timestamp in the current Aspen editorial workflow."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:3fe0a800-3073-4c6a-843f-5b174279007a",
+            "requestedFacet": "The event that triggers a timestamp in the current Aspen editorial workflow.",
+            "supportSummary": "The Aspen oral-history workflow says to mark a timestamp whenever the speaker changes.",
+            "constraintCheck": "Directly identifies the triggering event in the requested workflow.",
+            "verdict": "direct"
+          },
+          {
+            "id": "source_segment:4253037d-2325-4c51-8d1c-90fb59c3d024",
+            "requestedFacet": "The event that triggers a timestamp in the current Aspen editorial workflow.",
+            "supportSummary": "The Aspen glossary defines timestamp but explicitly specifies no event to mark.",
+            "constraintCheck": "Matches the workflow name but does not establish the triggering event.",
+            "verdict": "not_established"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3593,
+        "outputTokens": 198,
+        "totalTokens": 3791,
+        "inputTokenDetails": {
+          "noCacheTokens": 3593,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 198,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-aspen",
+      "run": 1,
+      "inputSha256": "340cba3ae43ec335e077a0dbc7b98f3e1b5e0dede3e50e68ad2da8c5356214eb",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:7415777f-c920-4db5-8616-44d17f019a37"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2250.2103750000024,
+      "providerOutput": {
+        "requestedFacets": [
+          "The naming change explained in the user's attached Aspen interview note"
+        ],
+        "assessments": [
+          {
+            "id": "highlight:7415777f-c920-4db5-8616-44d17f019a37",
+            "requestedFacet": "The naming change explained in the user's attached Aspen interview note",
+            "supportSummary": "The note says the user used full first names instead of initials because Mara and Milo both began with M.",
+            "constraintCheck": "The attached note is specifically about Aspen and directly states the naming change and its reason.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2119,
+        "outputTokens": 121,
+        "totalTokens": 2240,
+        "inputTokenDetails": {
+          "noCacheTokens": 2119,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 121,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-aspen",
+      "run": 1,
+      "inputSha256": "0193005eb2355ed0194d4065a88578caaad374996ba46d5f3e56b52e01327599",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:6c56cee5-3b3d-4312-8d73-628697f261bd"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2258.6222500000003,
+      "providerOutput": {
+        "requestedFacets": [
+          "Why the user changed how often they marked timestamps in their Aspen reflection."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:6c56cee5-3b3d-4312-8d73-628697f261bd",
+            "requestedFacet": "Reason for changing timestamp frequency in the Aspen reflection",
+            "supportSummary": "The user first marked only the recording start, then added timestamps at every speaker change because they could not find the later handover.",
+            "constraintCheck": "Directly describes the change, its reason, and the Aspen interview.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3251,
+        "outputTokens": 125,
+        "totalTokens": 3376,
+        "inputTokenDetails": {
+          "noCacheTokens": 3251,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 125,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-hazel",
+      "run": 1,
+      "inputSha256": "723fecd3a990a5db1d250f57f7024e63e7b3535c2eb06606f15710f0b263f4af",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:79216a57-5325-487c-8508-24d6ff284646"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1841.2379999999976,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the feature, besides color, that the current Hazel editorial passage uses to distinguish routes."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:79216a57-5325-487c-8508-24d6ff284646",
+            "requestedFacet": "Feature besides color used to distinguish routes in the current Hazel editorial passage",
+            "supportSummary": "The passage says neighboring routes are distinguished by stitch texture as well as thread color, specifying dashed and continuous stitches.",
+            "constraintCheck": "This is the current Hazel editorial source and directly establishes the requested feature.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5483,
+        "outputTokens": 127,
+        "totalTokens": 5610,
+        "inputTokenDetails": {
+          "noCacheTokens": 5483,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 127,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-hazel",
+      "run": 1,
+      "inputSha256": "573d5dc196116c4f0bd826c5259968cb2731f4562ddbbb6d0a6f7c624b949838",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:e7967d15-28c6-449c-81f4-d23d7e9736b5"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3408.003540999998,
+      "providerOutput": {
+        "requestedFacets": [
+          "The stitch style saved for each path on the Hazel map: identify the stitch style for the canal path and for the hill path."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:e7967d15-28c6-449c-81f4-d23d7e9736b5",
+            "requestedFacet": "Stitch style for each Hazel-map path",
+            "supportSummary": "Says to use dashed stitches for the canal path and continuous stitches for the hill path.",
+            "constraintCheck": "Directly identifies both paths and their saved stitch styles on the Hazel map.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2362,
+        "outputTokens": 130,
+        "totalTokens": 2492,
+        "inputTokenDetails": {
+          "noCacheTokens": 2362,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 130,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-hazel",
+      "run": 1,
+      "inputSha256": "cdf494244e43dc2a2ccd50251d1cc8563f5ab342c7288555b1640be000b35c47",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:b57ad0b5-198a-4e67-8208-fff91d1be2bd"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2487.0921249999956,
+      "providerOutput": {
+        "requestedFacets": [
+          "What visual distinction between the routes remained in the user's gray copy of the Hazel map, despite the blue and green routes appearing identical?"
+        ],
+        "assessments": [
+          {
+            "id": "reflection:b57ad0b5-198a-4e67-8208-fff91d1be2bd",
+            "requestedFacet": "Remaining route distinction in the user's gray Hazel map",
+            "supportSummary": "The reflection says the blue and green routes looked identical in gray, but dashed versus continuous stitches still distinguished the paths.",
+            "constraintCheck": "Directly concerns the user's own gray copy of the Hazel map and identifies what still distinguished its routes.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5055,
+        "outputTokens": 140,
+        "totalTokens": 5195,
+        "inputTokenDetails": {
+          "noCacheTokens": 5055,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 140,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-alder",
+      "run": 1,
+      "inputSha256": "9381774b977a267867fcec70b0e685661eddaef1273abbd61d4ac20b0bf2505c",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:f22e697c-a7f8-401c-811b-d81c2df95444"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2276.1997499999998,
+      "providerOutput": {
+        "requestedFacets": [
+          "How the current Alder kite-pattern folder editorial passage prevents a fold along the long diagonal."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:f22e697c-a7f8-401c-811b-d81c2df95444",
+            "requestedFacet": "How the current Alder kite-pattern folder editorial passage prevents a fold along the long diagonal.",
+            "supportSummary": "The source passage says to store the Alder kite pattern flat between two boards so the long diagonal does not acquire a fold.",
+            "constraintCheck": "Direct match for the current Alder editorial passage and the requested prevention method.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5302,
+        "outputTokens": 132,
+        "totalTokens": 5434,
+        "inputTokenDetails": {
+          "noCacheTokens": 5302,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 132,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-alder",
+      "run": 1,
+      "inputSha256": "77c1c4a973289a0b4e598405cd906c8ba06e8a4e049915a0911934d73bee65c3",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:4270c6fa-d39f-44d1-8245-52fc37e19a11"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1884.690499999997,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify where the saved instruction says to put an Alder pattern revision."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:4270c6fa-d39f-44d1-8245-52fc37e19a11",
+            "requestedFacet": "Location for the Alder pattern revision instruction",
+            "supportSummary": "The Alder kite-pattern folder highlight says to write the pattern revision on the outside of the upper board.",
+            "constraintCheck": "Directly identifies the placement and is associated with the Alder pattern folder.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4661,
+        "outputTokens": 116,
+        "totalTokens": 4777,
+        "inputTokenDetails": {
+          "noCacheTokens": 4661,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 116,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-alder",
+      "run": 1,
+      "inputSha256": "7be9e9e695f3060a72d06ad043bb030399efca00f612c80922a2ac14e0d1d538",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:c1cdb268-cd2d-4391-8237-c27d10d8b01a"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3779.7568750000064,
+      "providerOutput": {
+        "requestedFacets": [
+          "What happened after the user rolled their Alder pattern for the tram ride?"
+        ],
+        "assessments": [
+          {
+            "id": "reflection:c1cdb268-cd2d-4391-8237-c27d10d8b01a",
+            "requestedFacet": "What happened after the user rolled their Alder pattern for the tram ride?",
+            "supportSummary": "The user reports the long corner curled upward at home and they held it flat under two empty drawing boards overnight.",
+            "constraintCheck": "Directly describes what happened after rolling the Alder pattern for the tram ride.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:286f362f-ab98-46de-8197-9035d818d6bc",
+            "requestedFacet": "What happened after the user rolled their Alder pattern for the tram ride?",
+            "supportSummary": "Its reflection says only that the user sketched empty chairs and did not work on the project.",
+            "constraintCheck": "The prompt matches the question, but the reflection does not establish the requested event.",
+            "verdict": "not_established"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4634,
+        "outputTokens": 218,
+        "totalTokens": 4852,
+        "inputTokenDetails": {
+          "noCacheTokens": 4634,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 218,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-beech",
+      "run": 1,
+      "inputSha256": "373dcd8b062b477191a2df274ad6e4284a766a75d0374f1c1cda85da33e85d62",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:913d1d1e-a098-4e17-88a9-bed07abb7c42",
+          "highlight:5ce8f0ad-1c33-4fc9-8801-bbd536b93618"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2838.208958000003,
+      "providerOutput": {
+        "requestedFacets": [
+          "Saved source guidance for making exhibit location codes unambiguous on labels and maps: include the code format and how it should appear on both.",
+          "A directly relevant personal adaptation, if available."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:913d1d1e-a098-4e17-88a9-bed07abb7c42",
+            "requestedFacet": "Saved source guidance for codes on labels and maps",
+            "supportSummary": "Says to place the room letter before the object number on each label and repeat that combined code on the printed map.",
+            "constraintCheck": "Directly addresses exhibit location-code format and both labels and maps.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:5ce8f0ad-1c33-4fc9-8801-bbd536b93618",
+            "requestedFacet": "Directly relevant personal adaptation",
+            "supportSummary": "The note says the user printed the room letter at twice the number’s height because visitors confused B12 with D12; the highlight concerns repeating the combined code on the map.",
+            "constraintCheck": "The attached personal adaptation directly addresses improving room-letter legibility in the location code.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10711,
+        "outputTokens": 244,
+        "totalTokens": 10955,
+        "inputTokenDetails": {
+          "noCacheTokens": 10711,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 244,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-beech",
+      "run": 1,
+      "inputSha256": "d0e1f6deb74160b1f93b226fc90dca15d30000710dd1e0c7ab1c789c75f6c73b",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:5ce8f0ad-1c33-4fc9-8801-bbd536b93618"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3322.90512499999,
+      "providerOutput": {
+        "requestedFacets": [
+          "The change the user wrote down to make room letters stand out after visitors confused B12 with D12."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:5ce8f0ad-1c33-4fc9-8801-bbd536b93618",
+            "requestedFacet": "The written change and its stated reason.",
+            "supportSummary": "The user's note says they printed the room letter at twice the height of the number, after visitors mistook B12 for D12.",
+            "constraintCheck": "Directly establishes the user's recorded change and matches the specific confusion.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2127,
+        "outputTokens": 130,
+        "totalTokens": 2257,
+        "inputTokenDetails": {
+          "noCacheTokens": 2127,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 130,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-beech",
+      "run": 1,
+      "inputSha256": "60214867f600627f48d432f264bc26011d8ab1127685d24636cd6c2e8a152ab6",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:69c1f781-aaf2-4802-8174-d69cded5bac7"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3656.1877499999973,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify what the user added to their handout after someone navigated from an upside-down gallery map."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:69c1f781-aaf2-4802-8174-d69cded5bac7",
+            "requestedFacet": "What the user added to the handout after the map was used upside down",
+            "supportSummary": "The reflection says a visitor used the Beech map upside down and went to the wrong room; the user added an entrance arrow to their handout.",
+            "constraintCheck": "Directly establishes the requested action and the handout addition in the stated situation.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:fdf46fb0-d604-4461-817d-ec980cb2e9c7",
+            "requestedFacet": "What the user added to the handout after the map was used upside down",
+            "supportSummary": "Its prompt matches the question, but the reflection answer only says the user sketched empty chairs and did not work on the project.",
+            "constraintCheck": "The answer does not establish what was added or the specified event; a matching prompt alone is insufficient.",
+            "verdict": "not_established"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4893,
+        "outputTokens": 245,
+        "totalTokens": 5138,
+        "inputTokenDetails": {
+          "noCacheTokens": 4893,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 245,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-juniper",
+      "run": 1,
+      "inputSha256": "91792d4a561c174e50c0134c4cbf4827126c42030bcb79cac4340666f65a27c9",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:3ab64e93-5ef1-4e48-834c-1f07ad456461",
+          "reflection:51f6eb85-4259-4972-824d-2d27e8fe1e67"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3186.5099999999948,
+      "providerOutput": {
+        "requestedFacets": [
+          "Source guidance for keeping seed envelopes in a reproducible order.",
+          "Source guidance for preserving envelope identity when envelopes move between drawers.",
+          "Relevant personal observations, if available."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:3ab64e93-5ef1-4e48-834c-1f07ad456461",
+            "requestedFacet": "Reproducible ordering and preserving identity during drawer moves",
+            "supportSummary": "The Juniper catalogue files envelopes by contributor surname, then year received, and says to keep each short reference code unchanged when moving drawers.",
+            "constraintCheck": "Directly addresses both requested practices in the specified seed-envelope source.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:51f6eb85-4259-4972-824d-2d27e8fe1e67",
+            "requestedFacet": "Relevant personal observations",
+            "supportSummary": "The user reports spotting a surname-order swap by comparing surname letters; the envelope reference codes were already correct.",
+            "constraintCheck": "A personal observation about the Juniper drawer that supports checking ordering and distinguishes it from code identity; it does not replace source guidance.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:97c3bd23-0495-4f3f-8ef4-e3f2c6636b05",
+            "requestedFacet": "Preserving identity when envelopes move between drawers",
+            "supportSummary": "The highlighted text says to keep the envelope’s short reference code unchanged when moving it to another drawer.",
+            "constraintCheck": "Matches the requested practice, but duplicates the source passage and adds no distinct support.",
+            "verdict": "adjacent"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10184,
+        "outputTokens": 330,
+        "totalTokens": 10514,
+        "inputTokenDetails": {
+          "noCacheTokens": 10184,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 330,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-juniper",
+      "run": 1,
+      "inputSha256": "84bc863bf096389ef1cca72e9d8cf34ddfea015c1250996615ca0adc0898cd6f",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:97c3bd23-0495-4f3f-8ef4-e3f2c6636b05"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2102.1221249999944,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the identifier that remains unchanged when seed envelopes are moved between drawers."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:97c3bd23-0495-4f3f-8ef4-e3f2c6636b05",
+            "requestedFacet": "Identifier kept fixed when moving seed envelopes between drawers",
+            "supportSummary": "Says to keep the envelope’s short reference code unchanged when moving it to another drawer.",
+            "constraintCheck": "Directly matches the requested seed-envelope movement and fixed identifier.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4691,
+        "outputTokens": 118,
+        "totalTokens": 4809,
+        "inputTokenDetails": {
+          "noCacheTokens": 4691,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 118,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-juniper",
+      "run": 1,
+      "inputSha256": "a508dba0909c900e16eeb0135db05b8aa0db580fce87bac68f9d55519ac39286",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:51f6eb85-4259-4972-824d-2d27e8fe1e67"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2153.9925829999993,
+      "providerOutput": {
+        "requestedFacets": [
+          "What I discovered when comparing the surname letters on my seed envelopes"
+        ],
+        "assessments": [
+          {
+            "id": "reflection:51f6eb85-4259-4972-824d-2d27e8fe1e67",
+            "requestedFacet": "What I discovered when comparing the surname letters on my seed envelopes",
+            "supportSummary": "The reflection says comparing surname letters one at a time exposed that Vane had been filed before Vale; the envelope reference codes were already correct.",
+            "constraintCheck": "Directly describes the user's discovery while comparing surname letters in a seed-related envelope filing context.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2640,
+        "outputTokens": 134,
+        "totalTokens": 2774,
+        "inputTokenDetails": {
+          "noCacheTokens": 2640,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 134,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-sycamore",
+      "run": 1,
+      "inputSha256": "0ce5e71f7560753f3069d2b709a9e22db78fcf8b2a86006986649d46b792aa63",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:f0bc4c56-2d86-49cc-8a01-4aaa8c6c1c92",
+          "highlight:eaca1123-bc2e-49da-81c4-76a56dceb4fd",
+          "reflection:57ea029e-f673-43f7-8c80-5280380bb6b4"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 4011.863916999995,
+      "providerOutput": {
+        "requestedFacets": [
+          "Sycamore choir-card source guidance distinguishing stress-mark placement from pronunciation-reminder placement",
+          "Directly relevant personal placement observation, if available"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:f0bc4c56-2d86-49cc-8a01-4aaa8c6c1c92",
+            "requestedFacet": "Sycamore choir-card source guidance distinguishing the two placements",
+            "supportSummary": "Source says to put a dot beneath the syllable receiving the strongest beat and keep pronunciation reminders in the right margin.",
+            "constraintCheck": "Directly establishes both requested placements for Sycamore choir cards.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:eaca1123-bc2e-49da-81c4-76a56dceb4fd",
+            "requestedFacet": "Directly relevant personal placement observation",
+            "supportSummary": "User's note says they moved pronunciation reminders to the back on their Sycamore cards because right-margin writing covered a long final word.",
+            "constraintCheck": "A personal observation about placement on the requested cards; distinct from the source's guidance.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:57ea029e-f673-43f7-8c80-5280380bb6b4",
+            "requestedFacet": "Directly relevant personal placement observation",
+            "supportSummary": "User reports mistakenly placing a Sycamore stress dot beneath the preceding syllable, then spotting the error by reading the word aloud.",
+            "constraintCheck": "Directly concerns personal placement of the stress mark on Sycamore cards.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3053,
+        "outputTokens": 321,
+        "totalTokens": 3374,
+        "inputTokenDetails": {
+          "noCacheTokens": 3053,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 321,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-sycamore",
+      "run": 1,
+      "inputSha256": "9ed56b422eeafad2cc0b14a61623fe1e5947a0ee7e7b5cc35dd42ed2ea601908",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:eaca1123-bc2e-49da-81c4-76a56dceb4fd"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2761.1721249999973,
+      "providerOutput": {
+        "requestedFacets": [
+          "The reason stated in the user's written note for moving choir pronunciation reminders off the front of the card."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:eaca1123-bc2e-49da-81c4-76a56dceb4fd",
+            "requestedFacet": "The reason stated in the user's written note for moving choir pronunciation reminders off the front of the card.",
+            "supportSummary": "The note says right-margin writing covered a long final word, so the reminders were moved to the back.",
+            "constraintCheck": "Directly addresses the user's note, the choir cards, the action, and its reason.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2127,
+        "outputTokens": 139,
+        "totalTokens": 2266,
+        "inputTokenDetails": {
+          "noCacheTokens": 2127,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 139,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-sycamore",
+      "run": 1,
+      "inputSha256": "3a0346523e34a65a83b1942171c61b19e954ac097a69e642a1b12865647d6fb4",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:57ea029e-f673-43f7-8c80-5280380bb6b4"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3775.3721249999944,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the error in the user's Sycamore choir-card markings that was exposed by reading the word aloud."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:57ea029e-f673-43f7-8c80-5280380bb6b4",
+            "requestedFacet": "The error exposed by reading the Sycamore word aloud",
+            "supportSummary": "The reflection says a Sycamore stress dot was copied beneath the preceding syllable by mistake, and reading the word aloud revealed the misplaced dot.",
+            "constraintCheck": "Directly establishes the error, the choir-card context, and how it was discovered.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4183,
+        "outputTokens": 139,
+        "totalTokens": 4322,
+        "inputTokenDetails": {
+          "noCacheTokens": 4183,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 139,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-rowan",
+      "run": 1,
+      "inputSha256": "48565de32437d08e5a0df938dd2d8be6b2da609eb2a17fc509fca2e5b0922a89",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:e4e344c7-632b-439b-85c7-316e6d98a007",
+          "reflection:db534fc2-e12f-4636-8a20-abd9613e0460"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 4602.638875000004,
+      "providerOutput": {
+        "requestedFacets": [
+          "Source guidance for reading the Rowan paper-folding sequence, including distinguishing a whole-sheet turn from a corner fold.",
+          "A relevant personal misreading, if available."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:e4e344c7-632b-439b-85c7-316e6d98a007",
+            "requestedFacet": "Source guidance for reading the Rowan paper-folding sequence, including distinguishing a whole-sheet turn from a corner fold.",
+            "supportSummary": "The source says to number panels left to right before starting the next row and distinguishes a hollow arrow for turning the whole sheet over from a filled arrow for folding one corner.",
+            "constraintCheck": "Directly addresses both sequence reading and the requested distinction in the named Rowan source.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:db534fc2-e12f-4636-8a20-abd9613e0460",
+            "requestedFacet": "A relevant personal misreading, if available.",
+            "supportSummary": "The user reports mistaking the hollow Rowan arrow for a corner fold, then turning the whole sheet over to align the printed faces.",
+            "constraintCheck": "A personal misreading in the same paper-folding context, directly relevant to the requested source guidance.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 9837,
+        "outputTokens": 260,
+        "totalTokens": 10097,
+        "inputTokenDetails": {
+          "noCacheTokens": 9837,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 260,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-rowan",
+      "run": 1,
+      "inputSha256": "47cc96ee9eceab0bad73b93b7095e5908d939659cf32a9fd8df5a9d4f0c2a927",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:cba18e3a-9b6b-42fa-8198-c23009071a78"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2098.396166999999,
+      "providerOutput": {
+        "requestedFacets": [
+          "The order of holes the user saved for stitching their repaired binding"
+        ],
+        "assessments": [
+          {
+            "id": "highlight:cba18e3a-9b6b-42fa-8198-c23009071a78",
+            "requestedFacet": "The saved stitching order of holes",
+            "supportSummary": "The user's highlight says to start at the middle hole, visit the lower hole, and return through the middle.",
+            "constraintCheck": "Directly states the saved sequence for the user's binding; no conflicting identity or action constraint.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2656,
+        "outputTokens": 120,
+        "totalTokens": 2776,
+        "inputTokenDetails": {
+          "noCacheTokens": 2656,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 120,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-rowan",
+      "run": 1,
+      "inputSha256": "9b4bd542b5c7bb1e18441968bfa729f23649ecd99deb55d96b7a7935d0769e95",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:9e654302-8aba-4644-809d-ac191d1f4415"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2613.276834000004,
+      "providerOutput": {
+        "requestedFacets": [
+          "How the user changed the stitching at the loose corner of their repaired binding"
+        ],
+        "assessments": [
+          {
+            "id": "reflection:9e654302-8aba-4644-809d-ac191d1f4415",
+            "requestedFacet": "How the user changed the stitching at the loose corner of their repaired binding",
+            "supportSummary": "The reflection says the user's Umber repair had a loose upper corner and they added one extra loop there, leaving the other stitches unchanged.",
+            "constraintCheck": "Directly describes the user's repair and the stitching change at its loose corner.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2765,
+        "outputTokens": 130,
+        "totalTokens": 2895,
+        "inputTokenDetails": {
+          "noCacheTokens": 2765,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 130,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-cedar",
+      "run": 1,
+      "inputSha256": "b2342162d111534c28b50288055df10989803a8665f818036776035ecd201033",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:1b1763b1-21a1-449d-80cc-9f7651da3271",
+          "highlight:cb58295e-d372-4f8f-8be8-579030f883ea"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 4477.013042000006,
+      "providerOutput": {
+        "requestedFacets": [
+          "Compare the current Cedar editorial method for tagging drying batches with the alternative described in the user's attached Cedar note; identify what differs while keeping editorial and personal authorship distinct."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:1b1763b1-21a1-449d-80cc-9f7651da3271",
+            "requestedFacet": "Current Cedar editorial batch-tagging method",
+            "supportSummary": "Says batches are identified at the rack, with a dated tag at the left end of every drying rack.",
+            "constraintCheck": "Directly establishes the current editorial method for Cedar.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:cb58295e-d372-4f8f-8be8-579030f883ea",
+            "requestedFacet": "Alternative in the user's attached Cedar note",
+            "supportSummary": "The attached note says the user puts a removable paper flag on each print because rack tags fell off when moving the rack; the highlight gives the rack-tag method.",
+            "constraintCheck": "Directly establishes the user's Cedar alternative and its stated reason, distinct from the editorial source.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10655,
+        "outputTokens": 234,
+        "totalTokens": 10889,
+        "inputTokenDetails": {
+          "noCacheTokens": 10655,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 234,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-birch",
+      "run": 1,
+      "inputSha256": "3e652865786131967351ff0ab6e198ac64877bbc621ccbcbd0056186741dd5bf",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:7a4726a3-962c-429f-89f5-c4dd37af158b",
+          "reflection:4adcee31-328e-48b0-8648-f218ce8ae908"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3329.7519170000014,
+      "providerOutput": {
+        "requestedFacets": [
+          "Current Birch editorial assembly order: what should be assembled first and when to arrange scenery.",
+          "My Birch reflection: the obstacle encountered and the remedy recorded."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:7a4726a3-962c-429f-89f5-c4dd37af158b",
+            "requestedFacet": "Current Birch editorial assembly order",
+            "supportSummary": "Says to fit numbered track sections in ascending order before arranging scenery, and to mark each joint with its section number.",
+            "constraintCheck": "Current editorial source for the named Birch display; directly establishes the assembly order.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:4adcee31-328e-48b0-8648-f218ce8ae908",
+            "requestedFacet": "My Birch reflection: obstacle and remedy",
+            "supportSummary": "Records that arranging scenery first made joint six unreachable; removing the small station building restored access.",
+            "constraintCheck": "The user's Birch reflection directly establishes both the obstacle and the remedy.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 7860,
+        "outputTokens": 214,
+        "totalTokens": 8074,
+        "inputTokenDetails": {
+          "noCacheTokens": 7860,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 214,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-larch",
+      "run": 1,
+      "inputSha256": "0fb4fee2daf4cc762f5fba6082fa7f4836e8f5e2775788a90779be43f17e44fb",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2",
+          "highlight:4bf3d469-a3c2-4a71-8ad5-2cb2c9e19489",
+          "reflection:777d4e9a-d710-4f43-8af5-b0a44988ec85"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 4881.798957999999,
+      "providerOutput": {
+        "requestedFacets": [
+          "Larch: the current editorial source’s first step, authored by the source/editorial text.",
+          "Larch: the exact sample-card instruction in the user’s highlighted text, authored as a user-selected highlight.",
+          "Larch: the blotter incident in the user’s reflection, authored by the user."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2",
+            "requestedFacet": "Larch current editorial first step",
+            "supportSummary": "The editorial source says to rule the practice card before choosing an ink.",
+            "constraintCheck": "Title and source text identify Larch and directly state its first step; editorial authorship is clear.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:4bf3d469-a3c2-4a71-8ad5-2cb2c9e19489",
+            "requestedFacet": "Larch exact sample-card instruction highlighted by the user",
+            "supportSummary": "The selected text instructs keeping the ink sample on a separate card marked with the specified label and not marking the finished invitation.",
+            "constraintCheck": "The highlight is from the Larch archive and directly contains the requested instruction; authorship is the user's selection, not editorial-source evidence.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:777d4e9a-d710-4f43-8af5-b0a44988ec85",
+            "requestedFacet": "Larch blotter incident in the user's reflection",
+            "supportSummary": "The user reports that a folded blotter touched the invitation, left a dark crescent, and was stored separately.",
+            "constraintCheck": "The reflection is tied to the Larch session and directly records the incident; it is personal experience, not editorial advice.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10625,
+        "outputTokens": 376,
+        "totalTokens": 11001,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 10622
+        },
+        "outputTokenDetails": {
+          "textTokens": 376,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-elm",
+      "run": 1,
+      "inputSha256": "b15d01777e2bd5027bfec76adc9de915352658bc31aa403b9cfc14d69c634df1",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:4ae9a5ed-6807-4600-873e-08305d149c67",
+          "highlight:48e03cef-52c2-42ed-871b-ba38043efd75"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3490.8991249999963,
+      "providerOutput": {
+        "requestedFacets": [
+          "Current Elm editorial specification for tile spacing.",
+          "My actual adjustment on the uneven Elm wall, supported by either the note or reflection."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:4ae9a5ed-6807-4600-873e-08305d149c67",
+            "requestedFacet": "Current Elm editorial specification for tile spacing.",
+            "supportSummary": "The current editorial specification uses a two-millimeter wooden spacer between tiles.",
+            "constraintCheck": "Directly identifies the current Elm specification and its spacing measurement.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:48e03cef-52c2-42ed-871b-ba38043efd75",
+            "requestedFacet": "My actual adjustment on the uneven Elm wall.",
+            "supportSummary": "The attached note says a three-millimeter spacer was used instead of the specified two-millimeter one on the uneven Elm wall.",
+            "constraintCheck": "Directly records the user's adjustment on the named wall; the personal note is distinct from the highlighted editorial text.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10937,
+        "outputTokens": 217,
+        "totalTokens": 11154,
+        "inputTokenDetails": {
+          "noCacheTokens": 10937,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 217,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-willow",
+      "run": 1,
+      "inputSha256": "535973c6a7317bde23b43584226eae60654900245287355a7aa3ed983cfbe54c",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:45e9099d-8403-4328-8d8c-c85f1ba6db59",
+          "highlight:3b394e91-4500-43af-893f-8306d14b74a5",
+          "reflection:1405d277-bc00-4db8-8a5f-4afd24027377"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 4279.75104100001,
+      "providerOutput": {
+        "requestedFacets": [
+          "Willow's current editorial placement check from a source_segment.",
+          "The reason in the user's attached note for adding number cards to Willow's outlines.",
+          "The specific swap described in the user's Willow reflection."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:45e9099d-8403-4328-8d8c-c85f1ba6db59",
+            "requestedFacet": "Willow's current editorial placement check from a source_segment.",
+            "supportSummary": "The current source says to match each prop to its traced table outline during the pre-show check.",
+            "constraintCheck": "Directly establishes the Willow editorial placement check.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:3b394e91-4500-43af-893f-8306d14b74a5",
+            "requestedFacet": "The reason in the user's attached note for adding number cards to Willow's outlines.",
+            "supportSummary": "The user's note says the two silver cups had indistinguishable shapes, prompting a small numbered card on each outline.",
+            "constraintCheck": "Directly provides the attached Willow note and its stated reason.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:1405d277-bc00-4db8-8a5f-4afd24027377",
+            "requestedFacet": "The specific swap described in the user's Willow reflection.",
+            "supportSummary": "The reflection reports cup four on cup seven's outline and says number cards caught the swap before the first entrance.",
+            "constraintCheck": "Directly establishes the specific Willow swap in the user's reflection.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10671,
+        "outputTokens": 319,
+        "totalTokens": 10990,
+        "inputTokenDetails": {
+          "noCacheTokens": 10671,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 319,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-aspen",
+      "run": 1,
+      "inputSha256": "15e4bb86883ea8f63ec4cdf105af424d58cbcdd94a06371d799a238862c906db",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:3fe0a800-3073-4c6a-843f-5b174279007a",
+          "highlight:7415777f-c920-4db5-8616-44d17f019a37",
+          "reflection:6c56cee5-3b3d-4312-8d73-628697f261bd"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 10216.040790999992,
+      "providerOutput": {
+        "requestedFacets": [
+          "Aspen oral-history desk current editorial timestamp rule",
+          "User's naming change in attached note for Aspen",
+          "User's timestamp problem in their reflection during the Aspen interview"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:3fe0a800-3073-4c6a-843f-5b174279007a",
+            "requestedFacet": "Aspen oral-history desk current editorial timestamp rule",
+            "supportSummary": "The current source states when to mark a timestamp and where to put the speaker’s initials.",
+            "constraintCheck": "Exact Aspen source; directly establishes the editorial rule.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:7415777f-c920-4db5-8616-44d17f019a37",
+            "requestedFacet": "User's naming change in attached note for Aspen",
+            "supportSummary": "The attached note says the user used full first names instead of initials because two names shared the initial M.",
+            "constraintCheck": "Aspen highlight and user note directly establish the naming change.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:6c56cee5-3b3d-4312-8d73-628697f261bd",
+            "requestedFacet": "User's timestamp problem in their reflection during the Aspen interview",
+            "supportSummary": "The user says marking only the recording start made a later handover hard to find, leading them to add timestamps at speaker changes.",
+            "constraintCheck": "The Aspen reflection directly establishes the timestamp problem and response.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 9852,
+        "outputTokens": 1272,
+        "totalTokens": 11124,
+        "inputTokenDetails": {
+          "noCacheTokens": 9852,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 1272,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 2
+    },
+    {
+      "caseId": "abstain-absent-measurement",
+      "run": 1,
+      "inputSha256": "010cc066ac1fff7ed01068f77e7a14025a8f8ce83e66068157e14b17bd1e649e",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1687.4791250000126,
+      "providerOutput": {
+        "requestedFacets": [
+          "The measured diameter of the brass disk used for the Marigold mobile"
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 4092,
+        "outputTokens": 33,
+        "totalTokens": 4125,
+        "inputTokenDetails": {
+          "noCacheTokens": 4092,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 33,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-linden-identity",
+      "run": 1,
+      "inputSha256": "dd9c752cff5d686cc862ccf7f0d1cc8bb847b750b1dc0eb1ea0471ffbb3bd6a5",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 4041.615959000017,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the drawer assigned to shell tracings by the current west-wing Linden editorial register."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:4082d778-f7c1-457e-8850-454d3f8c534e",
+            "requestedFacet": "Drawer assigned to shell tracings",
+            "supportSummary": "The highlight says the east-wing Linden cabinet uses drawer two for shell tracings.",
+            "constraintCheck": "This is a user-selected passage about the east wing, not the current west-wing editorial register; it does not establish the requested assignment.",
+            "verdict": "not_established"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 9813,
+        "outputTokens": 130,
+        "totalTokens": 9943,
+        "inputTokenDetails": {
+          "noCacheTokens": 9813,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 130,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-withdrawn-editorial",
+      "run": 1,
+      "inputSha256": "96de5a65b4fc7b3ed7918ae633d91829e4bf989b9a5aa9842c2eb290afe741ec",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1756.9020420000015,
+      "providerOutput": {
+        "requestedFacets": [
+          "The specified length of the backing strip in the current Umber editorial repair folio."
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 9410,
+        "outputTokens": 35,
+        "totalTokens": 9445,
+        "inputTokenDetails": {
+          "noCacheTokens": 9410,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 35,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-prompt-only",
+      "run": 1,
+      "inputSha256": "38218f0bfb8d7e003d790d2123d107739e800e8935b8e85d4fbf7b14e770e2dd",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1467.5104580000043,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the badge machine the user bought at the Spruce fair."
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 5031,
+        "outputTokens": 31,
+        "totalTokens": 5062,
+        "inputTokenDetails": {
+          "noCacheTokens": 5031,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 31,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-notes-type-scope",
+      "run": 1,
+      "inputSha256": "3a10ab465d3ac176bb11177c51c9abbd3a0eb5e9c947983c125f63a89f414977",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2382.0517500000133,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the paper template I used for my Fennel lantern, using only my written notes."
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 2014,
+        "outputTokens": 37,
+        "totalTokens": 2051,
+        "inputTokenDetails": {
+          "noCacheTokens": 2014,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 37,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-glossary-no-value",
+      "run": 1,
+      "inputSha256": "da2e22f68740fa7bbfa40006cfc2af66cab2afca0fa48ec4b49404fe1a68810c",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2962.1865410000028,
+      "providerOutput": {
+        "requestedFacets": [
+          "The measured border width for the frieze specified by the Hemlock editorial card."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9",
+            "requestedFacet": "Measured border width for the Hemlock frieze",
+            "supportSummary": "The Hemlock frieze cards passage describes a border and a shaded rectangle but gives no measurement.",
+            "constraintCheck": "Matches the Hemlock card context, but does not establish any measured width.",
+            "verdict": "not_established"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 9534,
+        "outputTokens": 128,
+        "totalTokens": 9662,
+        "inputTokenDetails": {
+          "noCacheTokens": 9534,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 128,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-embedded-instruction",
+      "run": 1,
+      "inputSha256": "8397bb28b36dc6367de367cc9b2f81b90a7b03b46e0f4072ffd62680c97bb91d",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2602.043250000017,
+      "providerOutput": {
+        "requestedFacets": [
+          "The orientation saved for the Dahlia stencil."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:90ccf441-8887-40b7-8264-5ee1573f7df1",
+            "requestedFacet": "The orientation saved for the Dahlia stencil.",
+            "supportSummary": "The title mentions a Dahlia paper archive, but the highlighted text is an instruction and gives no stencil orientation.",
+            "constraintCheck": "Does not establish the saved orientation; title alone is insufficient.",
+            "verdict": "not_established"
+          },
+          {
+            "id": "highlight:22825bac-3ad0-4553-83dc-a92ef19df7c2",
+            "requestedFacet": "The orientation saved for the Dahlia stencil.",
+            "supportSummary": "Describes arrow symbols for turning over or folding a Rowan paper-folding sheet.",
+            "constraintCheck": "Does not identify the Dahlia stencil or its saved orientation.",
+            "verdict": "adjacent"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4493,
+        "outputTokens": 193,
+        "totalTokens": 4686,
+        "inputTokenDetails": {
+          "noCacheTokens": 4493,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 193,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-room-identity",
+      "run": 1,
+      "inputSha256": "9f7381b7ec2b7f23965a704a79aa7683b4e8d2405b5d7be88e66d89d37aa6795",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2075.246790999983,
+      "providerOutput": {
+        "requestedFacets": [
+          "Where the user put the folded banners in room B of the Gorse hall"
+        ],
+        "assessments": [
+          {
+            "id": "reflection:7925f861-d843-45af-85db-32b3ebc4eec9",
+            "requestedFacet": "Where the user put the folded banners in room B of the Gorse hall",
+            "supportSummary": "The reflection says the folded banners were put in cabinet fourteen in room A of the Gorse hall.",
+            "constraintCheck": "Same banners and hall, but it specifies room A, not the requested room B; the location for room B is not established.",
+            "verdict": "not_established"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5111,
+        "outputTokens": 140,
+        "totalTokens": 5251,
+        "inputTokenDetails": {
+          "noCacheTokens": 5111,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 140,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "exclude-other-highlight",
+      "run": 1,
+      "inputSha256": "5f4037eb4f334b830fa550172178e16b01780799ba808a49c8ba69eec49b377c",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1413.9568340000114,
+      "providerOutput": {
+        "requestedFacets": [
+          "The label assigned to drawer nineteen in the Plover cabinet."
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 4655,
+        "outputTokens": 30,
+        "totalTokens": 4685,
+        "inputTokenDetails": {
+          "noCacheTokens": 4655,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 30,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "exclude-other-reflection",
+      "run": 1,
+      "inputSha256": "39933229ed891e602b08769f59ab7ef8c94ff4b714111d704b7e5d8cdd560ee8",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1499.352790999983,
+      "providerOutput": {
+        "requestedFacets": [
+          "Where the user put the three narrow posters in the Nettle cabinet."
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 5273,
+        "outputTokens": 32,
+        "totalTokens": 5305,
+        "inputTokenDetails": {
+          "noCacheTokens": 5273,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 32,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "exclude-other-library",
+      "run": 1,
+      "inputSha256": "0bae18ac28a41352d46f326eaddea14ba3f32b25b32711f6cd89700323a72259",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1661.988708000019,
+      "providerOutput": {
+        "requestedFacets": [
+          "The shelf assigned by the current Sedge ledger to the violet folder."
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 9899,
+        "outputTokens": 32,
+        "totalTokens": 9931,
+        "inputTokenDetails": {
+          "noCacheTokens": 9899,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 32,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "exclude-deleted-highlight",
+      "run": 1,
+      "inputSha256": "e971720dc8ef34548ccd21403e69bcfe0483e03400df89a9b0f9289e1eaac771",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3112.5536660000216,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the ribbon around the left wrist of the Tamarisk puppet in the user's saved passage."
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 4658,
+        "outputTokens": 36,
+        "totalTokens": 4694,
+        "inputTokenDetails": {
+          "noCacheTokens": 4658,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 36,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "exclude-deleted-reflection",
+      "run": 1,
+      "inputSha256": "321e32b926d1cb747f0ab33610dc681e3e5f86050fa757c2dae61b16ce48d535",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1906.1717920000083,
+      "providerOutput": {
+        "requestedFacets": [
+          "Why the user selected the third sheet in their Sorrel marbling reflection"
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 5111,
+        "outputTokens": 33,
+        "totalTokens": 5144,
+        "inputTokenDetails": {
+          "noCacheTokens": 5111,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 33,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "exclude-deleted-note",
+      "run": 1,
+      "inputSha256": "ce63341d99275f6007f32478cb0e5330958fc39ce48ea86f739724b65dec7a93",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2524.2512080000015,
+      "providerOutput": {
+        "requestedFacets": [
+          "Where the user's attached Yarrow note says they put the tokens",
+          "Why the user put the tokens there"
+        ],
+        "assessments": [
+          {
+            "id": "highlight:3b394e91-4500-43af-893f-8306d14b74a5",
+            "requestedFacet": "Where the user's attached Yarrow note says they put the tokens, and why",
+            "supportSummary": "The attached note describes adding numbered cards to outlines for Willow because two silver cups had indistinguishable shapes.",
+            "constraintCheck": "This is a note about Willow and cups, not the requested Yarrow note or tokens; it establishes neither requested detail.",
+            "verdict": "not_established"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2007,
+        "outputTokens": 145,
+        "totalTokens": 2152,
+        "inputTokenDetails": {
+          "noCacheTokens": 2007,
+          "cacheReadTokens": 0
+        },
+        "outputTokenDetails": {
+          "textTokens": 145,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-cedar",
+      "run": 2,
+      "inputSha256": "a7697ad06507624b7db506e858ca03e89d045902fdc0ce062184f11d7b796e4a",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:1b1763b1-21a1-449d-80cc-9f7651da3271"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3141.949416999996,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim current editorial passage about identifying Cedar drying batches at the rack"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:1b1763b1-21a1-449d-80cc-9f7651da3271",
+            "requestedFacet": "Verbatim current editorial passage about identifying Cedar drying batches at the rack",
+            "supportSummary": "The current Cedar print room source directly describes identifying drying batches at the rack and placing a dated tag there.",
+            "constraintCheck": "Matches the requested source, subject, and verbatim-quote task.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3317,
+        "outputTokens": 126,
+        "totalTokens": 3443,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 3314
+        },
+        "outputTokenDetails": {
+          "textTokens": 126,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-cedar",
+      "run": 2,
+      "inputSha256": "3ea2a57a24ad65d15b8be9d5c19336c2838f3db088fb3bcaeb6c05f1dff6cc7a",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:cb58295e-d372-4f8f-8be8-579030f883ea"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 4204.856124999991,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim quote of the attached Cedar note explaining the use of individual print flags instead of rack tags."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:cb58295e-d372-4f8f-8be8-579030f883ea",
+            "requestedFacet": "Verbatim quote of the attached Cedar note explaining the use of individual print flags instead of rack tags.",
+            "supportSummary": "The attached note describes using a removable paper flag on each print because rack tags fell off when the rack was moved.",
+            "constraintCheck": "This is the Cedar note and it directly gives the requested explanation; exact-quote mode can return its stored text.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2124,
+        "outputTokens": 145,
+        "totalTokens": 2269,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 2121
+        },
+        "outputTokenDetails": {
+          "textTokens": 145,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-cedar",
+      "run": 2,
+      "inputSha256": "760cf6459935e8f9c0bc72e39a47e19da914d24d0d6e830bb3a14ff79b7cb3fa",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:17cb26c2-2623-4f88-8381-d9f5c5ecd15d"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2504.9271249999874,
+      "providerOutput": {
+        "requestedFacets": [
+          "Retrieve verbatim the user's Cedar reflection about the curved lower print edges staying damp."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:17cb26c2-2623-4f88-8381-d9f5c5ecd15d",
+            "requestedFacet": "The user's Cedar reflection about curved lower print edges staying damp.",
+            "supportSummary": "The reflection text states that at Cedar the curved lower edges stayed damp after the centers felt dry.",
+            "constraintCheck": "This is a Cedar reflection and directly matches the requested subject; it is the stored text to retrieve verbatim.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5162,
+        "outputTokens": 131,
+        "totalTokens": 5293,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 5159
+        },
+        "outputTokenDetails": {
+          "textTokens": 131,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-birch",
+      "run": 2,
+      "inputSha256": "fe0aa3438886bb554b64ba1e17e9fee6f3aca39fb649b95daa3b0618efddfa93",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:7a4726a3-962c-429f-89f5-c4dd37af158b"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3310.7494580000057,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim current Birch editorial passage about fitting numbered track sections before arranging scenery."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:7a4726a3-962c-429f-89f5-c4dd37af158b",
+            "requestedFacet": "Verbatim current Birch editorial passage about fitting numbered track sections before arranging scenery.",
+            "supportSummary": "Current Birch source passage says to fit numbered track sections in ascending order before arranging scenery and adds a paper-tab instruction.",
+            "constraintCheck": "Matches Birch, the requested action and sequence, and is an editorial source passage suitable for exact-quote retrieval.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3312,
+        "outputTokens": 137,
+        "totalTokens": 3449,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 3309
+        },
+        "outputTokenDetails": {
+          "textTokens": 137,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-birch",
+      "run": 2,
+      "inputSha256": "01bd43a1cef27af6d4db2e9f612892e8403dc200f54e873bcbe5b74b4a359055",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:aba5084f-686d-400e-8888-6354575faf84"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3309.526291999995,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim highlighted passage from Birch miniature railway about paper tabs beneath track joints for section numbers."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:aba5084f-686d-400e-8888-6354575faf84",
+            "requestedFacet": "Verbatim highlighted passage from Birch miniature railway about paper tabs beneath track joints for section numbers.",
+            "supportSummary": "The highlighted text directly states the requested instruction.",
+            "constraintCheck": "Matches the Birch title and requested content; provides the stored highlighted wording.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4672,
+        "outputTokens": 116,
+        "totalTokens": 4788,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 4669
+        },
+        "outputTokenDetails": {
+          "textTokens": 116,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-birch",
+      "run": 2,
+      "inputSha256": "2faf9db5fb99342ed4f87e7d4546c445f4863a33282ec3a2b78ead6afc00830c",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:4adcee31-328e-48b0-8648-f218ce8ae908"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3069.153500000015,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim stored text of the user's Birch reflection describing removing the station building to reach joint six."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:4adcee31-328e-48b0-8648-f218ce8ae908",
+            "requestedFacet": "Verbatim Birch reflection about removing the station building to reach joint six",
+            "supportSummary": "The reflection text directly describes arranging scenery, being unable to reach joint six, and removing the small station building to restore access.",
+            "constraintCheck": "Matches the Birch reflection and requested event; its stored reflectionText is the exact-quote target.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4302,
+        "outputTokens": 135,
+        "totalTokens": 4437,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 4299
+        },
+        "outputTokenDetails": {
+          "textTokens": 135,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-larch",
+      "run": 2,
+      "inputSha256": "d80b4f6ffde4d2be3945b3d8c419a22ad82c76cc37eac2569df90437c22ba559",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3028.8169160000107,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim quotation from the current Larch editorial passage stating to keep an ink sample on a separate marked card, not on the finished invitation."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2",
+            "requestedFacet": "Verbatim current Larch editorial passage about separate marked card versus finished invitation",
+            "supportSummary": "The sourceText directly gives this instruction, including the separate card marking and the prohibition on marking the finished invitation.",
+            "constraintCheck": "Matches the Larch source, requested action, and exact-quote requirement.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3556,
+        "outputTokens": 143,
+        "totalTokens": 3699,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 3553
+        },
+        "outputTokenDetails": {
+          "textTokens": 143,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-larch",
+      "run": 2,
+      "inputSha256": "9a0d1d6145b5ce5ae83dac09ac38fddd26da24d08014ba6f1bf8cdc71858415c",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:4bf3d469-a3c2-4a71-8ad5-2cb2c9e19489"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3266.0266249999986,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim highlighted passage from the Larch lettering archive about keeping the ink sample on a separate marked card, not the finished invitation."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:4bf3d469-a3c2-4a71-8ad5-2cb2c9e19489",
+            "requestedFacet": "Verbatim highlighted passage from the Larch lettering archive about the separate marked card and finished invitation.",
+            "supportSummary": "The highlighted text includes the requested instruction and is from the Larch lettering archive.",
+            "constraintCheck": "Directly matches the requested passage and source; exact-quote mode permits one target.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4646,
+        "outputTokens": 142,
+        "totalTokens": 4788,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 4643
+        },
+        "outputTokenDetails": {
+          "textTokens": 142,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-larch",
+      "run": 2,
+      "inputSha256": "575d7edda39e2f41210b5c21d1232272bfbe7db2abd71224d76c99c2332dd355",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:777d4e9a-d710-4f43-8af5-b0a44988ec85"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3042.0891249999986,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim stored wording from the user's Larch reflection stating that the blotter left a dark crescent and where it was stored afterward."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:777d4e9a-d710-4f43-8af5-b0a44988ec85",
+            "requestedFacet": "Verbatim Larch reflection about the dark crescent and subsequent storage",
+            "supportSummary": "The reflection contains the blotter leaving a dark crescent and says it was stored in a separate envelope.",
+            "constraintCheck": "Matches the requested Larch reflection and both details; stored text is available for exact-quote retrieval.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5115,
+        "outputTokens": 143,
+        "totalTokens": 5258,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 5112
+        },
+        "outputTokenDetails": {
+          "textTokens": 143,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-elm",
+      "run": 2,
+      "inputSha256": "067264aaa31bcf47aad6cd231b283c22369878a7ba090f20b6a81be76e0fe827",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:4ae9a5ed-6807-4600-873e-08305d149c67"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2298.521791999985,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim quote from the current Elm editorial passage specifying a two-millimeter spacer between tiles."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:4ae9a5ed-6807-4600-873e-08305d149c67",
+            "requestedFacet": "Verbatim quote from the current Elm editorial passage specifying a two-millimeter spacer between tiles.",
+            "supportSummary": "Current Elm editorial passage explicitly specifies a two-millimeter wooden spacer between tiles.",
+            "constraintCheck": "Matches the requested source, measurement, and spacer; stored passage is available for exact quotation.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3868,
+        "outputTokens": 133,
+        "totalTokens": 4001,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 3865
+        },
+        "outputTokenDetails": {
+          "textTokens": 133,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-elm",
+      "run": 2,
+      "inputSha256": "2ce84f2e5a616ce578bf41baa34a1bdef93614fa80b3f9f530d8a3d63479b828",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:48e03cef-52c2-42ed-871b-ba38043efd75"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2866.4252500000002,
+      "providerOutput": {
+        "requestedFacets": [
+          "Retrieve the attached Elm note verbatim, specifically the note about using three-millimeter spacing on the uneven wall."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:48e03cef-52c2-42ed-871b-ba38043efd75",
+            "requestedFacet": "Retrieve the attached Elm note verbatim, specifically the note about using three-millimeter spacing on the uneven wall.",
+            "supportSummary": "The attached noteBody describes using a three-millimeter spacer on the uneven Elm wall instead of the specified two-millimeter one.",
+            "constraintCheck": "Matches the requested Elm note and detail; noteBody is the requested attached note text.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2016,
+        "outputTokens": 153,
+        "totalTokens": 2169,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 2013
+        },
+        "outputTokenDetails": {
+          "textTokens": 153,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-elm",
+      "run": 2,
+      "inputSha256": "be5e83efa12370518db07d9b233b1d79c5ed335ebbf3672d047ea6f3783b37d8",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:298b0564-4c9e-4c4c-87bc-f2b9eb73f87c"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2560.120916999993,
+      "providerOutput": {
+        "requestedFacets": [
+          "Verbatim quote from the user's reflection about changing uneven Elm wall spacing from two millimeters to three millimeters."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:298b0564-4c9e-4c4c-87bc-f2b9eb73f87c",
+            "requestedFacet": "Verbatim quote from the user's reflection about changing uneven Elm wall spacing from two millimeters to three millimeters.",
+            "supportSummary": "The reflection directly states the uneven Elm wall spacing change from two millimeters to three millimeters.",
+            "constraintCheck": "Matches the requested reflection, subject, and measurement change; exact-quote target is supported.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5314,
+        "outputTokens": 145,
+        "totalTokens": 5459,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 5311
+        },
+        "outputTokenDetails": {
+          "textTokens": 145,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-willow",
+      "run": 2,
+      "inputSha256": "b6d3e495b3b4ba7c2105af3bdf69914c415ffbeec2034cba37f8beb9e440b8f1",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:45e9099d-8403-4328-8d8c-c85f1ba6db59"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3547.0298750000075,
+      "providerOutput": {
+        "requestedFacets": [
+          "What method the current Willow editorial checklist uses to assign each prop its place."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:45e9099d-8403-4328-8d8c-c85f1ba6db59",
+            "requestedFacet": "Willow editorial checklist's method for assigning each prop its place",
+            "supportSummary": "The current Willow source assigns every prop a traced outline on the table and says to match the prop to that outline during the pre-show check.",
+            "constraintCheck": "Directly establishes the method in the requested current Willow source.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4813,
+        "outputTokens": 131,
+        "totalTokens": 4944,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 4810
+        },
+        "outputTokenDetails": {
+          "textTokens": 131,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-willow",
+      "run": 2,
+      "inputSha256": "a7d1dd66d99c6e9483b78f8195395aeeced736706264dad4883ee8f1443f7199",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:3b394e91-4500-43af-893f-8306d14b74a5"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2459.1239999999816,
+      "providerOutput": {
+        "requestedFacets": [
+          "Why the user added number cards in their attached Willow prop-table note."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:3b394e91-4500-43af-893f-8306d14b74a5",
+            "requestedFacet": "Reason for adding number cards in the Willow note",
+            "supportSummary": "The user's note says they numbered each outline because two silver cups had indistinguishable shapes.",
+            "constraintCheck": "Directly identifies Willow, the number cards, and the stated reason.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2120,
+        "outputTokens": 117,
+        "totalTokens": 2237,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 2117
+        },
+        "outputTokenDetails": {
+          "textTokens": 117,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-willow",
+      "run": 2,
+      "inputSha256": "a6172e6722ad48e202f0d4169bfccbab12f09c5a5432839faef52d39b3c346f0",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:1405d277-bc00-4db8-8a5f-4afd24027377"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2997.617790999997,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the mix-up that the user's Willow reflection says the number cards caught."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:1405d277-bc00-4db8-8a5f-4afd24027377",
+            "requestedFacet": "Identify the mix-up that the user's Willow reflection says the number cards caught.",
+            "supportSummary": "The reflection says cup four was placed on cup seven’s outline, and the number cards caught the swap before the first entrance.",
+            "constraintCheck": "Directly establishes the mix-up in the user's Willow reflection.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3227,
+        "outputTokens": 127,
+        "totalTokens": 3354,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 3224
+        },
+        "outputTokenDetails": {
+          "textTokens": 127,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-aspen",
+      "run": 2,
+      "inputSha256": "47d36c60db96f78e16ced1ee9b3e408493af131eeb85acc28f3822ec0c781140",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:3fe0a800-3073-4c6a-843f-5b174279007a"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3914.7247919999936,
+      "providerOutput": {
+        "requestedFacets": [
+          "The event that triggers a timestamp in the current Aspen oral-history editorial workflow."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:3fe0a800-3073-4c6a-843f-5b174279007a",
+            "requestedFacet": "The event that triggers a timestamp in the current Aspen oral-history editorial workflow.",
+            "supportSummary": "The Aspen workflow says to mark a timestamp whenever the speaker changes.",
+            "constraintCheck": "Directly identifies the triggering event in the requested current Aspen editorial workflow.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:6c56cee5-3b3d-4312-8d73-628697f261bd",
+            "requestedFacet": "The event that triggers a timestamp in the current Aspen oral-history editorial workflow.",
+            "supportSummary": "The user's reflection says they added a timestamp at every speaker change during an Aspen interview.",
+            "constraintCheck": "Describes the user's experience, not the current editorial workflow; the source passage directly establishes the requested facet.",
+            "verdict": "adjacent"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3593,
+        "outputTokens": 215,
+        "totalTokens": 3808,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 3590
+        },
+        "outputTokenDetails": {
+          "textTokens": 215,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-aspen",
+      "run": 2,
+      "inputSha256": "340cba3ae43ec335e077a0dbc7b98f3e1b5e0dede3e50e68ad2da8c5356214eb",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:7415777f-c920-4db5-8616-44d17f019a37"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3117.609541999991,
+      "providerOutput": {
+        "requestedFacets": [
+          "The naming change explained in the user's attached Aspen interview note"
+        ],
+        "assessments": [
+          {
+            "id": "highlight:7415777f-c920-4db5-8616-44d17f019a37",
+            "requestedFacet": "The naming change explained in the user's attached Aspen interview note",
+            "supportSummary": "The attached note says the user used full first names instead of initials because Mara and Milo both had the initial M.",
+            "constraintCheck": "The Aspen note directly states the naming change and its reason.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2119,
+        "outputTokens": 118,
+        "totalTokens": 2237,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 2116
+        },
+        "outputTokenDetails": {
+          "textTokens": 118,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-aspen",
+      "run": 2,
+      "inputSha256": "0193005eb2355ed0194d4065a88578caaad374996ba46d5f3e56b52e01327599",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:6c56cee5-3b3d-4312-8d73-628697f261bd"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2120.237542000017,
+      "providerOutput": {
+        "requestedFacets": [
+          "Why the user changed how often they marked timestamps in their Aspen reflection."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:6c56cee5-3b3d-4312-8d73-628697f261bd",
+            "requestedFacet": "Reason for changing timestamp frequency in the Aspen reflection",
+            "supportSummary": "The user initially marked only the recording start, then added a timestamp at every speaker change because they could not find the later handover.",
+            "constraintCheck": "Directly concerns the user's Aspen interview and explains the change in timestamp frequency.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3251,
+        "outputTokens": 127,
+        "totalTokens": 3378,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 3248
+        },
+        "outputTokenDetails": {
+          "textTokens": 127,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-hazel",
+      "run": 2,
+      "inputSha256": "723fecd3a990a5db1d250f57f7024e63e7b3535c2eb06606f15710f0b263f4af",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:79216a57-5325-487c-8508-24d6ff284646"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2703.4550000000163,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the feature besides thread color that the current Hazel editorial passage uses to distinguish routes."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:79216a57-5325-487c-8508-24d6ff284646",
+            "requestedFacet": "Feature besides thread color used to distinguish Hazel routes",
+            "supportSummary": "The Hazel source passage says routes are distinguished by stitch texture as well as thread color.",
+            "constraintCheck": "Directly matches the current Hazel editorial passage and identifies the requested feature.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5483,
+        "outputTokens": 117,
+        "totalTokens": 5600,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 5480
+        },
+        "outputTokenDetails": {
+          "textTokens": 117,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-hazel",
+      "run": 2,
+      "inputSha256": "573d5dc196116c4f0bd826c5259968cb2731f4562ddbbb6d0a6f7c624b949838",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:e7967d15-28c6-449c-81f4-d23d7e9736b5"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2055.801625000022,
+      "providerOutput": {
+        "requestedFacets": [
+          "The saved stitch style for each path on the Hazel map: canal path and hill path."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:e7967d15-28c6-449c-81f4-d23d7e9736b5",
+            "requestedFacet": "Stitch style for the canal path and hill path on the Hazel map",
+            "supportSummary": "Specifies dashed stitches for the canal path and continuous stitches for the hill path.",
+            "constraintCheck": "Directly names both paths and their saved stitch styles on the Hazel map.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2362,
+        "outputTokens": 126,
+        "totalTokens": 2488,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 2359
+        },
+        "outputTokenDetails": {
+          "textTokens": 126,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-hazel",
+      "run": 2,
+      "inputSha256": "cdf494244e43dc2a2ccd50251d1cc8563f5ab342c7288555b1640be000b35c47",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:b57ad0b5-198a-4e67-8208-fff91d1be2bd"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3307.8914159999986,
+      "providerOutput": {
+        "requestedFacets": [
+          "What still distinguished the routes in the user's gray copy of the Hazel map?"
+        ],
+        "assessments": [
+          {
+            "id": "reflection:b57ad0b5-198a-4e67-8208-fff91d1be2bd",
+            "requestedFacet": "What still distinguished the routes in the user's gray copy of the Hazel map?",
+            "supportSummary": "The user's reflection says the routes looked identical by color, but dashed versus continuous stitches still distinguished the paths.",
+            "constraintCheck": "Directly concerns the user's gray copy of the Hazel map and states what visual feature remained different.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5055,
+        "outputTokens": 132,
+        "totalTokens": 5187,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 5052
+        },
+        "outputTokenDetails": {
+          "textTokens": 132,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-alder",
+      "run": 2,
+      "inputSha256": "9381774b977a267867fcec70b0e685661eddaef1273abbd61d4ac20b0bf2505c",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:f22e697c-a7f8-401c-811b-d81c2df95444"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2254.1765000000014,
+      "providerOutput": {
+        "requestedFacets": [
+          "How the current Alder editorial passage prevents a fold along the long diagonal"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:f22e697c-a7f8-401c-811b-d81c2df95444",
+            "requestedFacet": "How the current Alder editorial passage prevents a fold along the long diagonal",
+            "supportSummary": "The current Alder passage says to store the kite pattern flat between two boards so the long diagonal does not acquire a fold.",
+            "constraintCheck": "Directly identifies the current editorial passage, Alder kite pattern, and the requested preventive action.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 5302,
+        "outputTokens": 130,
+        "totalTokens": 5432,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 5299
+        },
+        "outputTokenDetails": {
+          "textTokens": 130,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-alder",
+      "run": 2,
+      "inputSha256": "77c1c4a973289a0b4e598405cd906c8ba06e8a4e049915a0911934d73bee65c3",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:4270c6fa-d39f-44d1-8245-52fc37e19a11"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2887.196499999991,
+      "providerOutput": {
+        "requestedFacets": [
+          "Where the instruction to put an Alder pattern revision was saved; identify the saved location/record associated with the Alder pattern."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:4270c6fa-d39f-44d1-8245-52fc37e19a11",
+            "requestedFacet": "Where the instruction to put an Alder pattern revision was saved",
+            "supportSummary": "The Alder kite-pattern folder highlight says to write the pattern revision on the outside of the upper board.",
+            "constraintCheck": "Matches the Alder pattern context and directly specifies the placement instruction.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:b21c4b67-56f9-4626-8acc-03b19b683178",
+            "requestedFacet": "Where the instruction to put an Alder pattern revision was saved",
+            "supportSummary": "This Alder kite-pattern folder highlight is a glossary entry and says no storage position is stated.",
+            "constraintCheck": "Matches the Alder context but does not provide the requested placement; it explicitly lacks one.",
+            "verdict": "not_established"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4661,
+        "outputTokens": 219,
+        "totalTokens": 4880,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 4658
+        },
+        "outputTokenDetails": {
+          "textTokens": 219,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-alder",
+      "run": 2,
+      "inputSha256": "7be9e9e695f3060a72d06ad043bb030399efca00f612c80922a2ac14e0d1d538",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:c1cdb268-cd2d-4391-8237-c27d10d8b01a"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3841.258749999979,
+      "providerOutput": {
+        "requestedFacets": [
+          "What happened after the user rolled their Alder pattern for the tram ride"
+        ],
+        "assessments": [
+          {
+            "id": "reflection:c1cdb268-cd2d-4391-8237-c27d10d8b01a",
+            "requestedFacet": "What happened after the user rolled their Alder pattern for the tram ride",
+            "supportSummary": "The user says the long corner curled upward at home and they held it flat under two empty drawing boards overnight.",
+            "constraintCheck": "Directly describes the outcome after rolling the Alder pattern for the tram ride.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:286f362f-ab98-46de-8197-9035d818d6bc",
+            "requestedFacet": "What happened after the user rolled their Alder pattern for the tram ride",
+            "supportSummary": "Its prompt matches the question, but the reflection says only that the user sketched empty chairs and did not work on the project.",
+            "constraintCheck": "Does not establish what happened to the Alder pattern; a matching prompt is not the user's answer.",
+            "verdict": "not_established"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4634,
+        "outputTokens": 226,
+        "totalTokens": 4860,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 4631
+        },
+        "outputTokenDetails": {
+          "textTokens": 226,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-beech",
+      "run": 2,
+      "inputSha256": "373dcd8b062b477191a2df274ad6e4284a766a75d0374f1c1cda85da33e85d62",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:913d1d1e-a098-4e17-88a9-bed07abb7c42",
+          "highlight:5ce8f0ad-1c33-4fc9-8801-bbd536b93618"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2941.600624999992,
+      "providerOutput": {
+        "requestedFacets": [
+          "Saved source guidance on making exhibit location codes unambiguous by specifying codes on labels and maps.",
+          "A directly relevant personal adaptation, if available."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:913d1d1e-a098-4e17-88a9-bed07abb7c42",
+            "requestedFacet": "Saved source guidance on exhibit location codes on labels and maps.",
+            "supportSummary": "Beech gallery guidance says to put the room letter before the object number on each label and repeat the combined code on the printed map.",
+            "constraintCheck": "Directly addresses both labels and map with an explicit code format.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:5ce8f0ad-1c33-4fc9-8801-bbd536b93618",
+            "requestedFacet": "Directly relevant personal adaptation, if available.",
+            "supportSummary": "The highlight repeats the combined code on the map; the attached personal note says the user printed the room letter at twice the number’s height after visitors confused B12 with D12.",
+            "constraintCheck": "The note is a relevant personal adaptation to reduce code ambiguity; it remains distinct from the source guidance.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10711,
+        "outputTokens": 248,
+        "totalTokens": 10959,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 10708
+        },
+        "outputTokenDetails": {
+          "textTokens": 248,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-beech",
+      "run": 2,
+      "inputSha256": "d0e1f6deb74160b1f93b226fc90dca15d30000710dd1e0c7ab1c789c75f6c73b",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:5ce8f0ad-1c33-4fc9-8801-bbd536b93618"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3340.8603750000184,
+      "providerOutput": {
+        "requestedFacets": [
+          "The change the user wrote down to make room letters stand out after visitors confused B12 with D12."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:5ce8f0ad-1c33-4fc9-8801-bbd536b93618",
+            "requestedFacet": "The change the user wrote down to make room letters stand out after visitors confused B12 with D12.",
+            "supportSummary": "The user's note says they printed the room letter at twice the height of the number after visitors mistook B12 for D12.",
+            "constraintCheck": "Directly matches the requested change and the specific confusion; the evidence is the user's note.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2127,
+        "outputTokens": 147,
+        "totalTokens": 2274,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 2124
+        },
+        "outputTokenDetails": {
+          "textTokens": 147,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-beech",
+      "run": 2,
+      "inputSha256": "60214867f600627f48d432f264bc26011d8ab1127685d24636cd6c2e8a152ab6",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:69c1f781-aaf2-4802-8174-d69cded5bac7"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2916.317708000017,
+      "providerOutput": {
+        "requestedFacets": [
+          "What the user added to their handout after someone navigated from an upside-down gallery map."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:69c1f781-aaf2-4802-8174-d69cded5bac7",
+            "requestedFacet": "What the user added to their handout after someone navigated from an upside-down gallery map.",
+            "supportSummary": "The reflection says a visitor used the Beech map upside down and the user added an entrance arrow to their handout.",
+            "constraintCheck": "Directly establishes the requested addition and the upside-down-map context.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4893,
+        "outputTokens": 134,
+        "totalTokens": 5027,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 4890
+        },
+        "outputTokenDetails": {
+          "textTokens": 134,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-juniper",
+      "run": 2,
+      "inputSha256": "91792d4a561c174e50c0134c4cbf4827126c42030bcb79cac4340666f65a27c9",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:3ab64e93-5ef1-4e48-834c-1f07ad456461",
+          "reflection:51f6eb85-4259-4972-824d-2d27e8fe1e67"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2522.1809999999823,
+      "providerOutput": {
+        "requestedFacets": [
+          "Source guidance for keeping seed envelopes in a reproducible filing order.",
+          "Source guidance for preserving envelope identity when envelopes move between drawers.",
+          "Relevant personal observations, if available."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:3ab64e93-5ef1-4e48-834c-1f07ad456461",
+            "requestedFacet": "Reproducible filing order and preserving identity when moving envelopes between drawers",
+            "supportSummary": "The Juniper source specifies filing by contributor surname followed by year received, and keeping the short reference code unchanged when moving an envelope to another drawer.",
+            "constraintCheck": "Directly addresses seed envelopes, ordering, drawer moves, and identity preservation.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:51f6eb85-4259-4972-824d-2d27e8fe1e67",
+            "requestedFacet": "Relevant personal observations",
+            "supportSummary": "The user reports catching a Vane/Vale filing swap by comparing surname letters one at a time, while noting the envelope reference codes were already correct.",
+            "constraintCheck": "A personal observation about Juniper drawer ordering and codes, relevant to the requested guidance.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10184,
+        "outputTokens": 247,
+        "totalTokens": 10431,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 10181
+        },
+        "outputTokenDetails": {
+          "textTokens": 247,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-juniper",
+      "run": 2,
+      "inputSha256": "84bc863bf096389ef1cca72e9d8cf34ddfea015c1250996615ca0adc0898cd6f",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:97c3bd23-0495-4f3f-8ef4-e3f2c6636b05"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2604.8763749999925,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the identifier that the highlighted instruction says to keep unchanged when moving seed envelopes between drawers."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:97c3bd23-0495-4f3f-8ef4-e3f2c6636b05",
+            "requestedFacet": "Fixed identifier when moving seed envelopes between drawers",
+            "supportSummary": "The highlighted instruction says to keep the envelope’s short reference code unchanged when moving it to another drawer.",
+            "constraintCheck": "Directly concerns seed envelopes and drawer transfers, and identifies the fixed identifier.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:3d16e095-41f2-44b5-8cdb-1f2b9f209d28",
+            "requestedFacet": "Fixed identifier when moving seed envelopes between drawers",
+            "supportSummary": "A seed catalogue glossary entry says no filing keys or ordering rule is given.",
+            "constraintCheck": "Related catalogue context, but does not identify an identifier that stays fixed during a drawer move.",
+            "verdict": "adjacent"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4691,
+        "outputTokens": 215,
+        "totalTokens": 4906,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 4688
+        },
+        "outputTokenDetails": {
+          "textTokens": 215,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-juniper",
+      "run": 2,
+      "inputSha256": "a508dba0909c900e16eeb0135db05b8aa0db580fce87bac68f9d55519ac39286",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:51f6eb85-4259-4972-824d-2d27e8fe1e67"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2260.5729580000043,
+      "providerOutput": {
+        "requestedFacets": [
+          "What the user discovered by comparing the surname letters on their seed envelopes"
+        ],
+        "assessments": [
+          {
+            "id": "reflection:51f6eb85-4259-4972-824d-2d27e8fe1e67",
+            "requestedFacet": "What the user discovered by comparing the surname letters on their seed envelopes",
+            "supportSummary": "The reflection says comparing surname letters one at a time exposed that Vane had been filed before Vale; the envelope reference codes were correct.",
+            "constraintCheck": "Directly describes the user's discovery from comparing surname letters in the seed drawer.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2640,
+        "outputTokens": 132,
+        "totalTokens": 2772,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 2637
+        },
+        "outputTokenDetails": {
+          "textTokens": 132,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "library-sycamore",
+      "run": 2,
+      "inputSha256": "0ce5e71f7560753f3069d2b709a9e22db78fcf8b2a86006986649d46b792aa63",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:f0bc4c56-2d86-49cc-8a01-4aaa8c6c1c92",
+          "highlight:eaca1123-bc2e-49da-81c4-76a56dceb4fd",
+          "reflection:57ea029e-f673-43f7-8c80-5280380bb6b4"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3784.7516250000044,
+      "providerOutput": {
+        "requestedFacets": [
+          "Sycamore choir-card source guidance distinguishing stress-mark placement from pronunciation-reminder placement",
+          "A directly relevant personal placement observation, if available"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:f0bc4c56-2d86-49cc-8a01-4aaa8c6c1c92",
+            "requestedFacet": "Sycamore choir-card source guidance distinguishing stress-mark placement from pronunciation-reminder placement",
+            "supportSummary": "The source says to put a dot beneath the syllable receiving the strongest beat and keep pronunciation reminders in the right margin.",
+            "constraintCheck": "Directly establishes both placements for the requested Sycamore choir cards.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:eaca1123-bc2e-49da-81c4-76a56dceb4fd",
+            "requestedFacet": "A directly relevant personal placement observation, if available",
+            "supportSummary": "The user's note says they moved pronunciation reminders to the back because right-margin writing covered a long final word.",
+            "constraintCheck": "A personal observation about placement on Sycamore cards, relevant to the source guidance.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:57ea029e-f673-43f7-8c80-5280380bb6b4",
+            "requestedFacet": "A directly relevant personal placement observation, if available",
+            "supportSummary": "The user reports accidentally placing a Sycamore stress dot beneath the preceding syllable and noticing the error by reading aloud.",
+            "constraintCheck": "A personal observation directly about stress-mark placement on the requested cards.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 3053,
+        "outputTokens": 324,
+        "totalTokens": 3377,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 3050
+        },
+        "outputTokenDetails": {
+          "textTokens": 324,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-sycamore",
+      "run": 2,
+      "inputSha256": "9ed56b422eeafad2cc0b14a61623fe1e5947a0ee7e7b5cc35dd42ed2ea601908",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:eaca1123-bc2e-49da-81c4-76a56dceb4fd"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2108.8980410000077,
+      "providerOutput": {
+        "requestedFacets": [
+          "The reason in the user's written note for moving choir pronunciation reminders off the front of the card."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:eaca1123-bc2e-49da-81c4-76a56dceb4fd",
+            "requestedFacet": "The reason in the user's written note for moving choir pronunciation reminders off the front of the card.",
+            "supportSummary": "The note says right-margin writing covered a long final word, so the user moved the reminders to the back.",
+            "constraintCheck": "Directly establishes the user's reason in a note about choir cards.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2127,
+        "outputTokens": 133,
+        "totalTokens": 2260,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 2124
+        },
+        "outputTokenDetails": {
+          "textTokens": 133,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-sycamore",
+      "run": 2,
+      "inputSha256": "3a0346523e34a65a83b1942171c61b19e954ac097a69e642a1b12865647d6fb4",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:57ea029e-f673-43f7-8c80-5280380bb6b4"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 4352.265749999991,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the error in the user's Sycamore choir-card markings that reading the word aloud exposed."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:57ea029e-f673-43f7-8c80-5280380bb6b4",
+            "requestedFacet": "Identify the error exposed by reading the Sycamore word aloud.",
+            "supportSummary": "The reflection says a Sycamore stress dot was copied beneath the preceding syllable by mistake, and reading the word aloud revealed it.",
+            "constraintCheck": "Directly matches the choir-card markings, the user's error, and the stated discovery method.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 4183,
+        "outputTokens": 432,
+        "totalTokens": 4615,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 4180
+        },
+        "outputTokenDetails": {
+          "textTokens": 432,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 2
+    },
+    {
+      "caseId": "library-rowan",
+      "run": 2,
+      "inputSha256": "48565de32437d08e5a0df938dd2d8be6b2da609eb2a17fc509fca2e5b0922a89",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:e4e344c7-632b-439b-85c7-316e6d98a007",
+          "reflection:db534fc2-e12f-4636-8a20-abd9613e0460"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 4002.5639579999843,
+      "providerOutput": {
+        "requestedFacets": [
+          "Source guidance for reading the Rowan paper-folding sequence, including distinguishing a whole-sheet turn from a corner fold",
+          "A relevant personal misreading, if available"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:e4e344c7-632b-439b-85c7-316e6d98a007",
+            "requestedFacet": "Source guidance for reading the Rowan paper-folding sequence, including distinguishing a whole-sheet turn from a corner fold",
+            "supportSummary": "Gives panel ordering and distinguishes hollow arrows for turning the whole sheet from filled arrows for folding one corner.",
+            "constraintCheck": "Directly establishes the requested Rowan sequence guidance and distinction.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:db534fc2-e12f-4636-8a20-abd9613e0460",
+            "requestedFacet": "A relevant personal misreading, if available",
+            "supportSummary": "The user says they mistook a hollow Rowan arrow for a corner fold and found that turning the whole sheet over aligned the printed faces.",
+            "constraintCheck": "Directly supplies a personal misreading specific to the requested paper-folding guidance.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 9837,
+        "outputTokens": 239,
+        "totalTokens": 10076,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 9834
+        },
+        "outputTokenDetails": {
+          "textTokens": 239,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-highlight-rowan",
+      "run": 2,
+      "inputSha256": "47cc96ee9eceab0bad73b93b7095e5908d939659cf32a9fd8df5a9d4f0c2a927",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "highlight:cba18e3a-9b6b-42fa-8198-c23009071a78"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1957.2246659999946,
+      "providerOutput": {
+        "requestedFacets": [
+          "The order of holes the user saved for stitching their repaired binding."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:cba18e3a-9b6b-42fa-8198-c23009071a78",
+            "requestedFacet": "Saved order of holes for stitching the repaired binding",
+            "supportSummary": "The user's highlight explicitly gives a stitching sequence for their Umber binding: middle hole, lower hole, then back through the middle.",
+            "constraintCheck": "Directly establishes the saved hole order and concerns the user's binding.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2656,
+        "outputTokens": 122,
+        "totalTokens": 2778,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 2653
+        },
+        "outputTokenDetails": {
+          "textTokens": 122,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "notes-reflection-rowan",
+      "run": 2,
+      "inputSha256": "9b4bd542b5c7bb1e18441968bfa729f23649ecd99deb55d96b7a7935d0769e95",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "reflection:9e654302-8aba-4644-809d-ac191d1f4415"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 2289.8952079999726,
+      "providerOutput": {
+        "requestedFacets": [
+          "How the user changed the stitching at the loose corner of their repaired binding."
+        ],
+        "assessments": [
+          {
+            "id": "reflection:9e654302-8aba-4644-809d-ac191d1f4415",
+            "requestedFacet": "How the user changed the stitching at the loose corner of their repaired binding.",
+            "supportSummary": "The user says their Umber repair had a loose upper corner and they added one extra loop there, leaving the other stitches unchanged.",
+            "constraintCheck": "Directly describes the user's repair and the stitching change at its loose corner.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2765,
+        "outputTokens": 129,
+        "totalTokens": 2894,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 2762
+        },
+        "outputTokenDetails": {
+          "textTokens": 129,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-cedar",
+      "run": 2,
+      "inputSha256": "b2342162d111534c28b50288055df10989803a8665f818036776035ecd201033",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:1b1763b1-21a1-449d-80cc-9f7651da3271",
+          "highlight:cb58295e-d372-4f8f-8be8-579030f883ea"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 4750.460167000012,
+      "providerOutput": {
+        "requestedFacets": [
+          "Current Cedar print room editorial method for identifying/tagging drying batches.",
+          "Alternative batch-tagging method in the user's attached Cedar note.",
+          "The differences between the editorial method and the attached note, keeping source and user-note authorship distinct."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:1b1763b1-21a1-449d-80cc-9f7651da3271",
+            "requestedFacet": "Current Cedar print room editorial method for identifying/tagging drying batches.",
+            "supportSummary": "Editorial passage says identify batches at the rack, not on individual prints, by placing a dated tag at the left end of each drying rack.",
+            "constraintCheck": "Directly establishes the current Cedar editorial method and the requested batch-tagging action.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:cb58295e-d372-4f8f-8be8-579030f883ea",
+            "requestedFacet": "Alternative batch-tagging method in the user's attached Cedar note.",
+            "supportSummary": "Attached note says the user attaches a removable paper flag to each print because rack tags fell off when the rack was moved; the highlighted passage contains the editorial rack-tag method.",
+            "constraintCheck": "Directly establishes the user's Cedar alternative and its stated reason, distinct from the editorial passage.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10655,
+        "outputTokens": 269,
+        "totalTokens": 10924,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 10652
+        },
+        "outputTokenDetails": {
+          "textTokens": 269,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-birch",
+      "run": 2,
+      "inputSha256": "3e652865786131967351ff0ab6e198ac64877bbc621ccbcbd0056186741dd5bf",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:7a4726a3-962c-429f-89f5-c4dd37af158b",
+          "reflection:4adcee31-328e-48b0-8648-f218ce8ae908"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3261.196333000029,
+      "providerOutput": {
+        "requestedFacets": [
+          "Current Birch editorial assembly order: the source's prescribed sequence for assembling the display.",
+          "My recorded Birch obstacle and remedy: the difficulty I encountered and how I resolved it."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:7a4726a3-962c-429f-89f5-c4dd37af158b",
+            "requestedFacet": "Current Birch editorial assembly order",
+            "supportSummary": "The current source says to fit numbered track sections in ascending order before arranging scenery, and to mark section numbers beneath joints.",
+            "constraintCheck": "Directly establishes the current Birch editorial assembly order.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:4adcee31-328e-48b0-8648-f218ce8ae908",
+            "requestedFacet": "My recorded Birch obstacle and remedy",
+            "supportSummary": "The reflection records that arranging scenery first made joint six unreachable; removing the small station building restored access.",
+            "constraintCheck": "Directly establishes the user's Birch obstacle and remedy, distinct from the editorial source's guidance.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 7860,
+        "outputTokens": 219,
+        "totalTokens": 8079,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 7857
+        },
+        "outputTokenDetails": {
+          "textTokens": 219,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-larch",
+      "run": 2,
+      "inputSha256": "0fb4fee2daf4cc762f5fba6082fa7f4836e8f5e2775788a90779be43f17e44fb",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2",
+          "highlight:4bf3d469-a3c2-4a71-8ad5-2cb2c9e19489",
+          "reflection:777d4e9a-d710-4f43-8af5-b0a44988ec85"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 5096.330583000032,
+      "providerOutput": {
+        "requestedFacets": [
+          "Larch current editorial source: the first step in its instructions",
+          "Larch highlighted sample-card instruction, as user-selected text",
+          "User's own reflection: the blotter incident",
+          "Keep editorial source, highlighted text, and personal reflection authorship distinct"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2",
+            "requestedFacet": "Larch current editorial source: the first step in its instructions",
+            "supportSummary": "The Larch editorial passage begins by instructing the reader to rule the practice card before choosing ink.",
+            "constraintCheck": "The source is for Larch and directly states the current editorial first step; its authorship is editorial.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:4bf3d469-a3c2-4a71-8ad5-2cb2c9e19489",
+            "requestedFacet": "Larch highlighted sample-card instruction, as user-selected text",
+            "supportSummary": "The highlighted text says to keep the ink sample on a separate card with a specified mark and not mark the finished invitation.",
+            "constraintCheck": "The Larch highlight directly contains the requested sample-card instruction; this is user-selected text, not a substitute for the editorial source.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:777d4e9a-d710-4f43-8af5-b0a44988ec85",
+            "requestedFacet": "User's own reflection: the blotter incident",
+            "supportSummary": "The reflection says a folded blotter touched the invitation, left a dark crescent, and was stored separately.",
+            "constraintCheck": "This is the user's reflection about the Larch session and directly establishes the incident; it remains distinct from editorial advice.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10625,
+        "outputTokens": 370,
+        "totalTokens": 10995,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 10622
+        },
+        "outputTokenDetails": {
+          "textTokens": 370,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-elm",
+      "run": 2,
+      "inputSha256": "b15d01777e2bd5027bfec76adc9de915352658bc31aa403b9cfc14d69c634df1",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:4ae9a5ed-6807-4600-873e-08305d149c67",
+          "highlight:48e03cef-52c2-42ed-871b-ba38043efd75"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 3303.425416999962,
+      "providerOutput": {
+        "requestedFacets": [
+          "Current Elm editorial spacing specification: the source’s stated spacer measurement.",
+          "The adjustment actually used on the uneven Elm wall, from either the user's note or reflection.",
+          "Compare the editorial specification with the user's adjustment while keeping source and personal evidence distinct."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:4ae9a5ed-6807-4600-873e-08305d149c67",
+            "requestedFacet": "Current Elm editorial spacing specification",
+            "supportSummary": "The current Elm display-panel specification states a wooden spacer measurement between tiles.",
+            "constraintCheck": "Direct Elm editorial source evidence for the requested current specification.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:48e03cef-52c2-42ed-871b-ba38043efd75",
+            "requestedFacet": "The user's adjustment on the uneven Elm wall",
+            "supportSummary": "The attached personal note records a different spacer measurement used on the uneven Elm wall; the highlight itself states the editorial measurement.",
+            "constraintCheck": "The note is personal evidence and directly records the requested adjustment; retain it alongside the source for comparison.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10937,
+        "outputTokens": 230,
+        "totalTokens": 11167,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 10934
+        },
+        "outputTokenDetails": {
+          "textTokens": 230,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-willow",
+      "run": 2,
+      "inputSha256": "535973c6a7317bde23b43584226eae60654900245287355a7aa3ed983cfbe54c",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:45e9099d-8403-4328-8d8c-c85f1ba6db59",
+          "highlight:3b394e91-4500-43af-893f-8306d14b74a5",
+          "reflection:1405d277-bc00-4db8-8a5f-4afd24027377"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 5077.24216699996,
+      "providerOutput": {
+        "requestedFacets": [
+          "Willow's current editorial placement check in the source_segment",
+          "The reason in the user's attached note for adding numbered cards",
+          "The specific swap described in the user's reflection"
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:45e9099d-8403-4328-8d8c-c85f1ba6db59",
+            "requestedFacet": "Willow's current editorial placement check in the source_segment",
+            "supportSummary": "The current Willow source says every prop has a traced outline on the table and instructs matching each prop to its outline during the pre-show check.",
+            "constraintCheck": "Directly establishes the current editorial placement check for the named Willow notebook.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:3b394e91-4500-43af-893f-8306d14b74a5",
+            "requestedFacet": "The reason in the user's attached note for adding numbered cards",
+            "supportSummary": "The attached note says the user added a small numbered card to each outline because the two silver cups had indistinguishable shapes.",
+            "constraintCheck": "Directly gives the user's reason for adding numbered cards in Willow; the note is personal, not editorial source content.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:1405d277-bc00-4db8-8a5f-4afd24027377",
+            "requestedFacet": "The specific swap described in the user's reflection",
+            "supportSummary": "The user's Willow rehearsal reflection says cup four was placed on cup seven's outline, and reading the number cards caught the swap before the first entrance.",
+            "constraintCheck": "Directly identifies the specific Willow swap and preserves its authorship as the user's reflection.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 10671,
+        "outputTokens": 349,
+        "totalTokens": 11020,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 10668
+        },
+        "outputTokenDetails": {
+          "textTokens": 349,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "comparison-aspen",
+      "run": 2,
+      "inputSha256": "15e4bb86883ea8f63ec4cdf105af424d58cbcdd94a06371d799a238862c906db",
+      "outcome": "complete",
+      "output": {
+        "ids": [
+          "source_segment:3fe0a800-3073-4c6a-843f-5b174279007a",
+          "highlight:7415777f-c920-4db5-8616-44d17f019a37",
+          "reflection:6c56cee5-3b3d-4312-8d73-628697f261bd"
+        ]
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 9915.812000000034,
+      "providerOutput": {
+        "requestedFacets": [
+          "For Aspen oral-history desk, current editorial timestamp rule (editorial source authorship).",
+          "For Aspen oral-history desk, naming change described in the user's attached note (personal note authorship).",
+          "For Aspen oral-history desk, timestamp problem described in the user's reflection (personal reflection authorship)."
+        ],
+        "assessments": [
+          {
+            "id": "source_segment:3fe0a800-3073-4c6a-843f-5b174279007a",
+            "requestedFacet": "Current editorial timestamp rule",
+            "supportSummary": "Aspen source specifies timestamps at speaker changes, with the speaker’s initials beside each timestamp.",
+            "constraintCheck": "Matches the named Aspen workflow and provides the current editorial rule.",
+            "verdict": "direct"
+          },
+          {
+            "id": "highlight:7415777f-c920-4db5-8616-44d17f019a37",
+            "requestedFacet": "Naming change in attached note",
+            "supportSummary": "The attached note says the user used full first names rather than initials because two speakers shared the initial M.",
+            "constraintCheck": "The note is attached to the Aspen desk highlight and establishes the requested naming change.",
+            "verdict": "direct"
+          },
+          {
+            "id": "reflection:6c56cee5-3b3d-4312-8d73-628697f261bd",
+            "requestedFacet": "Timestamp problem in reflection",
+            "supportSummary": "The user says marking only the recording start made a later handover hard to find; timestamps at speaker changes helped locate it.",
+            "constraintCheck": "The reflection explicitly concerns the Aspen interview and its timestamp problem.",
+            "verdict": "direct"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 9852,
+        "outputTokens": 998,
+        "totalTokens": 10850,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 9849
+        },
+        "outputTokenDetails": {
+          "textTokens": 998,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 2
+    },
+    {
+      "caseId": "abstain-absent-measurement",
+      "run": 2,
+      "inputSha256": "010cc066ac1fff7ed01068f77e7a14025a8f8ce83e66068157e14b17bd1e649e",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1835.4115420000162,
+      "providerOutput": {
+        "requestedFacets": [
+          "Measured diameter of the brass disk used for the Marigold mobile"
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 4092,
+        "outputTokens": 32,
+        "totalTokens": 4124,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 4089
+        },
+        "outputTokenDetails": {
+          "textTokens": 32,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-linden-identity",
+      "run": 2,
+      "inputSha256": "dd9c752cff5d686cc862ccf7f0d1cc8bb847b750b1dc0eb1ea0471ffbb3bd6a5",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 4824.267540999979,
+      "providerOutput": {
+        "requestedFacets": [
+          "Drawer assigned to shell tracings by the current west-wing Linden editorial register."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:4082d778-f7c1-457e-8850-454d3f8c534e",
+            "requestedFacet": "Drawer assigned to shell tracings by the current west-wing Linden editorial register.",
+            "supportSummary": "The highlight says the east-wing Linden cabinet uses drawer two for shell tracings.",
+            "constraintCheck": "It concerns the east wing, not the requested west-wing current editorial register; the drawer assignment cannot be transferred across wings.",
+            "verdict": "not_established"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 9813,
+        "outputTokens": 133,
+        "totalTokens": 9946,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 9810
+        },
+        "outputTokenDetails": {
+          "textTokens": 133,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-withdrawn-editorial",
+      "run": 2,
+      "inputSha256": "96de5a65b4fc7b3ed7918ae633d91829e4bf989b9a5aa9842c2eb290afe741ec",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1808.3291660000104,
+      "providerOutput": {
+        "requestedFacets": [
+          "Length of the backing strip specified by the current Umber editorial repair folio."
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 9410,
+        "outputTokens": 34,
+        "totalTokens": 9444,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 9407
+        },
+        "outputTokenDetails": {
+          "textTokens": 34,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-prompt-only",
+      "run": 2,
+      "inputSha256": "38218f0bfb8d7e003d790d2123d107739e800e8935b8e85d4fbf7b14e770e2dd",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 1526.9880830000038,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the badge machine the user bought at the Spruce fair."
+        ],
+        "assessments": []
+      },
+      "usage": {
+        "inputTokens": 5031,
+        "outputTokens": 31,
+        "totalTokens": 5062,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 5028
+        },
+        "outputTokenDetails": {
+          "textTokens": 31,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-notes-type-scope",
+      "run": 2,
+      "inputSha256": "3a10ab465d3ac176bb11177c51c9abbd3a0eb5e9c947983c125f63a89f414977",
+      "outcome": "complete",
+      "output": {
+        "ids": []
+      },
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 5916.053083000006,
+      "providerOutput": {
+        "requestedFacets": [
+          "Identify the paper template the user used for their Fennel lantern, using only the user's written notes."
+        ],
+        "assessments": [
+          {
+            "id": "highlight:3b394e91-4500-43af-893f-8306d14b74a5",
+            "requestedFacet": "Paper template used for the Fennel lantern",
+            "supportSummary": "The note describes adding numbered cards to outlines for Willow props.",
+            "constraintCheck": "It concerns Willow, not the Fennel lantern, and does not identify a paper template.",
+            "verdict": "not_established"
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 2014,
+        "outputTokens": 125,
+        "totalTokens": 2139,
+        "inputTokenDetails": {
+          "noCacheTokens": 3,
+          "cacheReadTokens": 2011
+        },
+        "outputTokenDetails": {
+          "textTokens": 125,
+          "reasoningTokens": 0
+        }
+      },
+      "phaseCount": 1
+    },
+    {
+      "caseId": "abstain-glossary-no-value",
+      "run": 2,
+      "inputSha256": "da2e22f68740fa7bbfa40006cfc2af66cab2afca0fa48ec4b49404fe1a68810c",
+      "outcome": "error",
+      "output": null,
+      "model": "gpt-6-luna",
+      "provider": "openai",
+      "durationMs": 13345.124500000034,
+      "failureType": "Error",
+      "failureCause": "unknown",
+      "rawProviderBody": "{\n  \"id\": \"resp_042a306e8a3abb3a016abdfe0ca82887d095894cdc60c9920c\",\n  \"object\": \"response\",\n  \"created_at\": 1790836236,\n  \"status\": \"incomplete\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\": {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n  },\n  \"instructions\": null,\n  \"max_output_tokens\": 1600,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_042a306e8a3abb3a016abdfe0d619887d083f55906ea799085\",\n      \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\": [\n        {\n          \"type\": \"output_text\",\n          \"annotations\": [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"requestedFacets\\\":[\\\"The measured border width, if stated in the Hemlock editorial card/source for the frieze.\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"Hemlock frieze cards passage defines a border and describes a shaded-rectangle illustration, but gives no width measurement.\\\",\\\"constraintCheck\\\":\\\"Matches the Hemlock frieze source, but does not establish the requested measured width.\\\",\\\"verdict\\\":\\\"not_established\\\"}]}]} \\n{\\\"requestedFacets\\\":[\\\"The measured border width, if stated in the Hemlock editorial card/source for the frieze.\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"Hemlock frieze cards passage defines a border and describes a shaded-rectangle illustration, but gives no width measurement.\\\",\\\"constraintCheck\\\":\\\"Matches the Hemlock frieze source, but does not establish the requested measured width.\\\",\\\"verdict\\\":\\\"not_established\\\"}]} \\n\\n\\n\\\\boxed{} \\n{\\\"requestedFacets\\\":[\\\"The measured border width given by the Hemlock editorial card for the frieze.\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"The Hemlock frieze cards passage says a border surrounds a design and describes a shaded-rectangle illustration; no width is supplied.\\\",\\\"constraintCheck\\\":\\\"This is the matching Hemlock source, but it does not state a measured border width.\\\",\\\"verdict\\\":\\\"not_established\\\"}]} \\n{\\\"requestedFacets\\\":[\\\"Measured border width in the Hemlock editorial card for the frieze\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"Hemlock frieze card passage mentions a border and its illustration but provides no measurement.\\\",\\\"constraintCheck\\\":\\\"The source matches Hemlock, but does not establish any measured width.\\\",\\\"verdict\\\":\\\"not_established\\\"}]} \\n{\\\"requestedFacets\\\":[\\\"The measured border width, if stated, in the Hemlock editorial card for the frieze.\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"Hemlock frieze cards source describes a border and shaded rectangle, without a width measurement.\\\",\\\"constraintCheck\\\":\\\"Matches the requested source and frieze, but the requested measured width is not established.\\\",\\\"verdict\\\":\\\"not_established\\\"}]} \\n{\\\"requestedFacets\\\":[\\\"The measured border width given in the Hemlock editorial card for the frieze.\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"Hemlock frieze passage describes a border and shaded-rectangle illustration, but gives no width measurement.\\\",\\\"constraintCheck\\\":\\\"Correct Hemlock source, but it does not establish the requested measurement.\\\",\\\"verdict\\\":\\\"not_established\\\"}]} \\n{\\\"requestedFacets\\\":[\\\"Measured border width given by the Hemlock editorial card for the frieze\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width given by the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"Hemlock frieze passage describes a border around a design and a shaded rectangle; it contains no width measurement.\\\",\\\"constraintCheck\\\":\\\"Identifies the right source, but does not state the requested measurement.\\\",\\\"verdict\\\":\\\"not_established\\\"}]} \\n{\\\"requestedFacets\\\":[\\\"Measured border width in the Hemlock editorial card for the frieze\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"The Hemlock frieze cards passage describes a border and illustration but gives no measurement.\\\",\\\"constraintCheck\\\":\\\"The source matches, yet the requested width is absent.\\\",\\\"verdict\\\":\\\"not_established\\\"}]} \\n{\\\"requestedFacets\\\":[\\\"Measured border width that the Hemlock editorial card gives for the frieze\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"The passage titled Hemlock frieze cards describes a border and a shaded rectangle, but states no width.\\\",\\\"constraintCheck\\\":\\\"Matches the requested Hemlock source, but cannot establish a measured width.\\\",\\\"verdict\\\":\\\"not_established\\\"}]} \\n{\\\"requestedFacets\\\":[\\\"Measured border width given by the Hemlock editorial card for the frieze\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"Hemlock frieze cards passage mentions a border and a shaded-rectangle example without a measurement.\\\",\\\"constraintCheck\\\":\\\"The matching source does not provide the requested measured width.\\\",\\\"verdict\\\":\\\"not_established\\\"}]} \\n{\\\"requestedFacets\\\":[\\\"The measured border width that the Hemlock editorial card gives for the frieze.\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"The Hemlock frieze passage describes a border and shaded rectangle, but includes no measurement.\\\",\\\"constraintCheck\\\":\\\"The relevant source is present, but it does not establish the requested width.\\\",\\\"verdict\\\":\\\"not_established\\\"}]} \\n{\\\"requestedFacets\\\":[\\\"Measured border width given in the Hemlock editorial card for the frieze\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial card for the frieze\\\",\\\"supportSummary\\\":\\\"The Hemlock source describes a border and shaded-rectangle illustration without stating a measurement.\\\",\\\"constraintCheck\\\":\\\"It matches the source constraint but provides no measured width.\\\",\\\"verdict\\\":\\\"not_established\\\"}]} \\n{\\\"requestedFacets\\\":[\\\"Measured border width stated by the Hemlock editorial card for the frieze\\\"],\\\"assessments\\\":[{\\\"id\\\":\\\"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\\\",\\\"requestedFacet\\\":\\\"Measured border width in the Hemlock editorial\"\n        }\n      ],\n      \"phase\": \"commentary\",\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\": \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"json_schema\",\n      \"description\": null,\n      \"name\": \"response\",\n      \"schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"requestedFacets\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\",\n              \"minLength\": 1,\n              \"maxLength\": 2000\n            },\n            \"minItems\": 1,\n            \"maxItems\": 8\n          },\n          \"assessments\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"id\": {\n                  \"type\": \"string\",\n                  \"enum\": [\n                    \"highlight:48e03cef-52c2-42ed-871b-ba38043efd75\",\n                    \"highlight:51b71637-e017-4985-859c-6d7a743a72f6\",\n                    \"reflection:298b0564-4c9e-4c4c-87bc-f2b9eb73f87c\",\n                    \"highlight:eaca1123-bc2e-49da-81c4-76a56dceb4fd\",\n                    \"highlight:3c766781-c09e-4a8e-819b-ca4419a6eeb2\",\n                    \"highlight:008222a9-2cdc-4a22-83b7-ba485ea21a2c\",\n                    \"highlight:0097c2c6-0f8c-4281-8769-0589cc23a983\",\n                    \"highlight:00ddc480-7e6d-4dbd-8bc9-41a3199bb349\",\n                    \"highlight:010b9589-bb75-4155-858a-7ad23ba7d495\",\n                    \"highlight:011ac173-f032-4cee-824f-61dcc990a913\",\n                    \"highlight:01227144-7a7b-433e-8125-6bb76b60e128\",\n                    \"highlight:01296f63-719e-46c8-817d-ba0d8d56fd0a\",\n                    \"highlight:0161f9b9-97a3-439f-8a8f-3ff9e8c23da8\",\n                    \"highlight:018a63b3-6b6e-46ec-8a3c-46e8ac700314\",\n                    \"highlight:019d9f44-d4eb-4856-89f4-8cf55dd9c530\",\n                    \"highlight:01b8a65c-c4b6-4abc-833b-9c8ee368cfcb\",\n                    \"highlight:01be44a4-f1c2-4eeb-8330-b598146d48e3\",\n                    \"highlight:01cc4f19-960c-464f-87c8-c79dc22f26bf\",\n                    \"highlight:02c4c388-21ab-41ec-8230-676343f03796\",\n                    \"highlight:0338006b-7504-41c1-84fb-761a0d38fe61\",\n                    \"highlight:033e5883-1093-4348-877b-0f5362393f94\",\n                    \"highlight:0349a82f-c40d-4656-8bd7-1db1da1866ff\",\n                    \"highlight:0358ff97-6b01-4746-85e9-4bd105c1ba6e\",\n                    \"highlight:041ca382-f774-4ecd-8e05-cca7258bf9cf\",\n                    \"highlight:0422a2f6-2275-4581-8d8c-a131ce9e3c02\",\n                    \"highlight:04496255-1fb6-418b-89ef-35aaf1ba880e\",\n                    \"highlight:04baf8bf-7745-4b2d-83db-0d603f1255f7\",\n                    \"highlight:04cce696-e382-4559-851b-240534ad9fe7\",\n                    \"highlight:04e81a3d-72e0-463d-82bb-693c39268d28\",\n                    \"highlight:051d7b3a-2876-4e59-8110-32d6d6e7eb0b\",\n                    \"highlight:0569d462-6557-4c14-88a7-2d16ad61ce94\",\n                    \"highlight:0573fa3f-fb30-4a1c-8d0e-eb38543f070e\",\n                    \"highlight:059d9d8a-54fc-4ac4-84cc-12036e53b80d\",\n                    \"reflection:0000390f-9bb9-419f-8708-b65cdd6e2afe\",\n                    \"reflection:00108d24-680d-4ae6-8a27-8e1b39a38120\",\n                    \"reflection:00465f71-22da-483c-83c3-7cb2910b2862\",\n                    \"reflection:008b7022-b39f-4b44-8d69-ef29f63d883d\",\n                    \"reflection:00d24927-c13e-4b13-81c6-add81eca0427\",\n                    \"reflection:0211f29d-48d6-45e2-8369-cfc38f0b62b1\",\n                    \"reflection:022853d1-747b-4fa5-89c6-84b4ad6a3a8a\",\n                    \"reflection:034ed60d-eb29-4802-8945-6d0f8fd08e07\",\n                    \"reflection:0390678d-f72e-4c2e-8efb-2bf9e330b3c7\",\n                    \"reflection:03ef2863-6841-4d86-8a3f-0375da239d84\",\n                    \"reflection:041c26dc-6cac-4251-8b35-729a3563a55c\",\n                    \"reflection:047c0e59-9875-4e84-8df7-5aa0d26b29d1\",\n                    \"reflection:04f08aaa-fce9-4281-85e2-afd7e4931412\",\n                    \"reflection:0502c165-d0f5-4e9c-85c1-4d004d54761d\",\n                    \"reflection:0513cb8a-1165-4d85-82b2-1d2732915b42\",\n                    \"reflection:052d9593-7e40-426f-849b-6d1df375f219\",\n                    \"reflection:057b8811-4e74-4a20-8485-832f6c0aff49\",\n                    \"reflection:05b99ca2-9b31-476e-8f0a-1e8b326b167e\",\n                    \"reflection:05bbf1e8-1320-437d-8858-14b42820199e\",\n                    \"reflection:05c5263a-fa1d-46d5-8ccf-1e06bd9a8e85\",\n                    \"reflection:063be219-be24-484c-8326-30c328bd128f\",\n                    \"reflection:0652c18f-5ca3-47ae-8f39-02b66cb0d83b\",\n                    \"reflection:065d2787-d3ba-4f96-8a18-13526dd29ba2\",\n                    \"reflection:066c90e2-d0c7-4877-8dd4-e668bd5dfd06\",\n                    \"reflection:0676e97b-c44e-4ad4-84b4-3bac7a81ed8b\",\n                    \"reflection:067ebd6d-44d1-43ea-861e-cfb35daad17f\",\n                    \"reflection:0729f193-ef7e-476e-8b78-a91e33a3ddee\",\n                    \"reflection:076d6861-cdef-4377-8a7c-9e7ba85d114b\",\n                    \"reflection:0789b0b8-4df5-48ea-8174-58e6d32d3628\",\n                    \"reflection:0826e5fd-62a3-49ac-872d-013bc372eb29\",\n                    \"reflection:08778a5b-8fea-4b2d-82c8-00e137b6d60b\",\n                    \"source_segment:203398c0-c0d0-4f23-83e4-cc354e6cdac9\",\n                    \"source_segment:4ae9a5ed-6807-4600-873e-08305d149c67\",\n                    \"source_segment:795ab324-516a-4a25-8526-7157da0c395d\",\n                    \"source_segment:60dc6f35-fa37-4416-833a-54e2912aeea2\",\n                    \"source_segment:edc1185d-e34b-4e68-8eb8-7d36312968b2\",\n                    \"source_segment:e4e344c7-632b-439b-85c7-316e6d98a007\",\n                    \"source_segment:f0bc4c56-2d86-49cc-8a01-4aaa8c6c1c92\",\n                    \"source_segment:ed8a479f-82df-4aa9-888d-027a61af0dfa\",\n                    \"source_segment:5f18cc9d-e62b-40d6-8cab-0f63df0ee8f4\",\n                    \"source_segment:79216a57-5325-487c-8508-24d6ff284646\",\n                    \"source_segment:02f7833d-5996-4597-8ab1-772a61550b97\",\n                    \"source_segment:9f746696-c238-4973-8d51-e3cf7957abbf\",\n                    \"source_segment:f22e697c-a7f8-401c-811b-d81c2df95444\"\n                  ]\n                },\n                \"requestedFacet\": {\n                  \"type\": \"string\",\n                  \"minLength\": 1,\n                  \"maxLength\": 2000\n                },\n                \"supportSummary\": {\n                  \"type\": \"string\",\n                  \"minLength\": 1,\n                  \"maxLength\": 2000\n                },\n                \"constraintCheck\": {\n                  \"type\": \"string\",\n                  \"minLength\": 1,\n                  \"maxLength\": 2000\n                },\n                \"verdict\": {\n                  \"type\": \"string\",\n                  \"enum\": [\n                    \"direct\",\n                    \"adjacent\",\n                    \"not_established\",\n                    \"contradicts_requested_claim\"\n                  ]\n                }\n              },\n              \"required\": [\n                \"id\",\n                \"requestedFacet\",\n                \"supportSummary\",\n                \"constraintCheck\",\n                \"verdict\"\n              ],\n              \"additionalProperties\": false\n            },\n            \"maxItems\": 8\n          }\n        },\n        \"required\": [\n          \"requestedFacets\",\n          \"assessments\"\n        ],\n        \"additionalProperties\": false\n      },\n      \"strict\": true\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 9534,\n    \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 9531\n    },\n    \"output_tokens\": 1600,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 11134\n  },\n  \"user\": null,\n  \"metadata\": {}\n}",
+      "errorCode": "PROVIDER_OR_VALIDATION_FAILURE"
+    }
+  ],
+  "metrics": {
+    "runs": [
+      {
+        "run": 1,
+        "perClass": {
+          "source_segment": {
+            "passed": 18,
+            "total": 18,
+            "rate": 1
+          },
+          "highlight": {
+            "passed": 16,
+            "total": 16,
+            "rate": 1
+          },
+          "reflection": {
+            "passed": 16,
+            "total": 16,
+            "rate": 1
+          }
+        },
+        "recallMacro": 1,
+        "irrelevantRejectionAmongCapturedCases": {
+          "passed": 56,
+          "total": 56,
+          "rate": 1
+        },
+        "emptySelectionForCapturedAbstentions": {
+          "passed": 14,
+          "total": 14,
+          "rate": 1
+        },
+        "exactQuoteTargetIdentification": {
+          "passed": 12,
+          "total": 12,
+          "rate": 1
+        }
+      },
+      {
+        "run": 2,
+        "perClass": {
+          "source_segment": {
+            "passed": 18,
+            "total": 18,
+            "rate": 1
+          },
+          "highlight": {
+            "passed": 16,
+            "total": 16,
+            "rate": 1
+          },
+          "reflection": {
+            "passed": 16,
+            "total": 16,
+            "rate": 1
+          }
+        },
+        "recallMacro": 1,
+        "irrelevantRejectionAmongCapturedCases": {
+          "passed": 47,
+          "total": 56,
+          "rate": 0.8392857142857143
+        },
+        "emptySelectionForCapturedAbstentions": {
+          "passed": 5,
+          "total": 14,
+          "rate": 0.35714285714285715
+        },
+        "exactQuoteTargetIdentification": {
+          "passed": 12,
+          "total": 12,
+          "rate": 1
+        }
+      },
+      {
+        "run": 3,
+        "perClass": {
+          "source_segment": {
+            "passed": 0,
+            "total": 18,
+            "rate": 0
+          },
+          "highlight": {
+            "passed": 0,
+            "total": 16,
+            "rate": 0
+          },
+          "reflection": {
+            "passed": 0,
+            "total": 16,
+            "rate": 0
+          }
+        },
+        "recallMacro": 0,
+        "irrelevantRejectionAmongCapturedCases": {
+          "passed": 0,
+          "total": 56,
+          "rate": 0
+        },
+        "emptySelectionForCapturedAbstentions": {
+          "passed": 0,
+          "total": 14,
+          "rate": 0
+        },
+        "exactQuoteTargetIdentification": {
+          "passed": 0,
+          "total": 12,
+          "rate": 0
+        }
+      }
+    ],
+    "boundaries": "Selection IDs before final context composition only. These are not quote fidelity or final-answer scores. Denominators for rejection/abstention here cover captured model requests; real revoked/empty cases and full frozen thresholds are evaluated by production database replay.",
+    "releaseGate": "NOT_ASSESSED: requires real database replay of every run, final context/quote checks, answer generation and independent adjudication."
+  }
+}

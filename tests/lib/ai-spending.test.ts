@@ -27,6 +27,17 @@ describe("interactive spending admission", () => {
             expect(rpc.mock.calls[1]).toEqual(["record_ai_spend", expect.objectContaining({ p_cost_microusd: 200, p_input_tokens: 100, p_output_tokens: 20 })]);
         });
     });
+    it.each([
+        { inputTokens: 272000, cached: 1000, cost: 27160 },
+        { inputTokens: 272001, cached: 1000, cost: 54296 },
+    ])("settles Luna on the correct side of the long-context boundary", async ({ inputTokens, cached, cost }) => {
+        await authenticated(async () => {
+            const reservation = await reserveAiProviderCall({ provider: "openai", model: "gpt-6-luna", maxOutputTokens: 1600 });
+            expect(rpc.mock.calls[0][1].p_reserved_microusd).toBe(211200);
+            await reservation.record({ inputTokens, outputTokens: 100, inputTokenDetails: { cacheReadTokens: cached } });
+            expect(rpc.mock.calls[1][1].p_cost_microusd).toBe(cost);
+        });
+    });
     it.each(["disabled", "global_budget", "guest_budget", "guest_quota"] as const)("rejects %s before dispatch with truthful response", async reason => {
         rpc.mockReturnValue({ abortSignal: async () => ({ data: { allowed: false, reason, retryAfterMs: 1234 }, error: null }) });
         const provider = vi.fn();
