@@ -3352,3 +3352,113 @@ long tasks still need attribution before declaring the full first-load objective
 complete. Next: publish this focused PR, preserve required gates, then verify its
 deployed initial animation state. Reuse #219's completed hosted evidence; do not
 repeat broad benchmarks or fold in unrelated audio/model changes.
+
+
+### 1 October 2026 — font-priority investigation concluded without rollout
+
+#221 merged as 5898255b and production www.netflux.blog now serves that commit,
+including #220. The initial-animation visibility check passes in production on
+both desktop and mobile (two tests, zero retries). This supersedes the pending
+release state and intentional local append in font-loading-followup.
+
+Worktree /Users/j/.codex/worktrees/route-font-priority/Lifebook,
+branch codex/route-font-priority, based on fresh main 5898255b. No agents, paid
+calls, database changes or recurring monitors. #28 remains open.
+
+Consumer inspection corrected the earlier simplification: Playfair is also used
+by Browse cards and onboarding, so it must remain available. Two bounded candidates
+were evaluated without changing families, sizes or layout:
+
+1. Route-specific next/font preloading correctly prioritizes Home Playfair and
+   Browse Outfit, but separate preloaded/non-preloaded instances emit distinct
+   URLs for the same Playfair bytes. Cold Browse followed by Home requests both
+   forms. Reject this approach rather than introducing cache duplication. An
+   initial navigation fixture attempted a Browse logo that leads to Browse and
+   encountered onboarding; it was discarded, then replaced with direct page
+   navigation for the specific resource check.
+2. Shared Outfit preloading avoids separate font instances. Production build
+   passes. Twelve local cold observations alternate baseline/candidate order,
+   three per route and variant, at 390x844, 4x CPU, 150ms/200KB/s. Baseline built
+   application matches main (#221); complete public assets are served. Initial
+   preflight rejected local Vercel telemetry-script 404s. The two unavailable
+   platform scripts were explicitly stubbed equally on both before measurement;
+   other critical asset errors still fail the run. No favorable-result reruns.
+
+Median results (milliseconds):
+
+| Metric | Baseline | Shared Outfit preload |
+|---|---:|---:|
+| Home Playfair completion | 1242 | 1348 |
+| Home Inter completion | 1452 | 1519 |
+| Home FCP / LCP | 556 / 556 | 580 / 580 |
+| Browse Outfit completion | 2338 | 1198 |
+| Browse Inter completion | 1482 | 1618 |
+| Browse FCP / LCP | 600 / 944 | 616 / 1012 |
+
+The shared candidate adds 32528 bytes of early font traffic on Home. Reject it:
+it exchanges earlier Browse typography for later Home fonts without improving
+visible-content timing in this small sample. All application edits were reverted;
+only this checkpoint and [development evidence](evidence/font-priority-development-20261001.json)
+are published. Raw scripts/rejected patch remain under
+/private/tmp/netflux-font-attribution. Existing local ServerResponse listener
+warnings remain unresolved; these experiments change no server runtime logic.
+
+Next: inspect the shared initial instrumentation/framework JavaScript chunk and
+PostHog loading path for safely removable or deferrable work. Preserve early error
+capture, analytics identity ordering and existing product behavior. Use a small
+built comparison for one credible candidate; do not repeat font experiments or
+claim the full first-load bottleneck is resolved. Deployed #221's removal of the
+intentional reveal delay is verified; the wider objective remains open.
+
+
+Handoff (intentional uncommitted continuity append): PR #222 at40309169,
+https://github.com/Jseow008/ThePlayBook/pull/222. Two-file docs/evidence scope
+confirmed locally and on GitHub; PR scope passed, squash auto-merge requested.
+Required validation/security pending. Local browsers and servers stopped. Next:
+review the instrumentation/analytics loading boundary using the attribution
+already recorded, and propose one bounded JS candidate. No additional font
+benchmark or production test is required for this documentation-only PR.
+
+
+### 1 October 2026 — initial analytics JavaScript investigation
+
+Application experiment branch codex/initial-analytics-js in
+/Users/j/.codex/worktrees/initial-analytics-js/Lifebook, based on5898255b; all
+candidate source/test changes were reverted after rejection. No production
+settings, data or models changed, no paid calls, agents or monitors. Local
+servers/browsers stopped. #28 remains open.
+
+Installed PostHog1.393.0 exposes a slim entry point and extension bundles.
+Repository uses explicit event/pageview/identify/reset helpers. A sanitized read
+of the current public project configuration confirmed surveys, sessionRecording,
+productTours, conversations and autocaptureExceptions false. Candidate preserved
+AnalyticsExtensions, FeatureFlagsExtensions and ToolbarExtensions; Sentry initial
+capture was untouched. Experiments:
+
+- Packaged slim SDK plus retained extensions: build passes, but matched Home
+  initial-script gzip total increases417140→421780bytes (+4640bytes, 17 scripts
+  each). Reject, without a latency benchmark. The combined extension bundle does
+  not give the required byte reduction in this application build.
+- Direct installed extension-module imports: compilation succeeds but TypeScript
+  fails because distributed and source-module PostHog types contain incompatible
+  private members. Reject rather than casting away the compatibility boundary.
+  This second approach was not runtime-accepted or production-built successfully.
+
+First candidate verification: six unit tests passed, including real SDK anonymous
+→ identified → reset pageviews with captured events suppressed before delivery.
+Browser suite10passed/2failed: event delivery/one-pageview assertions reached
+success, but final zero-CSP-warning assertions failed on local report-only inline
+script warnings. Do not describe that suite as fully green or attribute the
+warnings to this candidate without a baseline. The analytics fixture's OTP call
+was intercepted locally; no email/account action was needed. All test edits were
+reverted with the rejected candidate.
+
+Raw evidence and rejected source: /private/tmp/netflux-js-attribution/size.json,
+unit.log, browser.log, build.log, build-direct.log and rejected-direct.patch.
+No shipping performance change or production speedup is established. These two
+attempts close this packaging approach for now. Next decision: preserve current
+observability and inspect route-specific interactive components for genuinely
+avoidable initial work before choosing another implementation. Delaying the whole
+analytics SDK would risk losing short visits and requires an explicit product
+tradeoff; do not silently do that to improve a benchmark. Do not repeat the font
+or SDK packaging experiments.
