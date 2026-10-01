@@ -3462,3 +3462,52 @@ avoidable initial work before choosing another implementation. Delaying the whol
 analytics SDK would risk losing short visits and requires an explicit product
 tradeoff; do not silently do that to improve a benchmark. Do not repeat the font
 or SDK packaging experiments.
+
+
+### 1 October 2026 — skip mobile carousel-arrow measurements
+
+Worktree /Users/j/.codex/worktrees/browse-lane-rendering/Lifebook,
+branch codex/browse-lane-rendering, based on freshly fetched main411db433 (#222).
+No subagents, paid calls, production writes, database changes or monitors.
+#28 remains open; production #221 initial visibility is already verified.
+
+The proposed offscreen-lane containment preflight was not promising for the
+current catalog. Once streaming settles, Browse has two active lanes (top about
+501px/859px, height326px at390px width). A temporary browser-only content-visibility
+auto check leaves both rendered; neither is far enough away to skip. The earlier
+42-link transient DOM count was not proof of42 simultaneously rendered cards:
+settled active lanes contain10cards each. No containment CSS or placeholder
+heights are shipped, and no full containment benchmark was run.
+
+A concrete avoidable cost exists in ContentLane: mobile CSS hides both arrows,
+but their scroll-width measurements, scroll/resize handlers and per-card resize
+observers still initialize. Candidate attaches those only while the existing
+md breakpoint (768px) matches, disconnects on entering mobile, and restores
+measurements on desktop. Native mobile scrolling, SSR content, dimensions, fonts,
+card links and desktop behavior remain unchanged.
+
+Built-browser baseline/candidate comparison, one observation per viewport:
+
+| Build | Width | Active lane resize targets | Observe calls |
+|---|---:|---:|---:|
+| Main application baseline | 390 | 22 | 22 |
+| Candidate | 390 | 0 | 0 |
+| Main application baseline | 1440 | 22 | 22 |
+| Candidate | 1440 | 22 | 22 |
+
+Baseline build from font-loading-followup has the same application as main411db433
+(the intervening #222 is documentation). Runtime proof also passes native mobile
+scroll-position changes, desktop arrow scrolling, mobile→desktop→mobile observer
+activation/cleanup and keyboard Preview navigation at both widths. Evidence:
+/private/tmp/netflux-lane-runtime.cjs and netflux-lane-runtime.json. Production
+build/typecheck, focused lint, nine ContentLane tests and eight desktop/mobile
+Home/Browse navigation tests pass, with no retries. Component regression checks
+prove mobile scroll/resize does not read geometry and breakpoint changes restore
+and clean up measurements. Local platform telemetry/script warnings and existing
+ServerResponse listener warnings do not establish candidate timing performance.
+
+This proves removal of unnecessary mobile work, not an overall first-paint
+speedup. Next: publish the focused change through required gates, verify deployed
+mobile/desktop behavior, and retain the original objective as open until useful
+user-visible readiness evidence supports closure. Do not repeat rejected font or
+SDK packaging experiments or infer all pre-paint layout came from these hooks.

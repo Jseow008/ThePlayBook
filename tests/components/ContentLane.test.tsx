@@ -1,5 +1,5 @@
 import { render, screen, act } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ContentLane } from "@/components/ui/ContentLane";
 import { COMPACT_SHELF_CARD_CLASS } from "@/components/ui/content-card-standards";
 import type { ContentItem } from "@/types/database";
@@ -29,6 +29,18 @@ vi.mock("@/components/ui/ContentCard", () => ({
 }));
 
 describe("ContentLane", () => {
+    let desktop: MediaQueryList;
+    let change: (() => void) | undefined;
+    beforeEach(() => {
+        desktop = {
+            matches: true,
+            addEventListener: vi.fn((_type, listener) => { change = listener; }),
+            removeEventListener: vi.fn(),
+        } as unknown as MediaQueryList;
+        vi.spyOn(window, "matchMedia").mockReturnValue(desktop);
+    });
+    afterEach(() => vi.restoreAllMocks());
+
     const items: ContentItem[] = [
         {
             id: "11111111-1111-1111-1111-111111111111",
@@ -112,6 +124,37 @@ describe("ContentLane", () => {
         expect(rightArrow.className).not.toContain("pointer-events-none");
         expect(rightArrow.className).not.toContain("lg:-right-4");
         expect(rightArrow).toHaveClass("hidden", "md:flex");
+    });
+
+    it("starts and stops arrow measurements when crossing the desktop breakpoint", () => {
+        Object.defineProperty(desktop, "matches", { configurable: true, value: false });
+        const observe = vi.spyOn(ResizeObserver.prototype, "observe");
+        const disconnect = vi.spyOn(ResizeObserver.prototype, "disconnect");
+        const { container, unmount } = render(<ContentLane title="Responsive Lane" items={items} />);
+        const scroller = container.querySelector(".overflow-x-auto") as HTMLDivElement;
+        const width = vi.fn(() => 1200);
+        Object.defineProperty(scroller, "scrollWidth", { configurable: true, get: width });
+        Object.defineProperty(scroller, "clientWidth", { configurable: true, value: 800 });
+        expect(observe).not.toHaveBeenCalled();
+        act(() => scroller.dispatchEvent(new Event("scroll")));
+        expect(width).not.toHaveBeenCalled();
+
+        Object.defineProperty(desktop, "matches", { value: true });
+        act(() => change?.());
+        expect(observe).toHaveBeenCalledTimes(3); // Container plus two cards.
+        expect(screen.getByRole("button", { name: "Scroll right" }).className).not.toContain("pointer-events-none");
+
+        Object.defineProperty(desktop, "matches", { value: false });
+        act(() => change?.());
+        expect(disconnect).toHaveBeenCalledOnce();
+        width.mockClear();
+        act(() => {
+            scroller.dispatchEvent(new Event("scroll"));
+            window.dispatchEvent(new Event("resize"));
+        });
+        expect(width).not.toHaveBeenCalled();
+        unmount();
+        expect(desktop.removeEventListener).toHaveBeenCalledWith("change", change);
     });
 
     it("passes through the requested card navigation mode", () => {
