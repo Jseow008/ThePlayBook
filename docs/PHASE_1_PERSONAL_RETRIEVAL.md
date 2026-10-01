@@ -3911,3 +3911,45 @@ preview-only experiment as a documentation-only result, then resume narrowly
 measuring font/image contention on the remaining slow pages. Do not ship the
 global switch or repeat this comparison hoping for a favorable outcome. #28 remains
 open. The hosted evidence and this checkpoint are the intentional follow-up changes.
+
+
+#### Follow-up: font/image contention — 1 October 2026
+
+User authorized continuing the focused investigation. Reused the immutable inline
+preview at31a51e06 and existing network/desktop settings. Production remains
+unchanged; #226 remains held with auto-merge off. Current worktree/branch unchanged.
+No source implementation changed; only this checkpoint and existing evidence JSON.
+
+Two attribution traces: Browse title/action appeared1575ms, fonts ready4364ms,
+hero4898ms and useful readiness4915ms. Three fonts totaled119120bytes;17img-initiated
+card transfers totaled142822bytes, alongside447142bytes of script responses. Hero
+is preload/link initiated, so it is not included in that card-image subtotal.
+Reader fonts were ready1705ms, title/action2327ms, cover2730ms, useful readiness2747ms.
+This Reader sample points to late content arrival and subsequent cover completion,
+not waiting for fonts. None of these figures establishes real-user averages.
+
+One small paired diagnostic held only baseline below-viewport image requests until
+hero readiness, then released them without abort/fallback. Reversed order across
+two observations each: normal4784/4756ms, deferred4407/4399ms (medians4770/4403ms).
+The367ms directional saving does not reach the4000ms maximum or2500ms median goal.
+A separate one-observation font diagnostic held fonts until hero readiness:4219ms,
+still above the maximum and initially using fallback typography. This is an upper-
+bound-style diagnostic, not an equivalent-looking implementation or rollout proof.
+No benchmark was repeated to replace failures; all observations are retained.
+
+The diagnostic scripts inherit the old variant label `external`; the evidence
+explicitly maps it to request deferral on the SAME INLINE preview, not external CSS.
+Preview feedback and analytics-config CSP failures are recorded. Reader recorded
+an aborted media request without playback. Public Browse was additionally opened
+and inspected through agent-browser, then closed. No accounts, data mutations,
+paid AI calls, infrastructure changes, timers or subagents.
+
+Conclusion: do not add viewport gating or defer fonts as a claimed resolution on
+this evidence. Both have modest potential but neither meets the stated target;
+font delay changes the initial appearance. Keep the accepted production behavior.
+Remaining work is reducing first-screen transfer competition/content-arrival delay
+without losing analytics, changing typography or reducing image quality. The current
+samples do not establish a safe implementation for that yet. Next investigation,
+if continued: isolate initial script-transfer contention using a bounded diagnostic
+before considering a specific module boundary; do not reopen CSS/priority experiments.
+#28 stays open. These findings are appended to the existing held PR, not deployed.
