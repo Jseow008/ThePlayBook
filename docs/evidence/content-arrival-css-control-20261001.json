@@ -1,0 +1,931 @@
+{
+  "productionTrace": [
+    {
+      "path": "/preview/0a52c5c8-f330-4ada-a164-05047b852444",
+      "arrival": {
+        "headers": 661,
+        "title": 2454,
+        "cover": 2454
+      },
+      "chunks": [
+        {
+          "at": 671,
+          "bytes": 10562
+        },
+        {
+          "at": 682,
+          "bytes": 4101
+        },
+        {
+          "at": 684,
+          "bytes": 4450
+        },
+        {
+          "at": 693,
+          "bytes": 7398
+        },
+        {
+          "at": 699,
+          "bytes": 10874
+        },
+        {
+          "at": 707,
+          "bytes": 11773
+        },
+        {
+          "at": 715,
+          "bytes": 7601
+        },
+        {
+          "at": 723,
+          "bytes": 12450
+        },
+        {
+          "at": 729,
+          "bytes": 19262
+        },
+        {
+          "at": 737,
+          "bytes": 21814
+        },
+        {
+          "at": 745,
+          "bytes": 12317
+        },
+        {
+          "at": 753,
+          "bytes": 12644
+        },
+        {
+          "at": 760,
+          "bytes": 15072
+        },
+        {
+          "at": 767,
+          "bytes": 14526
+        },
+        {
+          "at": 775,
+          "bytes": 15676
+        },
+        {
+          "at": 784,
+          "bytes": 16768
+        },
+        {
+          "at": 792,
+          "bytes": 9002
+        },
+        {
+          "at": 797,
+          "bytes": 14012
+        },
+        {
+          "at": 806,
+          "bytes": 11339
+        },
+        {
+          "at": 813,
+          "bytes": 7602
+        },
+        {
+          "at": 819,
+          "bytes": 7714
+        },
+        {
+          "at": 827,
+          "bytes": 7356
+        },
+        {
+          "at": 843,
+          "bytes": 8681
+        },
+        {
+          "at": 857,
+          "bytes": 6055
+        },
+        {
+          "at": 875,
+          "bytes": 5577
+        },
+        {
+          "at": 888,
+          "bytes": 7902
+        },
+        {
+          "at": 901,
+          "bytes": 9774
+        },
+        {
+          "at": 917,
+          "bytes": 40725
+        },
+        {
+          "at": 931,
+          "bytes": 21739
+        },
+        {
+          "at": 956,
+          "bytes": 19901
+        },
+        {
+          "at": 1009,
+          "bytes": 46387
+        },
+        {
+          "at": 1023,
+          "bytes": 31253
+        },
+        {
+          "at": 1045,
+          "bytes": 12956
+        },
+        {
+          "at": 1249,
+          "bytes": 18934
+        },
+        {
+          "at": 1450,
+          "bytes": 11562
+        },
+        {
+          "at": 1615,
+          "bytes": 15074
+        },
+        {
+          "at": 1773,
+          "bytes": 12102
+        },
+        {
+          "at": 1929,
+          "bytes": 37190
+        },
+        {
+          "at": 2072,
+          "bytes": 12660
+        },
+        {
+          "at": 2215,
+          "bytes": 280080
+        },
+        {
+          "at": 2342,
+          "bytes": 4810
+        },
+        {
+          "at": 2454,
+          "bytes": 10865
+        },
+        {
+          "at": 2537,
+          "bytes": 10024
+        }
+      ],
+      "images": [
+        {
+          "url": "https://www.netflux.blog/_next/image?url=%2Fimages%2Fnetflux-logo.png&w=96&q=75",
+          "at": 673,
+          "priority": "Low"
+        },
+        {
+          "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1775816291510-d8e62c89-c337-4e0b-9f3a-1bf2372ec7f9.jpg&w=224&q=75",
+          "at": 2455,
+          "priority": "Low"
+        }
+      ],
+      "streamError": null,
+      "htmlBytes": 878564,
+      "stages": {
+        "titleDom": 2467.199999988079,
+        "coverDom": 2467.300000011921,
+        "titleVisible": 2555.100000023842,
+        "coverLoaded": 2999.900000035763
+      },
+      "longTasks": [
+        {
+          "start": 4287.199999988079,
+          "duration": 69
+        }
+      ],
+      "navigation": {
+        "responseStart": 255.30000001192093,
+        "responseEnd": 2537.5,
+        "domInteractive": 2542.5,
+        "domContentLoaded": 2542.5,
+        "transferSize": 67537,
+        "encodedBodySize": 67237,
+        "decodedBodySize": 878564
+      },
+      "paint": [
+        {
+          "name": "first-paint",
+          "at": 1028
+        },
+        {
+          "name": "first-contentful-paint",
+          "at": 1028
+        }
+      ]
+    },
+    {
+      "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+      "arrival": {
+        "headers": 1413,
+        "title": 2692,
+        "cover": 2692
+      },
+      "chunks": [
+        {
+          "at": 1419,
+          "bytes": 4661
+        },
+        {
+          "at": 1425,
+          "bytes": 5907
+        },
+        {
+          "at": 1432,
+          "bytes": 4086
+        },
+        {
+          "at": 1443,
+          "bytes": 4451
+        },
+        {
+          "at": 1443,
+          "bytes": 5464
+        },
+        {
+          "at": 1530,
+          "bytes": 8547
+        },
+        {
+          "at": 1538,
+          "bytes": 13820
+        },
+        {
+          "at": 1546,
+          "bytes": 8219
+        },
+        {
+          "at": 1554,
+          "bytes": 8933
+        },
+        {
+          "at": 1560,
+          "bytes": 17410
+        },
+        {
+          "at": 1568,
+          "bytes": 19153
+        },
+        {
+          "at": 1592,
+          "bytes": 18507
+        },
+        {
+          "at": 1613,
+          "bytes": 11907
+        },
+        {
+          "at": 1771,
+          "bytes": 12670
+        },
+        {
+          "at": 1793,
+          "bytes": 17396
+        },
+        {
+          "at": 1816,
+          "bytes": 10483
+        },
+        {
+          "at": 1837,
+          "bytes": 19757
+        },
+        {
+          "at": 1860,
+          "bytes": 10843
+        },
+        {
+          "at": 1884,
+          "bytes": 11307
+        },
+        {
+          "at": 1906,
+          "bytes": 13207
+        },
+        {
+          "at": 1928,
+          "bytes": 8730
+        },
+        {
+          "at": 1950,
+          "bytes": 8405
+        },
+        {
+          "at": 1972,
+          "bytes": 7937
+        },
+        {
+          "at": 1996,
+          "bytes": 6974
+        },
+        {
+          "at": 2018,
+          "bytes": 9100
+        },
+        {
+          "at": 2040,
+          "bytes": 4502
+        },
+        {
+          "at": 2063,
+          "bytes": 7337
+        },
+        {
+          "at": 2085,
+          "bytes": 6688
+        },
+        {
+          "at": 2101,
+          "bytes": 28006
+        },
+        {
+          "at": 2115,
+          "bytes": 29072
+        },
+        {
+          "at": 2131,
+          "bytes": 22696
+        },
+        {
+          "at": 2146,
+          "bytes": 24031
+        },
+        {
+          "at": 2161,
+          "bytes": 23937
+        },
+        {
+          "at": 2176,
+          "bytes": 21827
+        },
+        {
+          "at": 2191,
+          "bytes": 24414
+        },
+        {
+          "at": 2198,
+          "bytes": 19971
+        },
+        {
+          "at": 2220,
+          "bytes": 13501
+        },
+        {
+          "at": 2236,
+          "bytes": 11003
+        },
+        {
+          "at": 2272,
+          "bytes": 13696
+        },
+        {
+          "at": 2310,
+          "bytes": 38178
+        },
+        {
+          "at": 2340,
+          "bytes": 7749
+        },
+        {
+          "at": 2396,
+          "bytes": 131072
+        },
+        {
+          "at": 2396,
+          "bytes": 155876
+        },
+        {
+          "at": 2453,
+          "bytes": 4861
+        },
+        {
+          "at": 2521,
+          "bytes": 3894
+        },
+        {
+          "at": 2588,
+          "bytes": 3959
+        },
+        {
+          "at": 2640,
+          "bytes": 5493
+        },
+        {
+          "at": 2692,
+          "bytes": 10799
+        },
+        {
+          "at": 2881,
+          "bytes": 6105
+        },
+        {
+          "at": 3068,
+          "bytes": 28886
+        }
+      ],
+      "images": [
+        {
+          "url": "https://www.netflux.blog/_next/image?url=%2Fimages%2Fnetflux-logo.png&w=96&q=75",
+          "at": 1420,
+          "priority": "Low"
+        },
+        {
+          "url": "https://www.netflux.blog/_next/image?url=https%3A%2F%2Fxmuqsgfxuaaophxnwure.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmedia%2Fcovers%2F1775816291510-d8e62c89-c337-4e0b-9f3a-1bf2372ec7f9.jpg&w=224&q=75",
+          "at": 2693,
+          "priority": "Low"
+        }
+      ],
+      "streamError": null,
+      "htmlBytes": 915427,
+      "stages": {
+        "titleDom": 2706.899999976158,
+        "coverDom": 2706.899999976158,
+        "titleVisible": 3085.699999988079,
+        "coverLoaded": 3706.699999988079
+      },
+      "longTasks": [],
+      "navigation": {
+        "responseStart": 43.89999997615814,
+        "responseEnd": 3068.399999976158,
+        "domInteractive": 3073.399999976158,
+        "domContentLoaded": 3073.399999976158,
+        "transferSize": 73261,
+        "encodedBodySize": 72961,
+        "decodedBodySize": 915427
+      },
+      "paint": [
+        {
+          "name": "first-paint",
+          "at": 2052
+        },
+        {
+          "name": "first-contentful-paint",
+          "at": 2052
+        }
+      ]
+    }
+  ],
+  "documentStructure": [
+    {
+      "path": "/preview/0a52c5c8-f330-4ada-a164-05047b852444",
+      "total": 878564,
+      "h1Offset": 866416,
+      "styleBytes": 263725,
+      "styles": [
+        {
+          "offset": 1278,
+          "bytes": 263725
+        }
+      ],
+      "inlineScriptBytes": 573014,
+      "biggestScripts": [
+        {
+          "offset": 286688,
+          "bytes": 564846
+        },
+        {
+          "offset": 851535,
+          "bytes": 6099
+        },
+        {
+          "offset": 281970,
+          "bytes": 845
+        },
+        {
+          "offset": 267806,
+          "bytes": 721
+        }
+      ]
+    },
+    {
+      "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+      "total": 915427,
+      "h1Offset": 880173,
+      "styleBytes": 263725,
+      "styles": [
+        {
+          "offset": 1278,
+          "bytes": 263725
+        }
+      ],
+      "inlineScriptBytes": 586443,
+      "biggestScripts": [
+        {
+          "offset": 286743,
+          "bytes": 565575
+        },
+        {
+          "offset": 852319,
+          "bytes": 17546
+        },
+        {
+          "offset": 875206,
+          "bytes": 1237
+        },
+        {
+          "offset": 282154,
+          "bytes": 845
+        }
+      ]
+    }
+  ],
+  "controlPlan": {
+    "commit": "85fc2cb791bc357b0de2d16a735453fb95df3ab1",
+    "variants": {
+      "inline": 3228,
+      "external": 3227
+    },
+    "profiles": [
+      {
+        "name": "mobile",
+        "width": 390,
+        "height": 844,
+        "cpu": 4
+      },
+      {
+        "name": "desktop",
+        "width": 1440,
+        "height": 900,
+        "cpu": 1
+      }
+    ],
+    "paths": [
+      "/",
+      "/browse",
+      "/preview/0a52c5c8-f330-4ada-a164-05047b852444",
+      "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story"
+    ],
+    "network": {
+      "latency": 150,
+      "downloadThroughput": 200000,
+      "uploadThroughput": 93750
+    },
+    "samples": 1,
+    "limits": "Development control only; one sample per page/profile/variant; reverse variant order by profile. Local telemetry404 retained. No acceptance or statistical speedup. Only inlineCss differs between fresh builds. Same FCP/visible content/cover requirements as preceding assessments."
+  },
+  "controlObservations": [
+    {
+      "profile": "mobile",
+      "path": "/",
+      "variant": "inline",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 678,
+      "fcp": 640,
+      "htmlEnd": 0,
+      "htmlBytes": 0,
+      "stylesheets": 0
+    },
+    {
+      "profile": "mobile",
+      "path": "/",
+      "variant": "external",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 1549.5,
+      "fcp": 1520,
+      "htmlEnd": 303.89999997615814,
+      "htmlBytes": 329016,
+      "stylesheets": 2
+    },
+    {
+      "profile": "mobile",
+      "path": "/browse",
+      "variant": "inline",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 1342.3999999761581,
+      "fcp": 588,
+      "htmlEnd": 0,
+      "htmlBytes": 0,
+      "stylesheets": 0
+    },
+    {
+      "profile": "mobile",
+      "path": "/browse",
+      "variant": "external",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 1823.199999988079,
+      "fcp": 1492,
+      "htmlEnd": 574.1999999880791,
+      "htmlBytes": 342410,
+      "stylesheets": 2
+    },
+    {
+      "profile": "mobile",
+      "path": "/preview/0a52c5c8-f330-4ada-a164-05047b852444",
+      "variant": "inline",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 3293.199999988079,
+      "fcp": 576,
+      "htmlEnd": 2637.099999964237,
+      "htmlBytes": 876508,
+      "stylesheets": 0
+    },
+    {
+      "profile": "mobile",
+      "path": "/preview/0a52c5c8-f330-4ada-a164-05047b852444",
+      "variant": "external",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 1411.6000000238419,
+      "fcp": 1372,
+      "htmlEnd": 589.8000000119209,
+      "htmlBytes": 77555,
+      "stylesheets": 2
+    },
+    {
+      "profile": "mobile",
+      "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+      "variant": "inline",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 3450.600000023842,
+      "fcp": 584,
+      "htmlEnd": 2756.199999988079,
+      "htmlBytes": 913301,
+      "stylesheets": 0
+    },
+    {
+      "profile": "mobile",
+      "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+      "variant": "external",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 1477.5,
+      "fcp": 1140,
+      "htmlEnd": 605.4000000357628,
+      "htmlBytes": 114347,
+      "stylesheets": 2
+    },
+    {
+      "profile": "desktop",
+      "path": "/",
+      "variant": "external",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 1525.300000011921,
+      "fcp": 1488,
+      "htmlEnd": 299.69999998807907,
+      "htmlBytes": 329016,
+      "stylesheets": 2
+    },
+    {
+      "profile": "desktop",
+      "path": "/",
+      "variant": "inline",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 625.0999999642372,
+      "fcp": 600,
+      "htmlEnd": 0,
+      "htmlBytes": 0,
+      "stylesheets": 0
+    },
+    {
+      "profile": "desktop",
+      "path": "/browse",
+      "variant": "external",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 2725.5,
+      "fcp": 1548,
+      "htmlEnd": 591.8000000119209,
+      "htmlBytes": 342410,
+      "stylesheets": 2
+    },
+    {
+      "profile": "desktop",
+      "path": "/browse",
+      "variant": "inline",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 2614.199999988079,
+      "fcp": 912,
+      "htmlEnd": 0,
+      "htmlBytes": 0,
+      "stylesheets": 0
+    },
+    {
+      "profile": "desktop",
+      "path": "/preview/0a52c5c8-f330-4ada-a164-05047b852444",
+      "variant": "external",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 1400,
+      "fcp": 1360,
+      "htmlEnd": 576.6999999880791,
+      "htmlBytes": 77555,
+      "stylesheets": 2
+    },
+    {
+      "profile": "desktop",
+      "path": "/preview/0a52c5c8-f330-4ada-a164-05047b852444",
+      "variant": "inline",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 3276.7000000476837,
+      "fcp": 568,
+      "htmlEnd": 2633.100000023842,
+      "htmlBytes": 876508,
+      "stylesheets": 0
+    },
+    {
+      "profile": "desktop",
+      "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+      "variant": "external",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 1735,
+      "fcp": 1392,
+      "htmlEnd": 738.8000000119209,
+      "htmlBytes": 114257,
+      "stylesheets": 2
+    },
+    {
+      "profile": "desktop",
+      "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444/the-singapore-story",
+      "variant": "inline",
+      "failed": [
+        {
+          "path": "/_vercel/insights/script.js",
+          "status": 404
+        },
+        {
+          "path": "/_vercel/speed-insights/script.js",
+          "status": 404
+        }
+      ],
+      "readyMs": 3281.800000011921,
+      "fcp": 556,
+      "htmlEnd": 2753.400000035763,
+      "htmlBytes": 913211,
+      "stylesheets": 0
+    }
+  ],
+  "cssHashes": [
+    {
+      "variant": "inline",
+      "css": [
+        {
+          "hash": "3248cc907af37e3ccdb5e8fd0b4b4c1cef240f37a33d082182d65bc908b64571",
+          "bytes": 4830
+        },
+        {
+          "hash": "c667bc0278b7d8b6cd2e127c7d95848bc410d26735067f97bbad9ba042aff2fe",
+          "bytes": 258765
+        }
+      ]
+    },
+    {
+      "variant": "external",
+      "css": [
+        {
+          "hash": "2335faf99ee5df8bc58ba9d3e11aef377e24447129741015b76d89c9c6647f6b",
+          "bytes": 4687
+        },
+        {
+          "hash": "c667bc0278b7d8b6cd2e127c7d95848bc410d26735067f97bbad9ba042aff2fe",
+          "bytes": 258765
+        }
+      ]
+    }
+  ],
+  "decision": "Scope decision pending; experimental flag restored; no production application changes.",
+  "fontCssEquivalentAfterUrlNormalization": true
+}

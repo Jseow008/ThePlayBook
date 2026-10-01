@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { getCssDeliveryMode } from "./scripts/css-delivery-mode.mjs";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs";
 
@@ -144,7 +145,7 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["@phosphor-icons/react"],
     // Deliver render-blocking styles with HTML rather than competing with JS
     // downloads on first visits. Keep cold/warm browser evidence for this tradeoff.
-    inlineCss: true,
+    inlineCss: getCssDeliveryMode() === "inline",
   },
   devIndicators: isPlaywrightTest ? false : undefined,
   distDir: isPlaywrightTest ? ".next-playwright" : ".next",

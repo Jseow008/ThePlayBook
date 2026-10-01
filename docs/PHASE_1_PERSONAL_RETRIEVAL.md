@@ -3753,3 +3753,106 @@ analytics-packaging or favorable-result benchmark experiments are justified by
 this run. Preserve the known limits rather than declare Preview/Reader complete.
 Local servers/browser sessions stopped; no timers created. PR #224 merged;
 #28 and residual Home/Browse desktop readiness remain open.
+
+
+### 1 October 2026 — content arrival and CSS delivery control
+
+Branch codex/content-delivery-control at85fc2cb7, worktree
+/Users/j/.codex/worktrees/content-delivery-control/Lifebook. User authorized
+continued investigation after Preview/Reader assessment. Production trace pinned
+by read-only deployment metadata to85fc2cb7 (same application asd804d33f).
+One desktop trace per route, same150ms/200000B/s network, captures streamed HTML
+arrival through CDP, DOM readiness and document size. No paid/model calls or
+account writes. Raw evidence: /private/tmp/netflux-content-arrival/.
+
+Preview decoded HTML878564bytes, transmitted body67237bytes; Reader915427/
+72961bytes. Both contain263725bytes of inline CSS. Largest inline framework
+script564846/565575bytes includes two serialized copies of the stylesheet.
+Title/cover markup received near2454ms Preview and2692ms Reader; DOM observations
+follow at2467/2707ms. Cover complete2999/3707ms. CDP arrival times are observed
+browser event times, not isolated server-processing durations; buffered streaming
+bytes and event scheduling limit exact wire attribution. Network responseStart
+is recorded separately. No unsupported pure-network/server inference.
+
+Official local Next.js inlineCss guidance documents CSS duplication and the
+absence of per-page configuration. A Tailwind source-scope preflight using only
+app/components/hooks/lib reduced compiled CSS255722→254322bytes, gzip34592→34434
+(<1%): rejected as a material optimization. An initial standalone preflight
+module-resolution failure was fixed using package exports; no browser results
+were discarded. Tailwind documentation: https://tailwindcss.com/docs/detecting-classes-in-source-files.
+
+New diagnostic control changes only experimental.inlineCss true→false. This
+revisits the earlier tradeoff because new traces show late content delivery.
+It deliberately differs from the existing no-external-stylesheet release invariant
+and is NOT approved for production by a diagnostic build. No checks/gates are
+removed. Both builds use the same85fc2cb7 source/public configuration and fresh
+production builds; baseline in clean codex/browse-card-delivery. Global utility
+CSS hashes match exactly (258765bytes). Font CSS differs only in generated URL
+form (absolute /_next/static/media vs relative ../media); verify resolved assets.
+Built browser smoke renders Preview correctly in both; screenshots retained.
+
+Fixed development plan: one cold-context observation per Home/Browse/Preview/
+Reader, mobile390x844/4xCPU and desktop1440x900/1xCPU, same150ms/200000B/s network.
+Inline/external order reversed by profile. Preserve all failures; local platform
+telemetry404 is an environment limitation. No acceptance or statistical claim
+from this small control. Next: inspect complete results; reject global external
+CSS if it moves the delay back to Home/Browse. Do not publish the flag change
+without resolving the prior release invariant and affected-page evidence.
+
+
+Control complete: all16 observations retained, one per page/profile/variant.
+
+| Page/profile | Inline CSS readiness ms | External CSS readiness ms |
+|---|---:|---:|
+| Home mobile |678|1550|
+| Home desktop |625|1525|
+| Browse mobile |1342|1823|
+| Browse desktop |2614|2726|
+| Preview mobile |3293|1412|
+| Preview desktop |3277|1400|
+| Reader mobile |3451|1478|
+| Reader desktop |3282|1735|
+
+These are development observations, not medians, production speedup proof or
+acceptance. First paint also becomes later with external CSS even where useful
+page content improves. All application styles match: global CSS byte hash is
+identical; font CSS becomes identical after normalizing the generated relative
+versus absolute asset paths. Local platform telemetry404 remains the only recorded
+resource failure; no application asset failures or readiness errors.
+
+The CSS control demonstrates a product tradeoff, not an unconditional fix. User
+was asked whether to validate external CSS on matched hosted builds (recommended
+before any rollout) or preserve current Home/Browse loading behavior. This scope
+choice is pending because the prior agreed direction explicitly left Home/Browse
+unchanged. Experimental global configuration has been restored; production and
+release gates are unchanged. No hosted deployment/control rollout attempted.
+
+PR #225 has merged at05e444a0. This worktree is fast-forwarded from85fc2cb7 onto
+main afterward, preserving the intentionally uncommitted checkpoint/evidence.
+The comparison builds remain pinned to85fc2cb7 and must not be relabeled as fresh
+main evidence. If hosted validation is chosen, construct paired baseline/candidate
+from the same fresh source/configuration; explicitly update the CSS release
+contract for review rather than bypass the existing no-stylesheet gate. No need
+to repeat source-scope or priority-only experiments. If preserving current loading
+is chosen, hold the global candidate; retain the unresolved readiness limits.
+
+
+#### Hosted validation authorized
+
+User approved matched hosted validation of the CSS tradeoff. Production rollout
+is not part of this comparison. Add a build-time NETFLUX_CSS_DELIVERY_EXPERIMENT
+switch with default inline; external is rejected unless VERCEL_ENV=preview.
+Both variants share one commit, project settings and preview environment. The
+normal production no-external-CSS check remains unchanged. Experimental external
+builds must instead prove local emitted stylesheet paths, non-empty app CSS,
+absence of inline app styles and the same320KiB aggregate budget. No gate is
+removed or skipped. Seven contract tests pass; typecheck and focused lint pass.
+The existing external diagnostic build passes the new emitted-asset check plus
+the sharp trace check. Initial test-type mismatch was corrected by documenting
+the environment input type; no runtime acceptance data was discarded.
+
+Next: open a held experimental PR, deploy inline and external previews from its
+exact commit, freeze URLs/identities and a three-observation per page/profile
+paired plan. Reverse order across repetitions/profiles; retain all failures and
+report Home/Browse regressions alongside Preview/Reader gains. No paid AI calls,
+accounts, production settings, database work, timers or production promotion.
