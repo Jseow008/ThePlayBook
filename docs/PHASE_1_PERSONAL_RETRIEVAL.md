@@ -3352,3 +3352,60 @@ long tasks still need attribution before declaring the full first-load objective
 complete. Next: publish this focused PR, preserve required gates, then verify its
 deployed initial animation state. Reuse #219's completed hosted evidence; do not
 repeat broad benchmarks or fold in unrelated audio/model changes.
+
+
+### 1 October 2026 — font-priority investigation concluded without rollout
+
+#221 merged as 5898255b and production www.netflux.blog now serves that commit,
+including #220. The initial-animation visibility check passes in production on
+both desktop and mobile (two tests, zero retries). This supersedes the pending
+release state and intentional local append in font-loading-followup.
+
+Worktree /Users/j/.codex/worktrees/route-font-priority/Lifebook,
+branch codex/route-font-priority, based on fresh main 5898255b. No agents, paid
+calls, database changes or recurring monitors. #28 remains open.
+
+Consumer inspection corrected the earlier simplification: Playfair is also used
+by Browse cards and onboarding, so it must remain available. Two bounded candidates
+were evaluated without changing families, sizes or layout:
+
+1. Route-specific next/font preloading correctly prioritizes Home Playfair and
+   Browse Outfit, but separate preloaded/non-preloaded instances emit distinct
+   URLs for the same Playfair bytes. Cold Browse followed by Home requests both
+   forms. Reject this approach rather than introducing cache duplication. An
+   initial navigation fixture attempted a Browse logo that leads to Browse and
+   encountered onboarding; it was discarded, then replaced with direct page
+   navigation for the specific resource check.
+2. Shared Outfit preloading avoids separate font instances. Production build
+   passes. Twelve local cold observations alternate baseline/candidate order,
+   three per route and variant, at 390x844, 4x CPU, 150ms/200KB/s. Baseline built
+   application matches main (#221); complete public assets are served. Initial
+   preflight rejected local Vercel telemetry-script 404s. The two unavailable
+   platform scripts were explicitly stubbed equally on both before measurement;
+   other critical asset errors still fail the run. No favorable-result reruns.
+
+Median results (milliseconds):
+
+| Metric | Baseline | Shared Outfit preload |
+|---|---:|---:|
+| Home Playfair completion | 1242 | 1348 |
+| Home Inter completion | 1452 | 1519 |
+| Home FCP / LCP | 556 / 556 | 580 / 580 |
+| Browse Outfit completion | 2338 | 1198 |
+| Browse Inter completion | 1482 | 1618 |
+| Browse FCP / LCP | 600 / 944 | 616 / 1012 |
+
+The shared candidate adds 32528 bytes of early font traffic on Home. Reject it:
+it exchanges earlier Browse typography for later Home fonts without improving
+visible-content timing in this small sample. All application edits were reverted;
+only this checkpoint and [development evidence](evidence/font-priority-development-20261001.json)
+are published. Raw scripts/rejected patch remain under
+/private/tmp/netflux-font-attribution. Existing local ServerResponse listener
+warnings remain unresolved; these experiments change no server runtime logic.
+
+Next: inspect the shared initial instrumentation/framework JavaScript chunk and
+PostHog loading path for safely removable or deferrable work. Preserve early error
+capture, analytics identity ordering and existing product behavior. Use a small
+built comparison for one credible candidate; do not repeat font experiments or
+claim the full first-load bottleneck is resolved. Deployed #221's removal of the
+intentional reveal delay is verified; the wider objective remains open.
