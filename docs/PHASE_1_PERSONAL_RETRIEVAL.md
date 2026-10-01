@@ -3753,3 +3753,257 @@ analytics-packaging or favorable-result benchmark experiments are justified by
 this run. Preserve the known limits rather than declare Preview/Reader complete.
 Local servers/browser sessions stopped; no timers created. PR #224 merged;
 #28 and residual Home/Browse desktop readiness remain open.
+
+
+### 1 October 2026 — content arrival and CSS delivery control
+
+Branch codex/content-delivery-control at85fc2cb7, worktree
+/Users/j/.codex/worktrees/content-delivery-control/Lifebook. User authorized
+continued investigation after Preview/Reader assessment. Production trace pinned
+by read-only deployment metadata to85fc2cb7 (same application asd804d33f).
+One desktop trace per route, same150ms/200000B/s network, captures streamed HTML
+arrival through CDP, DOM readiness and document size. No paid/model calls or
+account writes. Raw evidence: /private/tmp/netflux-content-arrival/.
+
+Preview decoded HTML878564bytes, transmitted body67237bytes; Reader915427/
+72961bytes. Both contain263725bytes of inline CSS. Largest inline framework
+script564846/565575bytes includes two serialized copies of the stylesheet.
+Title/cover markup received near2454ms Preview and2692ms Reader; DOM observations
+follow at2467/2707ms. Cover complete2999/3707ms. CDP arrival times are observed
+browser event times, not isolated server-processing durations; buffered streaming
+bytes and event scheduling limit exact wire attribution. Network responseStart
+is recorded separately. No unsupported pure-network/server inference.
+
+Official local Next.js inlineCss guidance documents CSS duplication and the
+absence of per-page configuration. A Tailwind source-scope preflight using only
+app/components/hooks/lib reduced compiled CSS255722→254322bytes, gzip34592→34434
+(<1%): rejected as a material optimization. An initial standalone preflight
+module-resolution failure was fixed using package exports; no browser results
+were discarded. Tailwind documentation: https://tailwindcss.com/docs/detecting-classes-in-source-files.
+
+New diagnostic control changes only experimental.inlineCss true→false. This
+revisits the earlier tradeoff because new traces show late content delivery.
+It deliberately differs from the existing no-external-stylesheet release invariant
+and is NOT approved for production by a diagnostic build. No checks/gates are
+removed. Both builds use the same85fc2cb7 source/public configuration and fresh
+production builds; baseline in clean codex/browse-card-delivery. Global utility
+CSS hashes match exactly (258765bytes). Font CSS differs only in generated URL
+form (absolute /_next/static/media vs relative ../media); verify resolved assets.
+Built browser smoke renders Preview correctly in both; screenshots retained.
+
+Fixed development plan: one cold-context observation per Home/Browse/Preview/
+Reader, mobile390x844/4xCPU and desktop1440x900/1xCPU, same150ms/200000B/s network.
+Inline/external order reversed by profile. Preserve all failures; local platform
+telemetry404 is an environment limitation. No acceptance or statistical claim
+from this small control. Next: inspect complete results; reject global external
+CSS if it moves the delay back to Home/Browse. Do not publish the flag change
+without resolving the prior release invariant and affected-page evidence.
+
+
+Control complete: all16 observations retained, one per page/profile/variant.
+
+| Page/profile | Inline CSS readiness ms | External CSS readiness ms |
+|---|---:|---:|
+| Home mobile |678|1550|
+| Home desktop |625|1525|
+| Browse mobile |1342|1823|
+| Browse desktop |2614|2726|
+| Preview mobile |3293|1412|
+| Preview desktop |3277|1400|
+| Reader mobile |3451|1478|
+| Reader desktop |3282|1735|
+
+These are development observations, not medians, production speedup proof or
+acceptance. First paint also becomes later with external CSS even where useful
+page content improves. All application styles match: global CSS byte hash is
+identical; font CSS becomes identical after normalizing the generated relative
+versus absolute asset paths. Local platform telemetry404 remains the only recorded
+resource failure; no application asset failures or readiness errors.
+
+The CSS control demonstrates a product tradeoff, not an unconditional fix. User
+was asked whether to validate external CSS on matched hosted builds (recommended
+before any rollout) or preserve current Home/Browse loading behavior. This scope
+choice is pending because the prior agreed direction explicitly left Home/Browse
+unchanged. Experimental global configuration has been restored; production and
+release gates are unchanged. No hosted deployment/control rollout attempted.
+
+PR #225 has merged at05e444a0. This worktree is fast-forwarded from85fc2cb7 onto
+main afterward, preserving the intentionally uncommitted checkpoint/evidence.
+The comparison builds remain pinned to85fc2cb7 and must not be relabeled as fresh
+main evidence. If hosted validation is chosen, construct paired baseline/candidate
+from the same fresh source/configuration; explicitly update the CSS release
+contract for review rather than bypass the existing no-stylesheet gate. No need
+to repeat source-scope or priority-only experiments. If preserving current loading
+is chosen, hold the global candidate; retain the unresolved readiness limits.
+
+
+#### Hosted validation authorized
+
+User approved matched hosted validation of the CSS tradeoff. Production rollout
+is not part of this comparison. Add a build-time NETFLUX_CSS_DELIVERY_EXPERIMENT
+switch with default inline; external is rejected unless VERCEL_ENV=preview.
+Both variants share one commit, project settings and preview environment. The
+normal production no-external-CSS check remains unchanged. Experimental external
+builds must instead prove local emitted stylesheet paths, non-empty app CSS,
+absence of inline app styles and the same320KiB aggregate budget. No gate is
+removed or skipped. Seven contract tests pass; typecheck and focused lint pass.
+The existing external diagnostic build passes the new emitted-asset check plus
+the sharp trace check. Initial test-type mismatch was corrected by documenting
+the environment input type; no runtime acceptance data was discarded.
+
+Next: open a held experimental PR, deploy inline and external previews from its
+exact commit, freeze URLs/identities and a three-observation per page/profile
+paired plan. Reverse order across repetitions/profiles; retain all failures and
+report Home/Browse regressions alongside Preview/Reader gains. No paid AI calls,
+accounts, production settings, database work, timers or production promotion.
+
+
+#### Matched hosted result — 1 October 2026
+
+PR #226 is held, auto-merge off, on `codex/content-delivery-control` in
+`/Users/j/.codex/worktrees/content-delivery-control/Lifebook`. Both preview builds
+are READY from the same measured commit `31a51e066fa80cba4ea3c05f5e209defbd7a2556`;
+project, Node version and preview environment match. Their deployment IDs and
+immutable URLs are in the evidence JSON. Production was not changed.
+
+Completed the frozen 48-observation plan once: three fresh-context samples for
+four pages, two viewport/CPU profiles and two CSS modes, alternating variant
+order. Network simulation remains150ms latency/200KB/s down. Values below are
+useful-content readiness medians, not first paint or real-user percentiles.
+
+| Page | Mobile inline → external | Desktop inline → external |
+| --- | ---: | ---: |
+| Home |748 →2418ms|744 →2438ms|
+| Browse |1702 →2230ms|4777 →4719ms|
+| Preview |2730 →3387ms|2254 →3222ms|
+| Reader |2260 →3949ms|3545 →3944ms|
+
+**Reject the global external-CSS rollout.** Seven of eight medians became slower;
+the58ms desktop Browse difference is too small to justify the regressions.
+The local improvement did not reproduce on matched hosted builds. Smaller HTML
+alone does not establish a faster experience: external stylesheet delivery moves
+work onto the blocking path. Retain current inline CSS. The mobile Preview and
+desktop Browse/Reader inline medians still exceed the2500ms target; desktop Browse
+also exceeds the4000ms maximum. Do not call the overall bottleneck resolved.
+
+All48 timed observations completed, without HTTP>=400 font/image/script/style
+responses. This harness did not capture CSP/network requestfailed events, so this
+is not a claim of zero browser errors. HTML end/size values recorded before stream
+completion may be zero. Application CSS is identical after concatenating the two
+external files and normalizing only generated font URL prefixes; initial per-file
+hash comparison failed on the packaging difference and was corrected before timing.
+
+Separate navigation/section smoke: initial hidden Read-link selector failed and
+was preserved; corrected visible-link smoke passed mobile both variants and
+desktop external with no horizontal overflow. Desktop inline stopped on a duplicate
+h1 strict-selector error. Keep that baseline smoke limitation; do not repeat the
+performance run or spend more validating a rejected candidate. Screenshots were
+captured locally; no redesign, account writes, paid AI, database work or timers.
+
+At measurement completion: PR scope, Security Validation, catalog evidence and
+Vercel passed on31a51e06; validate was still pending. This appended evidence does
+not validate a different application commit. Seven local contract tests, typecheck
+and focused lint passed before deployment. One agent; no additional paid model
+calls or benchmark repeats. Codex token usage unavailable.
+
+Next: retain inline CSS and keep #226 unmerged. Decide whether to archive the
+preview-only experiment as a documentation-only result, then resume narrowly
+measuring font/image contention on the remaining slow pages. Do not ship the
+global switch or repeat this comparison hoping for a favorable outcome. #28 remains
+open. The hosted evidence and this checkpoint are the intentional follow-up changes.
+
+
+#### Follow-up: font/image contention — 1 October 2026
+
+User authorized continuing the focused investigation. Reused the immutable inline
+preview at31a51e06 and existing network/desktop settings. Production remains
+unchanged; #226 remains held with auto-merge off. Current worktree/branch unchanged.
+No source implementation changed; only this checkpoint and existing evidence JSON.
+
+Two attribution traces: Browse title/action appeared1575ms, fonts ready4364ms,
+hero4898ms and useful readiness4915ms. Three fonts totaled119120bytes;17img-initiated
+card transfers totaled142822bytes, alongside447142bytes of script responses. Hero
+is preload/link initiated, so it is not included in that card-image subtotal.
+Reader fonts were ready1705ms, title/action2327ms, cover2730ms, useful readiness2747ms.
+This Reader sample points to late content arrival and subsequent cover completion,
+not waiting for fonts. None of these figures establishes real-user averages.
+
+One small paired diagnostic held only baseline below-viewport image requests until
+hero readiness, then released them without abort/fallback. Reversed order across
+two observations each: normal4784/4756ms, deferred4407/4399ms (medians4770/4403ms).
+The367ms directional saving does not reach the4000ms maximum or2500ms median goal.
+A separate one-observation font diagnostic held fonts until hero readiness:4219ms,
+still above the maximum and initially using fallback typography. This is an upper-
+bound-style diagnostic, not an equivalent-looking implementation or rollout proof.
+No benchmark was repeated to replace failures; all observations are retained.
+
+The diagnostic scripts inherit the old variant label `external`; the evidence
+explicitly maps it to request deferral on the SAME INLINE preview, not external CSS.
+Preview feedback and analytics-config CSP failures are recorded. Reader recorded
+an aborted media request without playback. Public Browse was additionally opened
+and inspected through agent-browser, then closed. No accounts, data mutations,
+paid AI calls, infrastructure changes, timers or subagents.
+
+Conclusion: do not add viewport gating or defer fonts as a claimed resolution on
+this evidence. Both have modest potential but neither meets the stated target;
+font delay changes the initial appearance. Keep the accepted production behavior.
+Remaining work is reducing first-screen transfer competition/content-arrival delay
+without losing analytics, changing typography or reducing image quality. The current
+samples do not establish a safe implementation for that yet. Next investigation,
+if continued: isolate initial script-transfer contention using a bounded diagnostic
+before considering a specific module boundary; do not reopen CSS/priority experiments.
+#28 stays open. These findings are appended to the existing held PR, not deployed.
+
+
+#### Continuous follow-through and final disposition — 1 October 2026
+
+User authorized necessary follow-ups without repeated proceed requests. Completed
+one bounded script-contention diagnostic and one concrete Reader candidate; no
+subagents, paid model calls, database work, accounts or recurring timers.
+
+Holding all script requests until visual readiness reduced Browse medians from
+4856ms to2390ms and Reader3607ms to2282ms (two each, reversed order). This establishes
+substantial script competition in the simulation, not a shippable solution: it
+delays hydration/interaction and short-visit analytics. Reused the previously
+inspected shared dependency map rather than repeating its bundle audit.
+
+Implemented one safe-to-evaluate boundary: extract the Markdown/highlight/sanitize
+engine unchanged into a dynamic module used when a Reader section first opens.
+Preserved visited text mounting, anchors, layout, fonts, auth and analytics. The
+experimental code is retained locally at95c7fd1699dd3f774d946324e9c49a72d2122bb4 on
+`codex/reader-markdown-loading` in
+`/Users/j/.codex/worktrees/reader-markdown-loading/Lifebook`; it is NOT deployed.
+19 focused tests, typecheck, lint, production build, CSS/sharp guards passed.
+Initial dependency symlink build failure and asynchronous assertion updates are
+recorded in evidence. No change to the sanitization or highlight algorithm.
+
+Eight local paired observations (two per viewport/variant) showed:
+
+| Metric | Original | Lazy Markdown |
+| --- | ---: | ---: |
+| Mobile useful-content median |3326ms|3211ms|
+| Desktop useful-content median |3274ms|3277ms|
+| Mobile first-section median |210ms|950ms|
+| Desktop first-section median |75ms|904ms|
+
+Initial compressed JavaScript fell by about117–118KB, but that did not establish
+an appreciable first-screen improvement and moved waiting to section opening.
+Reject this candidate; no hosted benchmark, PR or production rollout is justified.
+Existing local baseline85fc2cb7 has identical app/components/lib/hooks/config/package
+inputs to candidate base05e444a0 (documentation-only intervening commit).
+Browser preflight passed visually; local telemetry404 retained. Detailed results,
+including original failures/limits, are in the existing evidence JSON.
+
+**Finish this bounded pass, without claiming the bottleneck resolved.** The tested
+CSS/font/image/JavaScript tradeoffs do not support a further safe user-visible win
+under the current constraints. Do not schedule another round automatically. A
+larger shared-client/server-boundary redesign would be separate scoped work, not
+an endless extension of these micro-optimizations. Real-user field evidence would
+help determine whether that larger investment is justified; it has not been
+collected here and worldwide performance remains unproven. #28 remains open.
+
+PR #226 is now converted to a documentation-only record: remove the preview switch,
+its test and all CSS-gate changes from the final diff; preserve experimental commit
+history/evidence. It may merge through normal required gates without any application
+behavior change. The current checkpoint/evidence are the only intended final files.
+No need to repeat application performance measurements for this documentation change.
