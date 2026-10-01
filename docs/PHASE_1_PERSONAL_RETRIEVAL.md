@@ -4007,3 +4007,47 @@ its test and all CSS-gate changes from the final diff; preserve experimental com
 history/evidence. It may merge through normal required gates without any application
 behavior change. The current checkpoint/evidence are the only intended final files.
 No need to repeat application performance measurements for this documentation change.
+
+### Shared card visibility and Search loading — 1 October 2026
+
+User authorized the focused follow-up after a Browse-to-sitewide audit. Branch
+`codex/sitewide-search-load` in
+`/Users/j/.codex/worktrees/sitewide-search-load/Lifebook` started from fetched
+`origin/main` `3d237397`; application commit `801c4daf`. No redesign, database
+write, paid AI call, account creation, new infrastructure or recurring monitor.
+
+Live Browse and Search inspection found the first card in the DOM with its cover
+fully loaded but CSS opacity zero until hydration. With JavaScript disabled, the
+loaded cover stayed invisible. The shared `ContentCard` now paints the cover at
+normal opacity from server HTML and still clears its backing placeholder after
+load. This applies to Browse, Search and Library uses of that card; it does not
+change the Browse hero or Reader/Preview cover components. Built local browser
+checks confirmed loaded Browse and Search covers visible without JavaScript on
+390px mobile, with no horizontal overflow.
+
+Search previously awaited category statistics before starting any result query.
+Unfiltered newest, text-search and popular reads now start alongside statistics;
+category-filtered searches retain their statistics-derived raw category values.
+Deferred-stat tests prove the first two reads start while the statistics RPC is
+pending; the popular test covers Supabase's awaitable RPC builder. All 50 focused
+SearchPage/ContentCard tests, typecheck, full lint, production build, Sharp trace
+check and critical-CSS check passed. Built-browser newest, text, category and
+popular pages returned 200 with 20 cards and no overflow. A representative
+390px/1440px Home, Browse, Search, Preview and Reader smoke passed; one early
+desktop Preview/Reader observation preceded streamed headings, which appeared
+within the bounded follow-up wait.
+
+Failed setup/correction evidence: `NODE_OPTIONS` preload was rejected by Next's
+build worker; a temporary local environment-file link allowed the build and was
+removed afterward. The first built Popular probe exposed `.catch()` on a
+Supabase thenable; wrapping it as a real Promise fixed the route. Local text
+search needed a disposable runtime cursor key because the developer environment
+omits it. No production credential or configuration was changed. The local
+Next server logged repeated listener warnings during multi-route smoke, with no
+observed failed route after the correction.
+
+This proves cover visibility and removal of a Search request dependency, not a
+measured p95 or complete first-load win. Selected-category Search still waits for
+statistics, authenticated Library was not browser-tested, and worldwide readiness
+remains unmeasured. Next: inspect branch scope, push a ready PR, verify GitHub
+file scope and `PR scope`, then enable squash auto-merge under the existing gates.
