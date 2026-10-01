@@ -3314,3 +3314,41 @@ once deployed, no paid requests; preserve this checkpoint and hosted summaries i
 a documentation follow-up. Then bound remaining font/JS investigation with explicit
 user-visible readiness measurements. Do not call all32 findings or first-load UX
 complete, close #28, enable monitors or switch models.
+
+
+### 1 October 2026 — visible Home content during entrance motion
+
+Worktree: /Users/j/.codex/worktrees/font-loading-followup/Lifebook;
+branch codex/font-loading-followup, based on main a012117b. This supersedes the
+pending deployment state above: #219 merged as 8918c7f4 and www.netflux.blog was
+verified serving that commit. #220 merged as a012117b with passing required checks;
+its three-file narration-temperature/top-p change, test and OPS update have no
+first-load conflict. The production alias still served #219 at this inspection,
+so #220 production deployment is not yet confirmed.
+
+A bounded anonymous production probe (390x844, 200KB/s down, 150ms latency,
+4x CPU) found Home FCP 1372ms, headline opacity above .95 at 1776ms and paragraph
+at 1958ms while fonts were still loading; final paragraph LCP was 2972ms and font
+completion 3264ms. Browse FCP was 1152ms, heading visible at 1998ms and font
+completion 4232ms. These single samples identify mechanisms, not user averages.
+The probe's Playwright screenshots waited for fonts and are not early-frame proof.
+Raw local observations: /private/tmp/netflux-font-attribution/result.json.
+
+Home's CSS deliberately hid and blurred the already-rendered headline, description
+and actions during a 780ms entrance plus stagger delays. The focused correction
+keeps them opaque and unblurred throughout, retaining upward motion, timing,
+layout, typography, colors and copy. The existing landing browser test now pauses
+animations at time zero and asserts opacity 1/filter none. It fails against the
+current production baseline (actual opacity 0), then passes on the candidate.
+All eight focused Home/Browse/CTA/chrome tests passed on desktop and mobile,
+without retries. Production build/typecheck, focused lint and diff validation
+passed. Desktop/mobile screenshots were inspected; mobile has no horizontal
+overflow or framework error overlay. No paid calls, database changes, new agent
+or recurring monitor was used; #28 stays open.
+
+This proves removal of an intentional visibility delay, not a measured overall
+production speedup. Font swaps, shared resource bandwidth and remaining JavaScript
+long tasks still need attribution before declaring the full first-load objective
+complete. Next: publish this focused PR, preserve required gates, then verify its
+deployed initial animation state. Reuse #219's completed hosted evidence; do not
+repeat broad benchmarks or fold in unrelated audio/model changes.
