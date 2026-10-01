@@ -8,6 +8,20 @@ test('landing page loads and renders correctly', async ({ page }) => {
     await expect(heading).toBeVisible();
     const heroSection = heading.locator('xpath=ancestor::section[1]');
 
+    // Reset entrance animations to their delayed starting state. Content must
+    // remain readable there, not merely become visible once the animation ends.
+    const reveals = heroSection.locator('.landing-hero-reveal');
+    await reveals.evaluateAll(elements => elements.forEach(element => {
+        element.getAnimations().forEach(animation => {
+            animation.pause();
+            animation.currentTime = 0;
+        });
+    }));
+    for (const reveal of await reveals.all()) {
+        await expect(reveal).toHaveCSS('opacity', '1');
+        await expect(reveal).toHaveCSS('filter', 'none');
+    }
+
     // Verify the landing page exposes the current hero CTAs
     await expect(heroSection.getByRole('link', { name: 'Explore a Summary' })).toBeVisible();
     await expect(heroSection.getByRole('link', { name: 'Build Your Library Free' })).toBeVisible();
