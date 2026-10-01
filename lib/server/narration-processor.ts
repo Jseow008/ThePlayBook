@@ -136,6 +136,9 @@ async function claimNextNarrationJob() {
                 narration_status: "processing",
                 narration_started_at: startedAt,
                 narration_error: null,
+                narration_segments_completed: 0,
+                narration_segments_total: null,
+                narration_progress_at: null,
             })
             .eq("id", item.id)
             .eq("narration_status", "queued")
@@ -167,6 +170,43 @@ async function markNarrationFailed(contentId: string, startedAt: string, error: 
         .eq("id", contentId)
         .eq("narration_status", "processing")
         .eq("narration_started_at", startedAt);
+}
+
+async function saveNarrationProgress(
+    contentId: string,
+    startedAt: string,
+    completedSegments: number,
+    totalSegments: number,
+    requestId: string
+) {
+    try {
+        const supabase = getAdminClient();
+        const { error } = await supabase
+            .from("content_item")
+            .update({
+                narration_segments_completed: completedSegments,
+                narration_segments_total: totalSegments,
+                narration_progress_at: new Date().toISOString(),
+            })
+            .eq("id", contentId)
+            .eq("narration_status", "processing")
+            .eq("narration_started_at", startedAt);
+
+        if (!error) return;
+        logApiError({
+            requestId,
+            route: "/api/admin/narration/process",
+            message: "Failed to record narration segment progress",
+            error,
+        });
+    } catch (error) {
+        logApiError({
+            requestId,
+            route: "/api/admin/narration/process",
+            message: "Failed to record narration segment progress",
+            error,
+        });
+    }
 }
 
 async function releaseNarrationClaim(
@@ -297,7 +337,13 @@ export async function processNextNarrationJob(requestId: string) {
                 key_takeaways?: string[] | null;
             } | null,
             segments,
-        });
+        }, (completedSegments, totalSegments) => saveNarrationProgress(
+            contentId,
+            claimStartedAt,
+            completedSegments,
+            totalSegments,
+            requestId
+        ));
 
         if (audioBuffer.byteLength > MAX_AUDIO_BYTES) {
             throw new Error("Generated narration is too large to store.");
