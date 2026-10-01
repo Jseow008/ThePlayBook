@@ -255,7 +255,7 @@ export function DrainNarrationJobsButton() {
                 ) : queueSummary ? (
                     <>
                         <div>{queuedCount} queued for recovery</div>
-                        <div>{processingCount} currently processing in the background</div>
+                        <div>{processingCount} currently processing</div>
                         {processingJobs.length > 0 ? (
                             <div className="pt-1">
                                 <div className="font-medium text-foreground">Currently processing</div>
