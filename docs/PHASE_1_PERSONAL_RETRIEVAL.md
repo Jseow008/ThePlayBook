@@ -3056,3 +3056,106 @@ succeeded. Luna remains held. Any reliability change (for example a bounded retr
 of transient structured-output failures) is a distinct latency/cost/failure-policy
 decision that needs explicit recorded semantics and validation without hiding
 first-attempt failures. No such behavior is added by this evidence PR. #28 open.
+
+### Continued Luna diagnosis and corrective candidate — 1 October 2026
+
+User explicitly instructed continued diagnosis/fixes, rather than stopping at a
+release blocker. Fresh-main branch `codex/luna-response-investigation`, worktree
+`/private/tmp/netflux-luna-response`, base `f3910621`. No production change.
+
+Five bounded reproductions of comparison-larch all succeeded. An initial command
+omitted inherited Node server conditions and stopped before provider/network work;
+corrected invocation made exactly five calls, no provider retries. Artifacts
+`/private/tmp/netflux-luna-reproduction-{1..5}.json`. This does not repair #215.
+
+Source inspection and offline actual-SDK replay demonstrated a compatibility
+problem: generateText concatenates text across response messages, so documented
+commentary followed by valid final-answer JSON fails JSON parsing. Experimental
+`luna-final-phase.ts` accepts one explicitly final message, excludes only explicit
+preceding commentary, preserves usage, and rejects ambiguous/missing finals and
+malformed JSON. No arbitrary text repair or first-valid-JSON extraction. Seven
+SDK-backed offline regression cases now include incomplete-provider rejection.
+
+Fresh phase-aware none-reasoning evaluation stopped at call104/168 on run2
+abstain-glossary-no-value. First run had100% selector recall/rejection/abstention/
+quote-target metrics. Three real multi-message responses were handled, but the
+new failure is independently captured: provider status incomplete, reason
+max_output_tokens, one commentary message repeatedly emitting JSON-like objects,
+no final answer,1600output tokens and zero reasoning tokens. The adapter correctly
+rejected it. This observed provider-output failure is not inferred from a missing
+original response. Original comparison-larch failure still cannot be reconstructed.
+Raw artifact `/private/tmp/netflux-luna-phase-quality-v1.json`; exact executed
+runner saved `/private/tmp/netflux-luna-phase-quality-executed.ts`. Failed usage
+was absent from initial totals but remains in captured raw response: add9534input/
+1600output for any total-cost calculation; never silently relabel original totals.
+
+One diagnostic with reasoning low on that same failed input returned valid
+abstention in3253ms,131output tokens. This is diagnosis only, not held-out quality
+qualification. Seven separate development cases then passed7/7; median4871ms,
+13223input/2785output tokens, standard uncached estimate$0.0027148 versus prior
+Haiku$0.032220. No speed claim; user accepted cost-focused evaluation.
+
+Earlier checkpoint (now completed below): fresh three-run evaluation at reasoning low with the guarded phase
+adapter, same prompt/schema/output cap/deadline/quality floors; max168 calls, no
+retries. Raw `/private/tmp/netflux-luna-low-quality-v1.json`; runner
+`scripts/experiments/selector-luna-phase-quality.ts`; process session74193 at launch.
+Plan `/private/tmp/netflux-luna-low-quality-plan-output.json`. Complete error/raw
+synthetic response capture now includes phase-boundary errors and provider usage;
+multiple-message success bodies are retained as well. Read artifact/process before
+resuming; never restart a paid run after compaction. Next: inspect complete result
+or exact first failure; only if passed proceed to database/renderer integration
+verification and release. UI progress remains conditional; no partial assessment
+is user-visible. Timers paused, #28 open. No new account/DB project or sudo needed.
+
+
+### Luna correction qualifies for application rollout — 1 October 2026
+
+Completed the continued diagnosis rather than stopping at the first failed gate.
+Low reasoning with the explicit-final-phase adapter completed **168/168 independent
+provider calls**, 56 cases across three runs, zero retries or provider failures.
+Every selector metric was 100% in each run. Observed usage:886776 input and30584
+output tokens; median2911ms is a synthetic, cache-influenced observation, **not a
+production speedup claim**. The earlier39-call and104-call failures remain failures.
+No successful output was substituted into either.
+
+Integration adds an explicit selector-only environment override
+`PERSONAL_EVIDENCE_SELECTOR_MODEL=gpt-6-luna`. It retains the evaluated prompt,
+schema, candidates,1600 output cap,20s deadline, no retries, low reasoning,
+forceReasoning and store:false. Default remains the existing Haiku configuration.
+Unrecognized overrides or missing OpenAI configuration fail closed. The final-phase
+adapter discards only explicitly identified preceding commentary; ambiguous,
+incomplete and malformed finals still fail.
+
+Spending admission includes reviewed OpenAI standard Luna prices:
+$0.10/M input,$0.01/M cached input,$0.50/M output; above272000 input tokens, input
+and cache rates double and output multiplies by1.5. The full1050000-token context
+is conservatively reserved at the higher tier ($0.2112 with1600 output tokens);
+actual valid usage settles at its correct tier. Failed/unknown-usage calls retain
+the reserve. Daily policy/guest limits are unchanged. Pricing source:
+https://developers.openai.com/api/docs/models/gpt-6-luna (checked1October2026).
+No database migration is needed.
+
+Offline conversion verifies original request/config/adapter/harness hashes before
+binding each unchanged provider response to the shared application configuration.
+The disposable local Supabase gate passed175 tests (174 case-runs plus aggregate),
+with100% recall, irrelevant rejection, forbidden-evidence exclusion and exact-quote
+fidelity in each run. This includes real Auth/session lifecycle and rendered
+extract capture. It made **zero additional paid calls**. CI replays the same
+qualified fixture alongside the existing Haiku fixture.
+
+Evidence:
+- docs/evidence/luna-phase-none-failure-20261001.json (failed, preserved)
+- docs/evidence/luna-low-development-20261001.json
+- docs/evidence/luna-low-quality-20261001.json
+- docs/evidence/luna-low-database-20261001.json
+- tests/fixtures/retrieval/provider-selections-v2-luna-low.json
+
+Local full lint/typecheck passed;1633 unit tests passed,277 conditional skips;
+34 capacity-harness tests passed. Seven adapter tests use the actual installed SDK
+offline. Focused accounting tests cover both sides of272000 input tokens.
+
+Next: inspect/publish this focused correction PR, retain required gates, verify
+the production OpenAI configuration before enabling the selector override, then
+perform a bounded production smoke. Factual progress UI is still outstanding and
+will follow the qualified model change. No model/provider output is streamed as
+evidence before validation. No production changes yet, timers paused, #28 open.

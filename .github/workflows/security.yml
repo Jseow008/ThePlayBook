@@ -151,6 +151,10 @@ jobs:
           npm run database:catalog-search-runtime
           npm run database:personal-evidence-runtime
           npm run database:personal-retrieval-quality-runtime
+          PERSONAL_EVIDENCE_SELECTOR_MODEL=gpt-6-luna \
+            PERSONAL_SELECTION_FIXTURE=tests/fixtures/retrieval/provider-selections-v2-luna-low.json \
+            PERSONAL_RETRIEVAL_QUALITY_REPORT="${{ runner.temp }}/personal-retrieval-luna-quality.json" \
+            npm run database:personal-retrieval-quality-runtime
           npm run database:email-rpc-security
 
       - name: Retain personal retrieval evidence
@@ -158,7 +162,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: personal-retrieval-quality-${{ github.sha }}
-          path: ${{ runner.temp }}/personal-retrieval-quality.json
+          path: |
+            ${{ runner.temp }}/personal-retrieval-quality.json
+            ${{ runner.temp }}/personal-retrieval-luna-quality.json
           # Earlier setup/security failures may prevent the runner from starting.
           if-no-files-found: ignore
 
