@@ -100,3 +100,32 @@ production deployment verification. Local main is updated.
 ## Updating this page
 
 Record a delivery with its PR/commit and scope. Mark production verification separately with dated evidence. Use the existing workstream document for detailed checkpoints rather than adding transcript-sized logs here. The old [docs/AGENT.md](AGENT.md) path is a compatibility pointer; agent instructions live only in root [AGENTS.md](../AGENTS.md).
+
+
+## Readiness reconciliation — 1 October 2026
+
+Rechecked the32-finding register against `origin/main` at05e444a0 and retained
+release evidence. Snapshot maintenance is already repaired (#153/#160), not a new
+repair task: read-only production verification at14:18UTC found24 hourly successes,
+zero failures in24h and zero overdue snapshot/lease/terminal-operation counts.
+[Sanitized current evidence](evidence/snapshot-maintenance-status-20261001.json).
+No production records or settings changed. #32 still needs alert acknowledgement
+and ownership proof; healthy scheduling alone cannot close it.
+
+PR #226 is documentation-only, auto-merge enabled and still awaiting required
+validation at this checkpoint; do not claim merged. Its performance targets remain
+unresolved. The remaining scope is summarized in the [register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#reconciled-next-work--1-october-2026).
+
+Next priority: #30–32 operational evidence—read-only Auth/recovery review and alert
+ownership inventory before planning a scoped restore drill. #7/#11/#19/#29 and
+explicitly deferred product/history findings retain their separate obligations.
+#28 remains open by instruction. No recurring timers or new benchmark is needed.
+
+Continuity: this documentation reconciliation is on `codex/readiness-reconciliation`
+in `/Users/j/.codex/worktrees/readiness-reconciliation/Lifebook`, based on05e444a0.
+Only STATUS, the existing register and the sanitized maintenance evidence are in
+scope. Exact next action: publish this record through normal PR gates, then use the
+register for operational follow-up; do not revisit the historical404 as an active
+incident. The initially guessed old workflow filename returned404; workflow listing
+and the deployed cron migration established the replacement, then live SQL verified
+its health. No user data or credentials were read into the record.

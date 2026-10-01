@@ -1,0 +1,19 @@
+{
+  "observedAtUtc": "2026-10-01T14:18:35.033302Z",
+  "source": "Read-only production cron.job, cron.job_run_details and aggregate snapshot_private queries",
+  "jobName": "reconcile-account-data-snapshots",
+  "schedule": "17 * * * *",
+  "active": true,
+  "lookbackHours": 24,
+  "succeeded": 24,
+  "failed": 0,
+  "lastSuccessUtc": "2026-10-01T14:17:00.354684Z",
+  "snapshotsExpiredOver2Hours": 0,
+  "buildingLeasesExpiredOver2Hours": 0,
+  "terminalOperationsOver27HoursWithoutSnapshot": 0,
+  "limits": [
+    "Point-in-time check; not an alert delivery/acknowledgement test.",
+    "No manual maintenance execution, data modification or Auth/restore drill.",
+    "Original GitHub HTTP job is replaced by database-native scheduling; an absent old workflow is not a failure."
+  ]
+}
