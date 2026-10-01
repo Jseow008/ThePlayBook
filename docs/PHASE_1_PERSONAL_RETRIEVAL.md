@@ -3409,3 +3409,56 @@ capture, analytics identity ordering and existing product behavior. Use a small
 built comparison for one credible candidate; do not repeat font experiments or
 claim the full first-load bottleneck is resolved. Deployed #221's removal of the
 intentional reveal delay is verified; the wider objective remains open.
+
+
+Handoff (intentional uncommitted continuity append): PR #222 at40309169,
+https://github.com/Jseow008/ThePlayBook/pull/222. Two-file docs/evidence scope
+confirmed locally and on GitHub; PR scope passed, squash auto-merge requested.
+Required validation/security pending. Local browsers and servers stopped. Next:
+review the instrumentation/analytics loading boundary using the attribution
+already recorded, and propose one bounded JS candidate. No additional font
+benchmark or production test is required for this documentation-only PR.
+
+
+### 1 October 2026 — initial analytics JavaScript investigation
+
+Application experiment branch codex/initial-analytics-js in
+/Users/j/.codex/worktrees/initial-analytics-js/Lifebook, based on5898255b; all
+candidate source/test changes were reverted after rejection. No production
+settings, data or models changed, no paid calls, agents or monitors. Local
+servers/browsers stopped. #28 remains open.
+
+Installed PostHog1.393.0 exposes a slim entry point and extension bundles.
+Repository uses explicit event/pageview/identify/reset helpers. A sanitized read
+of the current public project configuration confirmed surveys, sessionRecording,
+productTours, conversations and autocaptureExceptions false. Candidate preserved
+AnalyticsExtensions, FeatureFlagsExtensions and ToolbarExtensions; Sentry initial
+capture was untouched. Experiments:
+
+- Packaged slim SDK plus retained extensions: build passes, but matched Home
+  initial-script gzip total increases417140→421780bytes (+4640bytes, 17 scripts
+  each). Reject, without a latency benchmark. The combined extension bundle does
+  not give the required byte reduction in this application build.
+- Direct installed extension-module imports: compilation succeeds but TypeScript
+  fails because distributed and source-module PostHog types contain incompatible
+  private members. Reject rather than casting away the compatibility boundary.
+  This second approach was not runtime-accepted or production-built successfully.
+
+First candidate verification: six unit tests passed, including real SDK anonymous
+→ identified → reset pageviews with captured events suppressed before delivery.
+Browser suite10passed/2failed: event delivery/one-pageview assertions reached
+success, but final zero-CSP-warning assertions failed on local report-only inline
+script warnings. Do not describe that suite as fully green or attribute the
+warnings to this candidate without a baseline. The analytics fixture's OTP call
+was intercepted locally; no email/account action was needed. All test edits were
+reverted with the rejected candidate.
+
+Raw evidence and rejected source: /private/tmp/netflux-js-attribution/size.json,
+unit.log, browser.log, build.log, build-direct.log and rejected-direct.patch.
+No shipping performance change or production speedup is established. These two
+attempts close this packaging approach for now. Next decision: preserve current
+observability and inspect route-specific interactive components for genuinely
+avoidable initial work before choosing another implementation. Delaying the whole
+analytics SDK would risk losing short visits and requires an explicit product
+tradeoff; do not silently do that to improve a benchmark. Do not repeat the font
+or SDK packaging experiments.
