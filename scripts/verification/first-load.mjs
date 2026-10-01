@@ -36,6 +36,13 @@ try {
         const page = await context.newPage();
         const cdp = await context.newCDPSession(page);
         let imageRequests = [];
+        let assetFailures = [];
+        page.on('response', response => {
+          const type = response.request().resourceType();
+          if (response.status() >= 400 && ['image', 'font', 'script', 'stylesheet'].includes(type)) {
+            assetFailures.push({ path: new URL(response.url()).pathname, type, status: response.status() });
+          }
+        });
         cdp.on('Network.requestWillBeSent', event => {
           if (event.type === 'Image') imageRequests.push({ priority: event.request.initialPriority,
             path: new URL(event.request.url).pathname });
@@ -69,11 +76,14 @@ try {
         });
         for (const cache of ['cold', 'warm']) {
           imageRequests = [];
+          assetFailures = [];
           const response = await page.goto(origin + route, { waitUntil: 'load', timeout: 60000 });
           assert.equal(response.status(), 200);
           await page.waitForTimeout(2000);
           const data = await page.evaluate(() => {
             const nav = performance.getEntriesByType('navigation')[0];
+            const hero = document.querySelector('img[fetchpriority="high"]');
+            const heroResource = hero && performance.getEntriesByName(hero.currentSrc).at(-1);
             return {
               ttfb: nav.responseStart, htmlBytes: nav.transferSize, htmlDecodedBytes: nav.decodedBodySize,
               domInteractive: nav.domInteractive, load: nav.loadEventEnd,
@@ -82,6 +92,16 @@ try {
               stylesheetLinks: document.querySelectorAll('link[rel="stylesheet"]').length,
               inlineStyles: document.querySelectorAll('style[data-precedence]').length,
               highPriorityImages: document.querySelectorAll('img[fetchpriority="high"]').length,
+              // A large blurred background can become LCP before the focal
+              // artwork. Track that artwork independently; don't confuse a
+              // smaller LCP timestamp with a fully loaded hero.
+              heroImage: hero ? {
+                complete: hero.complete && hero.naturalWidth > 0,
+                displayWidth: hero.getBoundingClientRect().width,
+                selectedWidth: new URL(hero.currentSrc).searchParams.get('w'),
+                responseEnd: heroResource?.responseEnd ?? null,
+                transferBytes: heroResource?.transferSize ?? null,
+              } : null,
               overflow: document.documentElement.scrollWidth > innerWidth,
               resources: performance.getEntriesByType('resource').map(e => ({
                 path: new URL(e.name).pathname, type: e.initiatorType, start: e.startTime,
@@ -90,6 +110,7 @@ try {
             };
           });
           assert(Number.isFinite(data.fcp), 'Content must paint');
+          assert.equal(assetFailures.length, 0, 'Failed assets invalidate the comparison: ' + JSON.stringify(assetFailures));
           assert(!data.overflow, 'No horizontal overflow');
           if (target === 'candidate') {
             assert(data.inlineStyles > 0, 'Built candidate must include critical CSS in HTML');

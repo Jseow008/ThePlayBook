@@ -1,0 +1,211 @@
+{
+  "status": "INVALID local timing comparison: copied baseline omitted public/; retained for transparency, not acceptance evidence",
+  "baseline": "e92764382f44126e879f34404d745e7bb599da5e",
+  "candidate": "same application source plus next.config.ts changes; branch subsequently refreshed onto #218",
+  "conditions": {
+    "viewport": "390x844",
+    "dpr": 1,
+    "downloadBytesPerSecond": 200000,
+    "latencyMs": 150,
+    "cpuSlowdown": 4,
+    "repetitions": 3,
+    "tour": "dismissed",
+    "cache": "cold context, then same-context warm reload",
+    "note": "Synthetic sequential samples, not field percentiles. No production writes or AI calls."
+  },
+  "summary": [
+    {
+      "route": "/",
+      "cache": "cold",
+      "target": "baseline",
+      "n": 3,
+      "fcp_ms": [
+        960,
+        580,
+        580
+      ],
+      "lcp_ms": [
+        1396,
+        1284,
+        1284
+      ],
+      "script_transfer_bytes": [
+        518573,
+        518633,
+        518488
+      ]
+    },
+    {
+      "route": "/",
+      "cache": "cold",
+      "target": "candidate",
+      "n": 3,
+      "fcp_ms": [
+        580,
+        580,
+        576
+      ],
+      "lcp_ms": [
+        1272,
+        1268,
+        1280
+      ],
+      "script_transfer_bytes": [
+        500453,
+        500241,
+        500389
+      ]
+    },
+    {
+      "route": "/",
+      "cache": "warm",
+      "target": "baseline",
+      "n": 3,
+      "fcp_ms": [
+        340,
+        364,
+        368
+      ],
+      "lcp_ms": [
+        340,
+        364,
+        368
+      ],
+      "script_transfer_bytes": [
+        600,
+        600,
+        600
+      ]
+    },
+    {
+      "route": "/",
+      "cache": "warm",
+      "target": "candidate",
+      "n": 3,
+      "fcp_ms": [
+        348,
+        364,
+        376
+      ],
+      "lcp_ms": [
+        348,
+        364,
+        376
+      ],
+      "script_transfer_bytes": [
+        600,
+        600,
+        600
+      ]
+    },
+    {
+      "route": "/browse",
+      "cache": "cold",
+      "target": "baseline",
+      "n": 3,
+      "fcp_ms": [
+        592,
+        628,
+        624
+      ],
+      "lcp_ms": [
+        1420,
+        1424,
+        1424
+      ],
+      "script_transfer_bytes": [
+        528103,
+        528106,
+        528264
+      ]
+    },
+    {
+      "route": "/browse",
+      "cache": "cold",
+      "target": "candidate",
+      "n": 3,
+      "fcp_ms": [
+        604,
+        632,
+        628
+      ],
+      "lcp_ms": [
+        960,
+        964,
+        980
+      ],
+      "script_transfer_bytes": [
+        509983,
+        510073,
+        510074
+      ]
+    },
+    {
+      "route": "/browse",
+      "cache": "warm",
+      "target": "baseline",
+      "n": 3,
+      "fcp_ms": [
+        528,
+        364,
+        348
+      ],
+      "lcp_ms": [
+        900,
+        728,
+        768
+      ],
+      "script_transfer_bytes": [
+        600,
+        600,
+        600
+      ]
+    },
+    {
+      "route": "/browse",
+      "cache": "warm",
+      "target": "candidate",
+      "n": 3,
+      "fcp_ms": [
+        336,
+        352,
+        444
+      ],
+      "lcp_ms": [
+        680,
+        692,
+        956
+      ],
+      "script_transfer_bytes": [
+        600,
+        600,
+        600
+      ]
+    }
+  ],
+  "runtime": [
+    {
+      "width": 390,
+      "navigation": "Home \u2192 Browse \u2192 Preview",
+      "overflow": false,
+      "errorCaptureIntercepted": true,
+      "sentTransaction": false
+    },
+    {
+      "width": 1440,
+      "navigation": "Home \u2192 Browse \u2192 Preview",
+      "overflow": false,
+      "errorCaptureIntercepted": true,
+      "sentTransaction": false
+    }
+  ],
+  "limitations": [
+    "Baseline logo/workflow image requests failed because public/ was absent. All local timing and transfer comparisons are invalid; hosted complete-deployment comparison supersedes them. Built candidate runtime/error-capture proof remains valid.",
+    "Local HTTP production builds, not Vercel delivery or worldwide users.",
+    "Three samples per route/cache are not percentiles.",
+    "LCP can be the large blurred background; independent focal-hero availability added to subsequent hosted measurements.",
+    "Home image transfer differed within the observation window; do not claim lower total Home image bytes.",
+    "No font or layout change; Home LCP was effectively unchanged."
+  ],
+  "raw_sha256": "0806fdb9bbf3ed71dab8274d0f535c14c0a1ade99f01aa93379efbaf5c62f832"
+}

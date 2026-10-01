@@ -3244,3 +3244,73 @@ status changes only at request boundaries. Timers are component-local, cleaned
 up on finish/error/unmount, not recurring verification automations.
 Focused delayed/error/retry, page/sidebar/mobile and scope-switch tests passed.
 No additional paid model evaluation or database migration required. #28 open.
+
+### First-load completion follow-up — 1 October 2026
+
+User requested closing the unfinished original objective before more AI experiments.
+Active worktree /Users/j/.codex/worktrees/first-load-completion/Lifebook,
+branch codex/first-load-completion, refreshed onto origin/main23bdaf05. No agents
+were spawned, paid calls made, database changes performed or monitors enabled.
+#28 remains open. #218 merged as23bdaf05; production still served e9276438 at the
+latest deployment check. Its intentional local continuity append in ask-progress
+is superseded here without restarting that application CI.
+
+Fresh public mobile trace reproduces late fonts/focal image while initial JS shares
+bandwidth. The largest production chunk contained Sentry; existing removal of
+unused tracing applied only to Webpack, while production builds use Turbopack.
+Candidate applies the same false tracing/debug constants through compiler.define,
+preserving error reporting. It also supplies400px device and256px image variants,
+keeping layout, fonts, source artwork, quality75 and access behavior unchanged.
+Compressed initial Home JS dropped18243bytes in matched build output. Synthetic
+uncaught errors were intercepted locally: built Sentry capture works on390/1440px,
+no transaction event; Home→Browse→Preview and overflow checks pass.
+
+Production builds, typecheck, focused lint and18 tests pass. Initial external
+node_modules symlink was rejected by Turbopack; replaced with a local copy before
+building. No application workaround was added. The local paired timing comparison is INVALID: the copied baseline omitted its
+public/ directory, causing image request failures. Original observations are
+retained in [evidence](evidence/first-load-completion-development-20261001.json)
+for transparency, not performance acceptance. The failure surfaced in server
+shutdown output. The harness now rejects failed image/font/script/stylesheet
+responses. No local benchmark rerun is needed: the complete hosted-deployment
+comparison below supersedes it. The independent build-byte comparison and actual
+candidate error-capture/navigation checks remain valid.
+
+STATUS.md and #25/#28 register rows now distinguish current evidence from older
+historical failures and still-open acceptance. #7/#11/#19/#29/#30–32 need evidence
+reconciliation; product experiments and full history remain deferred. No audit
+finding is silently closed by this performance change.
+
+Next: publish the focused candidate, inspect its built preview against the pinned
+production baseline with explicit hero completion and early navigation, verify
+#218's deployment and controlled wait UI without a paid request, retain gates,
+then record what is actually improved and the remaining first-load limitations.
+
+Release handoff (intentional uncommitted evidence append; do not restart app CI
+solely for this paragraph): #219 https://github.com/Jseow008/ThePlayBook/pull/219,
+head97197b6f, seven-file scope inspected locally/GitHub, PR scope passed. Preview
+ dpl_CHgzirHzx99X9jrqXARg1V4wBpXW READY. Hosted comparison completed24 observations
+against e9276438 production deployment, artifacts under
+/private/tmp/netflux-first-load-completion/hosted and hosted-summary.json.
+Focal hero bytes42042→20304. Focal response ends across three cold samples:
+baseline1257/1204/3215ms, candidate3972/1505/1356ms. Retain the first cold image
+transformation; don't claim consistent speedup. Home LCP2632/2228/2232ms versus
+2956/1244/2340ms also does not establish a consistent win. Lower bytes are proven;
+the complete first-load objective remains open. No repeated benchmark for this patch.
+
+Hosted desktop/mobile Home→Browse→Preview passed, screenshots inspected. Initial
+interaction harness requested a desktop-only carousel indicator on mobile and
+stopped; corrected navigation-only check passed. Reported5.7–5.8s navigation
+completion includes waitForURL's load wait, NOT first heading visibility or TTI.
+The saved early-interaction.json label was corrected to
+browseNavigationLoadCompletedMs to prevent misinterpretation. No production defect was inferred from that
+harness timeout. Built browser error capture proof remains local/intercepted.
+
+PR description carries these final observations; squash auto-merge requested after
+scope/preview validation. Full CI/security remain pending. Production still serves
+ e9276438 at the latest check, so #218 deployment/controlled UI smoke remains pending.
+Next action: inspect actionable #219 checks; verify #218/#219 production identity
+once deployed, no paid requests; preserve this checkpoint and hosted summaries in
+a documentation follow-up. Then bound remaining font/JS investigation with explicit
+user-visible readiness measurements. Do not call all32 findings or first-load UX
+complete, close #28, enable monitors or switch models.
