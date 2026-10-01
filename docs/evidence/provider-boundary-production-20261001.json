@@ -1,0 +1,67 @@
+{
+  "version": "provider-boundary-production-v1",
+  "observedAt": "2026-10-01T03:37:33Z",
+  "deployment": {
+    "id": "dpl_4PjQUAQARLJyt69p4b6dJQA69pWM",
+    "commit": "f506f6e1254f8f1c385df58846ec2a710d894158",
+    "domain": "www.netflux.blog",
+    "ready": true,
+    "verifiedBeforeAndAfterRequest": true
+  },
+  "request": {
+    "method": "POST",
+    "path": "/api/chat/notes",
+    "authenticated": true,
+    "count": 1,
+    "status": 200,
+    "cacheControl": "no-store",
+    "ingressRegion": "sin1",
+    "executionRegion": "bom1"
+  },
+  "browser": {
+    "requestDurationMsApprox": 17900,
+    "waitingForServerResponseMsApprox": 17880,
+    "contentDownloadMs": 3.31,
+    "queueingMs": 10.91,
+    "stalledMs": 0.57,
+    "requestSentMs": 0.26
+  },
+  "serverTimingMs": {
+    "client": 7,
+    "auth": 531,
+    "rate_limit": 820,
+    "session": 59,
+    "quota": 251,
+    "embedding": 873,
+    "search": 106,
+    "load_evidence": 152,
+    "selection": 12515,
+    "selection_reserve": 352,
+    "selection_provider": 11808,
+    "selection_sdk_prepare": 14,
+    "selection_headers": 11773,
+    "selection_first_byte": 11776,
+    "selection_body_read": 3,
+    "selection_sdk_finish": 17,
+    "selection_settle": 353,
+    "revalidate_evidence": 936,
+    "revalidate_search": 56,
+    "revalidate_auth": 48,
+    "response_ready": 16369
+  },
+  "interpretation": {
+    "providerWaitBeforeHeadersPercent": 99.7,
+    "providerShareOfResponseReadyPercent": 72.14,
+    "localPreparationBodyAndTailMs": 34
+  },
+  "limitations": [
+    "One ordinary authenticated observation; not averages, p95, global proof or a controlled before/after comparison.",
+    "Provider request is non-streaming. Before-headers wait includes network travel, provider queueing and processing; these are not separated.",
+    "First observed body bytes are not first generated token; first-byte span overlaps headers/body and must not be summed with them.",
+    "Body-read duration includes consumption; SDK spans are elapsed wall time, not isolated CPU measurements.",
+    "Browser duration is rounded request timing, not complete user-perceived question-to-render time.",
+    "SDK/body overhead was small in this sample; no claim that it is always small.",
+    "Exactly one paid request; billing cost unavailable."
+  ],
+  "privacy": "No question, personal excerpts, account identifiers, cookies, authorization headers, provider response bodies or evidence links stored."
+}

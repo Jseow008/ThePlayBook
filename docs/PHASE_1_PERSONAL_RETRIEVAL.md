@@ -2849,3 +2849,44 @@ comparison. Do not infer schema-compilation time from total provider duration or
 claim that fewer output tokens guarantee lower latency. Publish this experiment and
 its negative result through ordinary PR gates; no production smoke or deployment
 wait is needed because application behavior is unchanged. #28 remains open.
+
+### Provider-boundary production observation — 1 October 2026
+
+#210 security repair merged `b07432bb`; #209 instrumentation merged `f506f6e1`;
+#208 development evidence merged `76e05f6b`. Production domain `www.netflux.blog`
+was verified before and after this observation on ready deployment
+`dpl_4PjQUAQARLJyt69p4b6dJQA69pWM`, serving exact commit `f506f6e1` (including the
+security patch). #208's later documentation/experiment merge was not required for
+this measurement. User explicitly authorized one ordinary signed-in request.
+
+Opera Network recorded one POST /api/chat/notes, HTTP200, no-store,
+`sin1::bom1` ingress/execution, response Date 2026-10-01T03:37:33Z. Browser request
+~17.90s (not complete question-to-render time); server response_ready 16,369ms.
+Selection provider 11,808ms: SDK preparation 14ms, fetch-to-headers 11,773ms,
+headers-to-body-EOF 3ms, post-body SDK handling 17ms. Fetch-to-first-observed-byte
+11,776ms is overlapping and is not added to these stages. Selection spending
+reservation/settlement 352/353ms. Full numeric phases are in
+`docs/evidence/provider-boundary-production-20261001.json`.
+
+About 99.7% of provider time elapsed before response headers. Local SDK preparation,
+body consumption and final handling totaled only 34ms in this sample. This rules
+those out as the dominant contributor for this request. It does NOT establish
+whether the wait is network RTT, provider queueing, schema preparation or model
+inference: generateText uses non-streaming provider responses. No first-token
+measurement, provider-side processing metric or isolated connection timing was
+obtained. This is one observation, not a p95, global test or controlled comparison
+with earlier 7.6s/13.4s measurements. The response-format experiments remain rejected.
+
+Exactly one paid call was made; no retries, new accounts, production writes outside
+the normal Ask Notes operation, infrastructure changes or additional benchmarks.
+No personal question/excerpts, signed citation URLs or credentials are recorded.
+DevTools was closed after capture. Recurring monitors remain PAUSED.
+
+Next diagnostic: obtain provider-side processing/queue timing if available, or
+consider a separately scoped controlled streaming observation (retaining full
+validation before displaying evidence) to distinguish initial response delay from
+generation duration. Neither is implemented or claimed necessary as an optimization
+from this sample. Do not tune prompts/models before that distinction. Publish this
+two-file evidence record through normal gates; no documentation deployment wait or
+additional paid probe is needed. Worktree `/private/tmp/netflux-provider-boundary-evidence`,
+branch `codex/provider-boundary-evidence`, base `76e05f6b`. #28 remains open.
