@@ -6,6 +6,7 @@
  */
 
 import { createPublicServerClient } from "@/lib/supabase/public-server";
+import { searchCatalog } from "@/lib/server/catalog-search";
 import { TrendingUp } from "lucide-react";
 import { getCategoryStats } from "@/lib/server/public-content";
 import type { ContentItem } from "@/types/database";
@@ -25,6 +26,7 @@ import {
     buildSearchHref,
     ContentGrid,
     formatPopularLabel,
+    getRecentCatalogPage,
     normalizeCatalogSort,
     normalizePage,
     normalizeType,
@@ -80,7 +82,23 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const rpcClient = supabase as typeof supabase & {
         rpc: (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>;
     };
-    const categoryStats = await getCategoryStats();
+    // Unfiltered results do not depend on the topic list, so start both reads together.
+    // Category-filtered results still use the raw values returned by category stats.
+    const categoryStatsPromise = getCategoryStats();
+    const preloadedSearchResponse = hasContentSearch && !canonicalCategory
+        ? searchCatalog({ query: query?.trim() ?? "", categories: [], type: selectedType ?? null, cursor: cursor ?? null })
+        : undefined;
+    const preloadedRecentPage = !hasContentSearch && selectedSort === "recent" && !canonicalCategory
+        ? getRecentCatalogPage({ categoryValues: [], type: selectedType, page: selectedPage })
+        : undefined;
+    const preloadedPopular = !hasContentSearch && selectedSort === "popular" && !canonicalCategory
+        ? Promise.resolve(rpcClient.rpc("get_trending_content", { p_limit: POPULAR_LIMIT, p_type: selectedType ?? null, p_categories: null }))
+        : undefined;
+    void preloadedSearchResponse?.catch(() => undefined);
+    void preloadedRecentPage?.catch(() => undefined);
+    void preloadedPopular?.catch(() => undefined);
+
+    const categoryStats = await categoryStatsPromise;
     const contentTypes = ["All", "Book", "Podcast", "Article"];
     const normalizedTopics = buildNormalizedTopics(categoryStats);
     const topicsByLabel = new Map(normalizedTopics.map((topic) => [topic.label, topic]));
@@ -106,11 +124,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const selectedTopicLabel = selectedTopic?.label;
     const selectedTopicValues = selectedTopic?.rawValues ?? [];
     const { data: popularData } = !hasContentSearch && selectedSort === "popular"
-        ? await rpcClient.rpc("get_trending_content", {
+        ? await (preloadedPopular ?? rpcClient.rpc("get_trending_content", {
             p_limit: POPULAR_LIMIT,
             p_type: selectedType ?? null,
             p_categories: selectedTopicValues.length > 0 ? selectedTopicValues : null,
-        })
+        }))
         : { data: null };
     const popularItems = (popularData || []) as unknown as ContentItem[];
 
@@ -270,6 +288,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             categoryValues={selectedTopicValues}
                             type={selectedTypeParam}
                             cursor={cursor}
+                            preloadedResponse={preloadedSearchResponse}
                         />
                     </Suspense>
                 ) : selectedSort === "recent" ? (
@@ -279,6 +298,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             categoryValues={selectedTopicValues}
                             type={selectedType}
                             page={selectedPage}
+                            preloadedPage={preloadedRecentPage}
                         />
                     </Suspense>
                 ) : popularItems.length > 0 ? (

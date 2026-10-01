@@ -306,7 +306,37 @@ describe("SearchPage", () => {
         expect(screen.queryByRole("link", { name: "Pregnancy" })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "Parenthood" })).not.toBeInTheDocument();
         expect(screen.queryByRole("combobox", { name: "More topics" })).not.toBeInTheDocument();
-        expect(fromMock).not.toHaveBeenCalled();
+        expect(fromMock).toHaveBeenCalledWith("content_item");
+    });
+
+    it("starts the unfiltered catalog read while category stats are pending", async () => {
+        let resolveStats!: (value: { data: Array<{ category: string; count: number }> }) => void;
+        rpcMock.mockImplementation((fn: string) => {
+            if (fn === "get_category_stats") {
+                return new Promise((resolve) => { resolveStats = resolve; });
+            }
+            throw new Error(`Unexpected RPC: ${fn}`);
+        });
+
+        const pendingPage = loadSearchPage({});
+        await waitFor(() => expect(fromMock).toHaveBeenCalledWith("content_item"));
+        resolveStats({ data: [] });
+        await pendingPage;
+    });
+
+    it("starts text search while category stats are pending", async () => {
+        let resolveStats!: (value: { data: Array<{ category: string; count: number }> }) => void;
+        rpcMock.mockImplementation((fn: string) => {
+            if (fn === "get_category_stats") {
+                return new Promise((resolve) => { resolveStats = resolve; });
+            }
+            throw new Error(`Unexpected RPC: ${fn}`);
+        });
+
+        const pendingPage = loadSearchPage({ q: "focus" });
+        await waitFor(() => expect(searchCatalogMock).toHaveBeenCalledWith(expect.objectContaining({ query: "focus", categories: [] })));
+        resolveStats({ data: [] });
+        await pendingPage;
     });
 
     it("labels the newest-first result grid as the full catalog", async () => {
@@ -332,9 +362,12 @@ describe("SearchPage", () => {
             }
 
             if (fn === "get_trending_content") {
-                return Promise.resolve({
-                    data: [{ id: "deep-work", title: "Deep Work" }],
-                });
+                // Supabase RPC builders are awaitable but do not expose .catch().
+                return {
+                    then(resolve: (value: { data: Array<{ id: string; title: string }> }) => unknown) {
+                        return Promise.resolve(resolve({ data: [{ id: "deep-work", title: "Deep Work" }] }));
+                    },
+                };
             }
 
             throw new Error(`Unexpected RPC: ${fn}`);

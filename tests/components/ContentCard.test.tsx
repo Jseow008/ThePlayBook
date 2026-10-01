@@ -234,7 +234,7 @@ describe("ContentCard", () => {
         expect(screen.getByAltText("Deep Work")).toHaveAttribute("sizes", CONTENT_CARD_IMAGE_SIZES);
     });
 
-    it("shows a cover placeholder until the image loads, then fades the cover in", () => {
+    it("keeps the cover visible before hydration and clears its placeholder after loading", () => {
         render(
             <ContentCard
                 item={{
@@ -248,7 +248,7 @@ describe("ContentCard", () => {
         const image = screen.getByAltText("Deep Work");
 
         expect(placeholder).toHaveClass("opacity-100", "motion-safe:animate-pulse");
-        expect(image).toHaveClass("opacity-0", "transition-[opacity,transform]");
+        expect(image).toHaveClass("opacity-100", "transition-transform");
 
         fireEvent.load(image);
 
