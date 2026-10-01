@@ -36,6 +36,13 @@ try {
         const page = await context.newPage();
         const cdp = await context.newCDPSession(page);
         let imageRequests = [];
+        let assetFailures = [];
+        page.on('response', response => {
+          const type = response.request().resourceType();
+          if (response.status() >= 400 && ['image', 'font', 'script', 'stylesheet'].includes(type)) {
+            assetFailures.push({ path: new URL(response.url()).pathname, type, status: response.status() });
+          }
+        });
         cdp.on('Network.requestWillBeSent', event => {
           if (event.type === 'Image') imageRequests.push({ priority: event.request.initialPriority,
             path: new URL(event.request.url).pathname });
@@ -69,6 +76,7 @@ try {
         });
         for (const cache of ['cold', 'warm']) {
           imageRequests = [];
+          assetFailures = [];
           const response = await page.goto(origin + route, { waitUntil: 'load', timeout: 60000 });
           assert.equal(response.status(), 200);
           await page.waitForTimeout(2000);
@@ -102,6 +110,7 @@ try {
             };
           });
           assert(Number.isFinite(data.fcp), 'Content must paint');
+          assert.equal(assetFailures.length, 0, 'Failed assets invalidate the comparison: ' + JSON.stringify(assetFailures));
           assert(!data.overflow, 'No horizontal overflow');
           if (target === 'candidate') {
             assert(data.inlineStyles > 0, 'Built candidate must include critical CSS in HTML');

@@ -1,5 +1,5 @@
 {
-  "status": "local development comparison; hosted verification pending",
+  "status": "INVALID local timing comparison: copied baseline omitted public/; retained for transparency, not acceptance evidence",
   "baseline": "e92764382f44126e879f34404d745e7bb599da5e",
   "candidate": "same application source plus next.config.ts changes; branch subsequently refreshed onto #218",
   "conditions": {
@@ -200,6 +200,7 @@
     }
   ],
   "limitations": [
+    "Baseline logo/workflow image requests failed because public/ was absent. All local timing and transfer comparisons are invalid; hosted complete-deployment comparison supersedes them. Built candidate runtime/error-capture proof remains valid.",
     "Local HTTP production builds, not Vercel delivery or worldwide users.",
     "Three samples per route/cache are not percentiles.",
     "LCP can be the large blurred background; independent focal-hero availability added to subsequent hosted measurements.",
