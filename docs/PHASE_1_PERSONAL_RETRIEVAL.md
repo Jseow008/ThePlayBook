@@ -4083,6 +4083,8 @@ Failed setup: first build used a symlinked `node_modules` outside Turbopack's
 filesystem root and failed before compiling application code. A locked local
 `npm ci` corrected the setup; the Next 16.3.6 build then passed. Temporary
 environment-file links and local server were removed/stopped. No blocker or
-pending product decision. Next: inspect committed scope, push and open the PR,
-verify GitHub file scope and `PR scope`, then enable squash auto-merge under
-normal gates.
+pending product decision. PR #231 is open; its GitHub file list matched the
+local scope, `PR scope` passed, and squash auto-merge is enabled. At handoff,
+required `validate`, `Security Validation`, and `Catalog Search Evidence` were
+running. Next: let required checks complete and address an actionable failure
+if one occurs; no production database rollout is involved.
