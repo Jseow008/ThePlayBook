@@ -296,13 +296,18 @@ export function DrainNarrationJobsButton() {
                                 </div>
                             </div>
                         ) : null}
-                        {failedJobs.length > 0 ? (
-                            <div className="pt-2">
-                                <div className="font-medium text-foreground">Recent failures</div>
+                        <div className="pt-2">
+                            <div className="font-medium text-foreground">Recent failures (last 24 hours)</div>
+                            {failedJobs.length > 0 ? (
                                 <ul className="mt-1 space-y-2">
                                     {failedJobs.map((job) => (
                                         <li key={job.id} className="min-w-0">
                                             <div className="break-words text-foreground">{job.title}</div>
+                                            {job.failedAt ? (
+                                                <time dateTime={job.failedAt} title={new Date(job.failedAt).toLocaleString()}>
+                                                    Failed {formatJobAge(Math.max(Date.now() - new Date(job.failedAt).getTime(), 0))} ago
+                                                </time>
+                                            ) : null}
                                             <div className="break-words text-red-700">
                                                 {job.error || "Narration failed without a recorded reason."}
                                             </div>
@@ -312,8 +317,8 @@ export function DrainNarrationJobsButton() {
                                         </li>
                                     ))}
                                 </ul>
-                            </div>
-                        ) : null}
+                            ) : <div className="mt-1">No failures in the last 24 hours.</div>}
+                        </div>
                         <div>{retryingCount} {retryingCount === 1 ? "job is" : "jobs are"} eligible for this recovery run</div>
                     </>
                 ) : (
