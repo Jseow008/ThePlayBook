@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import {
     CheckCircle2,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { SignInLink } from "@/components/ui/SignInLink";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { cn } from "@/lib/utils";
+import { buildLoginHref } from "@/lib/auth-redirect";
 import type { ContentType } from "@/types/database";
 import type { ContentRequestMutationResult } from "@/types/content-requests";
 
@@ -21,6 +22,7 @@ const TYPE_OPTIONS: Array<{ value: ContentType; label: string }> = [
     { value: "book", label: "Book" },
     { value: "video", label: "Video" },
 ];
+const REQUEST_DRAFT_KEY = "netflux_request_draft:v1";
 
 type SubmissionState = "idle" | "new" | "duplicate";
 
@@ -44,6 +46,34 @@ export function RequestBoard({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionState, setSubmissionState] = useState<SubmissionState>("idle");
 
+    useEffect(() => {
+        try {
+            const raw = window.sessionStorage.getItem(REQUEST_DRAFT_KEY);
+            if (!raw) return;
+            const saved = JSON.parse(raw) as Record<string, unknown>;
+            if (saved.returnPath !== `${window.location.pathname}${window.location.search}`) return;
+            if (typeof saved.input === "string") setInput(saved.input);
+            if (typeof saved.author === "string") setAuthor(saved.author);
+            if (saved.contentType === "book" || saved.contentType === "video") setContentType(saved.contentType);
+        } catch {
+            // An unavailable or malformed browser draft leaves the initial form intact.
+        }
+    }, []);
+
+    const persistRequestDraft = () => {
+        try {
+            window.sessionStorage.setItem(REQUEST_DRAFT_KEY, JSON.stringify({
+                returnPath: `${window.location.pathname}${window.location.search}`,
+                input,
+                author,
+                contentType,
+            }));
+            return true;
+        } catch {
+            return false;
+        }
+    };
+
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (isSubmitting) return;
@@ -54,7 +84,11 @@ export function RequestBoard({
         }
 
         if (!user) {
-            toast.error("Sign in to submit a request.");
+            if (!persistRequestDraft()) {
+                toast.error("Your browser could not keep this request. Copy it before signing in.");
+                return;
+            }
+            window.location.assign(buildLoginHref(`${window.location.pathname}${window.location.search}`));
             return;
         }
 
@@ -80,6 +114,11 @@ export function RequestBoard({
             setSubmissionState(nextState);
             setInput("");
             setAuthor("");
+            try {
+                window.sessionStorage.removeItem(REQUEST_DRAFT_KEY);
+            } catch {
+                // The submitted request is already saved on the server.
+            }
 
             if (payload.data.duplicate) {
                 toast.success("We already have this request.", {
@@ -190,7 +229,14 @@ export function RequestBoard({
                                 Submit request
                             </Button>
                         ) : (
-                            <SignInLink className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+                            <SignInLink
+                                className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                                onClick={(event) => {
+                                    if (persistRequestDraft()) return;
+                                    event.preventDefault();
+                                    toast.error("Your browser could not keep this request. Copy it before signing in.");
+                                }}
+                            >
                                 Sign in to submit
                             </SignInLink>
                         )}

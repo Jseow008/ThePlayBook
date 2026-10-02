@@ -1,4 +1,5 @@
 export const DEFAULT_LOGIN_REDIRECT_PATH = "/browse";
+export const REFLECTION_RESUME_PARAM = "resumeReflection";
 
 function normalizePath(
     candidate: string | null | undefined,

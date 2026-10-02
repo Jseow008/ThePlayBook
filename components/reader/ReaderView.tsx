@@ -34,6 +34,8 @@ import {
     writeScopedAudioResume,
 } from "@/lib/local-user-storage";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
+import { REFLECTION_RESUME_PARAM } from "@/lib/auth-redirect";
+import { GuestProgressChoice } from "./GuestProgressChoice";
 
 /**
  * Reader View — Accordion Layout
@@ -65,6 +67,7 @@ const AuthorChat = dynamic(
         ssr: false,
     }
 );
+const ReturnedReflection = dynamic(() => import("./ReturnedReflection").then((mod) => mod.ReturnedReflection));
 
 function escapeAttributeSelector(value: string) {
     return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -77,6 +80,7 @@ function wait(ms: number) {
 export function ReaderView({ content }: ReaderViewProps) {
     const quickMode = content.quick_mode_json as QuickMode | null;
     const segmentIdSet = useMemo(() => new Set(content.segments.map((segment) => segment.id)), [content.segments]);
+    const segmentIds = useMemo(() => content.segments.map((segment) => segment.id), [content.segments]);
     const [maxSegmentIndex, setMaxSegmentIndex] = useState(-1);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
@@ -950,6 +954,8 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onAudioPlaybackStarted={handleAudioPlaybackStarted}
                 />
 
+                <GuestProgressChoice contentId={content.id} segmentIds={segmentIds} />
+
                 {content.seriesContext && (
                     <div className="mb-5 space-y-3">
                         <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between">
@@ -1167,6 +1173,13 @@ export function ReaderView({ content }: ReaderViewProps) {
                     hasCompletedReading={isBookCompleted}
                     readerTheme={readerTheme}
                     onClose={() => setShowAuthorChat(false)}
+                />
+            )}
+            {searchParams.get(REFLECTION_RESUME_PARAM) === "1" && (
+                <ReturnedReflection
+                    contentId={content.id}
+                    contentTitle={content.title}
+                    readerTheme={readerTheme}
                 />
             )}
         </div>
