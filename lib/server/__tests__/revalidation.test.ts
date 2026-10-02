@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import {
     revalidateContentBulkChanged,
     revalidateContentCreated,
@@ -13,9 +13,11 @@ import {
 
 vi.mock("next/cache", () => ({
     revalidatePath: vi.fn(),
+    revalidateTag: vi.fn(),
 }));
 
 const revalidatePathMock = vi.mocked(revalidatePath);
+const revalidateTagMock = vi.mocked(revalidateTag);
 
 function revalidatedPaths() {
     return revalidatePathMock.mock.calls.map(([path]) => path);
@@ -24,12 +26,14 @@ function revalidatedPaths() {
 describe("revalidation helpers", () => {
     beforeEach(() => {
         revalidatePathMock.mockClear();
+        revalidateTagMock.mockClear();
     });
 
     it("dedupes direct path lists", () => {
         revalidatePaths(["/", "/browse", "/", null, undefined, "/browse"]);
 
         expect(revalidatedPaths()).toEqual(["/", "/browse"]);
+        expect(revalidateTagMock).not.toHaveBeenCalled();
     });
 
     it("revalidates create surfaces without the admin edit page", () => {
@@ -51,6 +55,7 @@ describe("revalidation helpers", () => {
             "/series/series-one",
         ]);
         expect(revalidatedPaths()).not.toContain("/admin/content/item-1/edit");
+        expect(revalidateTagMock).toHaveBeenCalledWith("search-catalog-v1", { expire: 0 });
     });
 
     it("revalidates update surfaces with old and new canonical read paths", () => {
@@ -136,6 +141,7 @@ describe("revalidation helpers", () => {
         ]);
         expect(revalidatedPaths()).not.toContain("/search");
         expect(revalidatedPaths()).not.toContain("/read/item-6");
+        expect(revalidateTagMock).not.toHaveBeenCalled();
     });
 
     it("revalidates narration content with canonical read paths when title is known", () => {

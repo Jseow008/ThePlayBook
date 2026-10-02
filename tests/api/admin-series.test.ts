@@ -21,6 +21,7 @@ vi.mock("@/lib/server/rate-limit", () => ({
 
 vi.mock("next/cache", () => ({
     revalidatePath: vi.fn(),
+    revalidateTag: vi.fn(),
 }));
 
 describe("Admin series API", () => {

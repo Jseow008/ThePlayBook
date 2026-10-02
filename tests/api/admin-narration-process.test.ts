@@ -14,6 +14,7 @@ const { expireStaleNarrationProcessingJobsMock, getNarrationQueueSummaryMock, re
 
 vi.mock("next/cache", () => ({
     revalidatePath: revalidatePathMock,
+    revalidateTag: vi.fn(),
 }));
 
 vi.mock("@/lib/admin/auth", () => ({

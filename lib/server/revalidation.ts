@@ -1,7 +1,8 @@
 import "server-only";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { buildCanonicalReadPath } from "@/lib/content-paths";
+import { SEARCH_CATALOG_CACHE_TAG } from "@/lib/server/search-cache-config";
 import type { getAdminClient } from "@/lib/supabase/admin";
 
 type AdminSupabaseClient = ReturnType<typeof getAdminClient>;
@@ -32,6 +33,9 @@ export function revalidatePaths(paths: Iterable<string | null | undefined>) {
     }
 
     uniquePaths.forEach((path) => revalidatePath(path));
+    if (uniquePaths.has("/search")) {
+        revalidateTag(SEARCH_CATALOG_CACHE_TAG, { expire: 0 });
+    }
 }
 
 export function revalidatePublicContentCollections() {
