@@ -4051,3 +4051,38 @@ measured p95 or complete first-load win. Selected-category Search still waits fo
 statistics, authenticated Library was not browser-tested, and worldwide readiness
 remains unmeasured. Next: inspect branch scope, push a ready PR, verify GitHub
 file scope and `PR scope`, then enable squash auto-merge under the existing gates.
+
+### Search catalog data cache — 3 October 2026
+
+User authorized a Search-only, one-hour data cache for topic counts, first-page
+Newest, and Popular, keyed on selected type and topic. Branch
+`codex/search-result-cache` in
+`/Users/j/.codex/worktrees/search-result-cache/Lifebook` started from freshly
+fetched `origin/main` `1af81aed`; application commit `10a599cd`. No database migration, UI change, Browse page
+change, image cache change, text-search cache, or deep-pagination cache.
+
+The implementation uses Next's cross-request data cache with one Search tag and
+3600-second revalidation. Successful empty results are cacheable; Supabase errors
+throw inside the cached read so they cannot be stored. Existing UI fallbacks stay
+outside the cache. Admin content invalidation of `/search` also expires the data
+tag immediately; reader-driven Popular rank changes wait for the one-hour TTL.
+Topic raw values are normalized before cache keying. Unfiltered reads still
+start alongside topic statistics.
+
+Focused tests (83 across six relevant files), typecheck, lint and policy checks
+(rerun with locked dependencies),
+production build, Sharp trace, and critical CSS check passed. A built local
+server returned 20 covers for default Search, 19 for Business podcasts, and 20
+for Popular books. Next cache debug logs showed first-read misses and repeated
+hits for each Search key. Local request timings (single illustrative sample,
+not p95): default 890ms then 43ms; Business podcast 225ms then 35ms;
+Popular books 245ms then 36ms. Page two remained a live 225ms read. No account
+write or production database mutation occurred.
+
+Failed setup: first build used a symlinked `node_modules` outside Turbopack's
+filesystem root and failed before compiling application code. A locked local
+`npm ci` corrected the setup; the Next 16.3.6 build then passed. Temporary
+environment-file links and local server were removed/stopped. No blocker or
+pending product decision. Next: inspect committed scope, push and open the PR,
+verify GitHub file scope and `PR scope`, then enable squash auto-merge under
+normal gates.
