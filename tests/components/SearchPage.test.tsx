@@ -60,6 +60,10 @@ vi.mock("next/navigation", () => ({
     }),
 }));
 
+vi.mock("next/cache", () => ({
+    unstable_cache: (read: (...args: unknown[]) => Promise<unknown>) => read,
+}));
+
 vi.mock("next/link", () => ({
     default: ({
         children,
@@ -379,7 +383,7 @@ describe("SearchPage", () => {
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
             p_limit: 20,
             p_type: "book",
-            p_categories: null,
+            p_categories: undefined,
         });
         expect(screen.getByText("Popular Books")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Personal Development" })).toBeInTheDocument();
@@ -540,7 +544,7 @@ describe("SearchPage", () => {
         );
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
             p_limit: 20,
-            p_type: null,
+            p_type: undefined,
             p_categories: ["Productivity"],
         });
     });
@@ -577,8 +581,8 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "Podcast" })).toHaveAttribute("href", "/search?type=podcast&sort=popular");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
             p_limit: 20,
-            p_type: null,
-            p_categories: null,
+            p_type: undefined,
+            p_categories: undefined,
         });
     });
 

@@ -5,11 +5,9 @@
  * Supports filtering by category and type.
  */
 
-import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { searchCatalog } from "@/lib/server/catalog-search";
+import { getPopularCatalogItems, getRecentCatalogPage, getSearchCategoryStats } from "@/lib/server/search-catalog";
 import { TrendingUp } from "lucide-react";
-import { getCategoryStats } from "@/lib/server/public-content";
-import type { ContentItem } from "@/types/database";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -26,7 +24,6 @@ import {
     buildSearchHref,
     ContentGrid,
     formatPopularLabel,
-    getRecentCatalogPage,
     normalizeCatalogSort,
     normalizePage,
     normalizeType,
@@ -49,8 +46,6 @@ interface NormalizedTopic {
     count: number;
     rawValues: string[];
 }
-
-const POPULAR_LIMIT = 20;
 
 function buildNormalizedTopics(categoryStats: CategoryStat[]) {
     return buildCanonicalCategoryStats(categoryStats)
@@ -78,13 +73,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     const hasContentSearch = (query?.trim().length ?? 0) > 0;
 
-    const supabase = createPublicServerClient();
-    const rpcClient = supabase as typeof supabase & {
-        rpc: (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>;
-    };
     // Unfiltered results do not depend on the topic list, so start both reads together.
     // Category-filtered results still use the raw values returned by category stats.
-    const categoryStatsPromise = getCategoryStats();
+    const categoryStatsPromise = getSearchCategoryStats().catch((error): CategoryStat[] => {
+        console.error("Search topic stats read failed", error);
+        return [];
+    });
     const preloadedSearchResponse = hasContentSearch && !canonicalCategory
         ? searchCatalog({ query: query?.trim() ?? "", categories: [], type: selectedType ?? null, cursor: cursor ?? null })
         : undefined;
@@ -92,7 +86,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         ? getRecentCatalogPage({ categoryValues: [], type: selectedType, page: selectedPage })
         : undefined;
     const preloadedPopular = !hasContentSearch && selectedSort === "popular" && !canonicalCategory
-        ? Promise.resolve(rpcClient.rpc("get_trending_content", { p_limit: POPULAR_LIMIT, p_type: selectedType ?? null, p_categories: null }))
+        ? getPopularCatalogItems({ categoryValues: [], type: selectedType })
         : undefined;
     void preloadedSearchResponse?.catch(() => undefined);
     void preloadedRecentPage?.catch(() => undefined);
@@ -123,14 +117,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ])).sort((a, b) => a.localeCompare(b));
     const selectedTopicLabel = selectedTopic?.label;
     const selectedTopicValues = selectedTopic?.rawValues ?? [];
-    const { data: popularData } = !hasContentSearch && selectedSort === "popular"
-        ? await (preloadedPopular ?? rpcClient.rpc("get_trending_content", {
-            p_limit: POPULAR_LIMIT,
-            p_type: selectedType ?? null,
-            p_categories: selectedTopicValues.length > 0 ? selectedTopicValues : null,
-        }))
-        : { data: null };
-    const popularItems = (popularData || []) as unknown as ContentItem[];
+    const popularItems = !hasContentSearch && selectedSort === "popular"
+        ? await (preloadedPopular ?? getPopularCatalogItems({
+            categoryValues: selectedTopicValues,
+            type: selectedType,
+        })).catch((error) => {
+            console.error("Search popular catalog read failed", error);
+            return [];
+        })
+        : [];
 
     return (
         <div className="min-h-screen bg-background pb-5 md:pb-6 lg:pb-16">
