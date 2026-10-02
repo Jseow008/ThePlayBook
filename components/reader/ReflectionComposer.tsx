@@ -11,7 +11,7 @@ import {
     useSaveReflection,
     type ReflectionWithContent,
 } from "@/hooks/useReflections";
-import { buildLoginHref } from "@/lib/auth-redirect";
+import { buildLoginHref, REFLECTION_RESUME_PARAM } from "@/lib/auth-redirect";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
@@ -30,6 +30,7 @@ interface ReflectionComposerProps {
     isOpen: boolean;
     isAuthenticated: boolean;
     existingReflection: ReflectionWithContent | null;
+    returningFromSignIn?: boolean;
     onClose: () => void;
     onSaved: () => void;
 }
@@ -41,6 +42,7 @@ export function ReflectionComposer({
     isOpen,
     isAuthenticated,
     existingReflection,
+    returningFromSignIn = false,
     onClose,
     onSaved,
 }: ReflectionComposerProps) {
@@ -68,9 +70,11 @@ export function ReflectionComposer({
                 window.sessionStorage.removeItem(getDraftKey(contentId));
                 setIsDraftStored(false);
             }
+            return true;
         } catch {
             // A draft is a convenience, not a requirement for the feature.
             setIsDraftStored(false);
+            return false;
         }
     }, [contentId]);
 
@@ -151,7 +155,13 @@ export function ReflectionComposer({
                 setShowSignInPrompt(true);
                 return;
             }
-            const returnTo = `${window.location.pathname}${window.location.search}`;
+            if (!persistDraft(reflectionText)) {
+                toast.error("Your browser could not keep this draft. Copy it before signing in.");
+                return;
+            }
+            const returnUrl = new URL(window.location.href);
+            returnUrl.searchParams.set(REFLECTION_RESUME_PARAM, "1");
+            const returnTo = `${returnUrl.pathname}${returnUrl.search}`;
             window.location.assign(buildLoginHref(returnTo));
             return;
         }
@@ -276,6 +286,11 @@ export function ReflectionComposer({
                         {showSignInPrompt && !isAuthenticated && (
                             <p role="status" className="mt-3 rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-sm text-primary">
                                 Sign in to save your reflection. Your draft will still be here when you return.
+                            </p>
+                        )}
+                        {returningFromSignIn && (
+                            <p role="status" className="mt-3 rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-sm text-primary">
+                                Review your draft before saving. If you already have a reflection for this read, saving will replace it.
                             </p>
                         )}
                     </div>
