@@ -3,6 +3,7 @@ import { revalidateNarrationContentChanged } from "@/lib/server/revalidation";
 
 export const NARRATION_PROCESS_BATCH_SIZE = 3;
 export const STALE_NARRATION_PROCESSING_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+const RECENT_NARRATION_FAILURE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 const STALE_NARRATION_PROCESSING_ERROR = "Narration generation was reset after it remained stuck in processing beyond the 2-hour safety window.";
 
@@ -140,6 +141,7 @@ export async function getNarrationQueueSummary(): Promise<NarrationQueueSummary>
 
 export async function getNarrationQueueStatus(): Promise<NarrationQueueStatus> {
     const nowMs = Date.now();
+    const recentFailureCutoff = new Date(nowMs - RECENT_NARRATION_FAILURE_MAX_AGE_MS).toISOString();
     const [summary, processingRows, failedResult] = await Promise.all([
         getNarrationQueueSummary(),
         loadProcessingNarrationJobs(),
@@ -149,6 +151,7 @@ export async function getNarrationQueueStatus(): Promise<NarrationQueueStatus> {
             .eq("status", "verified")
             .eq("narration_status", "failed")
             .is("deleted_at", null)
+            .gte("narration_completed_at", recentFailureCutoff)
             .order("narration_completed_at", { ascending: false, nullsFirst: false })
             .limit(5),
     ]);

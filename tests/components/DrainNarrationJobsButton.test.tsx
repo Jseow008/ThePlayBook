@@ -100,6 +100,7 @@ describe("DrainNarrationJobsButton", () => {
         await waitFor(() => {
             expect(screen.getByText(/0 queued for recovery/i)).toBeInTheDocument();
         });
+        expect(screen.getByText("No failures in the last 24 hours.")).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole("button", { name: /run recovery/i }));
 
@@ -181,6 +182,7 @@ describe("DrainNarrationJobsButton", () => {
         expect(screen.getByRole("progressbar", { name: "Deep Work narration progress" }))
             .toHaveAttribute("aria-valuenow", "2");
         expect(screen.getByText("The voice provider timed out.")).toBeInTheDocument();
+        expect(screen.getByText("Recent failures (last 24 hours)")).toBeInTheDocument();
         expect(screen.getByText("1 of 3 segments generated before failure")).toBeInTheDocument();
     });
 

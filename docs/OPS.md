@@ -384,7 +384,7 @@ Recovery path:
 
 - `POST /api/admin/narration/process` drains up to 3 queued narration jobs from an authenticated admin session
 - `POST /api/admin/narration/reset` marks stale `processing` jobs as failed so they can be re-queued cleanly
-- `/admin` now includes a `Retry Narration Jobs` control that shows the active processing titles, surfaces stale jobs, and can reset stale `processing` jobs on demand
+- `/admin` includes a `Retry Narration Jobs` control that shows active processing titles, the five most recent failures from the last 24 hours, and stale jobs that can be reset on demand. Older failed jobs remain failed on their content pages and can still be re-queued there.
 
 If narration remains stuck in `queued`, verify:
 
