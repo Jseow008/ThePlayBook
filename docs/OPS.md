@@ -333,6 +333,11 @@ Dry run:
 npm run embeddings:sync-segments -- --dry-run
 ```
 
+For a bounded production preflight, add `--max-segments 5`. The local sync
+waits and retries a Gemini per-minute quota response up to three times for the
+same batch. A daily quota failure or repeated minute-limit failure stops the
+run; rerunning later resumes from segments still missing embeddings.
+
 This is intentionally a local trusted-machine workflow now. `POST /api/admin/embeddings/sync-segments` returns `405`.
 
 Operator rule:
