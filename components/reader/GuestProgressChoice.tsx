@@ -5,10 +5,11 @@ import { toast } from "sonner";
 import { useReadingProgress, type ReadingProgressData } from "@/hooks/useReadingProgress";
 import { combineReadingProgress, readGuestProgress } from "@/lib/guest-progress-resume";
 
-export function GuestProgressChoice({ contentId, segmentIds, reflectionPending = false }: {
+export function GuestProgressChoice({ contentId, segmentIds, reflectionPending = false, onProgressChosen }: {
     contentId: string;
     segmentIds: string[];
     reflectionPending?: boolean;
+    onProgressChosen?: (progress: ReadingProgressData | null) => void;
 }) {
     const { user, isLoaded, hydrationStatus, getProgress, saveReadingProgress } = useReadingProgress();
     const [guestProgress, setGuestProgress] = useState<ReadingProgressData | null>(null);
@@ -75,8 +76,10 @@ export function GuestProgressChoice({ contentId, segmentIds, reflectionPending =
 
     const useBrowserProgress = () => {
         try {
-            saveReadingProgress(contentId, combineReadingProgress(guestProgress, accountProgress, segmentIds));
+            const combinedProgress = combineReadingProgress(guestProgress, accountProgress, segmentIds);
+            saveReadingProgress(contentId, combinedProgress);
             setDismissed(true);
+            onProgressChosen?.(combinedProgress);
         } catch {
             toast.error("Could not save this reading progress. Please try again.");
         }
@@ -89,6 +92,7 @@ export function GuestProgressChoice({ contentId, segmentIds, reflectionPending =
             // Keep this decision for the current view when browser storage is unavailable.
         }
         setDismissed(true);
+        onProgressChosen?.(accountProgress);
     };
 
     return (

@@ -66,7 +66,8 @@ describe("GuestProgressChoice", () => {
     });
 
     it("requires a choice before applying completed browser progress", async () => {
-        render(<GuestProgressChoice contentId="read-1" segmentIds={["first", "second"]} />);
+        const onProgressChosen = vi.fn();
+        render(<GuestProgressChoice contentId="read-1" segmentIds={["first", "second"]} onProgressChosen={onProgressChosen} />);
         const apply = await screen.findByRole("button", { name: "Add browser progress" });
         expect(saveReadingProgressMock).not.toHaveBeenCalled();
         fireEvent.click(apply);
@@ -74,14 +75,20 @@ describe("GuestProgressChoice", () => {
             completed: ["first", "second"],
             isCompleted: true,
         }));
+        expect(onProgressChosen).toHaveBeenCalledWith(expect.objectContaining({
+            completed: ["first", "second"],
+            isCompleted: true,
+        }));
     });
 
     it("keeps the existing account record when declined", async () => {
-        const view = render(<GuestProgressChoice contentId="read-1" segmentIds={["first", "second"]} />);
+        const onProgressChosen = vi.fn();
+        const view = render(<GuestProgressChoice contentId="read-1" segmentIds={["first", "second"]} onProgressChosen={onProgressChosen} />);
         fireEvent.click(await screen.findByRole("button", { name: "Keep account progress for now" }));
         expect(saveReadingProgressMock).not.toHaveBeenCalled();
         expect(sessionStorage.getItem("netflux_guest_progress_choice:v1:reader-1:read-1"))
             .toBe("2026-10-02T00:00:00.000Z");
+        expect(onProgressChosen).toHaveBeenCalledWith(expect.objectContaining({ completed: ["first"] }));
         view.unmount();
         render(<GuestProgressChoice contentId="read-1" segmentIds={["first", "second"]} />);
         expect(screen.queryByRole("button", { name: "Add browser progress" })).not.toBeInTheDocument();
