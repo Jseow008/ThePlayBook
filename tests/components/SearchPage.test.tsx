@@ -65,6 +65,7 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("next/link", () => ({
+    useLinkStatus: () => ({ pending: false }),
     default: ({
         children,
         href,
@@ -216,6 +217,20 @@ async function runRecentCatalogFromPage(searchParams: SearchParams = {}) {
     }
 
     return searchComponentsModule.RecentCatalog(recentCatalogProps);
+}
+
+async function runPopularCatalogFromPage(searchParams: SearchParams = {}) {
+    const { searchComponentsModule, page } = await loadSearchPage(searchParams);
+    const popularCatalogProps = findElementProps<Parameters<typeof searchComponentsModule.PopularCatalog>[0]>(
+        page,
+        searchComponentsModule.PopularCatalog
+    );
+
+    if (!popularCatalogProps) {
+        throw new Error("PopularCatalog was not rendered for the supplied search params");
+    }
+
+    return searchComponentsModule.PopularCatalog(popularCatalogProps);
 }
 
 describe("SearchPage", () => {
@@ -378,6 +393,9 @@ describe("SearchPage", () => {
         });
 
         await renderSearchPage({ type: "book", sort: "popular" });
+        await act(async () => {
+            render(await runPopularCatalogFromPage({ type: "book", sort: "popular" }));
+        });
 
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
@@ -388,6 +406,27 @@ describe("SearchPage", () => {
         expect(screen.getByText("Popular Books")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Personal Development" })).toBeInTheDocument();
         expect(fromMock).not.toHaveBeenCalled();
+    });
+
+    it("renders Popular filters and result placeholders before popular items resolve", async () => {
+        let resolvePopular!: (value: { data: Array<{ id: string; title: string }> }) => void;
+        rpcMock.mockImplementation((fn: string) => {
+            if (fn === "get_category_stats") {
+                return Promise.resolve({ data: [{ category: "Business", count: 2 }] });
+            }
+            if (fn === "get_trending_content") {
+                return new Promise((resolve) => { resolvePopular = resolve; });
+            }
+            throw new Error(`Unexpected RPC: ${fn}`);
+        });
+
+        const { page } = await loadSearchPage({ type: "podcast", sort: "popular" });
+        render(replaceAsyncResultsWithFallback(page));
+
+        expect(screen.getByRole("link", { name: "Podcast" })).toHaveClass("bg-primary");
+        expect(screen.getByRole("link", { name: "Popular" })).toHaveAttribute("aria-current", "page");
+        expect(document.querySelectorAll(".animate-pulse")).toHaveLength(12);
+        resolvePopular({ data: [] });
     });
 
     it("uses the indexed search service for text search and applies the type filter", async () => {
@@ -537,6 +576,7 @@ describe("SearchPage", () => {
 
     it("preserves Popular mode when switching filters", async () => {
         await renderSearchPage({ category: "Productivity", sort: "popular" });
+        await runPopularCatalogFromPage({ category: "Productivity", sort: "popular" });
 
         expect(screen.getByRole("link", { name: "Podcast" })).toHaveAttribute(
             "href",
