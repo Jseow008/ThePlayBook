@@ -4,9 +4,52 @@ import {
     SegmentEmbeddingSyncError,
     getGeminiSegmentCoverage,
     runGeminiSegmentBackfill,
+    withGeminiQuotaRetry,
 } from "@/lib/server/gemini-segment-sync";
 
 describe("gemini segment sync helper", () => {
+    it("waits for the provider's per-minute retry interval and retries the same batch", async () => {
+        const error = Object.assign(new Error(JSON.stringify({
+            error: { details: [
+                { violations: [{ quotaId: "EmbedContentRequestsPerMinutePerUserPerProjectPerModel-FreeTier" }] },
+                { retryDelay: "9s" },
+            ] },
+        })), { status: 429 });
+        const embed = vi.fn().mockRejectedValueOnce(error).mockResolvedValueOnce([1, 2, 3]);
+        const wait = vi.fn().mockResolvedValue(undefined);
+
+        await expect(withGeminiQuotaRetry(embed, { wait })).resolves.toEqual([1, 2, 3]);
+        expect(embed).toHaveBeenCalledTimes(2);
+        expect(wait).toHaveBeenCalledExactlyOnceWith(10_000);
+    });
+
+    it("does not retry a daily quota error", async () => {
+        const error = Object.assign(new Error(JSON.stringify({
+            error: { details: [{ violations: [{ quotaId: "EmbedContentRequestsPerDay-FreeTier" }] }] },
+        })), { status: 429 });
+        const embed = vi.fn().mockRejectedValue(error);
+        const wait = vi.fn();
+
+        await expect(withGeminiQuotaRetry(embed, { wait })).rejects.toBe(error);
+        expect(embed).toHaveBeenCalledTimes(1);
+        expect(wait).not.toHaveBeenCalled();
+    });
+
+    it("stops after three retries if the minute quota remains exhausted", async () => {
+        const error = Object.assign(new Error(JSON.stringify({
+            error: { details: [
+                { violations: [{ quotaId: "EmbedContentRequestsPerMinute-FreeTier" }] },
+                { retryDelay: "1s" },
+            ] },
+        })), { status: 429 });
+        const embed = vi.fn().mockRejectedValue(error);
+        const wait = vi.fn().mockResolvedValue(undefined);
+
+        await expect(withGeminiQuotaRetry(embed, { wait })).rejects.toBe(error);
+        expect(embed).toHaveBeenCalledTimes(4);
+        expect(wait).toHaveBeenCalledTimes(3);
+    });
+
     it("skips already-embedded segments on rerun", async () => {
         const rpc = vi
             .fn()

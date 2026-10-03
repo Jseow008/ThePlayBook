@@ -109,12 +109,12 @@ export function SyncSegmentEmbeddingsButton() {
                     <span>Loading embedding coverage...</span>
                 ) : summary ? (
                     <>
-                        <div>{summary.total_library_content_items} library items referenced</div>
-                        <div>{summary.embedded_content_items} content items have Gemini segment embeddings</div>
+                        <div>{summary.total_library_content_items} distinct items referenced in user libraries</div>
+                        <div>{summary.embedded_content_items} content items have at least one Gemini segment embedding</div>
                         <div>{summary.missing_segments} verified segments still need Gemini embeddings</div>
                         <div>{formatNumber(summary.estimated_remaining_characters)} characters remaining to embed</div>
                         {aiStaleItems !== null && staleSegmentEmbeddings !== null && (
-                            <div>{staleSegmentEmbeddings} verified items are still AI-stale on segment coverage across {aiStaleItems} total stale items</div>
+                            <div>{staleSegmentEmbeddings} verified items lack full segment coverage; {aiStaleItems} have at least one AI-readiness issue</div>
                         )}
                     </>
                 ) : (

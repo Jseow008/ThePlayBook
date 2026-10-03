@@ -4,6 +4,7 @@ export const DEFAULT_SEGMENT_SYNC_BATCH_SIZE = 50;
 export const MAX_SEGMENT_SYNC_BATCH_SIZE = 50;
 export const LOCAL_SEGMENT_SYNC_COMMAND = "npm run embeddings:sync-segments";
 export const LOCAL_SEGMENT_SYNC_DRY_RUN_COMMAND = "npm run embeddings:sync-segments -- --dry-run";
+const MAX_GEMINI_QUOTA_RETRIES = 3;
 
 export type CoverageSummary = {
     total_library_content_items: number;
@@ -80,6 +81,67 @@ function toErrorMessage(error: unknown, fallback: string) {
     }
 
     return fallback;
+}
+
+function getPerMinuteRetryDelayMs(error: unknown): number | null {
+    if (!error || typeof error !== "object" || (error as { status?: unknown }).status !== 429) {
+        return null;
+    }
+
+    let payload: {
+        error?: {
+            details?: Array<{
+                retryDelay?: string;
+                violations?: Array<{ quotaId?: string }>;
+            }>;
+        };
+    };
+    try {
+        const parsed: unknown = JSON.parse((error as Error).message);
+        if (!parsed || typeof parsed !== "object") return null;
+        payload = parsed as typeof payload;
+    } catch {
+        return null;
+    }
+
+    const details = Array.isArray(payload.error?.details) ? payload.error.details : [];
+    const isPerMinuteLimit = details.some((detail) =>
+        Array.isArray(detail.violations)
+            && detail.violations.some((violation) => violation.quotaId?.includes("PerMinute"))
+    );
+    if (!isPerMinuteLimit) {
+        return null;
+    }
+
+    const retryDelay = details.find((detail) => detail.retryDelay)?.retryDelay;
+    const match = retryDelay?.match(/^(\d+(?:\.\d+)?)(s|ms)$/);
+    const suggestedMs = match
+        ? Number(match[1]) * (match[2] === "s" ? 1000 : 1)
+        : 60_000;
+    return Math.min(90_000, Math.max(1_000, Math.ceil(suggestedMs) + 1_000));
+}
+
+export async function withGeminiQuotaRetry<T>(
+    embed: () => Promise<T>,
+    options: {
+        wait?: (ms: number) => Promise<void>;
+        onRetry?: (waitMs: number, attempt: number) => void;
+    } = {}
+): Promise<T> {
+    const wait = options.wait ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+
+    for (let attempt = 0; ; attempt++) {
+        try {
+            return await embed();
+        } catch (error) {
+            const delayMs = getPerMinuteRetryDelayMs(error);
+            if (delayMs === null || attempt >= MAX_GEMINI_QUOTA_RETRIES) {
+                throw error;
+            }
+            options.onRetry?.(delayMs, attempt + 1);
+            await wait(delayMs);
+        }
+    }
 }
 
 export function clampSegmentSyncBatchSize(batchSize?: number) {

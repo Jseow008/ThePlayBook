@@ -45,6 +45,39 @@ export type AdminAiReadinessSummary = {
     items_without_published_segments: number;
 };
 
+export async function getAdminAiReadinessSummary(supabase: {
+    rpc: (name: "get_admin_ai_readiness_summary") => PromiseLike<{ data: unknown; error: unknown }>;
+}): Promise<AdminAiReadinessSummary> {
+    const { data, error } = await supabase.rpc("get_admin_ai_readiness_summary");
+    if (error) {
+        throw error;
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || typeof row !== "object") {
+        throw new Error("AI readiness summary is unavailable");
+    }
+
+    const counts = row as Record<keyof AdminAiReadinessSummary, unknown>;
+    const fields: Array<keyof AdminAiReadinessSummary> = [
+        "verified_items",
+        "ai_ready_items",
+        "ai_stale_items",
+        "stale_content_embeddings",
+        "stale_segment_embeddings",
+        "items_without_published_segments",
+    ];
+    const summary = {} as AdminAiReadinessSummary;
+    for (const field of fields) {
+        const value = Number(counts[field]);
+        if (!Number.isSafeInteger(value) || value < 0 || counts[field] == null) {
+            throw new Error(`Invalid AI readiness count: ${field}`);
+        }
+        summary[field] = value;
+    }
+    return summary;
+}
+
 export type AdminAiReadinessCounts = {
     status: ContentStatus;
     hasContentEmbedding: boolean;

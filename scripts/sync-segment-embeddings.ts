@@ -14,6 +14,7 @@ import {
     getGeminiSegmentCoverage,
     normalizeMaxSegments,
     runGeminiSegmentBackfill,
+    withGeminiQuotaRetry,
 } from "../lib/server/gemini-segment-sync";
 
 const envFiles = [".env.local", ".env"];
@@ -158,11 +159,18 @@ async function main() {
                 batchSize: effectiveBatchSize,
                 maxSegments: effectiveMaxSegments ?? undefined,
                 embedBatch: async (contents) => {
-                    const response = await ai.models.embedContent({
-                        model: GEMINI_SEGMENT_EMBEDDING_MODEL,
-                        contents,
-                        config: { outputDimensionality: GEMINI_SEGMENT_EMBEDDING_DIMENSIONS },
-                    });
+                    const response = await withGeminiQuotaRetry(
+                        () => ai.models.embedContent({
+                            model: GEMINI_SEGMENT_EMBEDDING_MODEL,
+                            contents,
+                            config: { outputDimensionality: GEMINI_SEGMENT_EMBEDDING_DIMENSIONS },
+                        }),
+                        {
+                            onRetry: (waitMs, attempt) => {
+                                console.log(`Gemini minute quota reached; waiting ${Math.ceil(waitMs / 1000)}s before retry ${attempt}.`);
+                            },
+                        }
+                    );
 
                     return (response.embeddings ?? []).map((item) => item.values);
                 },

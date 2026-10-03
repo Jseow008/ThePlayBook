@@ -22,56 +22,7 @@ describe("Admin segment embedding sync API", () => {
         (verifyAdminSession as any).mockResolvedValue(true);
         (getAdminClient as any).mockReturnValue({
             rpc: rpcMock,
-            from: vi.fn((table: string) => {
-                if (table === "content_item") {
-                    return {
-                        select: vi.fn().mockReturnValue({
-                            eq: vi.fn().mockReturnValue({
-                                is: vi.fn().mockResolvedValue({
-                                    data: [
-                                        { id: "ready-item", status: "verified", embedding: "[1,2,3]" },
-                                        { id: "stale-item", status: "verified", embedding: null },
-                                    ],
-                                    error: null,
-                                }),
-                            }),
-                        }),
-                    };
-                }
-
-                if (table === "segment") {
-                    return {
-                        select: vi.fn().mockReturnValue({
-                            is: vi.fn().mockReturnValue({
-                                in: vi.fn().mockReturnValue({
-                                    range: vi.fn().mockResolvedValue({
-                                        data: [
-                                            { id: "segment-1", item_id: "ready-item", markdown_body: "Ready" },
-                                            { id: "segment-2", item_id: "stale-item", markdown_body: "Needs embedding" },
-                                        ],
-                                        error: null,
-                                    }),
-                                }),
-                            }),
-                        }),
-                    };
-                }
-
-                if (table === "segment_embedding_gemini") {
-                    return {
-                        select: vi.fn().mockReturnValue({
-                            in: vi.fn().mockReturnValue({
-                                range: vi.fn().mockResolvedValue({
-                                    data: [{ content_item_id: "ready-item", segment_id: "segment-1" }],
-                                    error: null,
-                                }),
-                            }),
-                        }),
-                    };
-                }
-
-                throw new Error(`Unexpected table ${table}`);
-            }),
+            from: vi.fn(),
         });
     });
 
@@ -96,6 +47,20 @@ describe("Admin segment embedding sync API", () => {
                 });
             }
 
+            if (fn === "get_admin_ai_readiness_summary") {
+                return Promise.resolve({
+                    data: [{
+                        verified_items: 496,
+                        ai_ready_items: 126,
+                        ai_stale_items: 370,
+                        stale_content_embeddings: 99,
+                        stale_segment_embeddings: 369,
+                        items_without_published_segments: 0,
+                    }],
+                    error: null,
+                });
+            }
+
             throw new Error(`Unexpected rpc: ${fn}`);
         });
 
@@ -110,17 +75,19 @@ describe("Admin segment embedding sync API", () => {
             estimated_remaining_characters: 4_200,
         });
         expect(json.ai_readiness).toEqual({
-            verified_items: 2,
-            ai_ready_items: 1,
-            ai_stale_items: 1,
-            stale_content_embeddings: 1,
-            stale_segment_embeddings: 1,
+            verified_items: 496,
+            ai_ready_items: 126,
+            ai_stale_items: 370,
+            stale_content_embeddings: 99,
+            stale_segment_embeddings: 369,
             items_without_published_segments: 0,
         });
         expect(json.command).toBe("npm run embeddings:sync-segments");
         expect(json.dry_run_command).toBe("npm run embeddings:sync-segments -- --dry-run");
         expect(json.workflow.content_embedding_sync.path).toBe("/api/admin/embeddings/sync");
         expect(json.workflow.segment_embedding_sync.command).toBe("npm run embeddings:sync-segments");
+        expect(rpcMock).toHaveBeenCalledWith("get_admin_ai_readiness_summary");
+        expect((getAdminClient as any).mock.results[0].value.from).not.toHaveBeenCalled();
     });
 
     it("requires admin access for POST", async () => {

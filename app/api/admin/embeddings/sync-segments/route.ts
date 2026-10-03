@@ -8,9 +8,8 @@ import {
     getGeminiSegmentCoverage,
 } from "@/lib/server/gemini-segment-sync";
 import {
-    getAdminAiReadinessMap,
+    getAdminAiReadinessSummary,
     getAdminAiReadinessWorkflow,
-    summarizeAdminAiReadiness,
 } from "@/lib/server/admin-ai-readiness";
 
 export async function GET() {
@@ -23,26 +22,14 @@ export async function GET() {
         }
 
         const supabase = getAdminClient();
-        const { data: items, error: itemError } = await supabase
-            .from("content_item")
-            .select("id, status, embedding")
-            .eq("status", "verified")
-            .is("deleted_at", null);
-
-        if (itemError) {
-            throw itemError;
-        }
-
-        const summary = await getGeminiSegmentCoverage(supabase);
-        const aiReadinessById = await getAdminAiReadinessMap(supabase as any, (items ?? []).map((item) => ({
-            id: item.id,
-            status: item.status,
-            embedding: item.embedding,
-        })));
+        const [summary, aiReadiness] = await Promise.all([
+            getGeminiSegmentCoverage(supabase),
+            getAdminAiReadinessSummary(supabase),
+        ]);
 
         return NextResponse.json({
             summary,
-            ai_readiness: summarizeAdminAiReadiness(Object.values(aiReadinessById)),
+            ai_readiness: aiReadiness,
             command: LOCAL_SEGMENT_SYNC_COMMAND,
             dry_run_command: LOCAL_SEGMENT_SYNC_DRY_RUN_COMMAND,
             workflow: getAdminAiReadinessWorkflow(),

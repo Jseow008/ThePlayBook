@@ -11,6 +11,11 @@ type SyncSummary = {
 
 type SyncEmbeddingsResponse = {
     summary?: SyncSummary;
+    results?: {
+        processed: number;
+        success: number;
+        failed: number;
+    };
     error?: {
         message?: string;
     };
@@ -21,6 +26,7 @@ export function SyncEmbeddingsButton() {
     const [isLoadingSummary, setIsLoadingSummary] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [statusText, setStatusText] = useState("");
+    const [statusTone, setStatusTone] = useState<"error" | "warning" | "info" | "success">("info");
     const [summary, setSummary] = useState<SyncSummary | null>(null);
 
     const loadSummary = async (isManualRefresh = false) => {
@@ -39,13 +45,20 @@ export function SyncEmbeddingsButton() {
             if (!res.ok) {
                 throw new Error(data.error?.message || "Failed to load embedding readiness");
             }
+            if (!data.summary) {
+                throw new Error("Embedding readiness is unavailable");
+            }
 
-            setSummary(data.summary ?? null);
+            setSummary(data.summary);
             if (isManualRefresh) {
                 setStatusText("Embedding readiness refreshed.");
+                setStatusTone("success");
             }
+            return data.summary;
         } catch (error: any) {
             setStatusText("Error: " + error.message);
+            setStatusTone("error");
+            return null;
         } finally {
             setIsLoadingSummary(false);
             setIsRefreshing(false);
@@ -56,28 +69,37 @@ export function SyncEmbeddingsButton() {
         try {
             setIsSyncing(true);
             setStatusText("Syncing...");
+            setStatusTone("info");
 
             const res = await fetch("/api/admin/embeddings/sync", {
                 method: "POST",
             });
 
-            const data = await res.json();
+            const data = await res.json() as SyncEmbeddingsResponse;
 
             if (!res.ok) {
                 const errorMessage = data?.error?.message || data?.error || "Failed to sync embeddings";
                 throw new Error(typeof errorMessage === "string" ? errorMessage : "Failed to sync embeddings");
             }
 
-            if (data.results && data.results.processed > 0) {
-                setStatusText(`Synced ${data.results.success} items!`);
-            } else {
-                setStatusText("All items up to date");
-            }
+            const latestSummary = await loadSummary();
+            if (!latestSummary) return;
 
-            await loadSummary();
+            const results = data.results;
+            if (results?.failed) {
+                setStatusText(`Synced ${results.success} of ${results.processed} items; ${results.failed} failed. ${latestSummary.missing_content_embeddings} still need content embeddings.`);
+                setStatusTone("warning");
+            } else if (latestSummary.missing_content_embeddings > 0) {
+                setStatusText(`Synced ${results?.success ?? 0} items. ${latestSummary.missing_content_embeddings} still need content embeddings; run another batch.`);
+                setStatusTone("info");
+            } else {
+                setStatusText("All content embeddings are up to date.");
+                setStatusTone("success");
+            }
         } catch (error: any) {
             console.error("Sync error:", error);
             setStatusText("Error: " + error.message);
+            setStatusTone("error");
         } finally {
             setIsSyncing(false);
         }
@@ -95,7 +117,7 @@ export function SyncEmbeddingsButton() {
                         Sync Content Embeddings
                     </div>
                     <p className="mt-1 text-xs leading-5 text-zinc-500">
-                        Verified content needs a fresh metadata embedding before AI retrieval is considered ready.
+                        Verified content needs a fresh metadata embedding before AI retrieval is considered ready. Each run processes up to 25 items.
                     </p>
                 </div>
                 <button
@@ -133,7 +155,7 @@ export function SyncEmbeddingsButton() {
             </button>
 
             {statusText && (
-                <span className={`mt-3 block text-xs font-medium ${statusText.startsWith("Error:") ? "text-red-500" : "text-emerald-500"}`}>
+                <span role="status" className={`mt-3 block text-xs font-medium ${statusTone === "error" ? "text-red-500" : statusTone === "warning" ? "text-amber-600" : statusTone === "success" ? "text-emerald-500" : "text-muted-foreground"}`}>
                     {statusText}
                 </span>
             )}
