@@ -1,9 +1,9 @@
 import { ContentCard } from "@/components/ui/ContentCard";
 import { SearchAnalyticsTracker } from "@/app/(public)/search/SearchAnalyticsTracker";
-import { getRecentCatalogPage, type RecentCatalogPage } from "@/lib/server/search-catalog";
+import { getPopularCatalogItems, getRecentCatalogPage, type RecentCatalogPage } from "@/lib/server/search-catalog";
 import { CatalogSearchError, searchCatalog, type CatalogSearchResponse, type CatalogSearchResult } from "@/lib/server/catalog-search";
 import type { ContentItem, ContentType } from "@/types/database";
-import { ArrowLeft, ArrowRight, Clock3, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock3, Search, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 const SEARCHABLE_TYPES: ContentType[] = ["book", "podcast", "article"];
@@ -125,6 +125,34 @@ export async function RecentCatalog({
                 <p className="py-12 text-center text-muted-foreground">No content matches these filters.</p>
             )}
         </div>
+    );
+}
+
+export async function PopularCatalog({
+    categoryValues,
+    type,
+    preloadedItems,
+}: {
+    categoryValues?: string[];
+    type?: ContentType;
+    preloadedItems?: Promise<ContentItem[]>;
+}) {
+    const items = await (preloadedItems ?? getPopularCatalogItems({ categoryValues, type }))
+        .catch((error): ContentItem[] => {
+            console.error("Search popular catalog read failed", error);
+            return [];
+        });
+
+    return items.length > 0 ? (
+        <div className="animate-in fade-in duration-500">
+            <div className="flex items-center gap-2 mb-6">
+                <TrendingUp className="size-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">{formatPopularLabel(type)}</h2>
+            </div>
+            <ContentGrid items={items} />
+        </div>
+    ) : (
+        <p className="py-12 text-center text-muted-foreground">No popular content matches these filters yet.</p>
     );
 }
 

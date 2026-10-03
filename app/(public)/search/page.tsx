@@ -7,10 +7,9 @@
 
 import { searchCatalog } from "@/lib/server/catalog-search";
 import { getPopularCatalogItems, getRecentCatalogPage, getSearchCategoryStats } from "@/lib/server/search-catalog";
-import { TrendingUp } from "lucide-react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { SearchFilterLink } from "@/components/ui/SearchFilterLink";
 import { Suspense } from "react";
 import { SearchTopicSelect } from "@/components/ui/SearchTopicSelect";
 import {
@@ -22,11 +21,10 @@ import {
 } from "@/lib/content-categories";
 import {
     buildSearchHref,
-    ContentGrid,
-    formatPopularLabel,
     normalizeCatalogSort,
     normalizePage,
     normalizeType,
+    PopularCatalog,
     RecentCatalog,
     ResultsSkeleton,
     SearchResults,
@@ -117,16 +115,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ])).sort((a, b) => a.localeCompare(b));
     const selectedTopicLabel = selectedTopic?.label;
     const selectedTopicValues = selectedTopic?.rawValues ?? [];
-    const popularItems = !hasContentSearch && selectedSort === "popular"
-        ? await (preloadedPopular ?? getPopularCatalogItems({
-            categoryValues: selectedTopicValues,
-            type: selectedType,
-        })).catch((error) => {
-            console.error("Search popular catalog read failed", error);
-            return [];
-        })
-        : [];
-
     return (
         <div className="min-h-screen bg-background pb-5 md:pb-6 lg:pb-16">
             <div className="max-w-7xl mx-auto px-6 lg:px-16 py-5 md:py-8">
@@ -159,7 +147,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 : selectedType === t.toLowerCase();
 
                             return (
-                                <Link
+                                <SearchFilterLink
                                     key={t}
                                     href={buildSearchHref({
                                         query,
@@ -173,7 +161,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                         }`}
                                 >
                                     {t}
-                                </Link>
+                                </SearchFilterLink>
                             );
                         })}
                     </div>
@@ -185,7 +173,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             Topics
                         </p>
                         <div className="flex flex-wrap justify-start gap-2">
-                            <Link
+                            <SearchFilterLink
                                 href={buildSearchHref({
                                     query,
                                     type: selectedTypeParam,
@@ -197,13 +185,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                     }`}
                             >
                                 All topics
-                            </Link>
+                            </SearchFilterLink>
 
                             {curatedTopicItems.map((item) => {
                                 const isActive = selectedTopicLabel === item.label;
 
                                 return (
-                                    <Link
+                                    <SearchFilterLink
                                         key={item.label}
                                         href={buildSearchHref({
                                             query,
@@ -217,7 +205,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                             }`}
                                     >
                                         {item.label}
-                                    </Link>
+                                    </SearchFilterLink>
                                 );
                             })}
 
@@ -240,7 +228,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             Sort by
                         </p>
                         <div className="flex items-center gap-2">
-                            <Link
+                            <SearchFilterLink
                                 href={buildSearchHref({
                                     category: selectedTopicLabel,
                                     type: selectedTypeParam,
@@ -254,8 +242,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 }`}
                             >
                                 Newest
-                            </Link>
-                            <Link
+                            </SearchFilterLink>
+                            <SearchFilterLink
                                 href={buildSearchHref({
                                     category: selectedTopicLabel,
                                     type: selectedTypeParam,
@@ -269,7 +257,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 }`}
                             >
                                 Popular
-                            </Link>
+                            </SearchFilterLink>
                         </div>
                     </div>
                 ) : null}
@@ -296,16 +284,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             preloadedPage={preloadedRecentPage}
                         />
                     </Suspense>
-                ) : popularItems.length > 0 ? (
-                    <div className="animate-in fade-in duration-500">
-                        <div className="flex items-center gap-2 mb-6">
-                            <TrendingUp className="size-5 text-primary" />
-                            <h2 className="text-lg font-semibold text-foreground">{formatPopularLabel(selectedType)}</h2>
-                        </div>
-                        <ContentGrid items={popularItems} />
-                    </div>
                 ) : (
-                    <p className="py-12 text-center text-muted-foreground">No popular content matches these filters yet.</p>
+                    <Suspense fallback={<ResultsSkeleton />}>
+                        <PopularCatalog
+                            categoryValues={selectedTopicValues}
+                            type={selectedType}
+                            preloadedItems={preloadedPopular}
+                        />
+                    </Suspense>
                 )}
             </div>
         </div>
