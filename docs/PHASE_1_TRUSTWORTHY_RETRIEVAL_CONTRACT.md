@@ -145,7 +145,7 @@ Phase 1 acceptance requires all of the following:
 
 ## 5. Finding register
 
-The owner column assigns an accountable role only. A named owner and target date must be recorded before the corresponding work starts; missing ownership metadata is not supplied or waived by this housekeeping pass. Delivery status was reconciled through main `0e861306` and scoped release evidence on 27 September 2026. “Merged” records a scoped implementation, not a fresh production smoke or blanket closure of its acceptance criteria. “Pending” means no closure evidence is recorded here, not proof that no related code exists. See [STATUS.md](STATUS.md) for release boundaries.
+The owner column assigns an accountable role only. A named owner and target date must be recorded before the corresponding work starts; missing ownership metadata is not supplied or waived by this housekeeping pass. Delivery status was rechecked against main `05e444a0` and the retained release evidence on 1 October 2026. This reconciliation does not repeat previously completed acceptance tests. “Merged” records a scoped implementation, not a fresh production smoke or blanket closure of its acceptance criteria. “Pending” means no closure evidence is recorded here, not proof that no related code exists. See [STATUS.md](STATUS.md) for release boundaries.
 
 | # | Workstream / timing | Accountable role | Dependency or release gate | Acceptance evidence | Delivery status / implementation evidence |
 | --- | --- | --- | --- | --- | --- |
@@ -180,7 +180,28 @@ The owner column assigns an accountable role only. A named owner and target date
 | 29 | Alongside Phase 1: measurement | Product analytics | #25 event definitions | Capture-to-retrieval and return cohorts are measured without raw text. | Pending retrieval-outcome acceptance; activity analytics are not its substitute. |
 | 30 | Operational readiness | Security, Operations | Applicable production authorization | Read-only Auth/recovery review has current signed-off evidence. | Pending current sign-off; retain dated security evidence. |
 | 31 | Operational readiness | Operations | Current backup posture | Isolated restore meets approved RTO and verifies Storage behavior. | Historical backup/restore evidence retained; current-posture drill remains open. |
-| 32 | Operational readiness | Operations | Alert ownership | Alert delivery through acknowledgement and response ownership are proven. | Snapshot maintenance repaired in #153 and successful production scheduled runs recorded in #160; alert delivery/acknowledgement ownership proof remains open. |
+| 32 | Operational readiness | Operations | Alert ownership | Alert delivery through acknowledgement and response ownership are proven. | Snapshot maintenance repaired in #153/#160 and reverified read-only on 1 October: active hourly job,24 successes/zero failures in24h, no overdue cleanup counts. See [current maintenance evidence](evidence/snapshot-maintenance-status-20261001.json). Alert delivery/acknowledgement ownership proof remains open. |
+
+## Reconciled next work — 1 October 2026
+
+The32 rows above remain authoritative; this is a scope summary, not blanket closure:
+
+- Recorded delivery/accepted scoped evidence: #2–6, #8–10, #12–13, #20–27.
+  #25 remains an ongoing evaluation obligation; #27 retains its owner-accepted
+  actual-VoiceOver verification gap. Broader synthesis remains held.
+- Partial or separately open acceptance: #7 live-list proof, #11 broader deletion
+  policy, #18 full editorial history, and #28 deliberately open at the owner's request.
+- Outstanding readiness/measurement evidence: #19, #29, #30–32. Healthy snapshot
+  maintenance does not establish #32 alert delivery, acknowledgement or ownership.
+- Deferred product/editorial validation: #1 comparative validation and #14–17.
+
+First-load experimentation in PR #226 is a separate documentation-only closeout,
+not completion of these findings or proof of worldwide performance. Prioritize
+current #30–32 operational evidence, starting with read-only Auth/recovery review
+and an alert-ownership inventory; plan any restore drill against its recorded
+acceptance criteria. Do not create another database or send test alerts merely
+because their closure evidence is pending. Existing authorization still applies,
+but scope, recipient and recovery targets must be concrete before those actions.
 
 ## Implementation order
 
