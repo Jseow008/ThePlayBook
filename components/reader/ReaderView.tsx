@@ -954,7 +954,11 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onAudioPlaybackStarted={handleAudioPlaybackStarted}
                 />
 
-                <GuestProgressChoice contentId={content.id} segmentIds={segmentIds} />
+                <GuestProgressChoice
+                    contentId={content.id}
+                    segmentIds={segmentIds}
+                    reflectionPending={searchParams.get(REFLECTION_RESUME_PARAM) === "1"}
+                />
 
                 {content.seriesContext && (
                     <div className="mb-5 space-y-3">
