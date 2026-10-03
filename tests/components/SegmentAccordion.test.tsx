@@ -205,6 +205,32 @@ describe('SegmentAccordion', () => {
         }
     });
 
+    it('does not run a queued scroll after its section closes', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const scrollToSpy = vi.fn();
+            window.scrollTo = scrollToSpy;
+
+            const { rerender } = render(
+                <SegmentAccordion
+                    {...defaultProps}
+                    expandedSegmentId="seg-2"
+                    scrollRequest={{ segmentId: 'seg-2', initialScrollY: 0, requestId: 1 }}
+                />
+            );
+            rerender(<SegmentAccordion {...defaultProps} expandedSegmentId={null} scrollRequest={null} />);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(450);
+            });
+
+            expect(scrollToSpy).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('focuses the segment header when an external scroll request asks for focus', async () => {
         vi.useFakeTimers();
 
