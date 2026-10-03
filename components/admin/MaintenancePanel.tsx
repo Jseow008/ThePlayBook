@@ -85,7 +85,7 @@ export function MaintenancePanel() {
     };
 
     return (
-        <section className="rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-sm">
+        <section className="min-w-0 rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-sm">
             <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                 <div className="flex items-start gap-3">
                     <div className="rounded-lg border border-border bg-background/50 p-2 text-muted-foreground">
