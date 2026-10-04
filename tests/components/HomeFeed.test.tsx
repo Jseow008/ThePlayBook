@@ -216,7 +216,7 @@ describe("HomeFeed", () => {
         expect(featuredLane).toHaveAttribute("data-view-all-href", "");
     });
 
-    it("offers desktop-only recovery actions after the final lane and before the footer", () => {
+    it("offers desktop-only catalog search after the final lane and before the footer", () => {
         render(
             <HomeFeed
                 items={[item]}
@@ -235,13 +235,12 @@ describe("HomeFeed", () => {
 
         expect(recoverySection).not.toBeNull();
         expect(recoverySection).toHaveClass("hidden", "md:block");
+        expect(recoverySection).toHaveTextContent("Search the full catalog for a topic, title, or author.");
         const searchLink = screen.getByRole("link", { name: "Search all summaries" });
-        const askLink = screen.getByRole("link", { name: "Ask Netflux" });
 
         expect(searchLink).toHaveAttribute("href", "/search");
         expect(searchLink).toHaveClass("min-h-10");
-        expect(askLink).toHaveAttribute("href", "/ask");
-        expect(askLink).toHaveClass("min-h-10");
+        expect(recoverySection!.querySelector('a[href="/ask"]')).toBeNull();
         expect(recommendations.compareDocumentPosition(recoverySection!) & Node.DOCUMENT_POSITION_FOLLOWING)
             .toBeTruthy();
         expect(recoverySection!.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING)

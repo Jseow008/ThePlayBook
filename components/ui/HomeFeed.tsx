@@ -101,24 +101,16 @@ export function HomeFeed({
                                     Haven&apos;t found the right summary?
                                 </h2>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    Search the full catalog or ask Netflux for a recommendation.
+                                    Search the full catalog for a topic, title, or author.
                                 </p>
                             </div>
 
-                            <div className="flex shrink-0 items-center gap-3">
-                                <Link
-                                    href="/search"
-                                    className="focus-ring touch-target-44 inline-flex min-h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-                                >
-                                    Search all summaries
-                                </Link>
-                                <Link
-                                    href="/ask"
-                                    className="focus-ring touch-target-44 inline-flex min-h-10 items-center justify-center rounded-full border border-border bg-transparent px-5 text-sm font-semibold text-foreground transition-colors hover:bg-muted/50"
-                                >
-                                    Ask Netflux
-                                </Link>
-                            </div>
+                            <Link
+                                href="/search"
+                                className="focus-ring touch-target-44 inline-flex min-h-10 shrink-0 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                            >
+                                Search all summaries
+                            </Link>
                         </div>
                     </section>
                 </div>
