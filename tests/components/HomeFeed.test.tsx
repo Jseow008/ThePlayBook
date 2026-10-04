@@ -235,7 +235,7 @@ describe("HomeFeed", () => {
 
         expect(recoverySection).not.toBeNull();
         expect(recoverySection).toHaveClass("hidden", "md:block");
-        expect(recoverySection).toHaveTextContent("Explore the full catalog to find a summary that fits what you're looking for.");
+        expect(recoverySection).toHaveTextContent("Search the full catalog for a topic, title, or author.");
         const searchLink = screen.getByRole("link", { name: "Search all summaries" });
 
         expect(searchLink).toHaveAttribute("href", "/search");

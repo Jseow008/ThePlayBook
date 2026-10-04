@@ -101,7 +101,7 @@ export function HomeFeed({
                                     Haven&apos;t found the right summary?
                                 </h2>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    Explore the full catalog to find a summary that fits what you&apos;re looking for.
+                                    Search the full catalog for a topic, title, or author.
                                 </p>
                             </div>
 
