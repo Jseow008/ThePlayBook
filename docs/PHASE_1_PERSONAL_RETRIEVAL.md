@@ -4088,3 +4088,77 @@ local scope, `PR scope` passed, and squash auto-merge is enabled. At handoff,
 required `validate`, `Security Validation`, and `Catalog Search Evidence` were
 running. Next: let required checks complete and address an actionable failure
 if one occurs; no production database rollout is involved.
+
+### Author causal grounding trial — 4 October 2026
+
+User authorized an explicit Ask Author rule for questions asking why, followed by
+a bounded Haiku/Luna retest. Branch `codex/author-causal-grounding` in Codex
+worktree `/Users/j/.codex/worktrees/author-causal-grounding/Lifebook` starts from
+fresh `origin/main` `b871dd45`. There is no commit, PR, deployment, model-setting
+change, or production database mutation from this trial.
+
+The local candidate adds one prompt rule: a reason must be explicitly linked to
+the event or choice in the source; nearby facts, sequence, permissions, and
+consequences do not establish a reason. The chat UI, source selection, history,
+output cap, quotas, and production Haiku routing remain unchanged. The synthetic
+direct-provider harness is `scripts/experiments/author-causal-qualification.ts`.
+Its development artifact is `/private/tmp/netflux-author-causal-dev-20261004.json`;
+all nine calls (three cases, one Haiku and two Luna runs each) completed and passed
+manual causal checks, including two Luna answers to the earlier marker failure.
+
+The predeclared fixed set stopped at call 21/30 when Luna's second empty-source
+call reached the 30-second deadline (`TimeoutError`). No retry or favorable
+replacement was made. The completed Luna causal answers stayed within the source.
+One completed Haiku response about simultaneous bell/bridge events added an
+unsupported interpretation of the keeper's intent, so the all-output grounding
+gate also fails. Held-out artifact:
+`/private/tmp/netflux-author-causal-heldout-20261004.json`. Neither model switch
+nor prompt-only production release is qualified by this run. Focused Author route
+tests passed 28/28; lint and typecheck passed. These checks verify code integrity,
+not answer quality.
+
+Next action: reassess empty-source handling and the answer contract before another
+provider experiment. Preserve this failed run as evidence; do not retry its timed
+out call or tune against the fixed set. Design a new development sample and a
+separate unopened fixed set if a revised approach is chosen. Keep production
+Haiku and the current selector-only Luna setting until a new release gate passes.
+
+### Author Luna qualification and release candidate — 4 October 2026
+
+The next candidate returns a deterministic UI-stream answer when a work has no
+usable segment text. It reserves no model spend or signed-in AI quota for that
+case. With an OpenAI key present, Ask Author alone now defaults to `gpt-6-luna`
+using no reasoning effort and no provider storage. `AUTHOR_CHAT_MODEL` can
+explicitly retain the earlier Haiku route. Other chat routes, the selector,
+source selection, history window, output cap, and UI remain unchanged. No
+database migration is involved.
+
+New development artifact `/private/tmp/netflux-author-luna-dev-20261004.json`:
+2/2 Luna outputs completed and passed manual review. The separate fixed artifact
+`/private/tmp/netflux-author-luna-fixed-20261004.json` contains 20/20 completed
+Luna calls across ten unseen synthetic source cases, each manually reviewed as
+grounded. All were below the route's 50-second deadline (maximum 3.615 seconds);
+total fixed-set usage was 7,346 input and 559 output tokens, approximately
+$0.001014 at the current ledger rates. The earlier 30-second held-out timeout
+remains a failure of that run; it was not retried or reclassified. The later
+key-validation ordering and default-routing edits do not change the tested
+prompt, Luna provider options, or source cases.
+
+Focused Author route tests passed 33/33; typecheck and focused lint passed.
+The full production build, Sharp trace check, and critical CSS check passed
+after replacing this worktree's external `node_modules` symlink with a locked
+local install and linking the existing environment file for the build. The
+built server, using the production database and `VERCEL=1` ingress simulation,
+returned HTTP 200 complete UI streams for a public Extreme Ownership question
+(6.8 seconds) and an absent-source question (0.9 seconds). The first built
+server probe without hosted ingress context returned 503 `RATE_LIMIT_UNAVAILABLE`
+by the documented production rate-limit policy; the correctly configured
+hosted-style probe passed. A prior development-server Luna HTTP journey also
+returned a complete answer. These local HTTP probes are not a post-deployment
+production journey.
+
+The Vercel connection denied project environment-variable listing (403), so
+the switch is carried by the code default with an environment rollback option.
+Pending: publish this branch through a scoped PR, let required checks gate the
+merge, and perform a production Author chat smoke after deployment. Temporary
+local test accounts were not created for this candidate.

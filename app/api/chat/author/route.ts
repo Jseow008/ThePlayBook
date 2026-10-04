@@ -13,6 +13,7 @@ import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { admitAiUsage, getQuotaExceededMessage } from "@/lib/server/ai-usage-quota";
+import { retrievalTextResponse } from "@/lib/server/retrieval-response";
 
 export const maxDuration = 60;
 
@@ -226,12 +227,6 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             });
         }
 
-        // --- Validate API Key ---
-        if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
-            logApiError({ requestId, route: "/api/chat/author", message: "API Keys not configured", error: new Error("Missing env") });
-            return apiError("INTERNAL_ERROR", "AI service is not configured.", 500, requestId);
-        }
-
         // --- Parse & Validate Body ---
         let body: unknown;
         try {
@@ -329,6 +324,14 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
 
         const segmentRows = (segments || []) as SourceSegment[];
         const contextText = buildSourceContext(segmentRows, lastMsg.content);
+        if (!segmentRows.some((segment) => segment.markdown_body.trim())) {
+            return retrievalTextResponse("I don't have source material for this work yet, so I can't answer from its text.", "ui");
+        }
+
+        if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+            logApiError({ requestId, route: "/api/chat/author", message: "API Keys not configured", error: new Error("Missing env") });
+            return apiError("INTERNAL_ERROR", "AI service is not configured.", 500, requestId);
+        }
 
         // --- System Prompt (optimized for persona + cost control) ---
         const systemPrompt = `You are ${authorName}, speaking about "${contentTitle}".
@@ -344,6 +347,7 @@ Rules:
 - Treat the source material as the only authority for claims about this work.
 - Clearly distinguish what the source directly supports, what is a reasonable inference, and what the source does not establish.
 - If an answer is not supported by the source material, say so instead of inventing a position.
+- For questions about why something happened or why a choice was made, give a reason only when the source explicitly connects it to that event or choice. Nearby facts, sequence, permission, or consequences alone do not establish a reason. If the source gives no reason, say so.
 - Never fabricate quotations, examples, events, or views of the author.
 - Stay on the ideas in this source. For unrelated requests, reply briefly: "I can help explore the arguments and applications of this source, but I cannot help with that unrelated request."
 - Be specific about concepts from the work.
@@ -352,17 +356,24 @@ Rules:
 - Match ${authorName}'s tone and challenge weak thinking when appropriate.`;
 
         // --- Select Model Dynamically based on ENV vars ---
+        // Author uses Luna when its key is available; an explicit override can retain the prior route.
+        const authorModel = process.env.AUTHOR_CHAT_MODEL || (process.env.OPENAI_API_KEY ? "gpt-6-luna" : undefined);
         let aiModel;
         let selectedProvider = "anthropic";
-        let selectedModel = process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL;
-        const provider = process.env.AI_PROVIDER || "anthropic";
+        let selectedModel = authorModel === DEFAULT_ANTHROPIC_MODEL ? authorModel : (process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
+        const provider = authorModel === "gpt-6-luna" ? "openai" : authorModel === DEFAULT_ANTHROPIC_MODEL ? "anthropic" : (process.env.AI_PROVIDER || "anthropic");
+
+        if (authorModel === "gpt-6-luna" && !process.env.OPENAI_API_KEY) {
+            logApiError({ requestId, route: "/api/chat/author", message: "Author Luna key not configured", error: new Error("Missing env") });
+            return apiError("INTERNAL_ERROR", "AI service is not configured.", 500, requestId);
+        }
 
         if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
-            aiModel = anthropic(process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
+            aiModel = anthropic(selectedModel);
         } else if (process.env.OPENAI_API_KEY) {
             const { openai } = await import("@ai-sdk/openai");
             selectedProvider = "openai";
-            selectedModel = process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini";
+            selectedModel = authorModel === "gpt-6-luna" ? authorModel : (process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
             aiModel = openai(selectedModel);
         } else {
             aiModel = anthropic(process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
@@ -409,6 +420,7 @@ Rules:
             system: systemPrompt,
             messages,
             maxOutputTokens: MAX_OUTPUT_TOKENS,
+            ...(authorModel === "gpt-6-luna" ? { providerOptions: { openai: { reasoningEffort: "none", forceReasoning: true, store: false } } } : {}),
             abortSignal: signal,
             experimental_transform: smoothStream({ delayInMs: 20, chunking: "word" }),
             onFinish: async ({ usage }) => {
