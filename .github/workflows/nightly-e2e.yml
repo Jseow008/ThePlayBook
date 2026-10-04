@@ -1,0 +1,86 @@
+name: Nightly Responsive E2E
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  responsive-e2e:
+    timeout-minutes: 45
+    runs-on: ubuntu-latest
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+      CATALOG_SEARCH_CURSOR_SECRET: ci-catalog-search-cursor-secret
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup local Supabase
+        run: npx supabase start
+
+      - name: Export local Supabase environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          status_output="$(
+            npx supabase status -o env \
+              --override-name api.url=NEXT_PUBLIC_SUPABASE_URL \
+              --override-name auth.anon_key=NEXT_PUBLIC_SUPABASE_ANON_KEY
+          )"
+          exported_environment="$(
+            printf '%s\n' "$status_output" \
+              | sed -nE 's/^(NEXT_PUBLIC_SUPABASE_(URL|ANON_KEY))="(.*)"$/\1=\3/p'
+          )"
+          test "$(printf '%s\n' "$exported_environment" | sed '/^$/d' | wc -l)" -eq 2
+          printf '%s\n' "$exported_environment" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci_e2e
+          NEXT_PUBLIC_POSTHOG_HOST: /flux
+          NEXT_PUBLIC_POSTHOG_CAPTURE_BOT_EVENTS: "true"
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Full responsive E2E
+        run: npx playwright test --reporter=html,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/nightly.json
+          NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci_e2e
+          NEXT_PUBLIC_POSTHOG_HOST: /flux
+          NEXT_PUBLIC_POSTHOG_CAPTURE_BOT_EVENTS: "true"
+
+      - name: Report executed and skipped coverage
+        if: always()
+        run: node scripts/report-e2e-coverage.mjs test-results/nightly.json
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nightly-responsive-report
+          path: |
+            playwright-report/
+            test-results/nightly.json
+          retention-days: 14

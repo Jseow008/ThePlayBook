@@ -2,6 +2,12 @@
 
 **Reconciled 1 October 2026:** core capture/search/evidence/citation/export work is shipped, but neither all 32 findings nor the complete first-load performance objective is closed. The selector-only Luna release (#217, `e9276438`) passed the frozen quality evaluation and one production smoke; the response took about 11.8 seconds in that browser sample. This establishes functioning, cheaper retrieval, not a general latency target. Factual wait feedback (#218, `23bdaf05`) is merged; production deployment verification is pending. See the [latest checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#luna-production-rollout-and-factual-wait-feedback--1-october-2026).
 
+## CI Stage 1 — 4 October 2026
+
+Implementation `395551e8` on `codex/ci-stage-one`, workspace `/Users/j/Desktop/Lifebook`: conservative PR verification tiers, broader explicit docs allowlist, and nightly six-viewport browser reporting. Production database gates are unchanged; shared application code remains fully checked. The [verification table](OPS.md#2-testing-and-verification) is the operating reference.
+
+Evidence: 57 focused classifier/workflow/report tests passed; targeted ESLint and diff whitespace checks passed. No failed implementation attempts or pending product decisions. Full hosted CI and the first scheduled browser run remain unverified locally; missing browser fixtures are reported as skipped coverage. Next action: publish the focused PR, verify PR scope, enable squash auto-merge, and let required GitHub checks gate merging in the background. Do not claim measured time savings yet. One agent; external model usage and comparative CI timing were not measured.
+
 ## What remains before claiming completion
 
 - **First-load experience:** #201 removed external CSS from the initial rendering path in measured cases. Browse image delivery, Home font arrival and early interaction readiness still need a bounded, matched comparison. The current follow-up reduces unnecessary initial script/image bytes without changing typography or layout. No global performance claim or further model experiment is part of this work.
