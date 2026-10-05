@@ -384,6 +384,9 @@ export const getSeriesPageData = cache(async (slug: string): Promise<SeriesPageD
 
 export const getCategoryStats = cache(async (): Promise<CategoryStat[]> => {
     const supabase = createPublicServerClient();
-    const { data } = await supabase.rpc("get_category_stats");
+    const { data, error } = await supabase.rpc("get_category_stats");
+    if (error) {
+        throw error;
+    }
     return (data as CategoryStat[] | null) ?? [];
 });

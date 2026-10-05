@@ -80,4 +80,21 @@ describe('ReaderHeroHeader', () => {
 
         expect(screen.getByTestId('mock-cover-image')).toHaveAttribute('sizes', READER_COVER_IMAGE_SIZES);
     });
+
+    it('provides a destination for Listen links when audio is available', () => {
+        render(
+            <ReaderHeroHeader
+                title="Test Title"
+                author="Test Author"
+                type="article"
+                coverImageUrl={null}
+                audioUrl="https://example.com/audio.mp3"
+                durationSeconds={600}
+                segmentsTotal={4}
+                segmentsCompleted={0}
+            />
+        );
+
+        expect(screen.getByRole('region', { name: 'Audio player' })).toHaveAttribute('id', 'audio-player');
+    });
 });

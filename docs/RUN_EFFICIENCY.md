@@ -70,3 +70,13 @@ Keep this pattern for comparable changes: one implementation owner, bounded inde
   Keep browser-style global fetch wrappers outside administrative fixture setup.
   Reproduce harness races locally before spending on another production run, and
   preserve original unsuccessful verdicts rather than relabeling raw evidence.
+
+
+## Browser evidence lesson — 1 October 2026
+
+- **Incomplete baseline assets:** a copied build omitted public/ and invalidated
+  its timing comparison. Keep the complete served artifact and preflight asset
+  success before comparisons; reject failed critical resources. Playwright
+  screenshots may wait for fonts, so use event/paint measurements or explicitly
+  non-waiting capture for early-frame claims. Check improvement by invalid runs
+  avoided, without repeating unaffected hosted evidence.

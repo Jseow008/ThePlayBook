@@ -7,6 +7,10 @@ vi.mock("@/components/ui/HeroCarousel", () => ({
     HeroCarousel: () => <div data-testid="hero-carousel" />,
 }));
 
+vi.mock("@/components/ui/BrowseReadingPanel", () => ({
+    BrowseReadingPanel: () => <div data-testid="browse-reading-panel" />,
+}));
+
 vi.mock("@/components/ui/RecommendationsRow", () => ({
     RecommendationsRow: ({ showUserCompletionBadge }: { showUserCompletionBadge?: boolean }) => (
         <div
@@ -61,6 +65,9 @@ describe("HomeFeed", () => {
         is_featured: false,
         narration_completed_at: null,
         narration_error: null,
+        narration_progress_at: null,
+        narration_segments_completed: 0,
+        narration_segments_total: null,
         narration_requested_at: null,
         narration_started_at: null,
         narration_status: "completed",
@@ -117,6 +124,10 @@ describe("HomeFeed", () => {
             "data-user-completion-badge",
             "true",
         );
+        const hero = screen.getByTestId("hero-carousel");
+        const panel = screen.getByTestId("browse-reading-panel");
+        expect(hero.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(panel.compareDocumentPosition(newOnNetfluxLane) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
     it("does not show Explore All when the newest shelf contains every matching item", () => {
@@ -213,7 +224,7 @@ describe("HomeFeed", () => {
         expect(featuredLane).toHaveAttribute("data-view-all-href", "");
     });
 
-    it("offers desktop-only recovery actions after the final lane and before the footer", () => {
+    it("offers desktop-only catalog search after the final lane and before the footer", () => {
         render(
             <HomeFeed
                 items={[item]}
@@ -232,13 +243,12 @@ describe("HomeFeed", () => {
 
         expect(recoverySection).not.toBeNull();
         expect(recoverySection).toHaveClass("hidden", "md:block");
+        expect(recoverySection).toHaveTextContent("Search the full catalog for a topic, title, or author.");
         const searchLink = screen.getByRole("link", { name: "Search all summaries" });
-        const askLink = screen.getByRole("link", { name: "Ask Netflux" });
 
         expect(searchLink).toHaveAttribute("href", "/search");
         expect(searchLink).toHaveClass("min-h-10");
-        expect(askLink).toHaveAttribute("href", "/ask");
-        expect(askLink).toHaveClass("min-h-10");
+        expect(recoverySection!.querySelector('a[href="/ask"]')).toBeNull();
         expect(recommendations.compareDocumentPosition(recoverySection!) & Node.DOCUMENT_POSITION_FOLLOWING)
             .toBeTruthy();
         expect(recoverySection!.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING)

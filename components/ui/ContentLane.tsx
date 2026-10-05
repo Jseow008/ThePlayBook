@@ -84,22 +84,43 @@ export function ContentLane({
     useEffect(() => {
         const container = scrollRef.current;
         if (!container) return;
-        const resizeObserver = typeof ResizeObserver === "undefined"
-            ? null
-            : new ResizeObserver(updateArrowState);
+        // Arrow controls use md:flex. Native mobile swiping needs no arrow
+        // geometry, per-card observers, or scroll-driven React updates.
+        const desktop = window.matchMedia("(min-width: 768px)");
+        let stopMeasurements: (() => void) | undefined;
 
-        updateArrowState();
-        container.addEventListener("scroll", updateArrowState, { passive: true });
-        window.addEventListener("resize", updateArrowState);
-        resizeObserver?.observe(container);
-        container.querySelectorAll<HTMLElement>(LANE_CARD_SELECTOR).forEach((card) => {
-            resizeObserver?.observe(card);
-        });
+        const syncMeasurements = () => {
+            if (!desktop.matches) {
+                stopMeasurements?.();
+                stopMeasurements = undefined;
+                setShowLeftArrow(false);
+                setShowRightArrow(false);
+                return;
+            }
+            if (stopMeasurements) return;
 
+            const resizeObserver = typeof ResizeObserver === "undefined"
+                ? null
+                : new ResizeObserver(updateArrowState);
+            updateArrowState();
+            container.addEventListener("scroll", updateArrowState, { passive: true });
+            window.addEventListener("resize", updateArrowState);
+            resizeObserver?.observe(container);
+            container.querySelectorAll<HTMLElement>(LANE_CARD_SELECTOR).forEach((card) => {
+                resizeObserver?.observe(card);
+            });
+            stopMeasurements = () => {
+                resizeObserver?.disconnect();
+                container.removeEventListener("scroll", updateArrowState);
+                window.removeEventListener("resize", updateArrowState);
+            };
+        };
+
+        syncMeasurements();
+        desktop.addEventListener("change", syncMeasurements);
         return () => {
-            resizeObserver?.disconnect();
-            container.removeEventListener("scroll", updateArrowState);
-            window.removeEventListener("resize", updateArrowState);
+            desktop.removeEventListener("change", syncMeasurements);
+            stopMeasurements?.();
         };
     }, [items.length, updateArrowState]);
 

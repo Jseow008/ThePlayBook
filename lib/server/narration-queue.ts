@@ -61,6 +61,9 @@ export async function queueNarrationJobIfEligible({
             narration_requested_at: now,
             narration_started_at: null,
             narration_completed_at: null,
+            narration_segments_completed: 0,
+            narration_segments_total: null,
+            narration_progress_at: null,
         })
         .eq("id", contentId)
         .eq("narration_status", persistedStatus)

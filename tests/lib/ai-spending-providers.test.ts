@@ -32,6 +32,27 @@ describe("nested provider spending boundaries", () => {
         expect(generate).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0, maxOutputTokens: 1600 }));
         expect(rpc).toHaveBeenLastCalledWith("record_ai_spend", expect.objectContaining({ p_cost_microusd: 35 }));
     });
+    it("uses only the qualified Luna configuration when explicitly enabled", async () => {
+        vi.stubEnv("PERSONAL_EVIDENCE_SELECTOR_MODEL", "gpt-6-luna");
+        vi.stubEnv("OPENAI_API_KEY", "fixture");
+        generate.mockResolvedValueOnce({ output: { requestedFacets: ["fixture"], assessments: [] },
+            usage: { inputTokens: 1000, outputTokens: 100 }, response: { modelId: "gpt-6-luna" } });
+        const result = await scoped(selection);
+        expect(result.provider).toBe("openai");
+        expect(generate.mock.calls[0][0].model.modelId).toBe("gpt-6-luna");
+        expect(generate).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0, maxOutputTokens: 1600,
+            providerOptions: { openai: { reasoningEffort: "low", forceReasoning: true, store: false } } }));
+        expect(rpc.mock.calls[0][1]).toMatchObject({ p_provider: "openai", p_model: "gpt-6-luna", p_reserved_microusd: 211200 });
+        expect(rpc.mock.calls[1][1]).toMatchObject({ p_cost_microusd: 150 });
+        expect(process.env.AI_MODEL).toBe("claude-haiku-4-5-20251001");
+    });
+    it.each(["gpt-6-luna", "unknown-model"])("fails closed for unconfigured selector %s", async model => {
+        vi.stubEnv("PERSONAL_EVIDENCE_SELECTOR_MODEL", model);
+        vi.stubEnv("OPENAI_API_KEY", "");
+        await expect(scoped(selection)).rejects.toMatchObject({ code: "NOT_CONFIGURED" });
+        expect(generate).not.toHaveBeenCalled();
+        expect(rpc).not.toHaveBeenCalled();
+    });
     it("blocks the selector and embedding provider when the policy is disabled", async () => {
         rpc.mockReturnValue({ abortSignal: async () => ({ data: { allowed: false, reason: "disabled", retryAfterMs: 1000 }, error: null }) });
         await expect(scoped(selection)).rejects.toBeInstanceOf(AiSpendingError);

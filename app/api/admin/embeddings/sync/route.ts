@@ -7,9 +7,8 @@ import { rateLimit } from "@/lib/server/rate-limit";
 import {
     CONTENT_EMBEDDING_SYNC_METHOD,
     CONTENT_EMBEDDING_SYNC_PATH,
-    getAdminAiReadinessMap,
+    getAdminAiReadinessSummary,
     getAdminAiReadinessWorkflow,
-    summarizeAdminAiReadiness,
 } from "@/lib/server/admin-ai-readiness";
 
 const EMBEDDING_MODEL = "gemini-embedding-001";
@@ -47,22 +46,7 @@ export async function GET() {
         }
 
         const supabase = getAdminClient();
-        const { data: items, error } = await supabase
-            .from("content_item")
-            .select("id, status, embedding")
-            .eq("status", "verified")
-            .is("deleted_at", null);
-
-        if (error) {
-            throw error;
-        }
-
-        const aiReadinessById = await getAdminAiReadinessMap(supabase as any, (items ?? []).map((item) => ({
-            id: item.id,
-            status: item.status,
-            embedding: item.embedding,
-        })));
-        const aiReadiness = summarizeAdminAiReadiness(Object.values(aiReadinessById));
+        const aiReadiness = await getAdminAiReadinessSummary(supabase);
 
         return NextResponse.json({
             summary: {

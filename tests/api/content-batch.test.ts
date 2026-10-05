@@ -53,6 +53,7 @@ describe("Content batch API", () => {
 
         expect(response.status).toBe(200);
         expect(mockFrom).toHaveBeenCalledWith("content_item");
+        expect(mockSelect).toHaveBeenCalledWith(expect.stringContaining("audio_url"));
         expect(mockIn).toHaveBeenCalledWith("id", [id]);
         expect(mockEq).toHaveBeenCalledWith("status", "verified");
         expect(mockIs).toHaveBeenCalledWith("deleted_at", null);

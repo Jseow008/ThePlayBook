@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
 import { createNotesChatScope, serializeNotesChatScope } from "@/lib/notes-chat-scope";
 import { useChat } from "@ai-sdk/react";
@@ -64,6 +64,33 @@ describe("NotesAskPanel", () => {
         });
     });
 
+    it.each(["page", "sidebar", "default"] as const)("keeps factual feedback through delayed and empty response states in %s", (variant) => {
+        vi.useFakeTimers();
+        let now = 0;
+        const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
+        const question = { id: "q", role: "user", parts: [{ type: "text", text: "Find my evidence" }] };
+        const chat = { messages: [question], sendMessage: sendMessageMock, setMessages: setMessagesMock, status: "submitted", error: null } as unknown as ReturnType<typeof useChat>;
+        vi.mocked(useChat).mockReturnValue(chat);
+        const { rerender, unmount } = render(<NotesAskPanel variant={variant} mobile={variant === "default"} currentScope={currentScope} onClose={vi.fn()} />);
+        try {
+            expect(screen.getByTestId("notes-request-progress")).toHaveTextContent("Searching your saved notes…");
+            act(() => { now = 8000; vi.advanceTimersByTime(8000); });
+            expect(screen.getByText("8s elapsed")).toHaveAttribute("aria-hidden", "true");
+            vi.mocked(useChat).mockReturnValue({ ...chat, status: "streaming", messages: [question, { id: "a", role: "assistant", parts: [] }] } as ReturnType<typeof useChat>);
+            rerender(<NotesAskPanel variant={variant} mobile={variant === "default"} currentScope={currentScope} onClose={vi.fn()} />);
+            expect(screen.getByTestId("notes-request-progress")).toHaveTextContent("Receiving your response…");
+            expect(screen.getByTestId("notes-request-progress")).toHaveTextContent("8s elapsed");
+            expect(screen.getByRole("status", { name: "Notes response status" })).not.toHaveTextContent("elapsed");
+            vi.mocked(useChat).mockReturnValue({ ...chat, status: "error", error: new Error("Disconnected") });
+            rerender(<NotesAskPanel variant={variant} mobile={variant === "default"} currentScope={currentScope} onClose={vi.fn()} />);
+            expect(screen.queryByTestId("notes-request-progress")).not.toBeInTheDocument();
+            expect(screen.getByRole("status", { name: "Notes response status" })).toHaveTextContent("Request failed.");
+            vi.mocked(useChat).mockReturnValue(chat);
+            rerender(<NotesAskPanel variant={variant} mobile={variant === "default"} currentScope={currentScope} onClose={vi.fn()} />);
+            expect(screen.getByTestId("notes-request-progress")).toHaveTextContent("0s elapsed");
+        } finally { unmount(); clock.mockRestore(); vi.useRealTimers(); }
+    });
+
     it("keeps the failed question retryable without presenting its partial answer as complete", async () => {
         const regenerate = vi.fn();
         const setMessages = vi.fn();
@@ -94,7 +121,7 @@ describe("NotesAskPanel", () => {
         composer.focus();
         vi.mocked(useChat).mockReturnValue({ ...chat, status: "streaming", messages: [{ id: "answer", role: "assistant", parts: [{ type: "text", text: "Partial words" }] }] } as ReturnType<typeof useChat>);
         rerender(<NotesAskPanel variant={variant} currentScope={currentScope} onClose={vi.fn()} />);
-        expect(status).toHaveTextContent("Searching your saved notes.");
+        expect(status).toHaveTextContent("Receiving your response…");
         expect(status).not.toHaveTextContent("Partial words");
         vi.mocked(useChat).mockReturnValue({ ...chat, messages: [{ id: "answer", role: "assistant", parts: [{ type: "text", text: "Verified words" }] }] } as ReturnType<typeof useChat>);
         rerender(<NotesAskPanel variant={variant} currentScope={currentScope} onClose={vi.fn()} />);

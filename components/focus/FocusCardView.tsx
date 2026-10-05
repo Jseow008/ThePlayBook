@@ -91,29 +91,67 @@ function getDesktopTakeawayClasses(compactLevel: DesktopCompactLevel) {
     return DESKTOP_TAKEAWAY_CLASSES[compactLevel] ?? null;
 }
 
+function FocusCoverPlaceholder({ testId }: { testId?: string }) {
+    return (
+        <div
+            data-testid={testId}
+            aria-hidden="true"
+            className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary via-card to-background"
+        >
+            <BookOpen className="size-10 text-muted-foreground" />
+        </div>
+    );
+}
+
 export const FocusCardView = memo(function FocusCardView({
     card,
     cardIndex,
     isSaved,
     isFocusDesktop,
     isActive,
+    loadCoverEagerly,
     showDesktopScrollCue,
     mobileCardTargetHeight,
     onOpenTakeaways,
     onToggleSave,
+    onReadSummary,
+    onCoverSettled,
 }: {
     card: FocusCard;
     cardIndex: number;
     isSaved: boolean;
     isFocusDesktop: boolean;
     isActive: boolean;
+    loadCoverEagerly: boolean;
     showDesktopScrollCue: boolean;
     mobileCardTargetHeight: number | null;
     onOpenTakeaways: (card: FocusCard, opener: HTMLElement) => void;
     onToggleSave: (card: FocusCard) => void;
+    onReadSummary?: (card: FocusCard) => void;
+    onCoverSettled?: (card: FocusCard, status: "loaded" | "failed") => void;
 }) {
     const duration = formatDuration(card.duration_seconds);
     const [mobileHookMaxHeight, setMobileHookMaxHeight] = useState<number | null>(null);
+    const [loadedCoverSrc, setLoadedCoverSrc] = useState<string | null>(null);
+    const isCoverLoaded = card.cover_image_url !== null && loadedCoverSrc === card.cover_image_url;
+    const coverErrorCountRef = useRef(0);
+
+    useEffect(() => {
+        coverErrorCountRef.current = 0;
+    }, [card.cover_image_url]);
+
+    useEffect(() => {
+        if (!isCoverLoaded || !onCoverSettled) return;
+        // Match the existing 150 ms opacity transition before calling the cover visible.
+        const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+        const timer = window.setTimeout(() => onCoverSettled(card, "loaded"), reducedMotion ? 0 : 150);
+        return () => window.clearTimeout(timer);
+    }, [card, isCoverLoaded, onCoverSettled]);
+
+    const handleCoverError = () => {
+        coverErrorCountRef.current += 1;
+        if (coverErrorCountRef.current >= 2) onCoverSettled?.(card, "failed");
+    };
     const cardRef = useRef<HTMLElement | null>(null);
     const cardContentRef = useRef<HTMLDivElement | null>(null);
     const hookBodyRef = useRef<HTMLDivElement | null>(null);
@@ -316,18 +354,19 @@ export const FocusCardView = memo(function FocusCardView({
                                             className="relative aspect-[2/3] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)]"
                                             style={{ width: `${desktopCoverWidth}px` }}
                                         >
+                                            {!isCoverLoaded && <FocusCoverPlaceholder testId="focus-cover-placeholder" />}
                                             <ResilientImage
                                                 src={card.cover_image_url}
                                                 alt={card.title}
                                                 fill
                                                 sizes={`${desktopCoverWidth}px`}
+                                                loading={loadCoverEagerly ? "eager" : "lazy"}
+                                                fetchPriority={isActive ? "high" : "auto"}
                                                 surface="content-preview"
-                                                className="object-cover"
-                                                fallback={
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary via-card to-background">
-                                                        <BookOpen className="size-10 text-muted-foreground" />
-                                                    </div>
-                                                }
+                                                onLoad={() => setLoadedCoverSrc(card.cover_image_url)}
+                                                onError={handleCoverError}
+                                                className={`object-cover transition-opacity duration-150 motion-reduce:transition-none ${isCoverLoaded ? "opacity-100" : "opacity-0"}`}
+                                                fallback={<FocusCoverPlaceholder />}
                                             />
                                         </div>
                                     ) : (
@@ -448,6 +487,7 @@ export const FocusCardView = memo(function FocusCardView({
                             ) : null}
                             <Link
                                 href={buildReadPath(card)}
+                                onClick={() => onReadSummary?.(card)}
                                 className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                                 aria-label={`Read ${card.title}`}
                             >
@@ -463,18 +503,19 @@ export const FocusCardView = memo(function FocusCardView({
                                 <div className="pointer-events-none absolute inset-[-1.1rem] rounded-[2rem] bg-primary/8 blur-2xl" aria-hidden="true" />
                                 {card.cover_image_url ? (
                                     <div className={`relative aspect-[2/3] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] ${isCompactMobileLayout ? "w-[112px] sm:w-[124px]" : "w-[140px]"}`}>
+                                        {!isCoverLoaded && <FocusCoverPlaceholder testId="focus-cover-placeholder" />}
                                         <ResilientImage
                                             src={card.cover_image_url}
                                             alt={card.title}
                                             fill
                                             sizes={isCompactMobileLayout ? "(max-width: 640px) 112px, 124px" : "140px"}
+                                            loading={loadCoverEagerly ? "eager" : "lazy"}
+                                            fetchPriority={isActive ? "high" : "auto"}
                                             surface="content-preview"
-                                            className="object-cover"
-                                            fallback={
-                                                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary via-card to-background">
-                                                    <BookOpen className="size-10 text-muted-foreground" />
-                                                </div>
-                                            }
+                                            onLoad={() => setLoadedCoverSrc(card.cover_image_url)}
+                                            onError={handleCoverError}
+                                            className={`object-cover transition-opacity duration-150 motion-reduce:transition-none ${isCoverLoaded ? "opacity-100" : "opacity-0"}`}
+                                            fallback={<FocusCoverPlaceholder />}
                                         />
                                     </div>
                                 ) : (

@@ -4,26 +4,32 @@ import { Search, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LibraryToolbarProps {
-    searchQuery: string;
-    onSearchChange: (query: string) => void;
+    searchQuery?: string;
+    onSearchChange?: (query: string) => void;
+    showSearch?: boolean;
     activeFilter: string;
     onFilterChange: (filter: string) => void;
     activeSort: "newest" | "oldest" | "title";
     onSortChange: (sort: "newest" | "oldest" | "title") => void;
     searchLabel?: string;
     searchPlaceholder?: string;
+    newestLabel?: string;
+    oldestLabel?: string;
     className?: string;
 }
 
 export function LibraryToolbar({
     searchQuery,
     onSearchChange,
+    showSearch = true,
     activeFilter,
     onFilterChange,
     activeSort,
     onSortChange,
     searchLabel = "Search library items",
     searchPlaceholder = "Search library items…",
+    newestLabel = "Newest",
+    oldestLabel = "Oldest",
     className,
 }: LibraryToolbarProps) {
     const filters = ["all", "book", "podcast", "article", "video"] as const;
@@ -31,17 +37,17 @@ export function LibraryToolbar({
     return (
         <div className={cn("flex flex-col gap-2.5 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-3", className)}>
             {/* Search */}
-            <div className="relative w-full lg:w-64 group">
+            {showSearch && <div className="relative w-full lg:w-64 group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground group-focus-within:text-foreground transition-colors" />
                 <input
                     type="text"
                     aria-label={searchLabel}
                     placeholder={searchPlaceholder}
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
+                    value={searchQuery ?? ""}
+                    onChange={(e) => onSearchChange?.(e.target.value)}
                     className="w-full h-10 pl-10 pr-4 rounded-full bg-secondary/40 border border-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all text-sm placeholder:text-muted-foreground/80"
                 />
-            </div>
+            </div>}
 
             <div
                 data-testid="library-toolbar-controls"
@@ -83,10 +89,13 @@ export function LibraryToolbar({
                         value={activeSort}
                         onChange={(e) => onSortChange(e.target.value as any)}
                         aria-label="Sort library items"
-                        className="relative h-11 min-w-28 cursor-pointer appearance-none rounded-full border border-transparent bg-transparent pl-3 pr-8 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:h-9"
+                        className={cn(
+                            "relative h-11 cursor-pointer appearance-none rounded-full border border-transparent bg-transparent pl-3 pr-8 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:h-9",
+                            newestLabel === "Newest" ? "min-w-28" : "min-w-44",
+                        )}
                     >
-                        <option value="newest">Newest</option>
-                        <option value="oldest">Oldest</option>
+                        <option value="newest">{newestLabel}</option>
+                        <option value="oldest">{oldestLabel}</option>
                         <option value="title">A-Z</option>
                     </select>
                     <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />

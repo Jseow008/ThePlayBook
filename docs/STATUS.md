@@ -1,6 +1,22 @@
 # Netflux release and workstream status
 
-**Latest production verification:** shared AI spending controls (#22), implementation [#170](https://github.com/Jseow008/ThePlayBook/pull/170) (`c82a704c`), verified live on `71c7c8b0` on 27 September 2026. The approved $5/day global ceiling includes $1/day shared by guests. A live request completed and settled at $0.002756; health returned 200. [Policy and procedures](OPS.md#541-interactive-ai-spending-controls-22) and [release evidence](PHASE_1_PERSONAL_RETRIEVAL.md#finding-22-approved-production-policy--27-september-2026) retain exact scope, exclusions and verification. Earlier deliveries retain their own evidence; this is not blanket closure of the 32-finding register.
+**Reconciled 1 October 2026:** core capture/search/evidence/citation/export work is shipped, but neither all 32 findings nor the complete first-load performance objective is closed. The selector-only Luna release (#217, `e9276438`) passed the frozen quality evaluation and one production smoke; the response took about 11.8 seconds in that browser sample. This establishes functioning, cheaper retrieval, not a general latency target. Factual wait feedback (#218, `23bdaf05`) is merged; production deployment verification is pending. See the [latest checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#luna-production-rollout-and-factual-wait-feedback--1-october-2026).
+
+## CI Stage 1 — 4 October 2026
+
+Implementation `395551e8` on `codex/ci-stage-one`, workspace `/Users/j/Desktop/Lifebook`: conservative PR verification tiers, broader explicit docs allowlist, and nightly six-viewport browser reporting. Production database gates are unchanged; shared application code remains fully checked. The [verification table](OPS.md#2-testing-and-verification) is the operating reference.
+
+Evidence: 57 focused classifier/workflow/report tests passed; targeted ESLint and diff whitespace checks passed. No failed implementation attempts or pending product decisions. Full hosted CI and the first scheduled browser run remain unverified locally; missing browser fixtures are reported as skipped coverage. Next action: publish the focused PR, verify PR scope, enable squash auto-merge, and let required GitHub checks gate merging in the background. Do not claim measured time savings yet. One agent; external model usage and comparative CI timing were not measured.
+
+## What remains before claiming completion
+
+- **First-load experience:** #201 removed external CSS from the initial rendering path in measured cases. Browse image delivery, Home font arrival and early interaction readiness still need a bounded, matched comparison. The current follow-up reduces unnecessary initial script/image bytes without changing typography or layout. No global performance claim or further model experiment is part of this work.
+- **AI wait:** #202 removed the application/database regional mismatch. Provider work still dominates the measured request; quality-qualified Luna and factual progress do not establish that latency is fully resolved.
+- **Original acceptance work:** #7 live-list completeness, #11 broader deletion policy, #19 publishing/index readiness, #29 retrieval-outcome measurement, and #30–32 current Auth/recovery sign-off, restoration proof and alert acknowledgement/ownership remain open in the [32-row register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register). Reconcile existing evidence before writing code or repeating tests; an unclosed acceptance row is not proof that its implementation is missing.
+- **Capacity #28:** bounded production acceptance is recorded in [the checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#authorized-ai-confirmation--30-september-2026). It remains open at the owner's request; no further broad load test is currently planned.
+- **Accepted/deferred scope:** #27 was closed with an explicitly accepted VoiceOver speech-verification gap. Comparative product validation (#1), experiments #14–16, broader publishing/provenance #17 and full revision history #18 remain deferred with their existing triggers.
+
+Next order: verify the #218 rollout, finish the bounded first-load follow-up, then reconcile the outstanding original acceptance items in dependency order. Existing production quotas remain $5/day global including $1/day shared guest allowance. No recurring verification timers are enabled.
 
 ## Implemented on main
 
@@ -28,7 +44,7 @@ Earlier export/resume handoffs reported production smoke success. The current re
 
 ## Current retrieval release
 
-PR #153 shipped typed highlights, notes and reflections with attributed evidence extracts. The historical generated-answer candidate failed grounding (86/90); it remains evidence against releasing broader synthesis. All 90 replacement extract responses were independently reviewed. Frozen diagnostic thresholds pass, with the three known irrelevant selections still counted as failures.
+PR #153 shipped typed highlights, notes and reflections with attributed evidence extracts. The historical generated-answer candidate failed grounding (86/90); it remains evidence against releasing broader synthesis. All 90 replacement extract responses were independently reviewed. That historical evaluation retained three known irrelevant selections as failures. The later #217 Luna selector evaluation passed all 56 cases across three runs (168 independent calls); the previous failed experiments remain recorded. See [qualification evidence](PHASE_1_PERSONAL_RETRIEVAL.md#luna-correction-qualifies-for-application-rollout--1-october-2026).
 
 The combined release passed a data-less hosted 105-migration replay, matching production schema/type contracts, six security checks, targeted database behavior tests, and all seven application smoke checks. All three reviewed migrations are applied; the follow-up production dry-run is clean and 46 existing captures are indexed and ready. The candidate's hourly Cron tick and a manual production maintenance run succeeded. A 26 September read-only production audit also recorded three successful hourly snapshot-maintenance Cron executions and a successful scheduled personal-evidence worker run.
 

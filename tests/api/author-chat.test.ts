@@ -10,6 +10,8 @@ import { aiRateLimit } from '@/lib/server/ai-rate-limit';
 import { recordAiRouteAbuse } from '@/lib/server/security-telemetry';
 import { admitAiUsage } from '@/lib/server/ai-usage-quota';
 import { smoothStream, streamText } from 'ai';
+import { retrievalTextResponse } from '@/lib/server/retrieval-response';
+import { openai } from '@ai-sdk/openai';
 
 vi.mock('@/lib/supabase/server', () => ({
     createClient: vi.fn(),
@@ -39,6 +41,10 @@ vi.mock('@ai-sdk/anthropic', () => ({
 
 vi.mock('@ai-sdk/openai', () => ({
     openai: vi.fn().mockReturnValue('mock-openai-model'),
+}));
+
+vi.mock('@/lib/server/retrieval-response', () => ({
+    retrievalTextResponse: vi.fn((message: string) => new Response(message, { status: 200 })),
 }));
 
 async function finishLatestStream() {
@@ -79,6 +85,7 @@ describe('Author Chat API', () => {
         process.env.ANTHROPIC_API_KEY = 'test-key';
         delete process.env.OPENAI_API_KEY;
         delete process.env.AI_PROVIDER;
+        delete process.env.AUTHOR_CHAT_MODEL;
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
         (aiRateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
@@ -338,7 +345,7 @@ describe('Author Chat API', () => {
         expect(streamText).not.toHaveBeenCalled();
     });
 
-    it('prefers Anthropic Sonnet by default when both providers are configured', async () => {
+    it('defaults Author to Luna when both providers are configured', async () => {
         process.env.OPENAI_API_KEY = 'openai-test-key';
 
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
@@ -349,6 +356,68 @@ describe('Author Chat API', () => {
         const res = await POST(req);
 
         expect(res.status).toBe(200);
+        expect(openai).toHaveBeenCalledWith('gpt-6-luna');
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ model: 'mock-openai-model' }));
+    });
+
+    it('allows an Author-only override back to the earlier Anthropic route', async () => {
+        process.env.OPENAI_API_KEY = 'openai-test-key';
+        process.env.AUTHOR_CHAT_MODEL = 'claude-haiku-4-5-20251001';
+        const res = await POST(new NextRequest('http://localhost/api/chat/author', {
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody),
+        }));
+        expect(res.status).toBe(200);
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ model: 'mock-anthropic-model' }));
+    });
+
+    it('answers an empty or whitespace-only source without quota or model work', async () => {
+        mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
+        order.mockReturnValueOnce({ data: [{ title: 'Untitled', markdown_body: '  ', order_index: 0 }], error: null });
+        const res = await POST(new NextRequest('http://localhost/api/chat/author', {
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody),
+        }));
+        expect(res.status).toBe(200);
+        expect(await res.text()).toContain("don't have source material");
+        expect(retrievalTextResponse).toHaveBeenCalledWith(expect.any(String), 'ui');
+        expect(admitAiUsage).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+        expect(spendingRpc).not.toHaveBeenCalled();
+    });
+
+    it('answers an empty source even when no provider key is configured', async () => {
+        delete process.env.ANTHROPIC_API_KEY;
+        order.mockReturnValueOnce({ data: [], error: null });
+        const res = await POST(new NextRequest('http://localhost/api/chat/author', {
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody),
+        }));
+        expect(res.status).toBe(200);
+        expect(retrievalTextResponse).toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it('routes Author alone to Luna with the qualified provider settings', async () => {
+        process.env.OPENAI_API_KEY = 'openai-test-key';
+        process.env.AUTHOR_CHAT_MODEL = 'gpt-6-luna';
+        const res = await POST(new NextRequest('http://localhost/api/chat/author', {
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody),
+        }));
+        expect(res.status).toBe(200);
+        expect(openai).toHaveBeenCalledWith('gpt-6-luna');
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            model: 'mock-openai-model',
+            providerOptions: { openai: { reasoningEffort: 'none', forceReasoning: true, store: false } },
+        }));
+        expect(spendingRpc).toHaveBeenCalledWith('reserve_ai_spend', expect.objectContaining({ p_provider: 'openai', p_model: 'gpt-6-luna' }));
+    });
+
+    it('fails closed when Luna is selected without an OpenAI key', async () => {
+        process.env.AUTHOR_CHAT_MODEL = 'gpt-6-luna';
+        const res = await POST(new NextRequest('http://localhost/api/chat/author', {
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody),
+        }));
+        expect(res.status).toBe(500);
+        expect(streamText).not.toHaveBeenCalled();
+        expect(spendingRpc).not.toHaveBeenCalled();
     });
 
     it('uses the lower author output cap and last 4 messages only', async () => {
