@@ -7,6 +7,10 @@ vi.mock("@/components/ui/HeroCarousel", () => ({
     HeroCarousel: () => <div data-testid="hero-carousel" />,
 }));
 
+vi.mock("@/components/ui/BrowseReadingPanel", () => ({
+    BrowseReadingPanel: () => <div data-testid="browse-reading-panel" />,
+}));
+
 vi.mock("@/components/ui/RecommendationsRow", () => ({
     RecommendationsRow: ({ showUserCompletionBadge }: { showUserCompletionBadge?: boolean }) => (
         <div
@@ -120,6 +124,10 @@ describe("HomeFeed", () => {
             "data-user-completion-badge",
             "true",
         );
+        const hero = screen.getByTestId("hero-carousel");
+        const panel = screen.getByTestId("browse-reading-panel");
+        expect(hero.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(panel.compareDocumentPosition(newOnNetfluxLane) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
     it("does not show Explore All when the newest shelf contains every matching item", () => {
