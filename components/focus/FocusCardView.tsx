@@ -97,6 +97,7 @@ export const FocusCardView = memo(function FocusCardView({
     isSaved,
     isFocusDesktop,
     isActive,
+    loadCoverEagerly,
     showDesktopScrollCue,
     mobileCardTargetHeight,
     onOpenTakeaways,
@@ -107,6 +108,7 @@ export const FocusCardView = memo(function FocusCardView({
     isSaved: boolean;
     isFocusDesktop: boolean;
     isActive: boolean;
+    loadCoverEagerly: boolean;
     showDesktopScrollCue: boolean;
     mobileCardTargetHeight: number | null;
     onOpenTakeaways: (card: FocusCard, opener: HTMLElement) => void;
@@ -321,6 +323,8 @@ export const FocusCardView = memo(function FocusCardView({
                                                 alt={card.title}
                                                 fill
                                                 sizes={`${desktopCoverWidth}px`}
+                                                loading={loadCoverEagerly ? "eager" : "lazy"}
+                                                fetchPriority={isActive ? "high" : "auto"}
                                                 surface="content-preview"
                                                 className="object-cover"
                                                 fallback={
@@ -468,6 +472,8 @@ export const FocusCardView = memo(function FocusCardView({
                                             alt={card.title}
                                             fill
                                             sizes={isCompactMobileLayout ? "(max-width: 640px) 112px, 124px" : "140px"}
+                                            loading={loadCoverEagerly ? "eager" : "lazy"}
+                                            fetchPriority={isActive ? "high" : "auto"}
                                             surface="content-preview"
                                             className="object-cover"
                                             fallback={

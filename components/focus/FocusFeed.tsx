@@ -41,6 +41,7 @@ export {
 };
 
 const BATCH_SIZE = 6;
+const FOCUS_COVER_AHEAD_COUNT = 2;
 const DESKTOP_SCROLL_CUE_DELAY_MS = 5000;
 const MOBILE_SCROLL_HINT_DELAY_MS = 2400;
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
@@ -1259,6 +1260,7 @@ export function FocusFeed() {
                                             isSaved={myListIdSet.has(card.id)}
                                             isFocusDesktop={isFocusDesktop}
                                             isActive={index === activeCardIndex}
+                                            loadCoverEagerly={index >= activeCardIndex - 1 && index <= activeCardIndex + FOCUS_COVER_AHEAD_COUNT}
                                             showDesktopScrollCue={isDesktopScrollCueVisible && index < cards.length - 1}
                                             mobileCardTargetHeight={listViewportHeight}
                                             onOpenTakeaways={openTakeawaysSheet}
