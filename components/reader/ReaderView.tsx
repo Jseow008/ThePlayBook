@@ -25,6 +25,7 @@ import { HighlightPopover } from "./HighlightPopover";
 import { MobileSelectionActions } from "./MobileSelectionActions";
 import { findCompletedSegmentIdsForPlaybackTime, findSegmentIdForPlaybackTime } from "@/lib/reader-audio-sync";
 import { captureAnalyticsEvent } from "@/lib/analytics";
+import { consumeConfirmedFocusRead } from "@/lib/focus-read-attribution";
 import { cn } from "@/lib/utils";
 import {
     clearScopedAudioResume,
@@ -167,6 +168,10 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
 
         openedContentIdRef.current = content.id;
+        const focusAttribution = consumeConfirmedFocusRead(content.id);
+        if (focusAttribution) {
+            captureAnalyticsEvent("focus_card_action", { ...focusAttribution, action: "summary_opened" });
+        }
         captureAnalyticsEvent("content_opened", {
             content_id: content.id,
             content_type: content.type,
