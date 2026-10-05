@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, createEvent, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LandingDeferredSections } from "@/components/ui/landing/LandingDeferredSections";
 import type { ContentItem } from "@/types/database";
@@ -200,11 +200,11 @@ function setupIntersectionObserver() {
   };
 }
 
-function configureCarouselLoop(testIdSuffix = "") {
-  const carousel = screen.getByTestId(`featured-reads-carousel${testIdSuffix}`) as HTMLDivElement;
-  const firstLoop = screen.getByTestId(`featured-reads-group-a${testIdSuffix}`) as HTMLDivElement;
-  const middleLoop = screen.getByTestId(`featured-reads-group-b${testIdSuffix}`) as HTMLDivElement;
-  const lastLoop = screen.getByTestId(`featured-reads-group-c${testIdSuffix}`) as HTMLDivElement;
+function configureCarouselLoop() {
+  const carousel = screen.getByTestId("featured-reads-carousel") as HTMLDivElement;
+  const firstLoop = screen.getByTestId("featured-reads-group-a") as HTMLDivElement;
+  const middleLoop = screen.getByTestId("featured-reads-group-b") as HTMLDivElement;
+  const lastLoop = screen.getByTestId("featured-reads-group-c") as HTMLDivElement;
 
   Object.defineProperty(carousel, "clientWidth", { configurable: true, value: 400 });
   Object.defineProperty(carousel, "scrollWidth", { configurable: true, value: 2800 });
@@ -233,7 +233,6 @@ function renderLandingPage() {
   );
 
   const carousel = configureCarouselLoop();
-  configureCarouselLoop("-2");
 
   act(() => {
     window.dispatchEvent(new Event("resize"));
@@ -313,28 +312,13 @@ describe("LandingPage featured reads carousel", () => {
     expect(carousel).toHaveClass("pt-3", "pb-3", "md:pt-4", "md:pb-4");
   });
 
-  it("renders two carousel rows with three loop groups each", () => {
+  it("renders one carousel row with three loop groups", () => {
     renderLandingPage();
 
+    expect(screen.getAllByTestId("featured-reads-carousel")).toHaveLength(1);
     expect(screen.getByTestId("featured-reads-group-a")).toBeInTheDocument();
     expect(screen.getByTestId("featured-reads-group-b")).toBeInTheDocument();
     expect(screen.getByTestId("featured-reads-group-c")).toBeInTheDocument();
-    expect(screen.getByTestId("featured-reads-group-a-2")).toBeInTheDocument();
-    expect(screen.getByTestId("featured-reads-group-b-2")).toBeInTheDocument();
-    expect(screen.getByTestId("featured-reads-group-c-2")).toBeInTheDocument();
-  });
-
-  it("moves the second row in the opposite direction", () => {
-    renderLandingPage();
-
-    const secondaryCarousel = screen.getByTestId("featured-reads-carousel-2") as HTMLDivElement;
-    const initialScrollLeft = secondaryCarousel.scrollLeft;
-
-    act(() => {
-      vi.advanceTimersByTime(1000);
-    });
-
-    expect(secondaryCarousel.scrollLeft).toBeLessThan(initialScrollLeft);
   });
 
   it("pauses on hover and focus, then resumes after the idle delay", () => {
@@ -391,12 +375,13 @@ describe("LandingPage featured reads carousel", () => {
 
     carousel.scrollLeft = 840;
 
-    fireEvent.pointerDown(carousel, {
+    const pointerDown = createEvent.pointerDown(carousel, {
       button: 0,
       clientX: 200,
       pointerId: 1,
-      pointerType: "mouse",
     });
+    Object.defineProperty(pointerDown, "pointerType", { value: "mouse" });
+    fireEvent(carousel, pointerDown);
 
     fireEvent.pointerMove(carousel, {
       clientX: 120,
@@ -412,16 +397,57 @@ describe("LandingPage featured reads carousel", () => {
     });
   });
 
+  it("leaves touch movement to native scrolling and pauses autoplay until after touch", () => {
+    const carousel = renderLandingPage();
+    const initialScrollLeft = carousel.scrollLeft;
+
+    expect(carousel).toHaveClass("overflow-x-auto");
+    expect(carousel.className).not.toContain("touch-action:pan-y");
+
+    fireEvent.touchStart(carousel);
+    const pointerDown = createEvent.pointerDown(carousel, {
+      button: 0,
+      clientX: 200,
+      pointerId: 2,
+    });
+    Object.defineProperty(pointerDown, "pointerType", { value: "touch" });
+    fireEvent(carousel, pointerDown);
+
+    const pointerMove = createEvent.pointerMove(carousel, {
+      clientX: 120,
+      pointerId: 2,
+    });
+    Object.defineProperty(pointerMove, "pointerType", { value: "touch" });
+    fireEvent(carousel, pointerMove);
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(carousel.scrollLeft).toBe(initialScrollLeft);
+
+    fireEvent.touchEnd(carousel);
+    act(() => {
+      vi.advanceTimersByTime(1900);
+    });
+    expect(carousel.scrollLeft).toBe(initialScrollLeft);
+
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+    expect(carousel.scrollLeft).toBeGreaterThan(initialScrollLeft);
+  });
+
   it("suppresses click-through after a drag interaction", () => {
     const carousel = renderLandingPage();
     const cardLink = getFirstCarouselCardLink(carousel);
 
-    fireEvent.pointerDown(carousel, {
+    const pointerDown = createEvent.pointerDown(carousel, {
       button: 0,
       clientX: 220,
       pointerId: 3,
-      pointerType: "mouse",
     });
+    Object.defineProperty(pointerDown, "pointerType", { value: "mouse" });
+    fireEvent(carousel, pointerDown);
 
     fireEvent.pointerMove(carousel, {
       clientX: 160,

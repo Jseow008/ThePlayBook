@@ -1256,13 +1256,6 @@ mark[data-highlight-spotlight="true"] {
   --featured-card-height: 16.125rem;
 }
 
-.landing-featured-row-support {
-  --featured-card-width: 9.5rem;
-  --featured-card-height: 14.25rem;
-  --featured-card-opacity: 0.86;
-  --featured-card-y: 0.125rem;
-}
-
 .landing-featured-read-shell {
   width: var(--featured-card-width);
   flex-basis: var(--featured-card-width);
@@ -1332,22 +1325,12 @@ mark[data-highlight-spotlight="true"] {
     --featured-card-width: 13.125rem;
     --featured-card-height: 19.7rem;
   }
-
-  .landing-featured-row-support {
-    --featured-card-width: 11.625rem;
-    --featured-card-height: 17.45rem;
-  }
 }
 
 @media (min-width: 768px) {
   .landing-featured-row-primary {
     --featured-card-width: 15.5rem;
     --featured-card-height: 23rem;
-  }
-
-  .landing-featured-row-support {
-    --featured-card-width: 13.375rem;
-    --featured-card-height: 19.75rem;
   }
 }
 
