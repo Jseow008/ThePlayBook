@@ -88,9 +88,26 @@ const getCachedPopularItems = unstable_cache(
         if (error) {
             throw error;
         }
-        return (data ?? []) as ContentItem[];
+        const items = (data ?? []) as ContentItem[];
+        if (items.length === 0) return items;
+
+        // The trending RPC does not return audio_url. Enrich its small result set
+        // so the Popular view can offer the same Listen action as other searches.
+        const { data: audioRows, error: audioError } = await supabase
+            .from("content_item")
+            .select("id, audio_url")
+            .in("id", items.map((item) => item.id))
+            .eq("status", "verified")
+            .is("deleted_at", null);
+        if (audioError) {
+            console.error("Popular audio availability read failed", audioError);
+            return items;
+        }
+
+        const audioById = new Map((audioRows ?? []).map((row) => [row.id, row.audio_url]));
+        return items.map((item) => ({ ...item, audio_url: audioById.get(item.id) ?? null }));
     },
-    ["search-popular-v1"],
+    ["search-popular-v2"],
     { revalidate: SEARCH_CATALOG_CACHE_SECONDS, tags: [SEARCH_CATALOG_CACHE_TAG] },
 );
 

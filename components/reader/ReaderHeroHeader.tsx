@@ -178,7 +178,7 @@ export function ReaderHeroHeader({
 
             {/* Audio Player (Always Visible) */}
             {audioUrl && (
-                <div className="mt-8 animate-fade-in">
+                <section id="audio-player" aria-label="Audio player" tabIndex={-1} className="mt-8 scroll-mt-24 animate-fade-in">
                     <AudioPlayer
                         src={audioUrl}
                         title="Listen to this summary"
@@ -210,7 +210,7 @@ export function ReaderHeroHeader({
                             </button>
                         </div>
                     )}
-                </div>
+                </section>
             )}
 
             {/* Progress Bar */}

@@ -4,6 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Search, X } from "lucide-react";
 import { ContentCard } from "@/components/ui/ContentCard";
+import { AudioListenLink } from "@/components/ui/AudioListenLink";
 import { LibraryGridSkeleton, LIBRARY_CARD_GRID_CLASS } from "@/components/ui/LibraryLoadingStates";
 import { LibraryNav } from "@/components/ui/LibraryNav";
 import { useBatchContentItems } from "@/hooks/use-content-queries";
@@ -92,6 +93,9 @@ export function LibrarySearchShell({ children }: { children: ReactNode }) {
                                         navigationMode={readingSet.has(item.id) ? "resume" : "preview"}
                                         titleDensity="app-compact"
                                     />
+                                    {item.audio_url?.trim() && (
+                                        <div className="mt-2"><AudioListenLink item={item} /></div>
+                                    )}
                                     <ul className="mt-2 flex flex-wrap gap-1" aria-label={`Library status for ${item.title}`}>
                                         {readingSet.has(item.id) && <li className="rounded-full bg-secondary/60 px-2 py-0.5 text-xs text-foreground">In progress</li>}
                                         {savedSet.has(item.id) && <li className="rounded-full bg-secondary/60 px-2 py-0.5 text-xs text-foreground">Saved</li>}
