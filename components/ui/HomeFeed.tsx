@@ -6,6 +6,7 @@ import { HeroCarousel } from "@/components/ui/HeroCarousel";
 
 import { RecommendationsRow } from "@/components/ui/RecommendationsRow";
 import { ContentLane } from "@/components/ui/ContentLane";
+import { BrowseReadingPanel } from "@/components/ui/BrowseReadingPanel";
 import { Logo } from "@/components/ui/Logo";
 import type { ContentItem, HomepageSection } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ export function HomeFeed({
                     "relative z-10 space-y-3 pb-3 transition-all duration-500 md:space-y-8 md:pb-0",
                     featuredItems.length > 0 ? "-mt-5 md:-mt-8 pt-0" : "pt-16 md:pt-24"
                 )}>
+                    <BrowseReadingPanel />
                     {/* Standard Feed View */}
                     <div className="space-y-8 md:space-y-10 lg:space-y-14 animate-in fade-in duration-500">
                         {/* New / Latest Additions */}
