@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, BookOpen } from "lucide-react";
@@ -66,18 +66,6 @@ export function BrowseReadingPanel() {
     const daysReadThisWeek = new Set(
         activityDays?.filter((day) => day.duration_seconds > 0).map((day) => day.activity_date) ?? [],
     ).size;
-    const readsCompletedThisMonth = useMemo(() => {
-        const today = new Date();
-        return completedIds.filter((id) => {
-            const completedAt = getProgress(id)?.completedAt;
-            if (!completedAt) return false;
-            const date = new Date(completedAt);
-            return Number.isFinite(date.getTime())
-                && date.getFullYear() === today.getFullYear()
-                && date.getMonth() === today.getMonth();
-        }).length;
-    }, [completedIds, getProgress]);
-
     if (!isReady || (completedIds.length === 0 && inProgressIds.length === 0 && daysReadThisWeek === 0)) {
         return null;
     }
@@ -99,26 +87,14 @@ export function BrowseReadingPanel() {
                             View progress <ArrowRight className="size-4" aria-hidden="true" />
                         </Link>
                     </div>
-                    <div className="mt-5 flex items-end gap-5 xl:gap-7">
-                        <div className="min-w-0 flex-1">
-                            <p className="flex items-baseline gap-2 text-foreground">
-                                <span className="font-display text-4xl font-semibold tabular-nums">
-                                    {activityPending ? "–" : activityDays ? daysReadThisWeek : "–"}
-                                </span>
-                                <span className="text-xs leading-5 text-muted-foreground xl:text-sm">
-                                    {daysReadThisWeek === 1 ? "day" : "days"} read this week
-                                </span>
-                            </p>
-                        </div>
-                        <div className="min-w-0 flex-1 border-l border-border pl-5 xl:pl-7">
-                            <p className="flex items-baseline gap-2 text-foreground">
-                                <span className="font-display text-4xl font-semibold tabular-nums">{readsCompletedThisMonth}</span>
-                                <span className="text-xs leading-5 text-muted-foreground xl:text-sm">
-                                    {readsCompletedThisMonth === 1 ? "read" : "reads"} completed this month
-                                </span>
-                            </p>
-                        </div>
-                    </div>
+                    <p className="mt-5 flex items-baseline gap-2 text-foreground">
+                        <span className="font-display text-4xl font-semibold tabular-nums">
+                            {activityPending ? "–" : activityDays ? daysReadThisWeek : "–"}
+                        </span>
+                        <span className="text-sm leading-5 text-muted-foreground">
+                            reading {daysReadThisWeek === 1 ? "day" : "days"} this week
+                        </span>
+                    </p>
                 </section>
 
                 {showResumeCard ? (
