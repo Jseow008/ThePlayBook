@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { useAuthUser } from "@/hooks/useAuthUser";
 import { useBatchContentItems } from "@/hooks/use-content-queries";
 import { buildReadPath } from "@/lib/content-paths";
 import { ResilientImage } from "@/components/ui/ResilientImage";
@@ -40,19 +41,21 @@ function useDesktopViewport() {
 }
 
 export function BrowseReadingPanel() {
-    const { completedIds, getProgress, inProgressIds, isLoaded, user } = useReadingProgress();
+    const authUser = useAuthUser();
+    const { getProgress, hydrationStatus, inProgressIds, isLoaded, retryHydration, user } = useReadingProgress();
     const isDesktop = useDesktopViewport();
-    const isReady = isDesktop && isLoaded && Boolean(user);
+    const isAuthenticatedDesktop = isDesktop && Boolean(authUser);
+    const isReady = isAuthenticatedDesktop && isLoaded && user?.id === authUser?.id;
     const resumeIds = inProgressIds.slice(0, 3);
-    const { data: resumeItems = [], isPending: resumePending } = useBatchContentItems(resumeIds, {
+    const { data: resumeItems = [], isError: resumeError, isPending: resumePending, refetch: refetchResume } = useBatchContentItems(resumeIds, {
         enabled: isReady,
     });
-    const resumeItem = resumeItems[0] ?? null;
+    const resumeItem = isReady ? resumeItems[0] ?? null : null;
     const week = getCurrentUtcWeek();
 
-    const { data: activityDays, isPending: activityPending } = useQuery({
-        queryKey: ["browse-reading-days", user?.id ?? null, week.start, week.end],
-        enabled: isReady,
+    const { data: activityDays, isError: activityError, isPending: activityPending, refetch: refetchActivity } = useQuery({
+        queryKey: ["browse-reading-days", authUser?.id ?? null, week.start, week.end],
+        enabled: isAuthenticatedDesktop,
         queryFn: async (): Promise<ActivityDay[]> => {
             const params = new URLSearchParams({ start: week.start, end: week.end });
             const response = await fetch(`/api/activity/history?${params}`);
@@ -61,47 +64,73 @@ export function BrowseReadingPanel() {
         },
         staleTime: 30_000,
         refetchOnMount: "always",
+        retry: 1,
     });
 
     const daysReadThisWeek = new Set(
         activityDays?.filter((day) => day.duration_seconds > 0).map((day) => day.activity_date) ?? [],
     ).size;
-    if (!isReady || (completedIds.length === 0 && inProgressIds.length === 0 && daysReadThisWeek === 0)) {
+    if (!isAuthenticatedDesktop) {
         return null;
     }
 
+    const progressError = hydrationStatus === "error";
+    const progressPending = !isReady && !progressError;
     const resumeProgress = resumeItem ? getProgress(resumeItem.id) : null;
     const totalSegments = resumeProgress?.totalSegments ?? 0;
     const progressPercent = totalSegments > 0
         ? Math.min(100, Math.round((resumeProgress?.completed.length ?? 0) / totalSegments * 100))
         : null;
-    const showResumeCard = Boolean(resumeItem) || (resumeIds.length > 0 && resumePending);
+    const showResumeCard = Boolean(resumeItem) || (resumeIds.length > 0 && (resumePending || resumeError || progressPending || progressError));
 
     return (
         <div className="hidden px-6 lg:block lg:px-16" data-testid="browse-reading-panel">
             <div className={`grid gap-4 ${showResumeCard ? "lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]" : "grid-cols-1"}`}>
-                <section aria-labelledby="browse-reading-title" className="flex min-h-36 flex-col justify-between rounded-2xl border border-border bg-card/70 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.15)] xl:p-6">
-                    <div className="flex items-start justify-between gap-4">
+                <section aria-labelledby="browse-reading-title" aria-busy={activityPending} className="flex min-h-48 flex-col justify-between rounded-2xl border border-border bg-card/70 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.15)] xl:p-6">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
                         <h2 id="browse-reading-title" className="font-display text-lg font-semibold text-foreground">Your reading</h2>
                         <Link href="/profile" className="focus-ring touch-target-44 inline-flex shrink-0 items-center gap-1 rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
                             View progress <ArrowRight className="size-4" aria-hidden="true" />
                         </Link>
                     </div>
-                    <p className="mt-5 flex items-baseline gap-2 text-foreground">
-                        <span className="font-display text-4xl font-semibold tabular-nums">
-                            {activityPending ? "–" : activityDays ? daysReadThisWeek : "–"}
-                        </span>
-                        <span className="text-sm leading-5 text-muted-foreground">
-                            reading {daysReadThisWeek === 1 ? "day" : "days"} this week
-                        </span>
-                    </p>
+                    {activityPending ? (
+                        <div className="mt-5 flex items-center gap-2" role="status" aria-label="Loading reading activity">
+                            <span className="h-9 w-8 animate-pulse rounded bg-secondary/70" aria-hidden="true" />
+                            <span className="h-4 w-40 animate-pulse rounded bg-secondary/70" aria-hidden="true" />
+                        </div>
+                    ) : activityError && !activityDays ? (
+                        <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground" role="alert">
+                            <span>Reading activity is unavailable.</span>
+                            <button type="button" onClick={() => void refetchActivity()} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>
+                        </div>
+                    ) : daysReadThisWeek > 0 ? (
+                        <p className="mt-5 flex items-baseline gap-2 text-foreground">
+                            <span className="font-display text-4xl font-semibold tabular-nums">
+                                {daysReadThisWeek}
+                            </span>
+                            <span className="text-sm leading-5 text-muted-foreground">
+                                reading {daysReadThisWeek === 1 ? "day" : "days"} this week
+                            </span>
+                        </p>
+                    ) : <p className="mt-5 text-sm text-muted-foreground">No reading days yet this week</p>}
+                    {activityError && activityDays ? (
+                        <p className="mt-1 text-xs text-muted-foreground">Could not refresh activity. <button type="button" onClick={() => void refetchActivity()} className="focus-ring rounded-sm font-medium text-foreground hover:underline">Retry</button></p>
+                    ) : null}
+                    {progressError && resumeIds.length === 0 ? (
+                        <p className="mt-2 text-xs text-muted-foreground" role="alert">Could not check unfinished reads. <button type="button" onClick={retryHydration} className="focus-ring rounded-sm font-medium text-foreground hover:underline">Retry</button></p>
+                    ) : null}
                 </section>
 
                 {showResumeCard ? (
-                    <section aria-labelledby="browse-resume-title" className="min-h-36 rounded-2xl border border-border bg-card/70 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.15)] xl:p-6">
+                    <section aria-labelledby="browse-resume-title" className="min-h-48 rounded-2xl border border-border bg-card/70 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.15)] xl:p-6">
                         <h2 id="browse-resume-title" className="font-display text-lg font-semibold text-foreground">Continue reading</h2>
-                        {resumeItem ? (
-                            <div className="mt-3 flex min-w-0 items-center gap-4">
+                        {progressError ? (
+                            <div className="mt-3 flex min-h-20 items-center gap-3 text-sm text-muted-foreground" role="alert">
+                                <span>Reading progress is unavailable.</span>
+                                <button type="button" onClick={retryHydration} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>
+                            </div>
+                        ) : resumeItem ? (
+                            <div className="mt-3 flex min-w-0 flex-wrap items-center gap-4">
                                 <div className="relative aspect-[2/3] w-14 shrink-0 overflow-hidden rounded-md bg-secondary xl:w-16">
                                     {resumeItem.cover_image_url ? (
                                         <ResilientImage
@@ -126,9 +155,14 @@ export function BrowseReadingPanel() {
                                         </>
                                     ) : <p className="mt-2 text-xs text-muted-foreground">Pick up where you left off</p>}
                                 </div>
-                                <Link href={buildReadPath(resumeItem)} className="focus-ring touch-target-44 inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 xl:px-5">
+                                <Link href={buildReadPath(resumeItem)} className="focus-ring touch-target-44 ml-auto inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 xl:px-5">
                                     Continue reading <ArrowRight className="size-4" aria-hidden="true" />
                                 </Link>
+                            </div>
+                        ) : resumeError ? (
+                            <div className="mt-3 flex min-h-20 items-center gap-3 text-sm text-muted-foreground" role="alert">
+                                <span>Continue reading is unavailable.</span>
+                                <button type="button" onClick={() => void refetchResume()} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>
                             </div>
                         ) : (
                             <div className="mt-3 h-20 animate-pulse rounded-lg bg-secondary/50" aria-hidden="true" />
