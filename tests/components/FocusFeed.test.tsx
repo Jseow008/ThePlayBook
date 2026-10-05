@@ -361,6 +361,40 @@ describe("FocusFeed", () => {
         });
     });
 
+    it("loads the current and next two covers ahead of scrolling", async () => {
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            json: async () => [
+                ...focusItems,
+                {
+                    ...focusItems[0]!,
+                    id: "123e4567-e89b-12d3-a456-426614174555",
+                    title: "Fourth cover",
+                    cover_image_url: "https://example.com/fourth.jpg",
+                },
+            ],
+        });
+
+        render(<FocusFeed />);
+
+        const cards = await screen.findAllByTestId("focus-feed-card");
+        expect(cards).toHaveLength(4);
+        const covers = cards.map((card) => within(card).getByRole("img", { name: /Essentialism|Deep Work|Atomic Habits|Fourth cover/ }));
+
+        expect(covers[0]).toHaveAttribute("loading", "eager");
+        expect(covers[0]).toHaveAttribute("fetchpriority", "high");
+        expect(covers[1]).toHaveAttribute("loading", "eager");
+        expect(covers[2]).toHaveAttribute("loading", "eager");
+        expect(covers[3]).toHaveAttribute("loading", "lazy");
+
+        await waitFor(() => expect(observerInstances.length).toBeGreaterThan(0));
+        await act(async () => {
+            observerInstances.at(-1)!.trigger(cards[1]!);
+        });
+
+        expect(covers[3]).toHaveAttribute("loading", "eager");
+    });
+
     it("calculates a hook clamp that preserves viewport containment when the card would overflow", () => {
         expect(
             getMobileHookMaxHeight({
