@@ -2967,6 +2967,48 @@ quality/latency tradeoff, not authorized for release by this one fixture. Altern
 retain output and improve factual progress feedback while production timing accrues.
 Do not repeat this request to obtain favorable timing. #28 stays open; timers paused.
 
+### Shorter reasoning development result — 1 October 2026
+
+Worktree `/private/tmp/netflux-selector-concise`, branch
+`codex/selector-concise-development`, freshly fetched base `5261cd3e`. #212's
+separate streaming diagnostic PR remains independent. User authorized evaluating
+shorter reasoning following the single streaming diagnostic. One agent; no timers.
+
+Development-only harness `scripts/experiments/selector-concise-reasoning.ts`
+appends a concise-explanation instruction to the unchanged production prompt. It
+preserves model, original IDs, all schema fields, candidate passages and final
+validation. Uses the same seven independent synthetic development cases and
+UUID-shaped IDs as earlier development comparisons. Fresh paired calls alternate
+arm order. Hard14-call cap, no retry, existing20s deadline, stop at first quality
+failure. Direct development calls are outside application spending accounting.
+
+Frozen before execution: both arms must preserve every expected ID with no extras;
+candidate must reduce output tokens at least20%, reduce combined input/output
+tokens and reduce median duration. Typecheck, focused lint and no-network plan
+passed before the paid test. No held-out evaluation or prompt tuning occurred.
+
+All14 calls completed. Both arms passed7/7 expected memberships with valid outputs.
+Baseline: input17,580/output2,690, median3,731.85ms, combined20,270tokens.
+Concise: input18,532/output2,730, median3,667.65ms, combined21,262tokens.
+**Reject**: output and total tokens rose; the20% reduction criterion failed.
+The1.7% lower median is not a meaningful established production improvement.
+Seven pairs with one attempt per arm cannot establish production percentiles.
+Observed application-provider usage41,532tokens; billed dollars unavailable.
+No full168-call quality benchmark, retries, production change, account creation,
+database work or model switch. Full synthetic outputs and frozen hashes retained
+in `docs/evidence/selector-concise-reasoning-development-20261001.json`; raw local
+artifact `/private/tmp/netflux-concise-development-v1.json`.
+
+Next: retain production prompt and stop further wording-only compression trials.
+Do not relax the evidence contract or remove validation to lower latency. A model
+comparison would be a distinct quality/cost decision; factual progress feedback
+can improve perceived waiting without claiming faster validated results. Neither
+follow-on is implemented by this record. #28 remains open. Publish experiment
+and negative result through normal PR gates; no production probe is needed.
+
+This was the recorded decision at that point. The later model comparison and
+selector Luna rollout are documented below.
+
 ### Faster-model comparison — 1 October 2026
 
 User authorized the bounded comparison. Worktree `/private/tmp/netflux-model-comparison`,
