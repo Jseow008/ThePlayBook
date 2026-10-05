@@ -14,6 +14,15 @@ async function hasHorizontalOverflow(locator: Locator) {
     return locator.evaluate((element) => element.scrollWidth > element.clientWidth + 1);
 }
 
+async function waitForHorizontalOverflow(locator: Locator) {
+    try {
+        await expect.poll(() => hasHorizontalOverflow(locator), { timeout: 10_000 }).toBe(true);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 async function firstOverflowingLocator(page: Page, testId: string) {
     const locators = page.getByTestId(testId);
     const count = await locators.count();
@@ -44,12 +53,50 @@ test.describe('responsive public high-risk surfaces', () => {
         await expectNoDocumentHorizontalScroll(page);
 
         const carousel = page.getByTestId('featured-reads-carousel');
-        if (await carousel.count() === 0 || !(await hasHorizontalOverflow(carousel))) {
+        if (!(await waitForHorizontalOverflow(carousel))) {
             test.skip(true, 'Landing featured reads carousel is unavailable for this data set.');
         }
 
+        await expect(carousel).toHaveCount(1);
         await expectIntentionalHorizontalScroller(page, carousel);
         guard.assertNoCriticalErrors();
+    });
+
+    test('landing featured reads responds to a native touch swipe', async ({ page }) => {
+        test.skip(!page.context().browser()?.browserType().name().includes('chromium'), 'Touch gesture probe uses Chromium CDP.');
+        test.skip((page.viewportSize()?.width ?? 0) >= 768, 'Touch gesture probe runs at mobile widths.');
+
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
+        const carousel = page.getByTestId('featured-reads-carousel');
+        if (!(await waitForHorizontalOverflow(carousel))) {
+            test.skip(true, 'Landing featured reads carousel is unavailable for this data set.');
+        }
+
+        await expect(carousel).toHaveCount(1);
+        await carousel.scrollIntoViewIfNeeded();
+        await expect(carousel).toHaveCSS('touch-action', 'auto');
+        const box = await carousel.boundingBox();
+        expect(box).not.toBeNull();
+        if (!box) return;
+
+        const startX = box.x + box.width * 0.8;
+        const y = box.y + Math.min(box.height / 2, 120);
+        const initialScrollLeft = await carousel.evaluate((element) => element.scrollLeft);
+        const cdp = await page.context().newCDPSession(page);
+
+        await cdp.send('Input.dispatchTouchEvent', {
+            type: 'touchStart',
+            touchPoints: [{ x: startX, y }],
+        });
+        for (let step = 1; step <= 5; step += 1) {
+            await cdp.send('Input.dispatchTouchEvent', {
+                type: 'touchMove',
+                touchPoints: [{ x: startX - step * 35, y }],
+            });
+        }
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+
+        await expect.poll(async () => carousel.evaluate((element) => element.scrollLeft)).toBeGreaterThan(initialScrollLeft + 40);
     });
 
     test('browse hero and content lanes keep horizontal scrolling scoped', async ({ page }) => {
