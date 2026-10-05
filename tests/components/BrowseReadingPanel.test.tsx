@@ -131,13 +131,17 @@ describe("BrowseReadingPanel", () => {
     it("keeps an empty state in the reserved card after a slow empty-account load", () => {
         mockUseBatchContentItems.mockReturnValue({ data: [], isPending: false, isError: false, refetch: mockRefetchResume });
         mockUseReadingProgress.mockReturnValue({
-            completedIds: [], inProgressIds: [], isLoaded: true,
-            user: { id: "reader-1" }, getProgress: vi.fn(),
+            completedIds: [], inProgressIds: [], isLoaded: false,
+            user: { id: "reader-1" }, hydrationStatus: "hydrating", getProgress: vi.fn(),
         });
         mockUseQuery.mockReturnValue({ data: undefined, isPending: true, isError: false, refetch: mockRefetchActivity });
         const { rerender } = render(<BrowseReadingPanel />);
         const panel = screen.getByTestId("browse-reading-panel");
 
+        mockUseReadingProgress.mockReturnValue({
+            completedIds: [], inProgressIds: [], isLoaded: true,
+            user: { id: "reader-1" }, hydrationStatus: "ready", getProgress: vi.fn(),
+        });
         mockUseQuery.mockReturnValue({ data: [], isPending: false, isError: false, refetch: mockRefetchActivity });
         rerender(<BrowseReadingPanel />);
 
@@ -227,6 +231,28 @@ describe("BrowseReadingPanel", () => {
         rerender(<BrowseReadingPanel />);
         expect(screen.getByTestId("browse-reading-panel")).toBe(panel);
         expect(screen.getByRole("link", { name: /continue reading/i })).toBeInTheDocument();
+    });
+
+    it("keeps the weekly count visible when an unfinished read is discovered later", () => {
+        mockUseReadingProgress.mockReturnValue({
+            completedIds: [], inProgressIds: [], isLoaded: false, user: { id: "reader-1" },
+            hydrationStatus: "hydrating", retryHydration: mockRetryHydration, getProgress: vi.fn(),
+        });
+        mockUseBatchContentItems.mockReturnValue({ data: [], isPending: false, isError: false, refetch: mockRefetchResume });
+        const { rerender } = render(<BrowseReadingPanel />);
+        const panel = screen.getByTestId("browse-reading-panel");
+        expect(screen.getByText("2")).toBeInTheDocument();
+        expect(screen.queryByRole("heading", { name: "Continue reading" })).not.toBeInTheDocument();
+
+        mockUseReadingProgress.mockReturnValue({
+            completedIds: [], inProgressIds: [resumeId], isLoaded: true, user: { id: "reader-1" },
+            hydrationStatus: "ready", retryHydration: mockRetryHydration, getProgress: vi.fn(),
+        });
+        mockUseBatchContentItems.mockReturnValue({ data: [], isPending: true, isError: false, refetch: mockRefetchResume });
+        rerender(<BrowseReadingPanel />);
+        expect(screen.getByTestId("browse-reading-panel")).toBe(panel);
+        expect(screen.getByText("2")).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Continue reading" })).toBeInTheDocument();
     });
 
     it("omits the continuation card when there is no unfinished read", () => {
