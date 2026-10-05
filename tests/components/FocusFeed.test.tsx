@@ -759,6 +759,77 @@ describe("FocusFeed", () => {
         }
     });
 
+    it("distinguishes an empty feed from a loading failure", async () => {
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ items: [], pageInfo: { hasMore: false, nextCursor: null } }),
+        });
+
+        render(<FocusFeed />);
+
+        expect(await screen.findByRole("heading", { name: "No quick takes available right now" }))
+            .toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Browse summaries" })).toHaveAttribute("href", "/browse");
+        expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("retries a failed initial batch without showing an empty-feed message", async () => {
+        fetchMock.mockResolvedValueOnce({ ok: false });
+
+        render(<FocusFeed />);
+
+        expect(await screen.findByRole("heading", { name: "Couldn't load quick takes" }))
+            .toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Browse summaries" })).not.toBeInTheDocument();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+        expect(await screen.findByText("Essentialism")).toBeInTheDocument();
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(getFocusRequestBody(1).cursor).toBeUndefined();
+    });
+
+    it("keeps existing cards and the cursor when retrying a failed later batch", async () => {
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: focusItems,
+                activeCardIndex: 1,
+                hasMore: true,
+                nextCursor: focusItems[2]!.id,
+                seenIds: focusItems.map((item) => item.id),
+            })
+        );
+        fetchMock
+            .mockResolvedValueOnce({ ok: false })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    items: [{ ...focusItems[0]!, id: "123e4567-e89b-12d3-a456-426614174555", title: "The One Thing" }],
+                    pageInfo: { hasMore: false, nextCursor: null },
+                }),
+            });
+
+        render(<FocusFeed />);
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't load more quick takes.");
+        expect(screen.getAllByTestId("focus-feed-card")).toHaveLength(3);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        fireEvent.click(screen.getByRole("button", { name: "Retry loading more" }));
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+            expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        });
+        expect(getFocusRequestBody(1).cursor).toBe(focusItems[2]!.id);
+        expect(getFocusRequestBody(1).excludeIds).toEqual(expect.arrayContaining(focusItems.map((item) => item.id)));
+        expect(await screen.findByText("The One Thing")).toBeInTheDocument();
+        expect(screen.getAllByTestId("focus-feed-card")).toHaveLength(4);
+    });
+
     it("continues prefetching normally after restoring near the end of a saved batch", async () => {
         window.sessionStorage.setItem(
             FOCUS_FEED_RESTORE_STORAGE_KEY,

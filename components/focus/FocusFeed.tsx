@@ -18,7 +18,7 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 import { FocusCardView } from "@/components/focus/FocusCardView";
-import { EmptyState, LoadingState } from "@/components/focus/FocusFeedStates";
+import { EmptyState, LoadingState, LoadMoreStatus } from "@/components/focus/FocusFeedStates";
 import { FocusTakeawaysSheet } from "@/components/focus/FocusTakeawaysSheet";
 import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/components/focus/focus-feed-utils";
 import {
@@ -283,6 +283,7 @@ export function FocusFeed() {
     const [hasMore, setHasMore] = useState(true);
     const [nextCursor, setNextCursor] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isRetryingLoadMore, setIsRetryingLoadMore] = useState(false);
     const [hasInitialized, setHasInitialized] = useState(false);
     const [activeCardIndex, setActiveCardIndex] = useState(0);
     const [mounted, setMounted] = useState(false);
@@ -682,6 +683,13 @@ export function FocusFeed() {
             resetCursor: true,
         });
     }, [fetchBatch, isLoaded]);
+
+    const retryLoadMore = useCallback(() => {
+        setIsRetryingLoadMore(true);
+        void fetchBatch({ ignoreHasMore: true }).finally(() => {
+            setIsRetryingLoadMore(false);
+        });
+    }, [fetchBatch]);
 
     useEffect(() => {
         setMounted(true);
@@ -1173,7 +1181,7 @@ export function FocusFeed() {
     }, [error, fetchBatch, hasMore, items.length]);
 
     useEffect(() => {
-        if (!hasInitializedRef.current || loading || !hasMore || cards.length === 0) {
+        if (!hasInitializedRef.current || loading || !hasMore || cards.length === 0 || error) {
             return;
         }
 
@@ -1184,7 +1192,7 @@ export function FocusFeed() {
         if (cards.length - activeCardIndex <= 3) {
             void fetchBatch();
         }
-    }, [activeCardIndex, cards.length, fetchBatch, hasMore, loading]);
+    }, [activeCardIndex, cards.length, error, fetchBatch, hasMore, loading]);
 
     useEffect(() => {
         if (!hasInitialized || !isRestoringSnapshotRef.current) {
@@ -1266,6 +1274,9 @@ export function FocusFeed() {
                                 )}
                             </div>
                         </div>
+                        {(error || isRetryingLoadMore) && (
+                            <LoadMoreStatus onRetry={retryLoadMore} retrying={isRetryingLoadMore} />
+                        )}
                         {!isFocusDesktop && isMobileScrollHintVisible ? (
                             <div className="pointer-events-none absolute inset-x-0 bottom-3 z-40 flex justify-center px-4">
                                 <div
