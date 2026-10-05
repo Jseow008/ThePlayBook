@@ -22,6 +22,7 @@ export function FocusTakeawaysSheet({
     phase,
     prefersReducedMotion,
     onClose,
+    onReadSummary,
     onDragOffsetChange,
     touchStartYRef,
     touchLastPointRef,
@@ -34,6 +35,7 @@ export function FocusTakeawaysSheet({
     phase: TakeawaysSheetPhase;
     prefersReducedMotion: boolean;
     onClose: () => void;
+    onReadSummary?: (card: FocusCard) => void;
     onDragOffsetChange: (offset: number) => void;
     touchStartYRef: MutableRefObject<number | null>;
     touchLastPointRef: MutableRefObject<SheetTouchPoint | null>;
@@ -201,6 +203,7 @@ export function FocusTakeawaysSheet({
                     <div className="border-t border-border/40 px-4 pt-3 safe-area-pb-md">
                         <Link
                             href={buildReadPath(card)}
+                            onClick={() => onReadSummary?.(card)}
                             className="focus-ring inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                             aria-label={`Read ${card.title}`}
                         >

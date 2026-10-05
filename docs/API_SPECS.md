@@ -281,7 +281,9 @@ The app uses `POST` so personal reading context is not sent in URL query strings
 
 `completedIds` and `savedIds` are capped at 12 each and are used only to retrieve semantically related, Focus-eligible content. A six-card batch aims for up to four personalized cards and reserves the remaining cards for the existing diverse discovery feed. Completed and already-shown IDs are excluded. If no history or semantic matches are available, the route returns the generic diversified feed.
 
-The legacy `GET` variant remains available for generic callers and accepts `limit`, `excludeIds`, `cursor`, and `seed` as query parameters. It does not personalize results.
+The `POST` response keeps selected candidate order and adds `pageInfo.personalizedIds`, the IDs of selected personalized cards. The first item is the strongest available selected candidate after the route's relevance and diversity scoring. Focus uses this metadata for the fresh opening-card experiment without another recommendation request.
+
+The legacy `GET` variant remains available for generic callers and accepts `limit`, `excludeIds`, `cursor`, and `seed` as query parameters. It does not personalize results; its ID ordering and page-info shape are unchanged.
 
 ### 4.3 `/api/recommendations`
 
