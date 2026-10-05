@@ -142,8 +142,8 @@ describe("Focus API", () => {
         expect(json).toEqual({
             items: [
                 expect.objectContaining({
-                id: "123e4567-e89b-12d3-a456-426614174001",
-                title: "Second Item",
+                    id: "123e4567-e89b-12d3-a456-426614174001",
+                    title: "Second Item",
                 }),
                 expect.objectContaining({
                     id: "123e4567-e89b-12d3-a456-426614174002",
@@ -518,6 +518,35 @@ describe("Focus API", () => {
         expect(response.status).toBe(200);
         expect(json.items).toHaveLength(2);
         expect(mockRpc).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves recommendation rank and identifies selected personalized cards", async () => {
+        const bestId = "123e4567-e89b-12d3-a456-426614174905";
+        const secondId = "123e4567-e89b-12d3-a456-426614174904";
+        mockRpc.mockResolvedValueOnce({
+            data: [bestId, secondId].map((id, index) => ({
+                id,
+                title: `Related ${index}`,
+                type: index === 0 ? "book" : "article",
+                author: null,
+                category: index === 0 ? "Mindset" : "Productivity",
+                cover_image_url: null,
+                duration_seconds: 180,
+                quick_mode_json: { hook: "A", big_idea: "B", key_takeaways: ["C"] },
+                similarity: 1 - index * 0.1,
+            })),
+            error: null,
+        });
+
+        const response = await POST(new NextRequest(new URL("http://localhost/api/focus"), {
+            method: "POST",
+            body: JSON.stringify({ limit: 3, completedIds: ["123e4567-e89b-12d3-a456-426614174901"] }),
+        }));
+        const json = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(json.items.slice(0, 2).map((item: { id: string }) => item.id)).toEqual([bestId, secondId]);
+        expect(json.pageInfo.personalizedIds).toEqual([bestId, secondId]);
     });
 
     it("validates personalized request payloads before querying content", async () => {

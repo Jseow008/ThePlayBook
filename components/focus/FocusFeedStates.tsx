@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import {
     FEED_CARD_HEIGHT_CLASS,
     FEED_LIST_VIEWPORT_CLASS,
@@ -104,15 +106,17 @@ export function EmptyState({
 }) {
     return (
         <div className={`flex items-center justify-center rounded-3xl border border-border/60 bg-card/40 px-6 ${FEED_LIST_VIEWPORT_CLASS}`}>
-            <div className="max-w-md rounded-[2rem] border border-border/60 bg-card/70 p-8 text-center shadow-sm">
+            <div
+                role={error ? "alert" : "status"}
+                className="max-w-md rounded-[2rem] border border-border/60 bg-card/70 p-8 text-center shadow-sm"
+            >
                 <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                    Nothing queued yet
+                    {error ? "Couldn't load quick takes" : "No quick takes available right now"}
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Focus mode needs verified quick-mode content to build the feed.
+                    {error ?? "Explore the catalog for more to read."}
                 </p>
-                {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
-                {error && (
+                {error ? (
                     <button
                         type="button"
                         onClick={onRetry}
@@ -120,8 +124,41 @@ export function EmptyState({
                     >
                         Retry
                     </button>
+                ) : (
+                    <Link
+                        href="/browse"
+                        className="focus-ring mt-5 inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    >
+                        Browse summaries
+                    </Link>
                 )}
             </div>
+        </div>
+    );
+}
+
+export function LoadMoreStatus({
+    onRetry,
+    retrying,
+}: {
+    onRetry: () => void;
+    retrying: boolean;
+}) {
+    return (
+        <div
+            role={retrying ? "status" : "alert"}
+            className="absolute inset-x-3 top-3 z-30 mx-auto flex max-w-xl flex-wrap items-center justify-center gap-3 rounded-2xl border border-border/70 bg-background/95 px-4 py-3 text-center text-sm text-foreground shadow-lg backdrop-blur"
+        >
+            <span>{retrying ? "Loading more quick takes…" : "Couldn't load more quick takes."}</span>
+            <button
+                type="button"
+                onClick={onRetry}
+                disabled={retrying}
+                className="focus-ring inline-flex h-9 items-center justify-center gap-2 rounded-full bg-primary px-4 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
+            >
+                {retrying && <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />}
+                {retrying ? "Retrying" : "Retry loading more"}
+            </button>
         </div>
     );
 }

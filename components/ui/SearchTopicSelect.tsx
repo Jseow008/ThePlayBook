@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 
 interface SearchTopicSelectProps {
     query?: string;
@@ -36,6 +37,7 @@ function buildSearchHref({ query, category, type, sort }: { query?: string; cate
 
 export function SearchTopicSelect({ query, type, sort, value = "", options }: SearchTopicSelectProps) {
     const router = useRouter();
+    const [isPending, startTransition] = useTransition();
 
     if (options.length === 0 && !value) {
         return null;
@@ -49,10 +51,13 @@ export function SearchTopicSelect({ query, type, sort, value = "", options }: Se
             <select
                 id="search-topic-select"
                 aria-label="More topics"
+                aria-busy={isPending}
                 value={value}
                 onChange={(event) => {
                     const nextCategory = event.target.value || undefined;
-                    router.push(buildSearchHref({ query, category: nextCategory, type, sort }));
+                    startTransition(() => {
+                        router.push(buildSearchHref({ query, category: nextCategory, type, sort }));
+                    });
                 }}
                 className="h-9 w-full appearance-none rounded-full border border-border bg-secondary/30 pl-4 pr-10 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary"
             >
@@ -63,7 +68,11 @@ export function SearchTopicSelect({ query, type, sort, value = "", options }: Se
                     </option>
                 ))}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            {isPending ? (
+                <Loader2 aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 motion-safe:animate-spin" />
+            ) : (
+                <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            )}
         </div>
     );
 }

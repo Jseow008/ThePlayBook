@@ -14,6 +14,7 @@ const { expireStaleNarrationProcessingJobsMock, getNarrationQueueSummaryMock, re
 
 vi.mock("next/cache", () => ({
     revalidatePath: revalidatePathMock,
+    revalidateTag: vi.fn(),
 }));
 
 vi.mock("@/lib/admin/auth", () => ({
@@ -139,18 +140,15 @@ describe("Admin narration processor API", () => {
     });
 
     it("claims and processes one queued narration job", async () => {
-        (generateNarrationAudio as any).mockResolvedValueOnce({
-            audioBuffer: Buffer.from("mp3-data"),
-            extension: "mp3",
-            contentType: "audio/mpeg",
-            segmentTimings: [
-                {
-                    id: "segment-1",
-                    order_index: 1,
-                    start_time_sec: 0,
-                    end_time_sec: 12,
-                },
-            ],
+        (generateNarrationAudio as any).mockImplementationOnce(async (_content: unknown, onProgress: (completed: number, total: number) => Promise<void>) => {
+            await onProgress(0, 1);
+            await onProgress(1, 1);
+            return {
+                audioBuffer: Buffer.from("mp3-data"),
+                extension: "mp3",
+                contentType: "audio/mpeg",
+                segmentTimings: [{ id: "segment-1", order_index: 1, start_time_sec: 0, end_time_sec: 12 }],
+            };
         });
 
         const queueSelectChain = {
@@ -213,6 +211,13 @@ describe("Admin narration processor API", () => {
         };
 
         contentUpdateMock.mockReturnValueOnce(claimUpdateChain);
+        const progressUpdateMock = vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                    eq: vi.fn().mockResolvedValue({ error: null }),
+                }),
+            }),
+        });
 
         (getAdminClient as any).mockReturnValue({
             from: vi.fn()
@@ -225,6 +230,8 @@ describe("Admin narration processor API", () => {
                 .mockReturnValueOnce({
                     select: vi.fn().mockReturnValue(fetchContentChain),
                 })
+                .mockReturnValueOnce({ update: progressUpdateMock })
+                .mockReturnValueOnce({ update: progressUpdateMock })
                 .mockReturnValueOnce({
                     select: vi.fn().mockReturnValue(queueSelectChain),
                 }),
@@ -253,6 +260,14 @@ describe("Admin narration processor API", () => {
         }));
         expect(json.data.processed).toBe(true);
         expect(generateNarrationAudio).toHaveBeenCalled();
+        expect(progressUpdateMock).toHaveBeenNthCalledWith(1, expect.objectContaining({
+            narration_segments_completed: 0,
+            narration_segments_total: 1,
+        }));
+        expect(progressUpdateMock).toHaveBeenNthCalledWith(2, expect.objectContaining({
+            narration_segments_completed: 1,
+            narration_segments_total: 1,
+        }));
         expect(uploadMock).toHaveBeenCalledWith(
             expect.stringMatching(/^generated\/11111111-1111-1111-1111-111111111111\/ai-narration-.*\.mp3$/),
             expect.any(Blob),

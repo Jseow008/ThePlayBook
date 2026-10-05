@@ -60,7 +60,12 @@ vi.mock("next/navigation", () => ({
     }),
 }));
 
+vi.mock("next/cache", () => ({
+    unstable_cache: (read: (...args: unknown[]) => Promise<unknown>) => read,
+}));
+
 vi.mock("next/link", () => ({
+    useLinkStatus: () => ({ pending: false }),
     default: ({
         children,
         href,
@@ -214,6 +219,20 @@ async function runRecentCatalogFromPage(searchParams: SearchParams = {}) {
     return searchComponentsModule.RecentCatalog(recentCatalogProps);
 }
 
+async function runPopularCatalogFromPage(searchParams: SearchParams = {}) {
+    const { searchComponentsModule, page } = await loadSearchPage(searchParams);
+    const popularCatalogProps = findElementProps<Parameters<typeof searchComponentsModule.PopularCatalog>[0]>(
+        page,
+        searchComponentsModule.PopularCatalog
+    );
+
+    if (!popularCatalogProps) {
+        throw new Error("PopularCatalog was not rendered for the supplied search params");
+    }
+
+    return searchComponentsModule.PopularCatalog(popularCatalogProps);
+}
+
 describe("SearchPage", () => {
     beforeEach(() => {
         vi.resetModules();
@@ -306,7 +325,37 @@ describe("SearchPage", () => {
         expect(screen.queryByRole("link", { name: "Pregnancy" })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "Parenthood" })).not.toBeInTheDocument();
         expect(screen.queryByRole("combobox", { name: "More topics" })).not.toBeInTheDocument();
-        expect(fromMock).not.toHaveBeenCalled();
+        expect(fromMock).toHaveBeenCalledWith("content_item");
+    });
+
+    it("starts the unfiltered catalog read while category stats are pending", async () => {
+        let resolveStats!: (value: { data: Array<{ category: string; count: number }> }) => void;
+        rpcMock.mockImplementation((fn: string) => {
+            if (fn === "get_category_stats") {
+                return new Promise((resolve) => { resolveStats = resolve; });
+            }
+            throw new Error(`Unexpected RPC: ${fn}`);
+        });
+
+        const pendingPage = loadSearchPage({});
+        await waitFor(() => expect(fromMock).toHaveBeenCalledWith("content_item"));
+        resolveStats({ data: [] });
+        await pendingPage;
+    });
+
+    it("starts text search while category stats are pending", async () => {
+        let resolveStats!: (value: { data: Array<{ category: string; count: number }> }) => void;
+        rpcMock.mockImplementation((fn: string) => {
+            if (fn === "get_category_stats") {
+                return new Promise((resolve) => { resolveStats = resolve; });
+            }
+            throw new Error(`Unexpected RPC: ${fn}`);
+        });
+
+        const pendingPage = loadSearchPage({ q: "focus" });
+        await waitFor(() => expect(searchCatalogMock).toHaveBeenCalledWith(expect.objectContaining({ query: "focus", categories: [] })));
+        resolveStats({ data: [] });
+        await pendingPage;
     });
 
     it("labels the newest-first result grid as the full catalog", async () => {
@@ -332,25 +381,53 @@ describe("SearchPage", () => {
             }
 
             if (fn === "get_trending_content") {
-                return Promise.resolve({
-                    data: [{ id: "deep-work", title: "Deep Work" }],
-                });
+                // Supabase RPC builders are awaitable but do not expose .catch().
+                return {
+                    then(resolve: (value: { data: Array<{ id: string; title: string }> }) => unknown) {
+                        return Promise.resolve(resolve({ data: [{ id: "deep-work", title: "Deep Work" }] }));
+                    },
+                };
             }
 
             throw new Error(`Unexpected RPC: ${fn}`);
         });
 
         await renderSearchPage({ type: "book", sort: "popular" });
+        await act(async () => {
+            render(await runPopularCatalogFromPage({ type: "book", sort: "popular" }));
+        });
 
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
             p_limit: 20,
             p_type: "book",
-            p_categories: null,
+            p_categories: undefined,
         });
         expect(screen.getByText("Popular Books")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Personal Development" })).toBeInTheDocument();
-        expect(fromMock).not.toHaveBeenCalled();
+        expect(fromMock).toHaveBeenCalledWith("content_item");
+        expect(getLatestQueryBuilder()?.select).toHaveBeenCalledWith("id, audio_url");
+    });
+
+    it("renders Popular filters and result placeholders before popular items resolve", async () => {
+        let resolvePopular!: (value: { data: Array<{ id: string; title: string }> }) => void;
+        rpcMock.mockImplementation((fn: string) => {
+            if (fn === "get_category_stats") {
+                return Promise.resolve({ data: [{ category: "Business", count: 2 }] });
+            }
+            if (fn === "get_trending_content") {
+                return new Promise((resolve) => { resolvePopular = resolve; });
+            }
+            throw new Error(`Unexpected RPC: ${fn}`);
+        });
+
+        const { page } = await loadSearchPage({ type: "podcast", sort: "popular" });
+        render(replaceAsyncResultsWithFallback(page));
+
+        expect(screen.getByRole("link", { name: "Podcast" })).toHaveClass("bg-primary");
+        expect(screen.getByRole("link", { name: "Popular" })).toHaveAttribute("aria-current", "page");
+        expect(document.querySelectorAll(".animate-pulse")).toHaveLength(12);
+        resolvePopular({ data: [] });
     });
 
     it("uses the indexed search service for text search and applies the type filter", async () => {
@@ -364,6 +441,34 @@ describe("SearchPage", () => {
             type: "podcast",
             cursor: null,
         });
+    });
+
+    it("offers Listen only on search results with audio", async () => {
+        searchCatalogMock.mockResolvedValueOnce({
+            outcome: "results",
+            results: [
+                {
+                    id: "audio-item", type: "book", title: "Audio Book", author: null, category: "Business", cover_image_url: null,
+                    duration_seconds: null, audio_url: "https://example.com/audio.mp3", created_at: "2026-09-17T00:00:00.000Z", quick_mode_json: {}, rank: 1,
+                    snippet: { source: "Summary", text: "A matching snippet", highlights: [] },
+                },
+                {
+                    id: "text-item", type: "book", title: "Text Book", author: null, category: "Business", cover_image_url: null,
+                    duration_seconds: null, audio_url: null, created_at: "2026-09-17T00:00:00.000Z", quick_mode_json: {}, rank: 2,
+                    snippet: { source: "Summary", text: "Another snippet", highlights: [] },
+                },
+            ],
+            pageInfo: { nextCursor: null, previousCursor: null, page: 1 },
+        });
+
+        const results = await runSearchResultsFromPage({ q: "book" });
+        await act(async () => { render(results); });
+
+        expect(screen.getByRole("link", { name: "Listen to Audio Book" })).toHaveAttribute(
+            "href",
+            "/read/audio-item/audio-book#audio-player",
+        );
+        expect(screen.queryByRole("link", { name: "Listen to Text Book" })).not.toBeInTheDocument();
     });
 
     it("binds the next search page to its opaque cursor and preserves its filters in pagination links", async () => {
@@ -500,6 +605,7 @@ describe("SearchPage", () => {
 
     it("preserves Popular mode when switching filters", async () => {
         await renderSearchPage({ category: "Productivity", sort: "popular" });
+        await runPopularCatalogFromPage({ category: "Productivity", sort: "popular" });
 
         expect(screen.getByRole("link", { name: "Podcast" })).toHaveAttribute(
             "href",
@@ -507,7 +613,7 @@ describe("SearchPage", () => {
         );
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
             p_limit: 20,
-            p_type: null,
+            p_type: undefined,
             p_categories: ["Productivity"],
         });
     });
@@ -544,8 +650,8 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "Podcast" })).toHaveAttribute("href", "/search?type=podcast&sort=popular");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
             p_limit: 20,
-            p_type: null,
-            p_categories: null,
+            p_type: undefined,
+            p_categories: undefined,
         });
     });
 

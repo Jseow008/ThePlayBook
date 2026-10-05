@@ -23,7 +23,6 @@ export default function MyListPage() {
     const { myListIds, isLoaded, removeFromMyList } = useReadingProgress();
 
     // Filter/Sort State
-    const [searchQuery, setSearchQuery] = useState("");
     const [activeFilter, setActiveFilter] = useState("all");
     const [activeSort, setActiveSort] = useState<"newest" | "oldest" | "title">("newest");
 
@@ -57,16 +56,7 @@ export default function MyListPage() {
             items = items.filter(item => item.type === activeFilter);
         }
 
-        // 2. Search
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            items = items.filter(item =>
-                item.title.toLowerCase().includes(query) ||
-                (item.author && item.author.toLowerCase().includes(query))
-            );
-        }
-
-        // 3. Sort
+        // 2. Sort
         items.sort((a, b) => {
             if (activeSort === "title") {
                 return a.title.localeCompare(b.title);
@@ -85,7 +75,7 @@ export default function MyListPage() {
         });
 
         return items;
-    }, [allItems, activeFilter, searchQuery, activeSort, myListIds]);
+    }, [allItems, activeFilter, activeSort, myListIds]);
 
     return (
         <div className="min-h-screen bg-background pb-8 lg:pb-24">
@@ -117,17 +107,14 @@ export default function MyListPage() {
                 {shouldShowLibraryControls && (
                     <div className="mb-8">
                         {isPageLoading ? (
-                            <LibraryToolbarSkeleton className="w-full" />
+                            <LibraryToolbarSkeleton className="w-full" showSearch={false} />
                         ) : (
                             <LibraryToolbar
-                                searchQuery={searchQuery}
-                                onSearchChange={setSearchQuery}
+                                showSearch={false}
                                 activeFilter={activeFilter}
                                 onFilterChange={setActiveFilter}
                                 activeSort={activeSort}
                                 onSortChange={setActiveSort}
-                                searchLabel="Search saved items"
-                                searchPlaceholder="Search saved items…"
                                 className="w-full"
                             />
                         )}
@@ -139,14 +126,14 @@ export default function MyListPage() {
                     {isPageLoading ? (
                         <LibraryGridSkeleton />
                     ) : isError && allItems.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5">
-                            <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border/70">
+                        <div className="flex flex-col items-center justify-center py-2 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5 sm:py-20">
+                            <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-4 border border-border/70 sm:mb-6">
                                 <AlertCircle className="size-10 text-muted-foreground" />
                             </div>
                             <h2 className="text-xl font-semibold text-foreground mb-2">
                                 We couldn&apos;t load your saved items
                             </h2>
-                            <p className="text-muted-foreground mb-8 max-w-sm">
+                            <p className="text-muted-foreground mb-3 max-w-sm sm:mb-8">
                                 Your saved items are still intact. Try again in a moment.
                             </p>
                             <button
@@ -157,14 +144,14 @@ export default function MyListPage() {
                             </button>
                         </div>
                     ) : allItems.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5">
-                            <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border/70">
+                        <div className="flex flex-col items-center justify-center py-2 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5 sm:py-20">
+                            <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-4 border border-border/70 sm:mb-6">
                                 <Plus className="size-10 text-muted-foreground" />
                             </div>
                             <h2 className="text-xl font-semibold text-foreground mb-2">
                                 Your library is empty
                             </h2>
-                            <p className="text-muted-foreground mb-8 max-w-sm">
+                            <p className="text-muted-foreground mb-3 max-w-sm sm:mb-8">
                                 Save books, podcasts, articles, and videos to your library so you can easily find them later.
                             </p>
                             <Link
@@ -176,9 +163,9 @@ export default function MyListPage() {
                         </div>
                     ) : filteredItems.length === 0 ? (
                         <div className="text-center py-20">
-                            <p className="text-muted-foreground">No items match your search.</p>
+                            <p className="text-muted-foreground">No items match this filter.</p>
                             <button
-                                onClick={() => { setSearchQuery(""); setActiveFilter("all"); }}
+                                onClick={() => setActiveFilter("all")}
                                 className="mt-3 inline-flex h-9 items-center rounded-full border border-border/70 bg-secondary/30 px-4 text-sm text-foreground hover:bg-secondary/50 transition-colors"
                             >
                                 Clear filters

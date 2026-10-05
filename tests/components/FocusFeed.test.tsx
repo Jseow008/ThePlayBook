@@ -18,7 +18,7 @@ const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
 const FOCUS_FEED_SEED_STORAGE_KEY = "focus-feed-seed-v1";
 const MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY = "focus-feed-mobile-scroll-hint-dismissed-v1";
 
-const { readingProgressState, mediaQueryState, toggleMyListMock, toastSuccessMock } = vi.hoisted(() => ({
+const { readingProgressState, mediaQueryState, toggleMyListMock, toastSuccessMock, analyticsCaptureMock } = vi.hoisted(() => ({
     readingProgressState: {
         value: {
             completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
@@ -34,23 +34,26 @@ const { readingProgressState, mediaQueryState, toggleMyListMock, toastSuccessMoc
     },
     toggleMyListMock: vi.fn(),
     toastSuccessMock: vi.fn(),
+    analyticsCaptureMock: vi.fn(),
 }));
 
 const scrollIntoViewMock = vi.fn();
 const observerInstances: MockIntersectionObserver[] = [];
 
 class MockIntersectionObserver {
-    constructor(private readonly callback: IntersectionObserverCallback) {
+    constructor(private readonly callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
         observerInstances.push(this);
+        this.root = options?.root ?? null;
+        this.thresholds = Array.isArray(options?.threshold) ? options.threshold : [options?.threshold ?? 0];
     }
 
     observe = vi.fn();
     unobserve = vi.fn();
     disconnect = vi.fn();
     takeRecords = vi.fn(() => []);
-    root = null;
+    root: Element | Document | null = null;
     rootMargin = "";
-    thresholds = [];
+    thresholds: number[] = [];
 
     trigger(target: Element, intersectionRatio = 0.85) {
         this.callback(
@@ -133,6 +136,8 @@ vi.mock("sonner", () => ({
         success: toastSuccessMock,
     },
 }));
+
+vi.mock("@/lib/analytics", () => ({ captureAnalyticsEvent: analyticsCaptureMock }));
 
 describe("FocusFeed", () => {
     const fetchMock = vi.fn();
@@ -240,7 +245,9 @@ describe("FocusFeed", () => {
         };
         toggleMyListMock.mockReset().mockResolvedValue(true);
         toastSuccessMock.mockReset();
+        analyticsCaptureMock.mockReset();
         window.sessionStorage.clear();
+        window.localStorage.removeItem("focus-opening-order-v1");
         fetchMock.mockResolvedValue({
             ok: true,
             json: async () => focusItems,
@@ -250,6 +257,7 @@ describe("FocusFeed", () => {
 
     afterEach(() => {
         mathRandomSpy.mockRestore();
+        vi.mocked(window.localStorage.getItem).mockReset();
     });
 
     it("shows a content-shaped skeleton while the initial focus batch is loading", async () => {
@@ -341,6 +349,74 @@ describe("FocusFeed", () => {
         expect(firstCard).toHaveClass("py-4");
     });
 
+    it("keeps the server-ranked first card in the trial without waiting for library hydration", async () => {
+        vi.mocked(window.localStorage.getItem).mockImplementation((key) =>
+            key === "focus-opening-order-v1" ? "ranked" : null
+        );
+        readingProgressState.value = { completedIds: [], isLoaded: false, myListIds: [] };
+        const rankedItems = [focusItems[2]!, focusItems[0]!, focusItems[1]!];
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                items: rankedItems,
+                pageInfo: { hasMore: false, nextCursor: null, personalizedIds: [] },
+            }),
+        });
+
+        const view = render(<FocusFeed />);
+        const firstCard = (await screen.findAllByTestId("focus-feed-card"))[0]!;
+        expect(within(firstCard).getByText("Atomic Habits")).toBeInTheDocument();
+        expect(getFocusRequestBody(0).completedIds).toEqual([]);
+        expect(getFocusRequestBody(0).savedIds).toEqual([]);
+
+        readingProgressState.value = { completedIds: [], isLoaded: true, myListIds: [] };
+        view.rerender(<FocusFeed />);
+        expect(within((await screen.findAllByTestId("focus-feed-card"))[0]!).getByText("Atomic Habits")).toBeInTheDocument();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("counts a card impression only after meaningful foreground visibility and suppresses repeats", async () => {
+        render(<FocusFeed />);
+        const card = (await screen.findAllByTestId("focus-feed-card"))[0]!;
+        const impressionObserver = observerInstances.filter((observer) => observer.thresholds.length === 3).at(-1);
+        expect(impressionObserver).toBeDefined();
+        expect(impressionObserver!.observe).toHaveBeenCalledWith(card);
+        expect(document.visibilityState).toBe("visible");
+        await waitFor(() => expect(analyticsCaptureMock).toHaveBeenCalledWith(
+            "focus_visit_started",
+            expect.any(Object),
+        ));
+
+        act(() => impressionObserver!.trigger(card, 0.74));
+        await new Promise((resolve) => window.setTimeout(resolve, 550));
+        expect(analyticsCaptureMock.mock.calls.filter(([event]) => event === "focus_card_impression")).toHaveLength(0);
+
+        act(() => impressionObserver!.trigger(card, 0.85));
+
+        await waitFor(() => {
+            const impressions = analyticsCaptureMock.mock.calls.filter(([event]) => event === "focus_card_impression");
+            expect(impressions).toHaveLength(1);
+            expect(impressions[0]?.[1]).toEqual(expect.objectContaining({ position: 1, entry_kind: "fresh" }));
+        });
+        act(() => impressionObserver!.trigger(card, 0.85));
+        expect(analyticsCaptureMock.mock.calls.filter(([event]) => event === "focus_card_impression")).toHaveLength(1);
+    });
+
+    it("does not replace an opening card when late library hydration marks it completed", async () => {
+        readingProgressState.value = { completedIds: [], isLoaded: false, myListIds: [] };
+        const view = render(<FocusFeed />);
+        expect(within((await screen.findAllByTestId("focus-feed-card"))[0]!).getByText("Essentialism")).toBeInTheDocument();
+
+        readingProgressState.value = {
+            completedIds: [focusItems[0]!.id],
+            isLoaded: true,
+            myListIds: [],
+        };
+        view.rerender(<FocusFeed />);
+
+        expect(within((await screen.findAllByTestId("focus-feed-card"))[0]!).getByText("Essentialism")).toBeInTheDocument();
+    });
+
     it("sends recent completed and saved IDs as Focus personalization context", async () => {
         const savedId = "123e4567-e89b-12d3-a456-426614174555";
         readingProgressState.value = {
@@ -358,6 +434,67 @@ describe("FocusFeed", () => {
         expect(getFocusRequestBody(0)).toMatchObject({
             completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
             savedIds: [savedId],
+        });
+    });
+
+    it("loads the current and next two covers ahead of scrolling", async () => {
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            json: async () => [
+                ...focusItems,
+                {
+                    ...focusItems[0]!,
+                    id: "123e4567-e89b-12d3-a456-426614174555",
+                    title: "Fourth cover",
+                    cover_image_url: "https://example.com/fourth.jpg",
+                },
+            ],
+        });
+
+        render(<FocusFeed />);
+
+        const cards = await screen.findAllByTestId("focus-feed-card");
+        expect(cards).toHaveLength(4);
+        const covers = cards.map((card) => within(card).getByRole("img", { name: /Essentialism|Deep Work|Atomic Habits|Fourth cover/ }));
+
+        expect(covers[0]).toHaveAttribute("loading", "eager");
+        expect(covers[0]).toHaveAttribute("fetchpriority", "high");
+        expect(covers[1]).toHaveAttribute("loading", "eager");
+        expect(covers[2]).toHaveAttribute("loading", "eager");
+        expect(covers[3]).toHaveAttribute("loading", "lazy");
+
+        await waitFor(() => expect(observerInstances.length).toBeGreaterThan(0));
+        await act(async () => {
+            observerInstances.at(-1)!.trigger(cards[1]!);
+        });
+
+        expect(covers[3]).toHaveAttribute("loading", "eager");
+    });
+
+    it.each([
+        { viewport: "mobile", isDesktop: false },
+        { viewport: "desktop", isDesktop: true },
+    ])("keeps the $viewport cover placeholder visible through an image retry", async ({ isDesktop }) => {
+        mediaQueryState.value.isDesktop = isDesktop;
+
+        render(<FocusFeed />);
+
+        const card = (await screen.findAllByTestId("focus-feed-card"))[0]!;
+        const cover = within(card).getByRole("img", { name: "Essentialism" });
+        expect(within(card).getByTestId("focus-cover-placeholder")).toBeInTheDocument();
+        expect(cover).toHaveClass("opacity-0");
+
+        fireEvent.error(cover);
+
+        const retriedCover = within(card).getByRole("img", { name: "Essentialism" });
+        expect(within(card).getByTestId("focus-cover-placeholder")).toBeInTheDocument();
+        expect(retriedCover).toHaveClass("opacity-0");
+
+        fireEvent.load(retriedCover);
+
+        await waitFor(() => {
+            expect(within(card).queryByTestId("focus-cover-placeholder")).not.toBeInTheDocument();
+            expect(within(card).getByRole("img", { name: "Essentialism" })).toHaveClass("opacity-100");
         });
     });
 
@@ -469,7 +606,7 @@ describe("FocusFeed", () => {
         expect(requestBody.completedIds).not.toContain("not-a-uuid");
     });
 
-    it("prunes completed items after reading progress hydrates and fetches replacements", async () => {
+    it("keeps the active opening card during hydration, then prunes it and fetches replacements after moving on", async () => {
         readingProgressState.value = {
             completedIds: [],
             isLoaded: false,
@@ -574,6 +711,16 @@ describe("FocusFeed", () => {
         view.rerender(<FocusFeed />);
 
         await waitFor(() => {
+            expect(screen.queryByText("Deep Work")).not.toBeInTheDocument();
+        });
+        expect(screen.getByText("Essentialism")).toBeInTheDocument();
+
+        const hydratedCards = screen.getAllByTestId("focus-feed-card");
+        act(() => {
+            observerInstances.at(-1)!.trigger(hydratedCards[1]!);
+        });
+
+        await waitFor(() => {
             expect(screen.queryByText("Essentialism")).not.toBeInTheDocument();
         });
         expect(await screen.findByText("The One Thing")).toBeInTheDocument();
@@ -630,6 +777,9 @@ describe("FocusFeed", () => {
     });
 
     it("restores the exact focus batch and card from sessionStorage immediately", async () => {
+        vi.mocked(window.localStorage.getItem).mockImplementation((key) =>
+            key === "focus-opening-order-v1" ? "ranked" : null
+        );
         window.sessionStorage.setItem(
             FOCUS_FEED_RESTORE_STORAGE_KEY,
             JSON.stringify({
@@ -757,6 +907,77 @@ describe("FocusFeed", () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+
+    it("distinguishes an empty feed from a loading failure", async () => {
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ items: [], pageInfo: { hasMore: false, nextCursor: null } }),
+        });
+
+        render(<FocusFeed />);
+
+        expect(await screen.findByRole("heading", { name: "No quick takes available right now" }))
+            .toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Browse summaries" })).toHaveAttribute("href", "/browse");
+        expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("retries a failed initial batch without showing an empty-feed message", async () => {
+        fetchMock.mockResolvedValueOnce({ ok: false });
+
+        render(<FocusFeed />);
+
+        expect(await screen.findByRole("heading", { name: "Couldn't load quick takes" }))
+            .toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Browse summaries" })).not.toBeInTheDocument();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+        expect(await screen.findByText("Essentialism")).toBeInTheDocument();
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(getFocusRequestBody(1).cursor).toBeUndefined();
+    });
+
+    it("keeps existing cards and the cursor when retrying a failed later batch", async () => {
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: focusItems,
+                activeCardIndex: 1,
+                hasMore: true,
+                nextCursor: focusItems[2]!.id,
+                seenIds: focusItems.map((item) => item.id),
+            })
+        );
+        fetchMock
+            .mockResolvedValueOnce({ ok: false })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    items: [{ ...focusItems[0]!, id: "123e4567-e89b-12d3-a456-426614174555", title: "The One Thing" }],
+                    pageInfo: { hasMore: false, nextCursor: null },
+                }),
+            });
+
+        render(<FocusFeed />);
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't load more quick takes.");
+        expect(screen.getAllByTestId("focus-feed-card")).toHaveLength(3);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        fireEvent.click(screen.getByRole("button", { name: "Retry loading more" }));
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+            expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        });
+        expect(getFocusRequestBody(1).cursor).toBe(focusItems[2]!.id);
+        expect(getFocusRequestBody(1).excludeIds).toEqual(expect.arrayContaining(focusItems.map((item) => item.id)));
+        expect(await screen.findByText("The One Thing")).toBeInTheDocument();
+        expect(screen.getAllByTestId("focus-feed-card")).toHaveLength(4);
     });
 
     it("continues prefetching normally after restoring near the end of a saved batch", async () => {

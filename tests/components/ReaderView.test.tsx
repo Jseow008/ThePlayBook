@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import type { ContentItemWithSegments } from '@/types/domain';
 import { audioResumeKey } from '@/lib/local-user-storage';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useState } from 'react';
 
 const {
     localStorageState,
@@ -208,6 +209,37 @@ vi.mock('@/components/reader/CompletionCard', () => ({
     CompletionCard: () => <div data-testid="mock-completion-card" />
 }));
 
+vi.mock('@/components/reader/GuestProgressChoice', () => ({
+    GuestProgressChoice: (props: any) => {
+        const [dismissed, setDismissed] = useState(false);
+        if (dismissed) return null;
+        return (
+            <div>
+                <button data-testid="choose-partial-progress" onClick={() => {
+                    setDismissed(true);
+                    props.onProgressChosen?.({
+                        itemId: props.contentId,
+                        completed: ['seg-1'],
+                        lastSegmentIndex: 0,
+                        lastReadAt: '2026-10-03T00:00:00.000Z',
+                        isCompleted: false,
+                    });
+                }} />
+                <button data-testid="choose-complete-progress" onClick={() => {
+                    setDismissed(true);
+                    props.onProgressChosen?.({
+                        itemId: props.contentId,
+                        completed: ['seg-1', 'seg-2'],
+                        lastSegmentIndex: 1,
+                        lastReadAt: '2026-10-03T00:00:00.000Z',
+                        isCompleted: true,
+                    });
+                }} />
+            </div>
+        );
+    },
+}));
+
 vi.mock('@/components/reader/AuthorChat', () => ({
     AuthorChat: (props: any) => (
         <div data-testid="mock-author-chat">
@@ -327,6 +359,12 @@ describe('ReaderView', () => {
         syncFromCloudMock.mockClear();
     });
 
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+    });
+
     it('renders the layout components including header, accordion, and drawers', async () => {
         render(<ReaderView content={mockContent} />);
 
@@ -403,6 +441,71 @@ describe('ReaderView', () => {
             const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
             expect(latestProps?.completedSegments.has('seg-1')).toBe(true);
         });
+    });
+
+    it('opens the first incomplete section after a progress choice', async () => {
+        const content = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                { ...mockContent.segments[0], start_time_sec: 0 },
+                { ...mockContent.segments[0], id: 'seg-2', order_index: 1, start_time_sec: 30 },
+            ],
+        } as ContentItemWithSegments;
+        render(<ReaderView content={content} />);
+
+        fireEvent.click(screen.getByTestId('choose-partial-progress'));
+
+        await waitFor(() => {
+            const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
+            expect(latestProps?.expandedSegmentId).toBe('seg-2');
+            expect(latestProps?.completedSegments.has('seg-1')).toBe(true);
+            expect(latestProps?.scrollRequest).toEqual(expect.objectContaining({
+                segmentId: 'seg-2',
+                focusAfterScroll: true,
+            }));
+            expect(readerHeroHeaderSpy).toHaveBeenLastCalledWith(expect.objectContaining({
+                initialAudioTimeSec: 30,
+            }));
+        });
+        expect(screen.queryByTestId('choose-partial-progress')).not.toBeInTheDocument();
+    });
+
+    it.each([
+        { label: 'desktop', width: 1280, height: 800, reducedMotion: false, behavior: 'smooth' },
+        { label: 'mobile with reduced motion', width: 390, height: 844, reducedMotion: true, behavior: 'auto' },
+    ])('closes open sections and reaches completion on $label', async ({ width, height, reducedMotion, behavior }) => {
+        const content = {
+            ...mockContent,
+            segments: [
+                mockContent.segments[0],
+                { ...mockContent.segments[0], id: 'seg-2', order_index: 1 },
+            ],
+        } as ContentItemWithSegments;
+        const scrollIntoView = vi.fn();
+        Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+            configurable: true,
+            value: scrollIntoView,
+        });
+        vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 1000 } as DOMRect);
+        vi.stubGlobal('innerWidth', width);
+        vi.stubGlobal('innerHeight', height);
+        vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: reducedMotion }));
+        render(<ReaderView content={content} />);
+
+        fireEvent.click(screen.getByTestId('manual-open-seg-1'));
+        expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-1');
+        fireEvent.click(screen.getByTestId('choose-complete-progress'));
+
+        await waitFor(() => {
+            const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
+            expect(latestProps?.expandedSegmentId).toBeNull();
+            expect(latestProps?.completedSegments.size).toBe(2);
+            expect(screen.getByTestId('mock-completion-card')).toBeInTheDocument();
+            expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior });
+            expect(screen.getByRole('region', { name: 'Reading complete' })).toHaveFocus();
+        });
+        expect(screen.queryByTestId('choose-complete-progress')).not.toBeInTheDocument();
     });
 
     it.each([

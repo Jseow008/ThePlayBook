@@ -48,6 +48,7 @@ vi.mock("@/lib/server/story-image-queue", () => ({
 
 vi.mock("next/cache", () => ({
     revalidatePath: vi.fn(),
+    revalidateTag: vi.fn(),
 }));
 
 describe("Admin content series support", () => {

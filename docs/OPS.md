@@ -123,14 +123,20 @@ For application changes, CI runs:
 - Next.js build
 - Playwright
 
-CI classifies documentation-only changes before starting expensive validation. Only the explicit documentation allowlist qualifies; an unknown path, a mixed change, or unavailable comparison evidence takes the full validation path. Required `validate` and `Security Validation` checks still report a result, including the classification reason. Documentation-only classification does not waive production migration or deployment gates.
+CI selects verification from explicit skip allowlists; unknown or mixed executable paths retain all checks. Only pull requests qualify for reduced checks. Pushes to main, manual runs, missing history, and classifier failures run full verification. Missing outputs never authorize a skip.
 
-The first CI efficiency pass keeps all browser projects, assertions, and application/security test coverage. It changes scheduling and execution only:
+| PR change | Application checks | Database/security checks | Browser projects |
+| --- | --- | --- | --- |
+| Allowlisted docs, agent guide, changelog, contribution guide, issue/PR templates | Route-shell policy only | Secret scan; no database setup | None |
+| CSS under app/components/styles or passive public images/fonts | Lint, types, unit tests, dependency posture, build | Secret scan, audit, environment/migration validation and security unit tests; skip SQL and catalog evidence suites | All six |
+| Database verification scripts/tests only | Same application checks | All security, SQL and catalog evidence suites | Desktop Chromium |
+| Application code, migrations, dependencies, CI/test configuration, unknown or mixed executable paths | All | All | All six |
 
-- New pull-request commits cancel superseded runs for that same pull request. Main-branch and manual runs are not cancelled by later runs.
-- Browser installation includes Chromium only, matching all currently configured browser projects. The iPhone/iPad project names describe viewport emulation, not WebKit coverage.
+The exact allowlists live in `scripts/classify-ci-changes.mjs`. Shared utilities, hooks, API routes, server actions, components and server helpers remain full-verification paths. Application CI still starts disposable Supabase for browser checks even when separate database-specific jobs are skipped. Required `validate` and `Security Validation` jobs continue reporting results and blocking merge on failures; PR scope remains required. Reduced selection does not change production migration authorization or §2.2.
 
-Validate workflow changes with both documentation-only and full application paths. Production-mode browser execution needs disposable equivalents of the production services, including the rate-limit backend, before replacing the current development-server suite. Broader viewport selection, security-check consolidation, and performance-job scheduling also require separate measured changes; they are not part of this first pass.
+Nightly Responsive E2E runs all six projects against disposable local Supabase daily and on manual dispatch. It is asynchronous and does not block an earlier merge. Its HTML/JSON reports and summary expose skipped tests (including missing authenticated/content fixtures); skipped flows are not verified coverage. No production credentials or data are used. This adds later detection, not equivalent pre-merge coverage. Existing PR browser execution still uses the development server; the build is checked separately.
+
+Superseded PR runs are cancelled; main/manual runs are not. Chromium installation serves all six viewport-emulation projects. Local work should run affected checks without automatically repeating the entire CI suite. Test classifier edge cases and workflow conditions whenever changing these rules; compare actual job completion times before claiming wall-clock savings.
 
 Relevant config:
 
@@ -333,6 +339,11 @@ Dry run:
 npm run embeddings:sync-segments -- --dry-run
 ```
 
+For a bounded production preflight, add `--max-segments 5`. The local sync
+waits and retries a Gemini per-minute quota response up to three times for the
+same batch. A daily quota failure or repeated minute-limit failure stops the
+run; rerunning later resumes from segments still missing embeddings.
+
 This is intentionally a local trusted-machine workflow now. `POST /api/admin/embeddings/sync-segments` returns `405`.
 
 Operator rule:
@@ -384,7 +395,7 @@ Recovery path:
 
 - `POST /api/admin/narration/process` drains up to 3 queued narration jobs from an authenticated admin session
 - `POST /api/admin/narration/reset` marks stale `processing` jobs as failed so they can be re-queued cleanly
-- `/admin` now includes a `Retry Narration Jobs` control that shows the active processing titles, surfaces stale jobs, and can reset stale `processing` jobs on demand
+- `/admin` includes a `Retry Narration Jobs` control that shows active processing titles, the five most recent failures from the last 24 hours, and stale jobs that can be reset on demand. Older failed jobs remain failed on their content pages and can still be re-queued there.
 
 If narration remains stuck in `queued`, verify:
 

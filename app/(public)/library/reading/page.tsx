@@ -21,10 +21,9 @@ import {
  * Shows all items the user has started reading but not completed with filters.
  */
 export default function ContinueReadingPage() {
-    const { archiveFromProgressList, inProgressIds, isLoaded, removeFromProgress, restoreProgressListArchive } = useReadingProgress();
+    const { archiveFromProgressList, getProgress, inProgressIds, isLoaded, removeFromProgress, restoreProgressListArchive } = useReadingProgress();
 
     // Filter/Sort State
-    const [searchQuery, setSearchQuery] = useState("");
     const [activeFilter, setActiveFilter] = useState("all");
     const [activeSort, setActiveSort] = useState<"newest" | "oldest" | "title">("newest");
 
@@ -58,18 +57,9 @@ export default function ContinueReadingPage() {
             items = items.filter(item => item.type === activeFilter);
         }
 
-        // 2. Search
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            items = items.filter(item =>
-                item.title.toLowerCase().includes(query) ||
-                (item.author && item.author.toLowerCase().includes(query))
-            );
-        }
-
         const orderById = new Map(inProgressIds.map((id, index) => [id, index]));
 
-        // 3. Sort
+        // 2. Sort
         items.sort((a, b) => {
             if (activeSort === "title") {
                 return a.title.localeCompare(b.title);
@@ -82,7 +72,7 @@ export default function ContinueReadingPage() {
         });
 
         return items;
-    }, [allItems, activeFilter, searchQuery, activeSort, inProgressIds]);
+    }, [allItems, activeFilter, activeSort, inProgressIds]);
 
     return (
         <div className="min-h-screen bg-background pb-20">
@@ -114,17 +104,16 @@ export default function ContinueReadingPage() {
                 {shouldShowLibraryControls && (
                     <div className="mb-8">
                         {isPageLoading ? (
-                            <LibraryToolbarSkeleton className="w-full" />
+                            <LibraryToolbarSkeleton className="w-full" showSearch={false} />
                         ) : (
                             <LibraryToolbar
-                                searchQuery={searchQuery}
-                                onSearchChange={setSearchQuery}
+                                showSearch={false}
                                 activeFilter={activeFilter}
                                 onFilterChange={setActiveFilter}
                                 activeSort={activeSort}
                                 onSortChange={setActiveSort}
-                                searchLabel="Search in-progress items"
-                                searchPlaceholder="Search in-progress items…"
+                                newestLabel="Recently read"
+                                oldestLabel="Least recently read"
                                 className="w-full"
                             />
                         )}
@@ -136,14 +125,14 @@ export default function ContinueReadingPage() {
                     {isPageLoading ? (
                         <LibraryGridSkeleton />
                     ) : isError && allItems.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5">
+                        <div className="flex flex-col items-center justify-center py-2 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5 sm:py-20">
                             <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border/70">
                                 <AlertCircle className="size-10 text-muted-foreground" />
                             </div>
                             <h2 className="text-xl font-semibold text-foreground mb-2">
                                 We couldn&apos;t load your progress
                             </h2>
-                            <p className="text-muted-foreground mb-8 max-w-sm">
+                            <p className="text-muted-foreground mb-6 max-w-sm sm:mb-8">
                                 Your in-progress items are still saved. Try again in a moment.
                             </p>
                             <button
@@ -154,14 +143,14 @@ export default function ContinueReadingPage() {
                             </button>
                         </div>
                     ) : allItems.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5">
+                        <div className="flex flex-col items-center justify-center py-2 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5 sm:py-20">
                             <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border/70">
                                 <Clock className="size-10 text-muted-foreground" />
                             </div>
                             <h2 className="text-xl font-semibold text-foreground mb-2">
                                 No reading in progress
                             </h2>
-                            <p className="text-muted-foreground mb-8 max-w-sm">
+                            <p className="text-muted-foreground mb-6 max-w-sm sm:mb-8">
                                 Start reading any content and your progress will be saved here automatically.
                             </p>
                             <Link
@@ -173,9 +162,9 @@ export default function ContinueReadingPage() {
                         </div>
                     ) : filteredItems.length === 0 ? (
                         <div className="text-center py-20">
-                            <p className="text-muted-foreground">No items match your search.</p>
+                            <p className="text-muted-foreground">No items match this filter.</p>
                             <button
-                                onClick={() => { setSearchQuery(""); setActiveFilter("all"); }}
+                                onClick={() => setActiveFilter("all")}
                                 className="mt-3 inline-flex h-9 items-center rounded-full border border-border/70 bg-secondary/30 px-4 text-sm text-foreground hover:bg-secondary/50 transition-colors"
                             >
                                 Clear filters
@@ -189,27 +178,36 @@ export default function ContinueReadingPage() {
                                 </p>
                             </div>
                             <div className={LIBRARY_CARD_GRID_CLASS}>
-                                {filteredItems.map((item) => (
-                                    <ContentCard
-                                        key={item.id}
-                                        item={item}
-                                        navigationMode="resume"
-                                        titleDensity="app-compact"
-                                        showDesktopQuickActions
-                                        desktopQuickAction="resume"
-                                        removeIcon="archive"
-                                        removeLabel="Hide from Continue Reading"
-                                        onRemove={(id) => {
-                                            archiveFromProgressList(id, "reading");
-                                            toast.success("Archived from List", {
-                                                action: {
-                                                    label: "Undo",
-                                                    onClick: () => restoreProgressListArchive(id, "reading"),
-                                                },
-                                            });
-                                        }}
-                                    />
-                                ))}
+                                {filteredItems.map((item) => {
+                                    const progress = getProgress(item.id);
+                                    const total = progress?.totalSegments ?? 0;
+                                    const completed = Math.min(progress?.completed?.length ?? 0, total);
+                                    return (
+                                        <div key={item.id}>
+                                            <ContentCard
+                                                item={item}
+                                                navigationMode="resume"
+                                                titleDensity="app-compact"
+                                                showDesktopQuickActions
+                                                desktopQuickAction="resume"
+                                                removeIcon="archive"
+                                                removeLabel="Hide from Continue Reading"
+                                                onRemove={(id) => {
+                                                    archiveFromProgressList(id, "reading");
+                                                    toast.success("Archived from List", {
+                                                        action: {
+                                                            label: "Undo",
+                                                            onClick: () => restoreProgressListArchive(id, "reading"),
+                                                        },
+                                                    });
+                                                }}
+                                            />
+                                            <p className="mt-2 text-xs text-muted-foreground">
+                                                {total > 0 ? `${completed} of ${total} sections completed` : "Reading in progress"}
+                                            </p>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </>
                     )}

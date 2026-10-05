@@ -96,8 +96,15 @@ jobs:
 
       - name: Test (E2E)
         if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
-        run: npx playwright test
+        run: |
+          if [ "$SCOPE_OUTCOME" = success ] && [ "$RUN_RESPONSIVE" = false ]; then
+            npx playwright test --project=desktop-chromium
+          else
+            npx playwright test
+          fi
         env:
+          SCOPE_OUTCOME: ${{ steps.scope.outcome }}
+          RUN_RESPONSIVE: ${{ steps.scope.outputs.run_responsive }}
           NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci_e2e
           NEXT_PUBLIC_POSTHOG_HOST: /flux
           NEXT_PUBLIC_POSTHOG_CAPTURE_BOT_EVENTS: "true"

@@ -158,7 +158,9 @@ function selectDiversifiedItems(
         selected.push(nextItem);
     }
 
-    return selected.sort((first, second) => first.id.localeCompare(second.id));
+    // Preserve the selection order: the first item is the strongest available
+    // candidate after the existing relevance and diversity scoring.
+    return selected;
 }
 
 function parseFocusItem(item: FocusFeedItem) {
@@ -279,6 +281,7 @@ async function buildFocusResponse(params: {
     request: FocusRequest;
     completedIds?: string[];
     savedIds?: string[];
+    includeSelectionMetadata?: boolean;
 }) {
     const { limit, seed } = params.request;
     const excludeIds = dedupeIds([
@@ -416,7 +419,10 @@ async function buildFocusResponse(params: {
         limit - personalizedItems.length,
         seed,
     );
-    const items = [...personalizedItems, ...discoveryItems];
+    const selectedItems = [...personalizedItems, ...discoveryItems];
+    const items = params.includeSelectionMetadata
+        ? selectedItems
+        : selectedItems.sort((first, second) => first.id.localeCompare(second.id));
     const selectedIds = new Set(items.map((item) => item.id));
     const remainingCarryIds = candidateItems
         .map((item) => item.id)
@@ -436,6 +442,9 @@ async function buildFocusResponse(params: {
         pageInfo: {
             hasMore,
             nextCursor: hasMore ? nextCursor : null,
+            ...(params.includeSelectionMetadata
+                ? { personalizedIds: personalizedItems.map((item) => item.id) }
+                : {}),
         },
     }, {
         headers: {
@@ -516,5 +525,6 @@ export async function POST(request: NextRequest) {
         request: focusRequest,
         completedIds,
         savedIds,
+        includeSelectionMetadata: true,
     });
 }
