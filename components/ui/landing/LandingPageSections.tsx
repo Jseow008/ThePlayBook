@@ -49,14 +49,10 @@ const STORYBOARD_SLIDES = [
 ] as const;
 
 const FEATURED_READS_DRAG_THRESHOLD_PX = 6;
-const FEATURED_READS_TOUCH_DRAG_INTENT_RATIO = 1.15;
 const FEATURED_READS_MIN_LOOP_ITEMS = 8;
 const FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND = 40;
 const FEATURED_READS_AUTOPLAY_MAX_FRAME_DELTA_MS = 100;
 const FEATURED_READS_AUTOPLAY_RESUME_DELAY_MS = 2000;
-const FEATURED_READS_ROW_COUNT = 2;
-
-type FeaturedReadsMarqueeDirection = "left" | "right";
 
 function getNormalizedScrollLeft(scrollLeft: number, loopWidth: number) {
   const middleStart = loopWidth;
@@ -172,18 +168,6 @@ function SectionIntro({
   );
 }
 
-function getFeaturedReadRows(items: ContentItem[]) {
-  if (items.length < FEATURED_READS_ROW_COUNT * 2) {
-    return Array.from({ length: FEATURED_READS_ROW_COUNT }, () => items);
-  }
-
-  const rows = Array.from({ length: FEATURED_READS_ROW_COUNT }, (_, rowIndex) =>
-    items.filter((_, itemIndex) => itemIndex % FEATURED_READS_ROW_COUNT === rowIndex)
-  );
-
-  return rows.map((rowItems) => (rowItems.length > 0 ? rowItems : items));
-}
-
 function FeaturedReadCard({
   item,
   isFocusable = true,
@@ -281,7 +265,6 @@ export function FeaturedReadsSection({
   const categoryRequestRef = useRef(0);
   const visibleCategories = categories.filter((category) => category.count >= 8).slice(0, 5);
   const activeCategoryStat = categories.find((category) => category.category === activeCategory);
-  const rows = getFeaturedReadRows(displayedItems);
   const useStaticRow = activeCategory !== null && displayedItems.length < FEATURED_READS_MIN_LOOP_ITEMS;
   const roundedContentCount = Math.floor(totalContentCount / 100) * 100;
   const popularIdeasCopy =
@@ -436,14 +419,7 @@ export function FeaturedReadsSection({
             {useStaticRow ? (
               <FeaturedReadsStaticRow items={displayedItems} />
             ) : (
-              rows.map((rowItems, index) => (
-                <FeaturedReadsMarqueeRow
-                  key={`featured-reads-row-${index}`}
-                  items={rowItems}
-                  direction={index % 2 === 0 ? "left" : "right"}
-                  rowIndex={index}
-                />
-              ))
+              <FeaturedReadsMarqueeRow items={displayedItems} />
             )}
           </div>
           {isLoadingCategory ? (
@@ -494,15 +470,7 @@ function FeaturedReadsStaticRow({ items }: { items: ContentItem[] }) {
   );
 }
 
-function FeaturedReadsMarqueeRow({
-  items,
-  direction,
-  rowIndex,
-}: {
-  items: ContentItem[];
-  direction: FeaturedReadsMarqueeDirection;
-  rowIndex: number;
-}) {
+function FeaturedReadsMarqueeRow({ items }: { items: ContentItem[] }) {
   const baseMultiplier = Math.max(
     1,
     Math.ceil(FEATURED_READS_MIN_LOOP_ITEMS / Math.max(1, items.length))
@@ -526,11 +494,8 @@ function FeaturedReadsMarqueeRow({
   const runAutoplayFrameRef = useRef<FrameRequestCallback>(() => {});
   const dragStateRef = useRef<{
     pointerId: number;
-    pointerType: string;
     startX: number;
-    startY: number;
     startScrollLeft: number;
-    intent: "pending" | "horizontal";
     moved: boolean;
   } | null>(null);
 
@@ -552,7 +517,7 @@ function FeaturedReadsMarqueeRow({
       if (!hasInitializedLoopRef.current || scrollElement.scrollLeft !== normalizedScrollLeft) {
         scrollElement.scrollLeft = hasInitializedLoopRef.current
           ? normalizedScrollLeft
-          : loopWidth + (rowIndex % 2 === 0 ? 0 : Math.min(loopWidth * 0.18, 240));
+          : loopWidth;
         hasInitializedLoopRef.current = true;
       }
     };
@@ -573,7 +538,7 @@ function FeaturedReadsMarqueeRow({
       resizeObserver?.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [items.length, rowIndex]);
+  }, [items.length]);
 
   const normalizeScrollPosition = useCallback((element: HTMLDivElement) => {
     const loopWidth = loopWidthRef.current;
@@ -655,9 +620,8 @@ function FeaturedReadsMarqueeRow({
     lastAutoplayFrameTimeRef.current = timestamp;
 
     if (elapsedMs > 0) {
-      const directionMultiplier = direction === "left" ? 1 : -1;
       autoplayOffsetRemainderRef.current +=
-        directionMultiplier * (elapsedMs / 1000) * FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND;
+        (elapsedMs / 1000) * FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND;
 
       const wholePixelOffset = autoplayOffsetRemainderRef.current > 0
         ? Math.floor(autoplayOffsetRemainderRef.current)
@@ -670,7 +634,7 @@ function FeaturedReadsMarqueeRow({
     }
 
     autoplayFrameRef.current = window.requestAnimationFrame(runAutoplayFrameRef.current);
-  }, [canRunAutoplay, direction, shiftScrollPosition]);
+  }, [canRunAutoplay, shiftScrollPosition]);
 
   const startAutoplay = useCallback(() => {
     if (typeof window === "undefined" || autoplayFrameRef.current !== null || !canRunAutoplay()) {
@@ -800,7 +764,7 @@ function FeaturedReadsMarqueeRow({
   }
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (event.pointerType === "mouse" && event.button !== 0) {
+    if (event.pointerType !== "mouse" || event.button !== 0) {
       return;
     }
 
@@ -811,19 +775,13 @@ function FeaturedReadsMarqueeRow({
     isDraggingRef.current = true;
     dragStateRef.current = {
       pointerId: event.pointerId,
-      pointerType: event.pointerType,
       startX: event.clientX,
-      startY: event.clientY,
       startScrollLeft: element.scrollLeft,
-      intent: "pending",
       moved: false,
     };
     suppressClickRef.current = false;
-
-    if (event.pointerType === "mouse") {
-      element.setPointerCapture?.(event.pointerId);
-      event.preventDefault();
-    }
+    element.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
@@ -833,29 +791,8 @@ function FeaturedReadsMarqueeRow({
     }
 
     const deltaX = event.clientX - dragState.startX;
-    const deltaY = event.clientY - dragState.startY;
-    const absoluteDeltaX = Math.abs(deltaX);
-    const absoluteDeltaY = Math.abs(deltaY);
-
-    if (dragState.intent === "pending") {
-      if (
-        absoluteDeltaX < FEATURED_READS_DRAG_THRESHOLD_PX
-        && absoluteDeltaY < FEATURED_READS_DRAG_THRESHOLD_PX
-      ) {
-        return;
-      }
-
-      const hasHorizontalIntent = dragState.pointerType === "mouse"
-        || absoluteDeltaX > absoluteDeltaY * FEATURED_READS_TOUCH_DRAG_INTENT_RATIO;
-
-      if (!hasHorizontalIntent) {
-        clearDragState();
-        return;
-      }
-
-      dragState.intent = "horizontal";
+    if (!dragState.moved && Math.abs(deltaX) >= FEATURED_READS_DRAG_THRESHOLD_PX) {
       dragState.moved = true;
-      event.currentTarget.setPointerCapture?.(event.pointerId);
     }
 
     if (!dragState.moved) {
@@ -898,9 +835,6 @@ function FeaturedReadsMarqueeRow({
     normalizeScrollPosition(element);
   }
 
-  const isPrimaryRow = rowIndex === 0;
-  const rowSuffix = isPrimaryRow ? "" : `-${rowIndex + 1}`;
-
   return (
     <div
       className="relative flex w-full overflow-hidden"
@@ -916,18 +850,16 @@ function FeaturedReadsMarqueeRow({
     >
       <div
         ref={scrollRef}
-        aria-label={isPrimaryRow ? "Popular reads" : "More popular reads"}
-        data-testid={
-          isPrimaryRow ? "featured-reads-carousel" : `featured-reads-carousel${rowSuffix}`
-        }
-        className={cn(
-          "landing-featured-row scrollbar-hide flex w-full overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 sm:px-6 md:pb-4 md:pt-4 [scrollbar-width:none] [touch-action:pan-y_pinch-zoom] cursor-grab",
-          isPrimaryRow ? "landing-featured-row-primary" : "landing-featured-row-support opacity-90"
-        )}
+        aria-label="Popular reads"
+        data-testid="featured-reads-carousel"
+        className="landing-featured-row landing-featured-row-primary scrollbar-hide flex w-full overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 sm:px-6 md:pb-4 md:pt-4 [scrollbar-width:none] md:cursor-grab"
         onMouseEnter={pauseAutoplay}
         onMouseLeave={resumeAutoplayLater}
         onFocus={pauseAutoplay}
         onBlur={resumeAutoplayLater}
+        onTouchStart={pauseAutoplay}
+        onTouchEnd={resumeAutoplayLater}
+        onTouchCancel={resumeAutoplayLater}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -937,9 +869,7 @@ function FeaturedReadsMarqueeRow({
         <div className="flex w-max items-stretch gap-4 sm:gap-6">
           <div
             ref={firstLoopRef}
-            data-testid={
-              isPrimaryRow ? "featured-reads-group-a" : `featured-reads-group-a${rowSuffix}`
-            }
+            data-testid="featured-reads-group-a"
             aria-hidden="true"
             className="flex items-stretch gap-4 sm:gap-6"
           >
@@ -954,9 +884,7 @@ function FeaturedReadsMarqueeRow({
           </div>
           <div
             ref={middleLoopRef}
-            data-testid={
-              isPrimaryRow ? "featured-reads-group-b" : `featured-reads-group-b${rowSuffix}`
-            }
+            data-testid="featured-reads-group-b"
             className="flex items-stretch gap-4 sm:gap-6"
           >
             {loopItems.map((item, index) => (
@@ -970,9 +898,7 @@ function FeaturedReadsMarqueeRow({
           </div>
           <div
             ref={lastLoopRef}
-            data-testid={
-              isPrimaryRow ? "featured-reads-group-c" : `featured-reads-group-c${rowSuffix}`
-            }
+            data-testid="featured-reads-group-c"
             aria-hidden="true"
             className="flex items-stretch gap-4 sm:gap-6"
           >

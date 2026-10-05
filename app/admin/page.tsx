@@ -140,7 +140,7 @@ export default async function AdminDashboardPage({
             <div className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1fr)_24rem]">
                 <MaintenancePanel />
 
-                <section className="rounded-xl border border-border bg-card text-card-foreground shadow-sm">
+                <section className="min-w-0 rounded-xl border border-border bg-card text-card-foreground shadow-sm">
                     <div className="flex items-center justify-between border-b border-border px-6 py-4">
                         <div>
                             <h2 className="font-semibold text-foreground">Recent Content</h2>

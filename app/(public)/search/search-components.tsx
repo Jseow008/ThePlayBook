@@ -1,13 +1,12 @@
 import { ContentCard } from "@/components/ui/ContentCard";
+import { AudioListenLink } from "@/components/ui/AudioListenLink";
 import { SearchAnalyticsTracker } from "@/app/(public)/search/SearchAnalyticsTracker";
-import { createPublicServerClient } from "@/lib/supabase/public-server";
-import { CatalogSearchError, searchCatalog, type CatalogSearchResult } from "@/lib/server/catalog-search";
+import { getPopularCatalogItems, getRecentCatalogPage, type RecentCatalogPage } from "@/lib/server/search-catalog";
+import { CatalogSearchError, searchCatalog, type CatalogSearchResponse, type CatalogSearchResult } from "@/lib/server/catalog-search";
 import type { ContentItem, ContentType } from "@/types/database";
-import { ArrowLeft, ArrowRight, Clock3, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock3, Search, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
-const CONTENT_CARD_SELECT = "id, type, title, author, category, cover_image_url, duration_seconds, audio_url, created_at, quick_mode_json";
-const CATALOG_PAGE_SIZE = 20;
 const SEARCHABLE_TYPES: ContentType[] = ["book", "podcast", "article"];
 type CatalogSort = "recent" | "popular";
 
@@ -91,38 +90,19 @@ export async function RecentCatalog({
     categoryValues,
     type,
     page,
+    preloadedPage,
 }: {
     categoryLabel?: string;
     categoryValues?: string[];
     type?: ContentType;
     page: number;
+    preloadedPage?: Promise<RecentCatalogPage>;
 }) {
-    const supabase = createPublicServerClient();
-    const normalizedCategoryValues = categoryValues?.filter(Boolean) ?? [];
-    const offset = (page - 1) * CATALOG_PAGE_SIZE;
-    let queryBuilder = supabase
-        .from("content_item")
-        .select(CONTENT_CARD_SELECT, { count: "exact" })
-        .eq("status", "verified")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .order("id", { ascending: false })
-        .range(offset, offset + CATALOG_PAGE_SIZE - 1);
-
-    if (normalizedCategoryValues.length === 1) {
-        queryBuilder = queryBuilder.eq("category", normalizedCategoryValues[0]);
-    } else if (normalizedCategoryValues.length > 1) {
-        queryBuilder = queryBuilder.in("category", normalizedCategoryValues);
-    }
-
-    if (type) {
-        queryBuilder = queryBuilder.eq("type", type);
-    }
-
-    const { data, count } = await queryBuilder;
-    const items = (data || []) as ContentItem[];
-    const totalItems = count ?? items.length;
-    const totalPages = Math.max(1, Math.ceil(totalItems / CATALOG_PAGE_SIZE));
+    const { items, totalItems, totalPages } = await (preloadedPage ?? getRecentCatalogPage({ categoryValues, type, page }))
+        .catch((error): RecentCatalogPage => {
+            console.error("Search newest catalog read failed", error);
+            return { items: [], totalItems: 0, totalPages: 1 };
+        });
 
     return (
         <div className="animate-in fade-in duration-500">
@@ -146,6 +126,34 @@ export async function RecentCatalog({
                 <p className="py-12 text-center text-muted-foreground">No content matches these filters.</p>
             )}
         </div>
+    );
+}
+
+export async function PopularCatalog({
+    categoryValues,
+    type,
+    preloadedItems,
+}: {
+    categoryValues?: string[];
+    type?: ContentType;
+    preloadedItems?: Promise<ContentItem[]>;
+}) {
+    const items = await (preloadedItems ?? getPopularCatalogItems({ categoryValues, type }))
+        .catch((error): ContentItem[] => {
+            console.error("Search popular catalog read failed", error);
+            return [];
+        });
+
+    return items.length > 0 ? (
+        <div className="animate-in fade-in duration-500">
+            <div className="flex items-center gap-2 mb-6">
+                <TrendingUp className="size-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">{formatPopularLabel(type)}</h2>
+            </div>
+            <ContentGrid items={items} />
+        </div>
+    ) : (
+        <p className="py-12 text-center text-muted-foreground">No popular content matches these filters yet.</p>
     );
 }
 
@@ -181,6 +189,7 @@ export function ContentGrid({ items }: { items: Array<ContentItem | CatalogSearc
                             titleDensity="app-compact"
                             priority={index === 0}
                         />
+                        <AudioListenLink item={item} />
                         {searchResult ? <SearchSnippet result={searchResult} /> : null}
                     </div>
                 );
@@ -260,12 +269,14 @@ export async function SearchResults({
     categoryValues,
     type,
     cursor,
+    preloadedResponse,
 }: {
     query?: string;
     categoryLabel?: string;
     categoryValues?: string[];
     type?: string;
     cursor?: string;
+    preloadedResponse?: Promise<CatalogSearchResponse>;
 }) {
     const normalizedType = normalizeType(type);
     const trimmedQuery = query?.trim() ?? "";
@@ -274,12 +285,12 @@ export async function SearchResults({
     const filtersCount = Number(normalizedCategoryValues.length > 0) + Number(Boolean(normalizedType));
 
     try {
-        const response = await searchCatalog({
+        const response = await (preloadedResponse ?? searchCatalog({
             query: trimmedQuery,
             categories: normalizedCategoryValues,
             type: normalizedType ?? null,
             cursor: cursor ?? null,
-        });
+        }));
 
         return renderSearchResults({
             results: response.results,

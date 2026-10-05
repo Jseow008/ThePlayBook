@@ -25,6 +25,7 @@ import { HighlightPopover } from "./HighlightPopover";
 import { MobileSelectionActions } from "./MobileSelectionActions";
 import { findCompletedSegmentIdsForPlaybackTime, findSegmentIdForPlaybackTime } from "@/lib/reader-audio-sync";
 import { captureAnalyticsEvent } from "@/lib/analytics";
+import { consumeConfirmedFocusRead } from "@/lib/focus-read-attribution";
 import { cn } from "@/lib/utils";
 import {
     clearScopedAudioResume,
@@ -34,6 +35,8 @@ import {
     writeScopedAudioResume,
 } from "@/lib/local-user-storage";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
+import { REFLECTION_RESUME_PARAM } from "@/lib/auth-redirect";
+import { GuestProgressChoice } from "./GuestProgressChoice";
 
 /**
  * Reader View — Accordion Layout
@@ -65,6 +68,7 @@ const AuthorChat = dynamic(
         ssr: false,
     }
 );
+const ReturnedReflection = dynamic(() => import("./ReturnedReflection").then((mod) => mod.ReturnedReflection));
 
 function escapeAttributeSelector(value: string) {
     return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -77,6 +81,7 @@ function wait(ms: number) {
 export function ReaderView({ content }: ReaderViewProps) {
     const quickMode = content.quick_mode_json as QuickMode | null;
     const segmentIdSet = useMemo(() => new Set(content.segments.map((segment) => segment.id)), [content.segments]);
+    const segmentIds = useMemo(() => content.segments.map((segment) => segment.id), [content.segments]);
     const [maxSegmentIndex, setMaxSegmentIndex] = useState(-1);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
@@ -110,6 +115,10 @@ export function ReaderView({ content }: ReaderViewProps) {
         requestId: number;
         focusAfterScroll?: boolean;
     } | null>(null);
+    const [progressChoiceDestination, setProgressChoiceDestination] = useState<
+        { kind: "segment"; segmentId: string } | { kind: "completion" } | null
+    >(null);
+    const completionRef = useRef<HTMLDivElement | null>(null);
     const latestAudioStateRef = useRef({ timeSec: 0, durationSec: 0 });
     const openedContentIdRef = useRef<string | null>(null);
     const handledReaderEntryRef = useRef<string | null>(null);
@@ -159,6 +168,10 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
 
         openedContentIdRef.current = content.id;
+        const focusAttribution = consumeConfirmedFocusRead(content.id);
+        if (focusAttribution) {
+            captureAnalyticsEvent("focus_card_action", { ...focusAttribution, action: "summary_opened" });
+        }
         captureAnalyticsEvent("content_opened", {
             content_id: content.id,
             content_type: content.type,
@@ -201,6 +214,35 @@ export function ReaderView({ content }: ReaderViewProps) {
             requestId: (previous?.requestId ?? 0) + 1,
         }));
     }, []);
+    const handleProgressChosen = useCallback((progress: ReadingProgressData | null) => {
+        const completed = new Set((progress?.completed ?? []).filter((id) => segmentIdSet.has(id)));
+        const nextSegment = content.segments.find((segment) => !completed.has(segment.id));
+        const savedIndex = progress?.maxSegmentIndex ?? progress?.lastSegmentIndex ?? -1;
+
+        handledReaderEntryRef.current = readerEntryKey;
+        setCompletedSegments(completed);
+        setMaxSegmentIndex(Math.min(content.segments.length - 1, Math.max(-1, savedIndex)));
+        setHasPendingProgressSave(false);
+        setSegmentScrollRequest(null);
+
+        if (!nextSegment) {
+            setExpandedSegmentId(null);
+            setIsAudioFollowEnabled(false);
+            setProgressChoiceDestination({ kind: "completion" });
+            return;
+        }
+
+        setExpandedSegmentId(nextSegment.id);
+        setProgressChoiceDestination({ kind: "segment", segmentId: nextSegment.id });
+        if (content.audio_url) {
+            const segmentAudioStart = Math.max(0, nextSegment.start_time_sec ?? 0);
+            setInitialAudioTimeSec(segmentAudioStart);
+            setAudioCurrentTimeSec(segmentAudioStart);
+            latestAudioStateRef.current = { timeSec: segmentAudioStart, durationSec: 0 };
+            setHasCompletedAudioPlayback(false);
+            setIsAudioFollowEnabled(true);
+        }
+    }, [content.audio_url, content.segments, readerEntryKey, segmentIdSet]);
     const resumeAudioFollow = useCallback(() => {
         setIsAudioFollowEnabled(true);
 
@@ -560,6 +602,35 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     // Derive book completion state
     const isBookCompleted = content.segments.length > 0 && content.segments.every((segment) => completedSegments.has(segment.id));
+
+    useEffect(() => {
+        if (!progressChoiceDestination) return;
+
+        if (progressChoiceDestination.kind === "segment") {
+            requestSegmentScroll(progressChoiceDestination.segmentId, window.scrollY, { focusAfterScroll: true });
+            setProgressChoiceDestination(null);
+            return;
+        }
+
+        if (!isBookCompleted || !completionRef.current) return;
+        const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        const timeoutId = window.setTimeout(() => {
+            const completion = completionRef.current;
+            if (completion) {
+                const top = completion.getBoundingClientRect().top;
+                if ((top < 72 || top > window.innerHeight - 120)
+                    && typeof completion.scrollIntoView === "function") {
+                    completion.scrollIntoView({
+                        block: "start",
+                        behavior: reducedMotion ? "auto" : "smooth",
+                    });
+                }
+                completion.focus({ preventScroll: true });
+            }
+            setProgressChoiceDestination(null);
+        }, reducedMotion ? 0 : 320);
+        return () => window.clearTimeout(timeoutId);
+    }, [isBookCompleted, progressChoiceDestination, requestSegmentScroll]);
 
     useEffect(() => {
         setShowAuthorChat(false);
@@ -950,6 +1021,13 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onAudioPlaybackStarted={handleAudioPlaybackStarted}
                 />
 
+                <GuestProgressChoice
+                    contentId={content.id}
+                    segmentIds={segmentIds}
+                    reflectionPending={searchParams.get(REFLECTION_RESUME_PARAM) === "1"}
+                    onProgressChosen={handleProgressChosen}
+                />
+
                 {content.seriesContext && (
                     <div className="mb-5 space-y-3">
                         <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between">
@@ -1105,13 +1183,15 @@ export function ReaderView({ content }: ReaderViewProps) {
 
                 {/* Completion Card or Content Feedback */}
                 {isBookCompleted ? (
-                    <CompletionCard
-                        contentId={content.id}
-                        title={content.title}
-                        author={content.author}
-                        segmentCount={content.segments.length}
-                        readerTheme={readerTheme}
-                    />
+                    <div ref={completionRef} className="scroll-mt-24" role="region" aria-label="Reading complete" tabIndex={-1}>
+                        <CompletionCard
+                            contentId={content.id}
+                            title={content.title}
+                            author={content.author}
+                            segmentCount={content.segments.length}
+                            readerTheme={readerTheme}
+                        />
+                    </div>
                 ) : (
                     <ContentFeedback contentId={content.id} />
                 )}
@@ -1167,6 +1247,13 @@ export function ReaderView({ content }: ReaderViewProps) {
                     hasCompletedReading={isBookCompleted}
                     readerTheme={readerTheme}
                     onClose={() => setShowAuthorChat(false)}
+                />
+            )}
+            {searchParams.get(REFLECTION_RESUME_PARAM) === "1" && (
+                <ReturnedReflection
+                    contentId={content.id}
+                    contentTitle={content.title}
+                    readerTheme={readerTheme}
                 />
             )}
         </div>

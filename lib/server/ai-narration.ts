@@ -31,8 +31,8 @@ const OPENAI_WAV_FORMAT = "wav";
 const FINAL_AUDIO_FORMAT = "mp3";
 const FINAL_AUDIO_CONTENT_TYPE = "audio/mpeg";
 const FISH_NARRATION_DIRECTION = "[speak in a calm, grounded conversational tone, with natural pauses and understated emphasis]";
-const FISH_NARRATION_TEMPERATURE = 0.5;
-const FISH_NARRATION_TOP_P = 0.7;
+const FISH_NARRATION_TEMPERATURE = 0.7;
+const FISH_NARRATION_TOP_P = 0.85;
 const TTS_CONCURRENCY = 3;
 const OPENAI_REQUEST_TIMEOUT_MS = 45_000;
 const FISH_REQUEST_TIMEOUT_MS = 120_000;
@@ -612,14 +612,22 @@ export async function synthesizeNarrationChunkWav(chunk: string, signal?: AbortS
     });
 }
 
-export async function generateNarrationAudio(content: NarrationContentSource) {
+export async function generateNarrationAudio(
+    content: NarrationContentSource,
+    onSegmentProgress?: (completedSegments: number, totalSegments: number) => Promise<void>
+) {
     const synthesizedSegments = [];
     let totalChunkCount = 0;
     let cumulativeSeconds = 0;
     let previousStoredEndSeconds = 0;
+    const segmentScripts = content.segments.map((segment, index) => buildNarrationSegmentScript(segment, index));
+    const totalSegments = segmentScripts.filter(Boolean).length;
+    let completedSegments = 0;
+
+    await onSegmentProgress?.(0, totalSegments);
 
     for (const [index, segment] of content.segments.entries()) {
-        const segmentScript = buildNarrationSegmentScript(segment, index);
+        const segmentScript = segmentScripts[index];
 
         if (!segmentScript) {
             synthesizedSegments.push({
@@ -658,6 +666,8 @@ export async function generateNarrationAudio(content: NarrationContentSource) {
             start_time_sec: storedStartSeconds,
             end_time_sec: storedEndSeconds,
         });
+        completedSegments += 1;
+        await onSegmentProgress?.(completedSegments, totalSegments);
     }
 
     const spokenSegments = synthesizedSegments.filter((segment) => segment.script && segment.wavBuffer);

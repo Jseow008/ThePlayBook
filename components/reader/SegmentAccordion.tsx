@@ -367,11 +367,16 @@ export function SegmentAccordion({
     const { fontSize, fontFamily, lineHeight } = useReaderSettings();
     const isReaderInteractionDesktop = useMediaQuery(VIEWPORT_QUERIES.readerInteractionDesktop);
     const currentExpandedId = expandedSegmentId !== undefined ? expandedSegmentId : uncontrolledExpandedId;
+    const currentExpandedIdRef = useRef(currentExpandedId);
     const isContentCompleted = segments.length > 0 && segments.every((segment) => completedSegments.has(segment.id));
     const scrollRequestSegmentId = scrollRequest?.segmentId;
     const scrollRequestInitialY = scrollRequest?.initialScrollY;
     const scrollRequestId = scrollRequest?.requestId;
     const scrollRequestFocusAfterScroll = scrollRequest?.focusAfterScroll;
+
+    useEffect(() => {
+        currentExpandedIdRef.current = currentExpandedId;
+    }, [currentExpandedId]);
 
     const setExpandedId = useCallback((nextSegmentId: string | null) => {
         onExpandedSegmentChange?.(nextSegmentId);
@@ -387,6 +392,7 @@ export function SegmentAccordion({
     }, []);
 
     const scrollSegmentIntoView = useCallback((segmentId: string, initialScrollY: number) => {
+        if (currentExpandedIdRef.current !== segmentId) return false;
         if (Math.abs(window.scrollY - initialScrollY) > 50) return false;
 
         const el = itemRefs.current.get(segmentId);

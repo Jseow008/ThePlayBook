@@ -25,8 +25,8 @@ describe("SyncSegmentEmbeddingsButton", () => {
         render(<SyncSegmentEmbeddingsButton />);
 
         await waitFor(() => {
-            expect(screen.getByText(/53 library items referenced/i)).toBeInTheDocument();
-            expect(screen.getByText(/40 content items have gemini segment embeddings/i)).toBeInTheDocument();
+            expect(screen.getByText(/53 distinct items referenced in user libraries/i)).toBeInTheDocument();
+            expect(screen.getByText(/40 content items have at least one gemini segment embedding/i)).toBeInTheDocument();
             expect(screen.getByText(/12 verified segments still need gemini embeddings/i)).toBeInTheDocument();
             expect(screen.getByText(/4,200 characters remaining to embed/i)).toBeInTheDocument();
         });

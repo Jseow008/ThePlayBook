@@ -140,6 +140,45 @@ export interface AnalyticsEventPropertiesByName {
     content_type?: string;
     save_state?: "saved";
   };
+  focus_card_impression: AnalyticsCommonProperties & {
+    focus_visit_id: string;
+    content_id: string;
+    variant: "control" | "ranked";
+    entry_kind: "fresh" | "restored";
+    selection_source: "personalized" | "discovery" | "unknown";
+    personalization_ready: boolean;
+    device_class: "mobile" | "desktop";
+    position: number;
+    readable_ms: number;
+  };
+  focus_visit_started: AnalyticsCommonProperties & {
+    focus_visit_id: string;
+    variant: "control" | "ranked";
+    assignment_stable: boolean;
+    entry_kind: "fresh" | "restored";
+    personalization_ready: boolean;
+    device_class: "mobile" | "desktop";
+  };
+  focus_card_action: AnalyticsCommonProperties & {
+    focus_visit_id: string;
+    content_id: string;
+    variant: "control" | "ranked";
+    entry_kind: "fresh" | "restored";
+    selection_source: "personalized" | "discovery" | "unknown";
+    personalization_ready: boolean;
+    device_class: "mobile" | "desktop";
+    position: number;
+    action: "summary_opened" | "saved" | "rapid_skip";
+  };
+  focus_feed_timing: AnalyticsCommonProperties & {
+    focus_visit_id: string;
+    variant: "control" | "ranked";
+    entry_kind: "fresh" | "restored";
+    device_class: "mobile" | "desktop";
+    measure: "first_readable" | "cover_visible" | "cover_failed" | "cover_absent" | "end_wait";
+    elapsed_ms: number;
+    outcome?: "ready" | "failed" | "abandoned";
+  };
   share_clicked: AnalyticsCommonProperties & {
     source: string;
     content_id?: string;
@@ -314,6 +353,38 @@ export const ANALYTICS_EVENT_CONTRACTS = {
     allowedProperties: eventProperties(["save_state"]),
     privacy: "behavioral_metadata",
     delivery: "server_confirmed",
+  },
+  focus_card_impression: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "Focus card remains at least 75% visible for 500 ms in a foreground tab.",
+    requiredProperties: ["focus_visit_id", "content_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "readable_ms"],
+    allowedProperties: eventProperties(["focus_visit_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "readable_ms"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
+  },
+  focus_visit_started: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "Focus visit begins, including visits with no card impression.",
+    requiredProperties: ["focus_visit_id", "variant", "assignment_stable", "entry_kind", "personalization_ready", "device_class"],
+    allowedProperties: eventProperties(["focus_visit_id", "variant", "assignment_stable", "entry_kind", "personalization_ready", "device_class"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
+  },
+  focus_card_action: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "Focus summary actually opens, a save succeeds, or a card is skipped rapidly.",
+    requiredProperties: ["focus_visit_id", "content_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "action"],
+    allowedProperties: eventProperties(["focus_visit_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "action"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
+  },
+  focus_feed_timing: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "User-visible Focus paint, cover and end-of-feed wait timing.",
+    requiredProperties: ["focus_visit_id", "variant", "entry_kind", "device_class", "measure", "elapsed_ms"],
+    allowedProperties: eventProperties(["focus_visit_id", "variant", "entry_kind", "device_class", "measure", "elapsed_ms", "outcome"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
   },
   share_clicked: {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,

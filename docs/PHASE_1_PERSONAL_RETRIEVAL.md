@@ -2967,6 +2967,55 @@ quality/latency tradeoff, not authorized for release by this one fixture. Altern
 retain output and improve factual progress feedback while production timing accrues.
 Do not repeat this request to obtain favorable timing. #28 stays open; timers paused.
 
+### Faster-model comparison — 1 October 2026
+
+User authorized the bounded comparison. Worktree `/private/tmp/netflux-model-comparison`,
+branch `codex/selector-model-comparison`, initially fresh-main `5261cd3e`, refreshed
+to `7d844fb1` after #212 merged. No application changes; #213 remains a separate
+negative prompt experiment record. One agent, no timer or production-data work.
+
+Confirmed frozen corpus-v2 thresholds before calls: overall/class recall95%/90%;
+per-run overall/class90%/85%; irrelevant rejection and abstention95%, each90%
+per run; quote fidelity and forbidden-evidence exclusion100%; three independent
+runs per case. Also retain complete extract grounding/attribution/coverage and
+no unexplained regression. Passing seven development cases never releases a model.
+
+Provider model-list GET verified GPT-6 Luna available; official model documentation
+describes focused high-volume use and supports reasoning none. Installed SDK
+requires explicit forceReasoning for this newer model: an offline intercepted
+request confirmed model, reasoning none, store false and strict JSON schema,
+without networking. Haiku remains the production baseline. Logical prompt,
+candidate passages/IDs, schema and final selector validation unchanged.
+Candidate provider-native schema encoding can differ; this is a model/provider
+configuration comparison, not isolated pure-model throughput.
+
+Harness `scripts/experiments/selector-model-comparison.ts` reuses seven synthetic
+development cases; alternating fresh baseline/candidate calls,14 maximum, no
+retries,20s deadline and stop on first quality failure. Predeclared advance rule:
+all expected IDs and no extras in all cases, median at least20% faster, faster in
+at least5/7 pairs, no higher estimated token cost. No held-out corpus tuning.
+Typecheck, focused lint and offline request preflight passed.
+
+Completed14calls, both arms7/7 valid correct selections. Haiku median3967.94ms,
+17580input/2928output tokens. Luna median4814.98ms,13223input/2487output tokens;
+faster in3/7 pairs only. **Reject for latency objective:** median21.35% slower.
+Standard token-price estimates: Haiku$0.032220, Luna$0.0025658, combined$0.0347858;
+actual billed invoice unavailable. Rates and source links recorded in evidence;
+no cache-read tokens observed. Total observed provider tokens36,218.
+
+Evidence: `docs/evidence/selector-model-comparison-development-20261001.json`;
+raw artifact `/private/tmp/netflux-model-comparison-v1.json`. All responses are
+synthetic, not private user content. Slower calls retained. No repeated favorable
+sampling, full168-call evaluation, release model change or production probe.
+These are seven local pairs, not production percentiles or all-times provider
+speed conclusions. No numerical acceptance thresholds changed.
+
+Next: retain Haiku. This candidate offers lower estimated cost but did not satisfy
+the requested latency objective. Do not keep cycling models without a new bounded
+decision. User-visible factual progress or eliminating demonstrated non-provider
+serial work are distinct next options; neither resolves provider generation time.
+Publish this negative result through normal gates. #28 stays open, timers paused.
+
 ### Cost-focused Luna quality evaluation — 1 October 2026
 
 User explicitly accepted evaluating Luna for cost despite its prior speed rejection,
@@ -3011,3 +3060,1154 @@ the failed gate hoping to pass or expose partial model assessments to users.
 Production switch still requires full three-run model quality, database replay,
 extract/citation checks, bounded spending configuration and normal release gates.
 #28 remains open. Recurring monitors remain paused.
+
+The Haiku production state and hold decision above describe this failed run.
+The subsequent diagnosis, corrected qualification and selector-only Luna rollout
+are documented below; they do not change this run's failed result.
+
+### Luna structured-output failure diagnosis — 1 October 2026
+
+User authorized a narrow diagnosis of #215's failed quality run. Fresh-main
+branch `codex/luna-failure-diagnosis`, worktree `/private/tmp/netflux-luna-diagnosis`,
+base `12d7c4a5`. #215 still holds the original failed evaluation independently.
+
+One paid request for the identical synthetic `comparison-larch` logical input and
+candidate configuration. Frozen capture validation and candidate hash match
+`0fb4fee2daf4cc762f5fba6082fa7f4836e8f5e2775788a90779be43f17e44fb`.
+Prompt, model, schema, reasoning none,1600output cap,20s deadline unchanged.
+No provider retry or full benchmark. Captured only synthetic response body, not
+request headers/keys. Offline planning, typecheck and focused lint passed.
+
+Diagnostic succeeded in5373ms. HTTP completed response, finish stop, no provider
+error/incomplete details, one message and zero hidden reasoning tokens. All
+required fixture evidence selected, no ineligible selections. Replaying the exact
+response through the same SDK and application validator passed offline (zero
+network calls); wire-hash equality was enforced. This disproves a consistently
+failing SDK/schema path for this input, not the original intermittent failure.
+
+Usage10625input (10622cached)/342output; standard price estimate$0.00027752,
+not an invoice. Cache hit makes this unsuitable for cold performance comparison.
+Raw original failed response was never retained and cannot be reconstructed.
+Its different788output tokens cannot establish what text or failure occurred.
+**Root cause remains unknown; original frozen evaluation remains failed/incomplete.**
+No successful diagnostic may be spliced into it or used to authorize a model switch.
+
+Harness `scripts/experiments/luna-failure-diagnostic.ts` supports explicit capture
+and failed-evaluation paths and offline replay of its local artifact. Evidence
+`docs/evidence/luna-failure-diagnostic-20261001.json` preserves the synthetic raw
+provider response, parsed assessment, usage, config and offline replay result.
+Raw local artifacts `/private/tmp/netflux-luna-failure-diagnostic-v1.json` and
+`/private/tmp/netflux-luna-failure-replay-v1.json`. Exactly one paid call, no retries,
+one agent, no production data/DB/infrastructure/model change; timers paused.
+
+Next: do not run another full quality attempt merely because this diagnostic
+succeeded. Luna remains held. Any reliability change (for example a bounded retry
+of transient structured-output failures) is a distinct latency/cost/failure-policy
+decision that needs explicit recorded semantics and validation without hiding
+first-attempt failures. No such behavior is added by this evidence PR. #28 open.
+
+### Continued Luna diagnosis and corrective candidate — 1 October 2026
+
+User explicitly instructed continued diagnosis/fixes, rather than stopping at a
+release blocker. Fresh-main branch `codex/luna-response-investigation`, worktree
+`/private/tmp/netflux-luna-response`, base `f3910621`. No production change.
+
+Five bounded reproductions of comparison-larch all succeeded. An initial command
+omitted inherited Node server conditions and stopped before provider/network work;
+corrected invocation made exactly five calls, no provider retries. Artifacts
+`/private/tmp/netflux-luna-reproduction-{1..5}.json`. This does not repair #215.
+
+Source inspection and offline actual-SDK replay demonstrated a compatibility
+problem: generateText concatenates text across response messages, so documented
+commentary followed by valid final-answer JSON fails JSON parsing. Experimental
+`luna-final-phase.ts` accepts one explicitly final message, excludes only explicit
+preceding commentary, preserves usage, and rejects ambiguous/missing finals and
+malformed JSON. No arbitrary text repair or first-valid-JSON extraction. Seven
+SDK-backed offline regression cases now include incomplete-provider rejection.
+
+Fresh phase-aware none-reasoning evaluation stopped at call104/168 on run2
+abstain-glossary-no-value. First run had100% selector recall/rejection/abstention/
+quote-target metrics. Three real multi-message responses were handled, but the
+new failure is independently captured: provider status incomplete, reason
+max_output_tokens, one commentary message repeatedly emitting JSON-like objects,
+no final answer,1600output tokens and zero reasoning tokens. The adapter correctly
+rejected it. This observed provider-output failure is not inferred from a missing
+original response. Original comparison-larch failure still cannot be reconstructed.
+Raw artifact `/private/tmp/netflux-luna-phase-quality-v1.json`; exact executed
+runner saved `/private/tmp/netflux-luna-phase-quality-executed.ts`. Failed usage
+was absent from initial totals but remains in captured raw response: add9534input/
+1600output for any total-cost calculation; never silently relabel original totals.
+
+One diagnostic with reasoning low on that same failed input returned valid
+abstention in3253ms,131output tokens. This is diagnosis only, not held-out quality
+qualification. Seven separate development cases then passed7/7; median4871ms,
+13223input/2785output tokens, standard uncached estimate$0.0027148 versus prior
+Haiku$0.032220. No speed claim; user accepted cost-focused evaluation.
+
+Earlier checkpoint (now completed below): fresh three-run evaluation at reasoning low with the guarded phase
+adapter, same prompt/schema/output cap/deadline/quality floors; max168 calls, no
+retries. Raw `/private/tmp/netflux-luna-low-quality-v1.json`; runner
+`scripts/experiments/selector-luna-phase-quality.ts`; process session74193 at launch.
+Plan `/private/tmp/netflux-luna-low-quality-plan-output.json`. Complete error/raw
+synthetic response capture now includes phase-boundary errors and provider usage;
+multiple-message success bodies are retained as well. Read artifact/process before
+resuming; never restart a paid run after compaction. Next: inspect complete result
+or exact first failure; only if passed proceed to database/renderer integration
+verification and release. UI progress remains conditional; no partial assessment
+is user-visible. Timers paused, #28 open. No new account/DB project or sudo needed.
+
+
+### Luna correction qualifies for application rollout — 1 October 2026
+
+Completed the continued diagnosis rather than stopping at the first failed gate.
+Low reasoning with the explicit-final-phase adapter completed **168/168 independent
+provider calls**, 56 cases across three runs, zero retries or provider failures.
+Every selector metric was 100% in each run. Observed usage:886776 input and30584
+output tokens; median2911ms is a synthetic, cache-influenced observation, **not a
+production speedup claim**. The earlier39-call and104-call failures remain failures.
+No successful output was substituted into either.
+
+Integration adds an explicit selector-only environment override
+`PERSONAL_EVIDENCE_SELECTOR_MODEL=gpt-6-luna`. It retains the evaluated prompt,
+schema, candidates,1600 output cap,20s deadline, no retries, low reasoning,
+forceReasoning and store:false. Default remains the existing Haiku configuration.
+Unrecognized overrides or missing OpenAI configuration fail closed. The final-phase
+adapter discards only explicitly identified preceding commentary; ambiguous,
+incomplete and malformed finals still fail.
+
+Spending admission includes reviewed OpenAI standard Luna prices:
+$0.10/M input,$0.01/M cached input,$0.50/M output; above272000 input tokens, input
+and cache rates double and output multiplies by1.5. The full1050000-token context
+is conservatively reserved at the higher tier ($0.2112 with1600 output tokens);
+actual valid usage settles at its correct tier. Failed/unknown-usage calls retain
+the reserve. Daily policy/guest limits are unchanged. Pricing source:
+https://developers.openai.com/api/docs/models/gpt-6-luna (checked1October2026).
+No database migration is needed.
+
+Offline conversion verifies original request/config/adapter/harness hashes before
+binding each unchanged provider response to the shared application configuration.
+The disposable local Supabase gate passed175 tests (174 case-runs plus aggregate),
+with100% recall, irrelevant rejection, forbidden-evidence exclusion and exact-quote
+fidelity in each run. This includes real Auth/session lifecycle and rendered
+extract capture. It made **zero additional paid calls**. CI replays the same
+qualified fixture alongside the existing Haiku fixture.
+
+Evidence:
+- docs/evidence/luna-phase-none-failure-20261001.json (failed, preserved)
+- docs/evidence/luna-low-development-20261001.json
+- docs/evidence/luna-low-quality-20261001.json
+- docs/evidence/luna-low-database-20261001.json
+- tests/fixtures/retrieval/provider-selections-v2-luna-low.json
+
+Local full lint/typecheck passed;1633 unit tests passed,277 conditional skips;
+34 capacity-harness tests passed. Seven adapter tests use the actual installed SDK
+offline. Focused accounting tests cover both sides of272000 input tokens.
+
+Next: inspect/publish this focused correction PR, retain required gates, verify
+the production OpenAI configuration before enabling the selector override, then
+perform a bounded production smoke. Factual progress UI is still outstanding and
+will follow the qualified model change. No model/provider output is streamed as
+evidence before validation. No production changes yet, timers paused, #28 open.
+
+Rollout checkpoint: PR #217 https://github.com/Jseow008/ThePlayBook/pull/217,
+head efda11aa, published from this worktree. GitHub20-file scope matches the
+inspected local scope; PR scope passed; squash auto-merge enabled. Full required
+validation/security and preview are running. Vercel CLI62.1.0 authenticates as the
+existing project owner; production OPENAI_API_KEY presence confirmed through env
+metadata, without retrieving its secret. PERSONAL_EVIDENCE_SELECTOR_MODEL is not
+yet configured. No production action so far. An additional offline provenance
+regression passed after the full suite (1634 total current tests including it).
+This paragraph is an intentional uncommitted continuity append, not a reason to
+rerun application CI. artifacts/ contains local replay inputs/results only.
+Next: resolve only actionable CI failures; after gates pass enable the production
+selector override and verify the deployed commit/config and one real Ask Notes
+request. No additional full paid evaluation is needed. Preserve this append in a
+subsequent evidence update.
+
+Latest release state: Security Validation passed (6m16s), Catalog Search Evidence
+and Vercel preview passed. validate is in Test (E2E); no actionable failure known.
+Offline actual-production-generator smoke also passed: one fake transport call,
+no network, correct low/store:false/1600/json_schema wire settings, explicit
+commentary removed and selected IDs unchanged. Artifact:
+artifacts/luna-production-wire-smoke.json. The disposable selector DB was stopped
+with its data retained; other local Supabase projects untouched. Estimated standard
+cost for168 calls with observed600379 cached input tokens is$0.049935; uncached
+estimate$0.103970. These are token-price estimates, not billing records.
+Production rollback reference saved at /private/tmp/netflux-luna-pre-rollout.json:
+dpl_EJoZbx9WBYgfBuU6C1uUQYsCvSJK. Production model override remains UNSET; Haiku
+still active. CLI inspect summary omits commit metadata: use the deployment API
+for commit identity before claiming rollout. Opera Ask page is available, but
+fresh authenticated smoke must occur only after the qualified deployment.
+No recurring monitor was created or resumed.
+
+Status check after merge: #217 merged as e92764382f44126e879f34404d745e7bb599da5e
+at2026-10-01T07:15:37Z; all PR required checks passed. Production alias still
+serves f3910621 (dpl_EJoZbx9WBYgfBuU6C1uUQYsCvSJK), override absent. Post-merge
+Security Validation passed, but Catalog Search Evidence failed before testing:
+Docker could not bind runner port54322 (address already in use); artifact-upload
+failure is downstream of setup. Run36829303959 failed jobs retried once under
+standing release authorization; no application change, paid call or gate bypass.
+Post-merge CI also remains in progress. Next: check this bounded retry and deployment
+before the previously authorized production model enablement/smoke.
+
+Confirmed follow-up: run36829303959 attempt2 succeeded, including Catalog Search
+Evidence and Security Validation; post-merge CI also succeeded. Production alias
+www.netflux.blog serves e92764382f44126e879f34404d745e7bb599da5e, deployment
+ dpl_8RWj4fZD6bG2fcbC3wxAc77YrCgT READY. Production OPENAI_API_KEY exists, but
+PERSONAL_EVIDENCE_SELECTOR_MODEL remains absent. Therefore #217 code is deployed,
+while the existing Haiku selector remains active. Next authorized step: enable
+production-only Luna override, deploy that configuration through normal gates,
+and perform one authenticated smoke; then address factual progress feedback.
+No further full paid benchmark needed; no production mutation during this check.
+
+### Luna production rollout and factual wait feedback — 1 October 2026
+
+Authorized production-only PERSONAL_EVIDENCE_SELECTOR_MODEL=gpt-6-luna setting
+added. Redeployed already-gated merge e9276438 as
+dpl_NuQhhxkKA2QYK1h62wxLicgK3deF; www.netflux.blog now serves that READY deployment.
+One ordinary signed-in Ask Notes request returned200 with an attributed extract
+and a passage link; opening that link resolved to Verified passage. No saved
+notes were created/edited; the request exists in the ordinary chat history.
+
+Response metadata: no-store; bom1 execution (sin1 ingress); response_ready9585ms,
+selection_provider5158ms, selection_reserve385ms, selection_settle169ms,
+selection_headers5122ms, SDK preparation18ms and completion15ms, body-read3ms.
+Browser Network panel showed roughly11.8s overall. This is one smoke sample,
+not a controlled speed comparison or worldwide performance proof.
+Read-only spending-ledger verification: provider openai, model gpt-6-luna,
+1891input/288output tokens,211200microUSD conservative reserve settled to334
+microUSD ($0.000334 accounting estimate, not provider invoice).
+
+The console observer was NOT installed: browser paste protection prevented it.
+Used the ordinary Network panel instead, without bypassing that protection.
+Only sanitized status/timings/counts are retained; no credentials, excerpts or
+citation tokens are stored in evidence. Diagnostic tab closed afterward.
+
+UI follow-up in Codex worktree
+/Users/j/.codex/worktrees/ask-progress/Lifebook, branch codex/ask-progress:
+preserves layout and models, shows actual submitted/receiving status plus elapsed
+client wait, and keeps feedback visible through an empty assistant stream start.
+No inferred backend stages, ETA, partial model judgments or progressive evidence
+delivery. Elapsed seconds are hidden from screen-reader announcements; the polite
+status changes only at request boundaries. Timers are component-local, cleaned
+up on finish/error/unmount, not recurring verification automations.
+Focused delayed/error/retry, page/sidebar/mobile and scope-switch tests passed.
+No additional paid model evaluation or database migration required. #28 open.
+
+### First-load completion follow-up — 1 October 2026
+
+User requested closing the unfinished original objective before more AI experiments.
+Active worktree /Users/j/.codex/worktrees/first-load-completion/Lifebook,
+branch codex/first-load-completion, refreshed onto origin/main23bdaf05. No agents
+were spawned, paid calls made, database changes performed or monitors enabled.
+#28 remains open. #218 merged as23bdaf05; production still served e9276438 at the
+latest deployment check. Its intentional local continuity append in ask-progress
+is superseded here without restarting that application CI.
+
+Fresh public mobile trace reproduces late fonts/focal image while initial JS shares
+bandwidth. The largest production chunk contained Sentry; existing removal of
+unused tracing applied only to Webpack, while production builds use Turbopack.
+Candidate applies the same false tracing/debug constants through compiler.define,
+preserving error reporting. It also supplies400px device and256px image variants,
+keeping layout, fonts, source artwork, quality75 and access behavior unchanged.
+Compressed initial Home JS dropped18243bytes in matched build output. Synthetic
+uncaught errors were intercepted locally: built Sentry capture works on390/1440px,
+no transaction event; Home→Browse→Preview and overflow checks pass.
+
+Production builds, typecheck, focused lint and18 tests pass. Initial external
+node_modules symlink was rejected by Turbopack; replaced with a local copy before
+building. No application workaround was added. The local paired timing comparison is INVALID: the copied baseline omitted its
+public/ directory, causing image request failures. Original observations are
+retained in [evidence](evidence/first-load-completion-development-20261001.json)
+for transparency, not performance acceptance. The failure surfaced in server
+shutdown output. The harness now rejects failed image/font/script/stylesheet
+responses. No local benchmark rerun is needed: the complete hosted-deployment
+comparison below supersedes it. The independent build-byte comparison and actual
+candidate error-capture/navigation checks remain valid.
+
+STATUS.md and #25/#28 register rows now distinguish current evidence from older
+historical failures and still-open acceptance. #7/#11/#19/#29/#30–32 need evidence
+reconciliation; product experiments and full history remain deferred. No audit
+finding is silently closed by this performance change.
+
+Next: publish the focused candidate, inspect its built preview against the pinned
+production baseline with explicit hero completion and early navigation, verify
+#218's deployment and controlled wait UI without a paid request, retain gates,
+then record what is actually improved and the remaining first-load limitations.
+
+Release handoff (intentional uncommitted evidence append; do not restart app CI
+solely for this paragraph): #219 https://github.com/Jseow008/ThePlayBook/pull/219,
+head97197b6f, seven-file scope inspected locally/GitHub, PR scope passed. Preview
+ dpl_CHgzirHzx99X9jrqXARg1V4wBpXW READY. Hosted comparison completed24 observations
+against e9276438 production deployment, artifacts under
+/private/tmp/netflux-first-load-completion/hosted and hosted-summary.json.
+Focal hero bytes42042→20304. Focal response ends across three cold samples:
+baseline1257/1204/3215ms, candidate3972/1505/1356ms. Retain the first cold image
+transformation; don't claim consistent speedup. Home LCP2632/2228/2232ms versus
+2956/1244/2340ms also does not establish a consistent win. Lower bytes are proven;
+the complete first-load objective remains open. No repeated benchmark for this patch.
+
+Hosted desktop/mobile Home→Browse→Preview passed, screenshots inspected. Initial
+interaction harness requested a desktop-only carousel indicator on mobile and
+stopped; corrected navigation-only check passed. Reported5.7–5.8s navigation
+completion includes waitForURL's load wait, NOT first heading visibility or TTI.
+The saved early-interaction.json label was corrected to
+browseNavigationLoadCompletedMs to prevent misinterpretation. No production defect was inferred from that
+harness timeout. Built browser error capture proof remains local/intercepted.
+
+PR description carries these final observations; squash auto-merge requested after
+scope/preview validation. Full CI/security remain pending. Production still serves
+ e9276438 at the latest check, so #218 deployment/controlled UI smoke remains pending.
+Next action: inspect actionable #219 checks; verify #218/#219 production identity
+once deployed, no paid requests; preserve this checkpoint and hosted summaries in
+a documentation follow-up. Then bound remaining font/JS investigation with explicit
+user-visible readiness measurements. Do not call all32 findings or first-load UX
+complete, close #28, enable monitors or switch models.
+
+
+### 1 October 2026 — visible Home content during entrance motion
+
+Worktree: /Users/j/.codex/worktrees/font-loading-followup/Lifebook;
+branch codex/font-loading-followup, based on main a012117b. This supersedes the
+pending deployment state above: #219 merged as 8918c7f4 and www.netflux.blog was
+verified serving that commit. #220 merged as a012117b with passing required checks;
+its three-file narration-temperature/top-p change, test and OPS update have no
+first-load conflict. The production alias still served #219 at this inspection,
+so #220 production deployment is not yet confirmed.
+
+A bounded anonymous production probe (390x844, 200KB/s down, 150ms latency,
+4x CPU) found Home FCP 1372ms, headline opacity above .95 at 1776ms and paragraph
+at 1958ms while fonts were still loading; final paragraph LCP was 2972ms and font
+completion 3264ms. Browse FCP was 1152ms, heading visible at 1998ms and font
+completion 4232ms. These single samples identify mechanisms, not user averages.
+The probe's Playwright screenshots waited for fonts and are not early-frame proof.
+Raw local observations: /private/tmp/netflux-font-attribution/result.json.
+
+Home's CSS deliberately hid and blurred the already-rendered headline, description
+and actions during a 780ms entrance plus stagger delays. The focused correction
+keeps them opaque and unblurred throughout, retaining upward motion, timing,
+layout, typography, colors and copy. The existing landing browser test now pauses
+animations at time zero and asserts opacity 1/filter none. It fails against the
+current production baseline (actual opacity 0), then passes on the candidate.
+All eight focused Home/Browse/CTA/chrome tests passed on desktop and mobile,
+without retries. Production build/typecheck, focused lint and diff validation
+passed. Desktop/mobile screenshots were inspected; mobile has no horizontal
+overflow or framework error overlay. No paid calls, database changes, new agent
+or recurring monitor was used; #28 stays open.
+
+This proves removal of an intentional visibility delay, not a measured overall
+production speedup. Font swaps, shared resource bandwidth and remaining JavaScript
+long tasks still need attribution before declaring the full first-load objective
+complete. Next: publish this focused PR, preserve required gates, then verify its
+deployed initial animation state. Reuse #219's completed hosted evidence; do not
+repeat broad benchmarks or fold in unrelated audio/model changes.
+
+
+### 1 October 2026 — font-priority investigation concluded without rollout
+
+#221 merged as 5898255b and production www.netflux.blog now serves that commit,
+including #220. The initial-animation visibility check passes in production on
+both desktop and mobile (two tests, zero retries). This supersedes the pending
+release state and intentional local append in font-loading-followup.
+
+Worktree /Users/j/.codex/worktrees/route-font-priority/Lifebook,
+branch codex/route-font-priority, based on fresh main 5898255b. No agents, paid
+calls, database changes or recurring monitors. #28 remains open.
+
+Consumer inspection corrected the earlier simplification: Playfair is also used
+by Browse cards and onboarding, so it must remain available. Two bounded candidates
+were evaluated without changing families, sizes or layout:
+
+1. Route-specific next/font preloading correctly prioritizes Home Playfair and
+   Browse Outfit, but separate preloaded/non-preloaded instances emit distinct
+   URLs for the same Playfair bytes. Cold Browse followed by Home requests both
+   forms. Reject this approach rather than introducing cache duplication. An
+   initial navigation fixture attempted a Browse logo that leads to Browse and
+   encountered onboarding; it was discarded, then replaced with direct page
+   navigation for the specific resource check.
+2. Shared Outfit preloading avoids separate font instances. Production build
+   passes. Twelve local cold observations alternate baseline/candidate order,
+   three per route and variant, at 390x844, 4x CPU, 150ms/200KB/s. Baseline built
+   application matches main (#221); complete public assets are served. Initial
+   preflight rejected local Vercel telemetry-script 404s. The two unavailable
+   platform scripts were explicitly stubbed equally on both before measurement;
+   other critical asset errors still fail the run. No favorable-result reruns.
+
+Median results (milliseconds):
+
+| Metric | Baseline | Shared Outfit preload |
+|---|---:|---:|
+| Home Playfair completion | 1242 | 1348 |
+| Home Inter completion | 1452 | 1519 |
+| Home FCP / LCP | 556 / 556 | 580 / 580 |
+| Browse Outfit completion | 2338 | 1198 |
+| Browse Inter completion | 1482 | 1618 |
+| Browse FCP / LCP | 600 / 944 | 616 / 1012 |
+
+The shared candidate adds 32528 bytes of early font traffic on Home. Reject it:
+it exchanges earlier Browse typography for later Home fonts without improving
+visible-content timing in this small sample. All application edits were reverted;
+only this checkpoint and [development evidence](evidence/font-priority-development-20261001.json)
+are published. Raw scripts/rejected patch remain under
+/private/tmp/netflux-font-attribution. Existing local ServerResponse listener
+warnings remain unresolved; these experiments change no server runtime logic.
+
+Next: inspect the shared initial instrumentation/framework JavaScript chunk and
+PostHog loading path for safely removable or deferrable work. Preserve early error
+capture, analytics identity ordering and existing product behavior. Use a small
+built comparison for one credible candidate; do not repeat font experiments or
+claim the full first-load bottleneck is resolved. Deployed #221's removal of the
+intentional reveal delay is verified; the wider objective remains open.
+
+
+Handoff (intentional uncommitted continuity append): PR #222 at40309169,
+https://github.com/Jseow008/ThePlayBook/pull/222. Two-file docs/evidence scope
+confirmed locally and on GitHub; PR scope passed, squash auto-merge requested.
+Required validation/security pending. Local browsers and servers stopped. Next:
+review the instrumentation/analytics loading boundary using the attribution
+already recorded, and propose one bounded JS candidate. No additional font
+benchmark or production test is required for this documentation-only PR.
+
+
+### 1 October 2026 — initial analytics JavaScript investigation
+
+Application experiment branch codex/initial-analytics-js in
+/Users/j/.codex/worktrees/initial-analytics-js/Lifebook, based on5898255b; all
+candidate source/test changes were reverted after rejection. No production
+settings, data or models changed, no paid calls, agents or monitors. Local
+servers/browsers stopped. #28 remains open.
+
+Installed PostHog1.393.0 exposes a slim entry point and extension bundles.
+Repository uses explicit event/pageview/identify/reset helpers. A sanitized read
+of the current public project configuration confirmed surveys, sessionRecording,
+productTours, conversations and autocaptureExceptions false. Candidate preserved
+AnalyticsExtensions, FeatureFlagsExtensions and ToolbarExtensions; Sentry initial
+capture was untouched. Experiments:
+
+- Packaged slim SDK plus retained extensions: build passes, but matched Home
+  initial-script gzip total increases417140→421780bytes (+4640bytes, 17 scripts
+  each). Reject, without a latency benchmark. The combined extension bundle does
+  not give the required byte reduction in this application build.
+- Direct installed extension-module imports: compilation succeeds but TypeScript
+  fails because distributed and source-module PostHog types contain incompatible
+  private members. Reject rather than casting away the compatibility boundary.
+  This second approach was not runtime-accepted or production-built successfully.
+
+First candidate verification: six unit tests passed, including real SDK anonymous
+→ identified → reset pageviews with captured events suppressed before delivery.
+Browser suite10passed/2failed: event delivery/one-pageview assertions reached
+success, but final zero-CSP-warning assertions failed on local report-only inline
+script warnings. Do not describe that suite as fully green or attribute the
+warnings to this candidate without a baseline. The analytics fixture's OTP call
+was intercepted locally; no email/account action was needed. All test edits were
+reverted with the rejected candidate.
+
+Raw evidence and rejected source: /private/tmp/netflux-js-attribution/size.json,
+unit.log, browser.log, build.log, build-direct.log and rejected-direct.patch.
+No shipping performance change or production speedup is established. These two
+attempts close this packaging approach for now. Next decision: preserve current
+observability and inspect route-specific interactive components for genuinely
+avoidable initial work before choosing another implementation. Delaying the whole
+analytics SDK would risk losing short visits and requires an explicit product
+tradeoff; do not silently do that to improve a benchmark. Do not repeat the font
+or SDK packaging experiments.
+
+
+### 1 October 2026 — skip mobile carousel-arrow measurements
+
+Worktree /Users/j/.codex/worktrees/browse-lane-rendering/Lifebook,
+branch codex/browse-lane-rendering, based on freshly fetched main411db433 (#222).
+No subagents, paid calls, production writes, database changes or monitors.
+#28 remains open; production #221 initial visibility is already verified.
+
+The proposed offscreen-lane containment preflight was not promising for the
+current catalog. Once streaming settles, Browse has two active lanes (top about
+501px/859px, height326px at390px width). A temporary browser-only content-visibility
+auto check leaves both rendered; neither is far enough away to skip. The earlier
+42-link transient DOM count was not proof of42 simultaneously rendered cards:
+settled active lanes contain10cards each. No containment CSS or placeholder
+heights are shipped, and no full containment benchmark was run.
+
+A concrete avoidable cost exists in ContentLane: mobile CSS hides both arrows,
+but their scroll-width measurements, scroll/resize handlers and per-card resize
+observers still initialize. Candidate attaches those only while the existing
+md breakpoint (768px) matches, disconnects on entering mobile, and restores
+measurements on desktop. Native mobile scrolling, SSR content, dimensions, fonts,
+card links and desktop behavior remain unchanged.
+
+Built-browser baseline/candidate comparison, one observation per viewport:
+
+| Build | Width | Active lane resize targets | Observe calls |
+|---|---:|---:|---:|
+| Main application baseline | 390 | 22 | 22 |
+| Candidate | 390 | 0 | 0 |
+| Main application baseline | 1440 | 22 | 22 |
+| Candidate | 1440 | 22 | 22 |
+
+Baseline build from font-loading-followup has the same application as main411db433
+(the intervening #222 is documentation). Runtime proof also passes native mobile
+scroll-position changes, desktop arrow scrolling, mobile→desktop→mobile observer
+activation/cleanup and keyboard Preview navigation at both widths. Evidence:
+/private/tmp/netflux-lane-runtime.cjs and netflux-lane-runtime.json. Production
+build/typecheck, focused lint, nine ContentLane tests and eight desktop/mobile
+Home/Browse navigation tests pass, with no retries. Component regression checks
+prove mobile scroll/resize does not read geometry and breakpoint changes restore
+and clean up measurements. Local platform telemetry/script warnings and existing
+ServerResponse listener warnings do not establish candidate timing performance.
+
+This proves removal of unnecessary mobile work, not an overall first-paint
+speedup. Next: publish the focused change through required gates, verify deployed
+mobile/desktop behavior, and retain the original objective as open until useful
+user-visible readiness evidence supports closure. Do not repeat rejected font or
+SDK packaging experiments or infer all pre-paint layout came from these hooks.
+
+
+### 1 October 2026 — bounded Home/Browse acceptance assessment
+
+Branch codex/home-browse-assessment in
+/Users/j/.codex/worktrees/home-browse-assessment/Lifebook, based on d804d33f.
+#223 merged with required checks passing; production deployment metadata resolves
+to d804d33f. Production built-runtime smoke confirms mobile0/desktop22 lane resize
+targets, mobile scrolling, desktop arrows, breakpoint transitions and keyboard
+Preview navigation. This supersedes the pending #223 handoff.
+
+Targets fixed before measurement: three cold browser contexts per page/profile;
+visible-content readiness median≤2500ms, max≤4000ms; Home→Browse navigation to
+visible heading median≤2000ms, max≤3000ms. Desktop1440x900 at1x CPU and mobile
+390x844 at4x CPU, both150ms latency/200000bytes per second download. This is a
+bounded working acceptance target, not a worldwide p75 or INP claim. Anonymous
+returning-visitor profile dismisses onboarding; first-time onboarding and logged-in
+journeys are not covered. Cold contexts do not imply cold CDN/image transforms.
+
+Readiness requires first-contentful-paint, a viewport-visible h1 and first-screen
+action through the ancestor opacity/visibility chain; Browse additionally requires
+its high-priority focal image loaded. A further animation frame is awaited. It is
+a painted-frame proxy, not proof of each pixel or an accessibility audit. Navigation
+measures automation click through destination heading visibility and two frames,
+after initial Home load; it does not measure clicking during hydration.
+
+Harness corrections retained transparently: an initial launch stopped before any
+samples because the functional smoke was still running; then an initial timing
+pass was invalidated because DOM eligibility plus RAF could precede FCP. Its raw
+observations remain in /private/tmp/netflux-home-browse-assessment/invalid-before-paint.log.
+The corrected pass requires FCP, with unchanged thresholds. No favorable-result
+reruns are authorized. Final evidence and verdict follow below.
+
+
+Corrected production results (milliseconds; all 12 samples retained in
+[evidence](evidence/home-browse-acceptance-20261001.json)):
+
+| Profile/page | Readiness samples | Median | Maximum | Verdict |
+|---|---|---:|---:|---|
+| Mobile Home | 645, 631, 632 | 632 | 645 | Pass |
+| Mobile Browse | 1463, 1574, 1554 | 1554 | 1574 | Pass |
+| Desktop Home | 697, 700, 678 | 697 | 700 | Pass |
+| Desktop Browse | 4660, 4678, 4693 | 4678 | 4693 | Fail |
+
+Home→Browse navigation passes: mobile median1463/max1473ms; desktop
+median1125/max1293ms. Every valid sample has zero failed critical assets.
+The desktop failure is retained; no acceptance thresholds were changed.
+
+One desktop diagnostic separates heading/action readiness (~1548ms) from the
+hero image (~4834ms). Its 1024px optimized image transfers82236bytes and is already
+requested early (~361ms) with high priority. Concurrent script/font downloads
+finish around the same time. Image completion is the remaining readiness gate;
+this does not establish image encoding alone as the cause of the entire delay.
+
+An offline encoding preflight at width1024 and quality75 produced WebP81936bytes
+and AVIF137531bytes (local encode103/350ms). Reject the same-quality format switch;
+these quality numbers are not perceptually equivalent and no global conclusion
+about AVIF follows. No configuration change was made.
+
+A single extra diagnostic aborted256px card-image requests to probe contention,
+but ResilientImage retries original sources on errors. Its ~4091ms hero result is
+not a clean deferral comparison, not acceptance evidence, and not a candidate
+speedup. Preserve that unsuccessful diagnostic without repeating the benchmark.
+Raw script/output: /private/tmp/netflux-home-browse-assessment/
+desktop-without-card-images.cjs and desktop-without-card-images-diagnostic.json.
+
+Decision: Home/Browse is not fully accepted, and Preview→Reader optimization is
+not started. Next implementation investigation should use a faithful development
+candidate for offscreen card-image deferral (including horizontal lanes), retaining
+first-screen images, fallback behavior, scrolling and accessibility. First inspect
+which images are outside the viewport; do not suppress all cards or defer analytics.
+Only a credible candidate warrants an affected-page comparison. If its benefit is
+insufficient, report the remaining shared script/font cost rather than restarting
+rejected packaging or font experiments. No application changes, paid AI requests,
+production data writes, infrastructure purchases or timers in this assessment.
+#28 remains open. Documentation-only handoff; no permanent/global speed guarantee.
+
+
+#### Follow-up: offscreen card delivery preflight
+
+Continued on 1 October, preserving the fixed failed desktop verdict. Production
+inspection at1440x900 found all20 lane covers loaded: first row y698, second row
+y1202, with four cards per row entirely to the right of the viewport. Native
+loading=lazy uses a preload distance, not strict viewport intersection.
+
+One additional diagnostic replaced all256px optimized cover responses with valid
+one-pixel image responses inside the test browser. This avoids the failed abort
+probe's direct-source retries; it intentionally also replaces visible covers, so
+it is not a shippable candidate. Hero readiness was3917ms; heading/action1428ms.
+Concurrent shared script downloads still finish around3.7–4.2seconds. Retained in
+the existing evidence JSON. This single observation is not an acceptance pass, a
+statistical speedup, or a strict causal upper bound: request interception and
+run-to-run variance remain confounders.
+
+Decision: do not add custom card intersection/loading machinery on this evidence.
+Removing even visible cover payloads did not meet the2500ms median target in this
+probe. JavaScript-gated loading could also delay visible images until hydration,
+while conservative server-rendered image allowances limit possible byte savings.
+No application changes were made; existing native lazy loading, image quality,
+layout, analytics and fallback behavior remain intact.
+
+Next action: inspect the shared initial JavaScript dependency graph for one safe,
+optional import boundary that competes with the desktop hero. Do not repeat the
+rejected analytics packaging/font experiments or disable short-visit analytics.
+If no credible boundary is found within a bounded inspection, present the remaining
+performance/design tradeoff before another comparison. Preview→Reader and #28
+remain open. Investigation worktree codex/browse-card-delivery is clean atd804d33f;
+results are carried in the existing codex/home-browse-assessment documentation PR.
+No paid AI calls, data changes, application rollout or recurring timer was used.
+
+
+#### Follow-up: bounded shared startup dependency inspection
+
+Read the deployed chunk URLs from the pinned d804d33f diagnostic and inspected
+public static JavaScript plus repository imports. Largest groups are React DOM,
+Next.js runtime/navigation, Supabase client/authentication, PostHog and Sentry.
+The largest mixed chunk includes a ~200.7KB raw/~63.3KB individually gzipped React
+DOM module group and a ~61.7KB raw/~21.5KB Sentry group. Supabase group is ~55KB
+gzipped; PostHog ~67.8KB. These recompressed module sizes are not additive to
+transmitted chunks; minified signatures/registrations are not full source maps.
+Sanitized chunk/module inspection retained in the existing evidence JSON.
+
+AppOnboardingTour is already dynamically imported. The shared chunk containing
+reading progress and snapshot hydration is ~10.1KB gzipped in total; extracting
+its small verifier alone does not demonstrate a material opportunity. Immediate
+authentication, short-visit analytics, error capture and navigation are active
+requirements, not optional hidden widgets. No substantial safe optional import
+boundary was demonstrated within this inspection. No application code changed,
+no new build/benchmark/provider request was needed, and no speedup is claimed.
+
+Decision checkpoint: stop small bundle experiments. The declared desktop Browse
+readiness target remains failed; Home/mobile Browse/navigation remain accepted
+only within their recorded local simulation. Next requires an explicit scope
+choice: a larger loading-architecture investigation with clear authentication/
+interaction safeguards, or accepting the residual desktop hero delay for now and
+moving to Preview→Reader. Do not silently loosen the target or claim this delay
+is fundamentally irreducible. This documentation follow-up remains in PR #224 on
+codex/home-browse-assessment; the application worktree remains clean. #28 stays open.
+
+
+### 1 October 2026 — Preview→Reader bounded readiness assessment
+
+User accepted leaving the remaining desktop Browse hero delay open while moving
+to Preview→Reader. PR #224 merged at85fc2cb7; application tree unchanged from
+production d804d33f. Branch codex/preview-reader-readiness at85fc2cb7 in
+/Users/j/.codex/worktrees/preview-reader-readiness/Lifebook. Read-only deployment
+metadata at start identifies d804d33f. No code changes before measurement.
+
+Frozen plan: /private/tmp/netflux-preview-reader/plan.json. Three fresh contexts
+per page/profile on one public summary (The Singapore Story), 390x844/4x CPU and
+1440x900/1x CPU,150ms network latency,200000B/s download,93750B/s upload. Readiness
+requires FCP, visible title and loaded cover, plus a visible Read link on Preview
+or visible Big Idea text on Reader, followed by an animation frame. Targets:
+readiness median≤2500/max≤4000ms; post-load Preview→Reader navigation
+median≤2000/max≤3000ms. First section expansion is additionally checked for
+rendered text, with working median≤1000/max≤2000ms. No audio or AI calls.
+Anonymous guest interactions may update isolated browser-local progress; no
+account creation or authenticated writes. Results do not cover worldwide p75,
+INP, first-time onboarding, all content types, or authenticated journeys.
+
+Preflight proved canonical Reader link and section selectors before timing.
+All samples, critical resource failures and errors are retained as they occur;
+no favorable-result reruns. Raw harness/results live under the plan directory.
+Assessment running; next: inspect complete fixed sample set, diagnose material
+failures, and implement only a credible bounded correction with affected checks.
+
+
+Production fixed-set results (milliseconds):
+
+| Profile/page | Readiness samples | Median | Maximum |
+|---|---|---:|---:|
+| Mobile Preview |3031,3152,3015|3031|3152|
+| Mobile Reader |2050,2909,3320|2909|3320|
+| Desktop Preview |2930,3018,2913|2930|3018|
+| Desktop Reader |3436,3617,3487|3487|3617|
+
+All four readiness medians miss2500ms, all maxima stay below4000ms. Navigation
+mobile2071,2089,1722ms (median2071); desktop2138,1893,2048ms (median2048) narrowly
+miss2000ms medians, all below3000ms. Section expansion46–152ms passes; zero failed
+critical assets or harness errors across the12 valid observations. No result is
+relabeled as accepted. [Evidence](evidence/preview-reader-readiness-20261001.json).
+
+One subsequent desktop diagnostic per route found cover requests begin atLow
+priority then promote toHigh. Preview title1648ms/cover2520ms; Reader
+title2724ms/cover3132ms. Covers are7930-byte224px responses, discovered at1428ms
+and2498ms respectively; delivery priority is only one candidate and cannot fix
+late discovery alone. Reader's ~78.5KB page-specific chunk includes Markdown
+parsing/rendering; deferral could worsen the currently responsive section opening.
+
+Candidate adds fetchPriority=high to both existing priority covers. No layout,
+quality, dimensions, auth, analytics or fallback changes. Production build,
+focused lint and21 existing component tests pass; local built Preview renders and
+navigates without an error overlay. A small built baseline/candidate comparison
+runs before deciding whether this change is credible. Baseline application tree
+8f30ae8f matches d804d33f outside documentation. Both local environments lack
+hosted Vercel telemetry endpoints (404); retain those failures as a limitation,
+not production acceptance. Do not infer a speedup from priority alone.
+
+
+Development comparison complete (one observation per page/profile/build):
+mobile Preview3421→2975ms, mobile Reader3180→3062ms, desktop Preview3284→3010ms,
+desktop Reader3270→3200ms. Navigation and section opening remain functional.
+Candidate cover fetchpriority=high confirmed in built DOM, baseline unset. This
+is enough to advance the tiny priority correction through required checks, not
+statistical latency proof or target acceptance. All telemetry404 records retained.
+
+Next: publish two application-line changes plus this evidence/checkpoint through
+normal PR gates, verify hosted image request priority and affected journey, then
+record production identity/limited verification. Targets remain unmet in the
+production baseline; no broad refactor, model call or data migration is authorized
+by this correction. No repeated full-site/capacity benchmark is needed.
+
+
+#### Hosted candidate decision — priority-only change rejected
+
+PR #225 candidate f2f3ed1a reached a ready hosted preview. Frozen12-observation
+candidate run retained in evidence; Preview medians mobile2814/desktop2977ms,
+Reader medians mobile3127/desktop3613ms. Outliers include mobile Preview4228ms
+and desktop Reader6676ms. Desktop224px image requests startedHigh, confirming the
+mechanism, but this does not establish an overall speedup or target acceptance.
+Hosted preview CSP blocks feedback.js and PostHog config; one Reader interaction
+check failed when scrollIntoViewIfNeeded encountered a detached node. These do
+not prove a product regression: preview configuration differs from production,
+there is no paired hosted baseline, and the patch changed only priority attrs.
+No rerun was used to replace those observations. Security/CSP and DOM causes are
+not claimed resolved by source inspection. Existing21 component tests and built
+functional checks pass, but cannot override the failed acceptance evidence.
+
+Auto-merge was disabled on discovery. Remove the two application lines and retain
+PR #225 as documentation only; do not ship a speculative performance fix. Production
+remains unchanged by this work. Candidate f2f3ed1a remains available in Git history;
+there are no discarded samples, infrastructure changes or paid provider calls.
+
+Conclusion: the representative journey is functional and section interaction is
+fast, but readiness/nav median working targets remain missed. Image priority is
+not a demonstrated solution, and late image discovery/shared delivery remain.
+A larger rendering/streaming investigation would need its own hypothesis and a
+matched hosted baseline before changing code. No further small priority, font,
+analytics-packaging or favorable-result benchmark experiments are justified by
+this run. Preserve the known limits rather than declare Preview/Reader complete.
+Local servers/browser sessions stopped; no timers created. PR #224 merged;
+#28 and residual Home/Browse desktop readiness remain open.
+
+
+### 1 October 2026 — content arrival and CSS delivery control
+
+Branch codex/content-delivery-control at85fc2cb7, worktree
+/Users/j/.codex/worktrees/content-delivery-control/Lifebook. User authorized
+continued investigation after Preview/Reader assessment. Production trace pinned
+by read-only deployment metadata to85fc2cb7 (same application asd804d33f).
+One desktop trace per route, same150ms/200000B/s network, captures streamed HTML
+arrival through CDP, DOM readiness and document size. No paid/model calls or
+account writes. Raw evidence: /private/tmp/netflux-content-arrival/.
+
+Preview decoded HTML878564bytes, transmitted body67237bytes; Reader915427/
+72961bytes. Both contain263725bytes of inline CSS. Largest inline framework
+script564846/565575bytes includes two serialized copies of the stylesheet.
+Title/cover markup received near2454ms Preview and2692ms Reader; DOM observations
+follow at2467/2707ms. Cover complete2999/3707ms. CDP arrival times are observed
+browser event times, not isolated server-processing durations; buffered streaming
+bytes and event scheduling limit exact wire attribution. Network responseStart
+is recorded separately. No unsupported pure-network/server inference.
+
+Official local Next.js inlineCss guidance documents CSS duplication and the
+absence of per-page configuration. A Tailwind source-scope preflight using only
+app/components/hooks/lib reduced compiled CSS255722→254322bytes, gzip34592→34434
+(<1%): rejected as a material optimization. An initial standalone preflight
+module-resolution failure was fixed using package exports; no browser results
+were discarded. Tailwind documentation: https://tailwindcss.com/docs/detecting-classes-in-source-files.
+
+New diagnostic control changes only experimental.inlineCss true→false. This
+revisits the earlier tradeoff because new traces show late content delivery.
+It deliberately differs from the existing no-external-stylesheet release invariant
+and is NOT approved for production by a diagnostic build. No checks/gates are
+removed. Both builds use the same85fc2cb7 source/public configuration and fresh
+production builds; baseline in clean codex/browse-card-delivery. Global utility
+CSS hashes match exactly (258765bytes). Font CSS differs only in generated URL
+form (absolute /_next/static/media vs relative ../media); verify resolved assets.
+Built browser smoke renders Preview correctly in both; screenshots retained.
+
+Fixed development plan: one cold-context observation per Home/Browse/Preview/
+Reader, mobile390x844/4xCPU and desktop1440x900/1xCPU, same150ms/200000B/s network.
+Inline/external order reversed by profile. Preserve all failures; local platform
+telemetry404 is an environment limitation. No acceptance or statistical claim
+from this small control. Next: inspect complete results; reject global external
+CSS if it moves the delay back to Home/Browse. Do not publish the flag change
+without resolving the prior release invariant and affected-page evidence.
+
+
+Control complete: all16 observations retained, one per page/profile/variant.
+
+| Page/profile | Inline CSS readiness ms | External CSS readiness ms |
+|---|---:|---:|
+| Home mobile |678|1550|
+| Home desktop |625|1525|
+| Browse mobile |1342|1823|
+| Browse desktop |2614|2726|
+| Preview mobile |3293|1412|
+| Preview desktop |3277|1400|
+| Reader mobile |3451|1478|
+| Reader desktop |3282|1735|
+
+These are development observations, not medians, production speedup proof or
+acceptance. First paint also becomes later with external CSS even where useful
+page content improves. All application styles match: global CSS byte hash is
+identical; font CSS becomes identical after normalizing the generated relative
+versus absolute asset paths. Local platform telemetry404 remains the only recorded
+resource failure; no application asset failures or readiness errors.
+
+The CSS control demonstrates a product tradeoff, not an unconditional fix. User
+was asked whether to validate external CSS on matched hosted builds (recommended
+before any rollout) or preserve current Home/Browse loading behavior. This scope
+choice is pending because the prior agreed direction explicitly left Home/Browse
+unchanged. Experimental global configuration has been restored; production and
+release gates are unchanged. No hosted deployment/control rollout attempted.
+
+PR #225 has merged at05e444a0. This worktree is fast-forwarded from85fc2cb7 onto
+main afterward, preserving the intentionally uncommitted checkpoint/evidence.
+The comparison builds remain pinned to85fc2cb7 and must not be relabeled as fresh
+main evidence. If hosted validation is chosen, construct paired baseline/candidate
+from the same fresh source/configuration; explicitly update the CSS release
+contract for review rather than bypass the existing no-stylesheet gate. No need
+to repeat source-scope or priority-only experiments. If preserving current loading
+is chosen, hold the global candidate; retain the unresolved readiness limits.
+
+
+#### Hosted validation authorized
+
+User approved matched hosted validation of the CSS tradeoff. Production rollout
+is not part of this comparison. Add a build-time NETFLUX_CSS_DELIVERY_EXPERIMENT
+switch with default inline; external is rejected unless VERCEL_ENV=preview.
+Both variants share one commit, project settings and preview environment. The
+normal production no-external-CSS check remains unchanged. Experimental external
+builds must instead prove local emitted stylesheet paths, non-empty app CSS,
+absence of inline app styles and the same320KiB aggregate budget. No gate is
+removed or skipped. Seven contract tests pass; typecheck and focused lint pass.
+The existing external diagnostic build passes the new emitted-asset check plus
+the sharp trace check. Initial test-type mismatch was corrected by documenting
+the environment input type; no runtime acceptance data was discarded.
+
+Next: open a held experimental PR, deploy inline and external previews from its
+exact commit, freeze URLs/identities and a three-observation per page/profile
+paired plan. Reverse order across repetitions/profiles; retain all failures and
+report Home/Browse regressions alongside Preview/Reader gains. No paid AI calls,
+accounts, production settings, database work, timers or production promotion.
+
+
+#### Matched hosted result — 1 October 2026
+
+PR #226 is held, auto-merge off, on `codex/content-delivery-control` in
+`/Users/j/.codex/worktrees/content-delivery-control/Lifebook`. Both preview builds
+are READY from the same measured commit `31a51e066fa80cba4ea3c05f5e209defbd7a2556`;
+project, Node version and preview environment match. Their deployment IDs and
+immutable URLs are in the evidence JSON. Production was not changed.
+
+Completed the frozen 48-observation plan once: three fresh-context samples for
+four pages, two viewport/CPU profiles and two CSS modes, alternating variant
+order. Network simulation remains150ms latency/200KB/s down. Values below are
+useful-content readiness medians, not first paint or real-user percentiles.
+
+| Page | Mobile inline → external | Desktop inline → external |
+| --- | ---: | ---: |
+| Home |748 →2418ms|744 →2438ms|
+| Browse |1702 →2230ms|4777 →4719ms|
+| Preview |2730 →3387ms|2254 →3222ms|
+| Reader |2260 →3949ms|3545 →3944ms|
+
+**Reject the global external-CSS rollout.** Seven of eight medians became slower;
+the58ms desktop Browse difference is too small to justify the regressions.
+The local improvement did not reproduce on matched hosted builds. Smaller HTML
+alone does not establish a faster experience: external stylesheet delivery moves
+work onto the blocking path. Retain current inline CSS. The mobile Preview and
+desktop Browse/Reader inline medians still exceed the2500ms target; desktop Browse
+also exceeds the4000ms maximum. Do not call the overall bottleneck resolved.
+
+All48 timed observations completed, without HTTP>=400 font/image/script/style
+responses. This harness did not capture CSP/network requestfailed events, so this
+is not a claim of zero browser errors. HTML end/size values recorded before stream
+completion may be zero. Application CSS is identical after concatenating the two
+external files and normalizing only generated font URL prefixes; initial per-file
+hash comparison failed on the packaging difference and was corrected before timing.
+
+Separate navigation/section smoke: initial hidden Read-link selector failed and
+was preserved; corrected visible-link smoke passed mobile both variants and
+desktop external with no horizontal overflow. Desktop inline stopped on a duplicate
+h1 strict-selector error. Keep that baseline smoke limitation; do not repeat the
+performance run or spend more validating a rejected candidate. Screenshots were
+captured locally; no redesign, account writes, paid AI, database work or timers.
+
+At measurement completion: PR scope, Security Validation, catalog evidence and
+Vercel passed on31a51e06; validate was still pending. This appended evidence does
+not validate a different application commit. Seven local contract tests, typecheck
+and focused lint passed before deployment. One agent; no additional paid model
+calls or benchmark repeats. Codex token usage unavailable.
+
+Next: retain inline CSS and keep #226 unmerged. Decide whether to archive the
+preview-only experiment as a documentation-only result, then resume narrowly
+measuring font/image contention on the remaining slow pages. Do not ship the
+global switch or repeat this comparison hoping for a favorable outcome. #28 remains
+open. The hosted evidence and this checkpoint are the intentional follow-up changes.
+
+
+#### Follow-up: font/image contention — 1 October 2026
+
+User authorized continuing the focused investigation. Reused the immutable inline
+preview at31a51e06 and existing network/desktop settings. Production remains
+unchanged; #226 remains held with auto-merge off. Current worktree/branch unchanged.
+No source implementation changed; only this checkpoint and existing evidence JSON.
+
+Two attribution traces: Browse title/action appeared1575ms, fonts ready4364ms,
+hero4898ms and useful readiness4915ms. Three fonts totaled119120bytes;17img-initiated
+card transfers totaled142822bytes, alongside447142bytes of script responses. Hero
+is preload/link initiated, so it is not included in that card-image subtotal.
+Reader fonts were ready1705ms, title/action2327ms, cover2730ms, useful readiness2747ms.
+This Reader sample points to late content arrival and subsequent cover completion,
+not waiting for fonts. None of these figures establishes real-user averages.
+
+One small paired diagnostic held only baseline below-viewport image requests until
+hero readiness, then released them without abort/fallback. Reversed order across
+two observations each: normal4784/4756ms, deferred4407/4399ms (medians4770/4403ms).
+The367ms directional saving does not reach the4000ms maximum or2500ms median goal.
+A separate one-observation font diagnostic held fonts until hero readiness:4219ms,
+still above the maximum and initially using fallback typography. This is an upper-
+bound-style diagnostic, not an equivalent-looking implementation or rollout proof.
+No benchmark was repeated to replace failures; all observations are retained.
+
+The diagnostic scripts inherit the old variant label `external`; the evidence
+explicitly maps it to request deferral on the SAME INLINE preview, not external CSS.
+Preview feedback and analytics-config CSP failures are recorded. Reader recorded
+an aborted media request without playback. Public Browse was additionally opened
+and inspected through agent-browser, then closed. No accounts, data mutations,
+paid AI calls, infrastructure changes, timers or subagents.
+
+Conclusion: do not add viewport gating or defer fonts as a claimed resolution on
+this evidence. Both have modest potential but neither meets the stated target;
+font delay changes the initial appearance. Keep the accepted production behavior.
+Remaining work is reducing first-screen transfer competition/content-arrival delay
+without losing analytics, changing typography or reducing image quality. The current
+samples do not establish a safe implementation for that yet. Next investigation,
+if continued: isolate initial script-transfer contention using a bounded diagnostic
+before considering a specific module boundary; do not reopen CSS/priority experiments.
+#28 stays open. These findings are appended to the existing held PR, not deployed.
+
+
+#### Continuous follow-through and final disposition — 1 October 2026
+
+User authorized necessary follow-ups without repeated proceed requests. Completed
+one bounded script-contention diagnostic and one concrete Reader candidate; no
+subagents, paid model calls, database work, accounts or recurring timers.
+
+Holding all script requests until visual readiness reduced Browse medians from
+4856ms to2390ms and Reader3607ms to2282ms (two each, reversed order). This establishes
+substantial script competition in the simulation, not a shippable solution: it
+delays hydration/interaction and short-visit analytics. Reused the previously
+inspected shared dependency map rather than repeating its bundle audit.
+
+Implemented one safe-to-evaluate boundary: extract the Markdown/highlight/sanitize
+engine unchanged into a dynamic module used when a Reader section first opens.
+Preserved visited text mounting, anchors, layout, fonts, auth and analytics. The
+experimental code is retained locally at95c7fd1699dd3f774d946324e9c49a72d2122bb4 on
+`codex/reader-markdown-loading` in
+`/Users/j/.codex/worktrees/reader-markdown-loading/Lifebook`; it is NOT deployed.
+19 focused tests, typecheck, lint, production build, CSS/sharp guards passed.
+Initial dependency symlink build failure and asynchronous assertion updates are
+recorded in evidence. No change to the sanitization or highlight algorithm.
+
+Eight local paired observations (two per viewport/variant) showed:
+
+| Metric | Original | Lazy Markdown |
+| --- | ---: | ---: |
+| Mobile useful-content median |3326ms|3211ms|
+| Desktop useful-content median |3274ms|3277ms|
+| Mobile first-section median |210ms|950ms|
+| Desktop first-section median |75ms|904ms|
+
+Initial compressed JavaScript fell by about117–118KB, but that did not establish
+an appreciable first-screen improvement and moved waiting to section opening.
+Reject this candidate; no hosted benchmark, PR or production rollout is justified.
+Existing local baseline85fc2cb7 has identical app/components/lib/hooks/config/package
+inputs to candidate base05e444a0 (documentation-only intervening commit).
+Browser preflight passed visually; local telemetry404 retained. Detailed results,
+including original failures/limits, are in the existing evidence JSON.
+
+**Finish this bounded pass, without claiming the bottleneck resolved.** The tested
+CSS/font/image/JavaScript tradeoffs do not support a further safe user-visible win
+under the current constraints. Do not schedule another round automatically. A
+larger shared-client/server-boundary redesign would be separate scoped work, not
+an endless extension of these micro-optimizations. Real-user field evidence would
+help determine whether that larger investment is justified; it has not been
+collected here and worldwide performance remains unproven. #28 remains open.
+
+PR #226 is now converted to a documentation-only record: remove the preview switch,
+its test and all CSS-gate changes from the final diff; preserve experimental commit
+history/evidence. It may merge through normal required gates without any application
+behavior change. The current checkpoint/evidence are the only intended final files.
+No need to repeat application performance measurements for this documentation change.
+
+### Shared card visibility and Search loading — 1 October 2026
+
+User authorized the focused follow-up after a Browse-to-sitewide audit. Branch
+`codex/sitewide-search-load` in
+`/Users/j/.codex/worktrees/sitewide-search-load/Lifebook` started from fetched
+`origin/main` `3d237397`; application commit `801c4daf`. No redesign, database
+write, paid AI call, account creation, new infrastructure or recurring monitor.
+
+Live Browse and Search inspection found the first card in the DOM with its cover
+fully loaded but CSS opacity zero until hydration. With JavaScript disabled, the
+loaded cover stayed invisible. The shared `ContentCard` now paints the cover at
+normal opacity from server HTML and still clears its backing placeholder after
+load. This applies to Browse, Search and Library uses of that card; it does not
+change the Browse hero or Reader/Preview cover components. Built local browser
+checks confirmed loaded Browse and Search covers visible without JavaScript on
+390px mobile, with no horizontal overflow.
+
+Search previously awaited category statistics before starting any result query.
+Unfiltered newest, text-search and popular reads now start alongside statistics;
+category-filtered searches retain their statistics-derived raw category values.
+Deferred-stat tests prove the first two reads start while the statistics RPC is
+pending; the popular test covers Supabase's awaitable RPC builder. All 50 focused
+SearchPage/ContentCard tests, typecheck, full lint, production build, Sharp trace
+check and critical-CSS check passed. Built-browser newest, text, category and
+popular pages returned 200 with 20 cards and no overflow. A representative
+390px/1440px Home, Browse, Search, Preview and Reader smoke passed; one early
+desktop Preview/Reader observation preceded streamed headings, which appeared
+within the bounded follow-up wait.
+
+Failed setup/correction evidence: `NODE_OPTIONS` preload was rejected by Next's
+build worker; a temporary local environment-file link allowed the build and was
+removed afterward. The first built Popular probe exposed `.catch()` on a
+Supabase thenable; wrapping it as a real Promise fixed the route. Local text
+search needed a disposable runtime cursor key because the developer environment
+omits it. No production credential or configuration was changed. The local
+Next server logged repeated listener warnings during multi-route smoke, with no
+observed failed route after the correction.
+
+This proves cover visibility and removal of a Search request dependency, not a
+measured p95 or complete first-load win. Selected-category Search still waits for
+statistics, authenticated Library was not browser-tested, and worldwide readiness
+remains unmeasured. Next: inspect branch scope, push a ready PR, verify GitHub
+file scope and `PR scope`, then enable squash auto-merge under the existing gates.
+
+### Search catalog data cache — 3 October 2026
+
+User authorized a Search-only, one-hour data cache for topic counts, first-page
+Newest, and Popular, keyed on selected type and topic. Branch
+`codex/search-result-cache` in
+`/Users/j/.codex/worktrees/search-result-cache/Lifebook` started from freshly
+fetched `origin/main` `1af81aed`; application commit `10a599cd`. No database migration, UI change, Browse page
+change, image cache change, text-search cache, or deep-pagination cache.
+
+The implementation uses Next's cross-request data cache with one Search tag and
+3600-second revalidation. Successful empty results are cacheable; Supabase errors
+throw inside the cached read so they cannot be stored. Existing UI fallbacks stay
+outside the cache. Admin content invalidation of `/search` also expires the data
+tag immediately; reader-driven Popular rank changes wait for the one-hour TTL.
+Topic raw values are normalized before cache keying. Unfiltered reads still
+start alongside topic statistics.
+
+Focused tests (83 across six relevant files), typecheck, lint and policy checks
+(rerun with locked dependencies),
+production build, Sharp trace, and critical CSS check passed. A built local
+server returned 20 covers for default Search, 19 for Business podcasts, and 20
+for Popular books. Next cache debug logs showed first-read misses and repeated
+hits for each Search key. Local request timings (single illustrative sample,
+not p95): default 890ms then 43ms; Business podcast 225ms then 35ms;
+Popular books 245ms then 36ms. Page two remained a live 225ms read. No account
+write or production database mutation occurred.
+
+Failed setup: first build used a symlinked `node_modules` outside Turbopack's
+filesystem root and failed before compiling application code. A locked local
+`npm ci` corrected the setup; the Next 16.3.6 build then passed. Temporary
+environment-file links and local server were removed/stopped. No blocker or
+pending product decision. PR #231 is open; its GitHub file list matched the
+local scope, `PR scope` passed, and squash auto-merge is enabled. At handoff,
+required `validate`, `Security Validation`, and `Catalog Search Evidence` were
+running. Next: let required checks complete and address an actionable failure
+if one occurs; no production database rollout is involved.
+
+### Author causal grounding trial — 4 October 2026
+
+User authorized an explicit Ask Author rule for questions asking why, followed by
+a bounded Haiku/Luna retest. Branch `codex/author-causal-grounding` in Codex
+worktree `/Users/j/.codex/worktrees/author-causal-grounding/Lifebook` starts from
+fresh `origin/main` `b871dd45`. There is no commit, PR, deployment, model-setting
+change, or production database mutation from this trial.
+
+The local candidate adds one prompt rule: a reason must be explicitly linked to
+the event or choice in the source; nearby facts, sequence, permissions, and
+consequences do not establish a reason. The chat UI, source selection, history,
+output cap, quotas, and production Haiku routing remain unchanged. The synthetic
+direct-provider harness is `scripts/experiments/author-causal-qualification.ts`.
+Its development artifact is `/private/tmp/netflux-author-causal-dev-20261004.json`;
+all nine calls (three cases, one Haiku and two Luna runs each) completed and passed
+manual causal checks, including two Luna answers to the earlier marker failure.
+
+The predeclared fixed set stopped at call 21/30 when Luna's second empty-source
+call reached the 30-second deadline (`TimeoutError`). No retry or favorable
+replacement was made. The completed Luna causal answers stayed within the source.
+One completed Haiku response about simultaneous bell/bridge events added an
+unsupported interpretation of the keeper's intent, so the all-output grounding
+gate also fails. Held-out artifact:
+`/private/tmp/netflux-author-causal-heldout-20261004.json`. Neither model switch
+nor prompt-only production release is qualified by this run. Focused Author route
+tests passed 28/28; lint and typecheck passed. These checks verify code integrity,
+not answer quality.
+
+Next action: reassess empty-source handling and the answer contract before another
+provider experiment. Preserve this failed run as evidence; do not retry its timed
+out call or tune against the fixed set. Design a new development sample and a
+separate unopened fixed set if a revised approach is chosen. Keep production
+Haiku and the current selector-only Luna setting until a new release gate passes.
+
+### Author Luna qualification and release candidate — 4 October 2026
+
+The next candidate returns a deterministic UI-stream answer when a work has no
+usable segment text. It reserves no model spend or signed-in AI quota for that
+case. With an OpenAI key present, Ask Author alone now defaults to `gpt-6-luna`
+using no reasoning effort and no provider storage. `AUTHOR_CHAT_MODEL` can
+explicitly retain the earlier Haiku route. Other chat routes, the selector,
+source selection, history window, output cap, and UI remain unchanged. No
+database migration is involved.
+
+New development artifact `/private/tmp/netflux-author-luna-dev-20261004.json`:
+2/2 Luna outputs completed and passed manual review. The separate fixed artifact
+`/private/tmp/netflux-author-luna-fixed-20261004.json` contains 20/20 completed
+Luna calls across ten unseen synthetic source cases, each manually reviewed as
+grounded. All were below the route's 50-second deadline (maximum 3.615 seconds);
+total fixed-set usage was 7,346 input and 559 output tokens, approximately
+$0.001014 at the current ledger rates. The earlier 30-second held-out timeout
+remains a failure of that run; it was not retried or reclassified. The later
+key-validation ordering and default-routing edits do not change the tested
+prompt, Luna provider options, or source cases.
+
+Focused Author route tests passed 33/33; typecheck and focused lint passed.
+The full production build, Sharp trace check, and critical CSS check passed
+after replacing this worktree's external `node_modules` symlink with a locked
+local install and linking the existing environment file for the build. The
+built server, using the production database and `VERCEL=1` ingress simulation,
+returned HTTP 200 complete UI streams for a public Extreme Ownership question
+(6.8 seconds) and an absent-source question (0.9 seconds). The first built
+server probe without hosted ingress context returned 503 `RATE_LIMIT_UNAVAILABLE`
+by the documented production rate-limit policy; the correctly configured
+hosted-style probe passed. A prior development-server Luna HTTP journey also
+returned a complete answer. These local HTTP probes are not a post-deployment
+production journey.
+
+The Vercel connection denied project environment-variable listing (403), so
+the switch is carried by the code default with an environment rollback option.
+Pending: publish this branch through a scoped PR, let required checks gate the
+merge, and perform a production Author chat smoke after deployment. Temporary
+local test accounts were not created for this candidate.

@@ -29,13 +29,13 @@ export function LibraryStatBadge({
     );
 }
 
-export function LibraryToolbarSkeleton({ className }: { className?: string }) {
+export function LibraryToolbarSkeleton({ className, showSearch = true }: { className?: string; showSearch?: boolean }) {
     return (
         <div
             aria-hidden="true"
             className={cn("flex flex-col gap-2.5 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-3", className)}
         >
-            <div className="h-10 w-full animate-pulse rounded-full border border-border/60 bg-secondary/40 lg:w-64" />
+            {showSearch && <div className="h-10 w-full animate-pulse rounded-full border border-border/60 bg-secondary/40 lg:w-64" />}
             <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap lg:gap-3">
                 <div className="flex flex-wrap gap-2 lg:rounded-full lg:border lg:border-border/60 lg:bg-secondary/25 lg:p-1">
                     {LIBRARY_FILTER_SKELETON_WIDTHS.map((width, index) => (

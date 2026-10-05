@@ -220,7 +220,10 @@ export type Database = {
           isbn: string | null
           narration_completed_at: string | null
           narration_error: string | null
+          narration_progress_at: string | null
           narration_requested_at: string | null
+          narration_segments_completed: number
+          narration_segments_total: number | null
           narration_started_at: string | null
           narration_status: string
           published_at: string | null
@@ -248,7 +251,10 @@ export type Database = {
           isbn?: string | null
           narration_completed_at?: string | null
           narration_error?: string | null
+          narration_progress_at?: string | null
           narration_requested_at?: string | null
+          narration_segments_completed?: number
+          narration_segments_total?: number | null
           narration_started_at?: string | null
           narration_status?: string
           published_at?: string | null
@@ -276,7 +282,10 @@ export type Database = {
           isbn?: string | null
           narration_completed_at?: string | null
           narration_error?: string | null
+          narration_progress_at?: string | null
           narration_requested_at?: string | null
+          narration_segments_completed?: number
+          narration_segments_total?: number | null
           narration_started_at?: string | null
           narration_status?: string
           published_at?: string | null

@@ -6,6 +6,7 @@ import { HeroCarousel } from "@/components/ui/HeroCarousel";
 
 import { RecommendationsRow } from "@/components/ui/RecommendationsRow";
 import { ContentLane } from "@/components/ui/ContentLane";
+import { BrowseReadingPanel } from "@/components/ui/BrowseReadingPanel";
 import { Logo } from "@/components/ui/Logo";
 import type { ContentItem, HomepageSection } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ export function HomeFeed({
                     "relative z-10 space-y-3 pb-3 transition-all duration-500 md:space-y-8 md:pb-0",
                     featuredItems.length > 0 ? "-mt-5 md:-mt-8 pt-0" : "pt-16 md:pt-24"
                 )}>
+                    <BrowseReadingPanel />
                     {/* Standard Feed View */}
                     <div className="space-y-8 md:space-y-10 lg:space-y-14 animate-in fade-in duration-500">
                         {/* New / Latest Additions */}
@@ -101,24 +103,16 @@ export function HomeFeed({
                                     Haven&apos;t found the right summary?
                                 </h2>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    Search the full catalog or ask Netflux for a recommendation.
+                                    Search the full catalog for a topic, title, or author.
                                 </p>
                             </div>
 
-                            <div className="flex shrink-0 items-center gap-3">
-                                <Link
-                                    href="/search"
-                                    className="focus-ring touch-target-44 inline-flex min-h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-                                >
-                                    Search all summaries
-                                </Link>
-                                <Link
-                                    href="/ask"
-                                    className="focus-ring touch-target-44 inline-flex min-h-10 items-center justify-center rounded-full border border-border bg-transparent px-5 text-sm font-semibold text-foreground transition-colors hover:bg-muted/50"
-                                >
-                                    Ask Netflux
-                                </Link>
-                            </div>
+                            <Link
+                                href="/search"
+                                className="focus-ring touch-target-44 inline-flex min-h-10 shrink-0 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                            >
+                                Search all summaries
+                            </Link>
                         </div>
                     </section>
                 </div>

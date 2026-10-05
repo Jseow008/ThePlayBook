@@ -83,6 +83,9 @@ describe("ContinueReadingPage", () => {
         is_featured: false,
         narration_completed_at: null,
         narration_error: null,
+        narration_progress_at: null,
+        narration_segments_completed: 0,
+        narration_segments_total: null,
         narration_requested_at: null,
         narration_started_at: null,
         narration_status: "completed",
@@ -103,6 +106,7 @@ describe("ContinueReadingPage", () => {
         mockToastSuccess.mockClear();
         mockUseReadingProgress.mockReturnValue({
             archiveFromProgressList: vi.fn(),
+            getProgress: vi.fn(() => ({ completed: ["first"], totalSegments: 4 })),
             inProgressIds: [item.id],
             isLoaded: true,
             refresh: vi.fn(),
@@ -124,6 +128,8 @@ describe("ContinueReadingPage", () => {
 
         expect(screen.getByText("resume:app-compact:quick-actions:Deep Work")).toBeInTheDocument();
         expect(screen.getByText("Item in Progress")).toBeInTheDocument();
+        expect(screen.getByText("1 of 4 sections completed")).toBeInTheDocument();
+        expect(screen.getByRole("combobox", { name: "Sort library items" })).toHaveTextContent("Recently read");
         expect(mockContentCard).toHaveBeenCalledWith(
             expect.objectContaining({
                 item,
@@ -143,6 +149,7 @@ describe("ContinueReadingPage", () => {
 
         mockUseReadingProgress.mockReturnValue({
             archiveFromProgressList,
+            getProgress: vi.fn(() => ({ completed: [], totalSegments: 4 })),
             inProgressIds: [item.id],
             isLoaded: true,
             refresh: vi.fn(),
@@ -175,6 +182,7 @@ describe("ContinueReadingPage", () => {
 
         mockUseReadingProgress.mockReturnValue({
             archiveFromProgressList: vi.fn(),
+            getProgress: vi.fn(() => ({ completed: [], totalSegments: 4 })),
             inProgressIds: [item.id, "missing-item"],
             isLoaded: true,
             refresh: vi.fn(),
@@ -200,6 +208,7 @@ describe("ContinueReadingPage", () => {
 
         mockUseReadingProgress.mockReturnValue({
             archiveFromProgressList: vi.fn(),
+            getProgress: vi.fn(() => ({ completed: [], totalSegments: 4 })),
             inProgressIds: [item.id, "missing-item"],
             isLoaded: true,
             refresh: vi.fn(),

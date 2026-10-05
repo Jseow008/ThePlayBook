@@ -43,12 +43,16 @@ export function aiSpendingFailureResponse(error: unknown): NextResponse | null {
 // Reviewed list prices, 27 Sep 2026. Integer nano-USD/token. No prompt caching,
 // tools, paid searches, priority tier, or automatic provider retries are enabled.
 // Reserve the entire supported context, not an unreliable characters/token estimate.
-const prices: Record<string, { input: number; cachedInput: number; output: number; context: number }> = {
+const prices: Record<string, { input: number; cachedInput: number; output: number; context: number; longContext?: { threshold: number; input: number; cachedInput: number; output: number } }> = {
     "anthropic:claude-haiku-4-5-20251001": { input: 1000, cachedInput: 100, output: 5000, context: 200_000 },
     "anthropic:claude-haiku-4-5": { input: 1000, cachedInput: 100, output: 5000, context: 200_000 },
     "anthropic:claude-sonnet-4-6": { input: 3000, cachedInput: 300, output: 15000, context: 1_000_000 },
     "openai:gpt-4o-mini": { input: 150, cachedInput: 75, output: 600, context: 128_000 },
     "openai:gpt-4o-mini-2024-07-18": { input: 150, cachedInput: 75, output: 600, context: 128_000 },
+    // OpenAI standard pricing reviewed 1 Oct 2026: $0.10/$0.01/$0.50 per million.
+    // Above 272k input tokens, input/cache rates double and output is 1.5x.
+    "openai:gpt-6-luna": { input: 100, cachedInput: 10, output: 500, context: 1_050_000,
+        longContext: { threshold: 272_000, input: 200, cachedInput: 20, output: 750 } },
     "google:gemini-embedding-001": { input: 150, cachedInput: 150, output: 0, context: 2048 },
 };
 const admissionSchema = z.discriminatedUnion("allowed", [
@@ -90,7 +94,8 @@ export async function reserveAiProviderCall(options: {
     signal.throwIfAborted();
     const guestKey = scope.authenticated ? null : aiNetworkIdentifier(scope.request);
     if (!scope.authenticated && (scope.feature !== "author-chat" || !guestKey)) throw new AiSpendingError("unavailable");
-    const reserved = Math.ceil((price.context * inputs * price.input + options.maxOutputTokens * price.output) / 1000);
+    const reservePrice = price.longContext ?? price;
+    const reserved = Math.ceil((price.context * inputs * reservePrice.input + options.maxOutputTokens * reservePrice.output) / 1000);
     const operationId = newAiSpendOperationId();
     try {
         const { data, error } = await getAdminClient().rpc("reserve_ai_spend", {
@@ -116,7 +121,8 @@ export async function reserveAiProviderCall(options: {
         if (cacheWrites !== undefined && cacheWrites !== 0) return;
         const cached = usage.inputTokenDetails?.cacheReadTokens ?? 0;
         if (!tokenCount(cached) || cached > usage.inputTokens) return;
-        const cost = Math.ceil(((usage.inputTokens - cached) * price.input + cached * price.cachedInput + usage.outputTokens * price.output) / 1000);
+        const actualPrice = price.longContext && usage.inputTokens > price.longContext.threshold ? price.longContext : price;
+        const cost = Math.ceil(((usage.inputTokens - cached) * actualPrice.input + cached * actualPrice.cachedInput + usage.outputTokens * actualPrice.output) / 1000);
         if (!Number.isSafeInteger(cost)) return;
         try {
             const { data, error } = await getAdminClient().rpc("record_ai_spend", {

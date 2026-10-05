@@ -1,0 +1,33 @@
+{
+  "version": "luna-production-smoke-v1",
+  "commit": "e92764382f44126e879f34404d745e7bb599da5e",
+  "deployment": "dpl_NuQhhxkKA2QYK1h62wxLicgK3deF",
+  "model": "gpt-6-luna",
+  "status": 200,
+  "citationOpened": true,
+  "cacheControl": "no-store",
+  "executionRegion": "bom1",
+  "ingressRegion": "sin1",
+  "paidSmokeRequests": 1,
+  "timingMs": {
+    "responseReady": 9585,
+    "provider": 5158,
+    "reserve": 385,
+    "settle": 169,
+    "headers": 5122,
+    "sdkPrepare": 18,
+    "sdkFinish": 15,
+    "bodyRead": 3
+  },
+  "ledger": {
+    "inputTokens": 1891,
+    "outputTokens": 288,
+    "reservedMicroUSD": 211200,
+    "settledMicroUSD": 334
+  },
+  "limits": [
+    "One observed production request, not a latency benchmark.",
+    "No personal excerpts, credential values or citation tokens retained.",
+    "Factual wait UI is a separate follow-up, not yet deployed."
+  ]
+}

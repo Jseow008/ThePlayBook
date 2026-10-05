@@ -27,6 +27,7 @@ type NarrationStatusResponse = {
         summary?: NarrationQueueSummary;
         processingJobs?: NarrationProcessingJob[];
         staleProcessingJobs?: NarrationProcessingJob[];
+        failedJobs?: NarrationFailedJob[];
         batchSize?: number;
     };
     error?: {
@@ -42,6 +43,19 @@ type NarrationProcessingJob = {
     startedAt: string | null;
     ageMs: number;
     isStale: boolean;
+    completedSegments: number;
+    totalSegments: number | null;
+    progressAt: string | null;
+    progressAgeMs: number | null;
+};
+
+type NarrationFailedJob = {
+    id: string;
+    title: string;
+    error: string | null;
+    failedAt: string | null;
+    completedSegments: number;
+    totalSegments: number | null;
 };
 
 type ResetNarrationResponse = {
@@ -59,7 +73,8 @@ function formatJobCount(count: number) {
 }
 
 function formatJobAge(ageMs: number) {
-    const totalMinutes = Math.max(1, Math.round(ageMs / 60_000));
+    if (ageMs < 60_000) return "<1m";
+    const totalMinutes = Math.round(ageMs / 60_000);
     if (totalMinutes < 60) {
         return `${totalMinutes}m`;
     }
@@ -76,12 +91,12 @@ export function DrainNarrationJobsButton() {
     const [queueSummary, setQueueSummary] = useState<NarrationQueueSummary | null>(null);
     const [processingJobs, setProcessingJobs] = useState<NarrationProcessingJob[]>([]);
     const [staleProcessingJobs, setStaleProcessingJobs] = useState<NarrationProcessingJob[]>([]);
+    const [failedJobs, setFailedJobs] = useState<NarrationFailedJob[]>([]);
     const [batchSize, setBatchSize] = useState(0);
     const [statusText, setStatusText] = useState("");
 
     const loadSummary = async () => {
         try {
-            setIsLoadingSummary(true);
             const res = await fetch("/api/admin/narration/status", {
                 method: "GET",
             });
@@ -94,6 +109,7 @@ export function DrainNarrationJobsButton() {
             setQueueSummary(data.data?.summary ?? null);
             setProcessingJobs(data.data?.processingJobs ?? []);
             setStaleProcessingJobs(data.data?.staleProcessingJobs ?? []);
+            setFailedJobs(data.data?.failedJobs ?? []);
             setBatchSize(data.data?.batchSize ?? 0);
         } catch (error: any) {
             setStatusText(`Error: ${error.message}`);
@@ -239,7 +255,7 @@ export function DrainNarrationJobsButton() {
                 ) : queueSummary ? (
                     <>
                         <div>{queuedCount} queued for recovery</div>
-                        <div>{processingCount} currently processing in the background</div>
+                        <div>{processingCount} currently processing</div>
                         {processingJobs.length > 0 ? (
                             <div className="pt-1">
                                 <div className="font-medium text-foreground">Currently processing</div>
@@ -252,11 +268,57 @@ export function DrainNarrationJobsButton() {
                                                 {job.startedAt ? ` • ${formatJobAge(job.ageMs)}` : ""}
                                                 {job.isStale ? " • stale" : ""}
                                             </span>
+                                            <div className="text-zinc-500">
+                                                {job.totalSegments === null
+                                                    ? "Preparing segments"
+                                                    : `${job.completedSegments} of ${job.totalSegments} segments generated`}
+                                                {job.progressAgeMs !== null && job.progressAgeMs !== undefined
+                                                    ? ` • Last progress ${formatJobAge(job.progressAgeMs)} ago`
+                                                    : ""}
+                                            </div>
+                                            {job.totalSegments !== null && job.totalSegments > 0 ? (
+                                                <div
+                                                    role="progressbar"
+                                                    aria-label={`${job.title} narration progress`}
+                                                    aria-valuemin={0}
+                                                    aria-valuemax={job.totalSegments}
+                                                    aria-valuenow={job.completedSegments}
+                                                    className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200"
+                                                >
+                                                    <div
+                                                        className="h-full rounded-full bg-zinc-700"
+                                                        style={{ width: `${Math.min(100, Math.round((job.completedSegments / job.totalSegments) * 100))}%` }}
+                                                    />
+                                                </div>
+                                            ) : null}
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         ) : null}
+                        <div className="pt-2">
+                            <div className="font-medium text-foreground">Recent failures (last 24 hours)</div>
+                            {failedJobs.length > 0 ? (
+                                <ul className="mt-1 space-y-2">
+                                    {failedJobs.map((job) => (
+                                        <li key={job.id} className="min-w-0">
+                                            <div className="break-words text-foreground">{job.title}</div>
+                                            {job.failedAt ? (
+                                                <time dateTime={job.failedAt} title={new Date(job.failedAt).toLocaleString()}>
+                                                    Failed {formatJobAge(Math.max(Date.now() - new Date(job.failedAt).getTime(), 0))} ago
+                                                </time>
+                                            ) : null}
+                                            <div className="break-words text-red-700">
+                                                {job.error || "Narration failed without a recorded reason."}
+                                            </div>
+                                            {job.totalSegments !== null ? (
+                                                <div>{job.completedSegments} of {job.totalSegments} segments generated before failure</div>
+                                            ) : null}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : <div className="mt-1">No failures in the last 24 hours.</div>}
+                        </div>
                         <div>{retryingCount} {retryingCount === 1 ? "job is" : "jobs are"} eligible for this recovery run</div>
                     </>
                 ) : (

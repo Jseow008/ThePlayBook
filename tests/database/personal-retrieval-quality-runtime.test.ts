@@ -14,7 +14,7 @@ import { buildLibraryMetadataContext, type LibraryItemRow } from "@/lib/server/l
 import { MAX_LIBRARY_CONTEXT_CHARS, getOutputTokenCap, getAnthropicModelName, detectAskIntent, buildRetrievalFallbackText, getNotesOutputTokenCap, getNotesAnthropicModelName, NOTES_NO_EVIDENCE, LIBRARY_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
 import { chunkPersonalEvidenceText, rankSourceEvidenceSpans, PersonalEvidenceVectorCache } from "@/lib/server/personal-evidence-ranking";
 import {
-    PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG, canonicalPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash,
+    PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG, PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG, canonicalPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash,
     type CanonicalPersonalEvidenceSelectionRequest,
     type PersonalEvidenceSelectionCandidate, type PersonalEvidenceSelectionGenerator,
 } from "@/lib/server/personal-evidence-selector";
@@ -32,7 +32,8 @@ const reportPath = resolve(process.env.PERSONAL_RETRIEVAL_QUALITY_REPORT ?? (cor
 const captureSelectionInputs = process.env.CAPTURE_PERSONAL_SELECTION_INPUTS === "1";
 const selectionInputsPath = resolve(process.env.PERSONAL_SELECTION_INPUTS_PATH ?? (corpusVersion === "v1" ? "artifacts/personal-selection-inputs.json" : "artifacts/personal-selection-inputs-v2-selector-v4.json"));
 const selectionFixturePath = resolve(process.env.PERSONAL_SELECTION_FIXTURE ?? (corpusVersion === "v1" ? "tests/fixtures/retrieval/provider-selections-v1.json" : "tests/fixtures/retrieval/provider-selections-v2-selector-v4.json"));
-const selectionModelConfig = PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG;
+const selectionModelConfig = process.env.PERSONAL_EVIDENCE_SELECTOR_MODEL === "gpt-6-luna"
+    ? PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG : PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG;
 const configured = Boolean(databaseUrl && apiUrl && anonKey && existsSync(vectorsPath));
 if (process.env.PERSONAL_RETRIEVAL_QUALITY_RUNTIME_REQUIRED === "1" && !configured) {
     throw new Error("Personal retrieval quality requires the disposable DB107 database/API/anon key and recorded real-provider vector fixture.");

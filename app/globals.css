@@ -840,7 +840,7 @@ mark[data-highlight-spotlight="true"] {
 .landing-hero-reveal {
   opacity: 1;
   transform: translateY(0);
-  filter: blur(0);
+  filter: none;
 }
 
 .landing-section-kicker {
@@ -1012,14 +1012,10 @@ mark[data-highlight-spotlight="true"] {
 
 @keyframes landingHeroReveal {
   from {
-    opacity: 0;
-    filter: blur(5px);
     transform: translateY(10px);
   }
 
   to {
-    opacity: 1;
-    filter: blur(0);
     transform: translateY(0);
   }
 }
@@ -1052,12 +1048,11 @@ mark[data-highlight-spotlight="true"] {
 
 @media (prefers-reduced-motion: no-preference) {
   .landing-hero-reveal {
-    opacity: 0;
-    filter: blur(5px);
+    /* The entrance motion must not hide already-rendered text or actions. */
     transform: translateY(10px);
     animation: landingHeroReveal 780ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
     animation-delay: var(--hero-reveal-delay, 0ms);
-    will-change: opacity, transform, filter;
+    will-change: transform;
   }
 
   .landing-hero-emphasis::after {
@@ -1261,13 +1256,6 @@ mark[data-highlight-spotlight="true"] {
   --featured-card-height: 16.125rem;
 }
 
-.landing-featured-row-support {
-  --featured-card-width: 9.5rem;
-  --featured-card-height: 14.25rem;
-  --featured-card-opacity: 0.86;
-  --featured-card-y: 0.125rem;
-}
-
 .landing-featured-read-shell {
   width: var(--featured-card-width);
   flex-basis: var(--featured-card-width);
@@ -1337,22 +1325,12 @@ mark[data-highlight-spotlight="true"] {
     --featured-card-width: 13.125rem;
     --featured-card-height: 19.7rem;
   }
-
-  .landing-featured-row-support {
-    --featured-card-width: 11.625rem;
-    --featured-card-height: 17.45rem;
-  }
 }
 
 @media (min-width: 768px) {
   .landing-featured-row-primary {
     --featured-card-width: 15.5rem;
     --featured-card-height: 23rem;
-  }
-
-  .landing-featured-row-support {
-    --featured-card-width: 13.375rem;
-    --featured-card-height: 19.75rem;
   }
 }
 

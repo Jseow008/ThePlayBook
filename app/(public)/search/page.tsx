@@ -5,13 +5,11 @@
  * Supports filtering by category and type.
  */
 
-import { createPublicServerClient } from "@/lib/supabase/public-server";
-import { TrendingUp } from "lucide-react";
-import { getCategoryStats } from "@/lib/server/public-content";
-import type { ContentItem } from "@/types/database";
-import Link from "next/link";
+import { searchCatalog } from "@/lib/server/catalog-search";
+import { getPopularCatalogItems, getRecentCatalogPage, getSearchCategoryStats } from "@/lib/server/search-catalog";
 import { redirect } from "next/navigation";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { SearchFilterLink } from "@/components/ui/SearchFilterLink";
 import { Suspense } from "react";
 import { SearchTopicSelect } from "@/components/ui/SearchTopicSelect";
 import {
@@ -23,11 +21,10 @@ import {
 } from "@/lib/content-categories";
 import {
     buildSearchHref,
-    ContentGrid,
-    formatPopularLabel,
     normalizeCatalogSort,
     normalizePage,
     normalizeType,
+    PopularCatalog,
     RecentCatalog,
     ResultsSkeleton,
     SearchResults,
@@ -47,8 +44,6 @@ interface NormalizedTopic {
     count: number;
     rawValues: string[];
 }
-
-const POPULAR_LIMIT = 20;
 
 function buildNormalizedTopics(categoryStats: CategoryStat[]) {
     return buildCanonicalCategoryStats(categoryStats)
@@ -76,11 +71,26 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     const hasContentSearch = (query?.trim().length ?? 0) > 0;
 
-    const supabase = createPublicServerClient();
-    const rpcClient = supabase as typeof supabase & {
-        rpc: (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>;
-    };
-    const categoryStats = await getCategoryStats();
+    // Unfiltered results do not depend on the topic list, so start both reads together.
+    // Category-filtered results still use the raw values returned by category stats.
+    const categoryStatsPromise = getSearchCategoryStats().catch((error): CategoryStat[] => {
+        console.error("Search topic stats read failed", error);
+        return [];
+    });
+    const preloadedSearchResponse = hasContentSearch && !canonicalCategory
+        ? searchCatalog({ query: query?.trim() ?? "", categories: [], type: selectedType ?? null, cursor: cursor ?? null })
+        : undefined;
+    const preloadedRecentPage = !hasContentSearch && selectedSort === "recent" && !canonicalCategory
+        ? getRecentCatalogPage({ categoryValues: [], type: selectedType, page: selectedPage })
+        : undefined;
+    const preloadedPopular = !hasContentSearch && selectedSort === "popular" && !canonicalCategory
+        ? getPopularCatalogItems({ categoryValues: [], type: selectedType })
+        : undefined;
+    void preloadedSearchResponse?.catch(() => undefined);
+    void preloadedRecentPage?.catch(() => undefined);
+    void preloadedPopular?.catch(() => undefined);
+
+    const categoryStats = await categoryStatsPromise;
     const contentTypes = ["All", "Book", "Podcast", "Article"];
     const normalizedTopics = buildNormalizedTopics(categoryStats);
     const topicsByLabel = new Map(normalizedTopics.map((topic) => [topic.label, topic]));
@@ -105,15 +115,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ])).sort((a, b) => a.localeCompare(b));
     const selectedTopicLabel = selectedTopic?.label;
     const selectedTopicValues = selectedTopic?.rawValues ?? [];
-    const { data: popularData } = !hasContentSearch && selectedSort === "popular"
-        ? await rpcClient.rpc("get_trending_content", {
-            p_limit: POPULAR_LIMIT,
-            p_type: selectedType ?? null,
-            p_categories: selectedTopicValues.length > 0 ? selectedTopicValues : null,
-        })
-        : { data: null };
-    const popularItems = (popularData || []) as unknown as ContentItem[];
-
     return (
         <div className="min-h-screen bg-background pb-5 md:pb-6 lg:pb-16">
             <div className="max-w-7xl mx-auto px-6 lg:px-16 py-5 md:py-8">
@@ -146,7 +147,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 : selectedType === t.toLowerCase();
 
                             return (
-                                <Link
+                                <SearchFilterLink
                                     key={t}
                                     href={buildSearchHref({
                                         query,
@@ -160,7 +161,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                         }`}
                                 >
                                     {t}
-                                </Link>
+                                </SearchFilterLink>
                             );
                         })}
                     </div>
@@ -172,7 +173,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             Topics
                         </p>
                         <div className="flex flex-wrap justify-start gap-2">
-                            <Link
+                            <SearchFilterLink
                                 href={buildSearchHref({
                                     query,
                                     type: selectedTypeParam,
@@ -184,13 +185,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                     }`}
                             >
                                 All topics
-                            </Link>
+                            </SearchFilterLink>
 
                             {curatedTopicItems.map((item) => {
                                 const isActive = selectedTopicLabel === item.label;
 
                                 return (
-                                    <Link
+                                    <SearchFilterLink
                                         key={item.label}
                                         href={buildSearchHref({
                                             query,
@@ -204,7 +205,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                             }`}
                                     >
                                         {item.label}
-                                    </Link>
+                                    </SearchFilterLink>
                                 );
                             })}
 
@@ -227,7 +228,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             Sort by
                         </p>
                         <div className="flex items-center gap-2">
-                            <Link
+                            <SearchFilterLink
                                 href={buildSearchHref({
                                     category: selectedTopicLabel,
                                     type: selectedTypeParam,
@@ -241,8 +242,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 }`}
                             >
                                 Newest
-                            </Link>
-                            <Link
+                            </SearchFilterLink>
+                            <SearchFilterLink
                                 href={buildSearchHref({
                                     category: selectedTopicLabel,
                                     type: selectedTypeParam,
@@ -256,7 +257,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 }`}
                             >
                                 Popular
-                            </Link>
+                            </SearchFilterLink>
                         </div>
                     </div>
                 ) : null}
@@ -270,6 +271,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             categoryValues={selectedTopicValues}
                             type={selectedTypeParam}
                             cursor={cursor}
+                            preloadedResponse={preloadedSearchResponse}
                         />
                     </Suspense>
                 ) : selectedSort === "recent" ? (
@@ -279,18 +281,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             categoryValues={selectedTopicValues}
                             type={selectedType}
                             page={selectedPage}
+                            preloadedPage={preloadedRecentPage}
                         />
                     </Suspense>
-                ) : popularItems.length > 0 ? (
-                    <div className="animate-in fade-in duration-500">
-                        <div className="flex items-center gap-2 mb-6">
-                            <TrendingUp className="size-5 text-primary" />
-                            <h2 className="text-lg font-semibold text-foreground">{formatPopularLabel(selectedType)}</h2>
-                        </div>
-                        <ContentGrid items={popularItems} />
-                    </div>
                 ) : (
-                    <p className="py-12 text-center text-muted-foreground">No popular content matches these filters yet.</p>
+                    <Suspense fallback={<ResultsSkeleton />}>
+                        <PopularCatalog
+                            categoryValues={selectedTopicValues}
+                            type={selectedType}
+                            preloadedItems={preloadedPopular}
+                        />
+                    </Suspense>
                 )}
             </div>
         </div>

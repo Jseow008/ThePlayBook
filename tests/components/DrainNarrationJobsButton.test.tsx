@@ -100,6 +100,7 @@ describe("DrainNarrationJobsButton", () => {
         await waitFor(() => {
             expect(screen.getByText(/0 queued for recovery/i)).toBeInTheDocument();
         });
+        expect(screen.getByText("No failures in the last 24 hours.")).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole("button", { name: /run recovery/i }));
 
@@ -142,6 +143,47 @@ describe("DrainNarrationJobsButton", () => {
         await waitFor(() => {
             expect(screen.getByText(/failed to process queued ai narration/i)).toBeInTheDocument();
         });
+    });
+
+    it("shows segment progress and the latest recorded failure", async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    summary: { queuedCount: 0, processingCount: 1 },
+                    processingJobs: [{
+                        id: "processing-id",
+                        title: "Deep Work",
+                        author: null,
+                        startedAt: "2026-10-01T16:00:00Z",
+                        ageMs: 120000,
+                        isStale: false,
+                        completedSegments: 2,
+                        totalSegments: 5,
+                        progressAt: "2026-10-01T16:01:00Z",
+                        progressAgeMs: 60000,
+                    }],
+                    failedJobs: [{
+                        id: "failed-id",
+                        title: "The Singapore Story",
+                        error: "The voice provider timed out.",
+                        failedAt: "2026-10-01T15:59:00Z",
+                        completedSegments: 1,
+                        totalSegments: 3,
+                    }],
+                    batchSize: 3,
+                },
+            }),
+        }) as any;
+
+        render(<DrainNarrationJobsButton />);
+
+        expect(await screen.findByText(/2 of 5 segments generated/)).toBeInTheDocument();
+        expect(screen.getByRole("progressbar", { name: "Deep Work narration progress" }))
+            .toHaveAttribute("aria-valuenow", "2");
+        expect(screen.getByText("The voice provider timed out.")).toBeInTheDocument();
+        expect(screen.getByText("Recent failures (last 24 hours)")).toBeInTheDocument();
+        expect(screen.getByText("1 of 3 segments generated before failure")).toBeInTheDocument();
     });
 
     it("shows stale processing titles and resets them", async () => {
