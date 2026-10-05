@@ -22,7 +22,7 @@ import { EmptyState, LoadingState, LoadMoreStatus } from "@/components/focus/Foc
 import { FocusTakeawaysSheet } from "@/components/focus/FocusTakeawaysSheet";
 import { getFocusOpeningVariant, orderFocusBatch, type FocusOpeningVariant, type FocusSelectionSource } from "@/components/focus/focus-opening-experiment";
 import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/components/focus/focus-feed-utils";
-import { markFocusReadIntent, type FocusActionContext } from "@/lib/focus-read-attribution";
+import { FOCUS_MEASUREMENT_VERSION, markFocusPreviewIntent, markFocusReadIntent, type FocusActionContext } from "@/lib/focus-read-attribution";
 import type { AnalyticsEventProperties } from "@/lib/analytics-events";
 import {
     FEED_LIST_VIEWPORT_CLASS,
@@ -59,16 +59,18 @@ const FOCUS_EXCLUSION_LIMIT = 500;
 const FOCUS_PERSONALIZATION_SEED_LIMIT = 12;
 const FocusItemIdSchema = z.string().uuid();
 
-type FocusExperimentEvent = "focus_visit_started" | "focus_card_impression" | "focus_card_action" | "focus_feed_timing";
+type FocusExperimentEvent = "focus_visit_started" | "focus_opening_batch" | "focus_card_impression" | "focus_card_action" | "focus_feed_timing";
+let focusAnalyticsModulePromise: Promise<typeof import("@/lib/analytics")> | null = null;
 
 function captureFocusEvent<E extends FocusExperimentEvent>(
     event: E,
     properties: AnalyticsEventProperties<E>,
 ) {
     // Loading analytics must never delay a Focus card or its actions.
-    void import("@/lib/analytics")
+    focusAnalyticsModulePromise ??= import("@/lib/analytics");
+    void focusAnalyticsModulePromise
         .then(({ captureAnalyticsEvent }) => captureAnalyticsEvent(event, properties))
-        .catch(() => {});
+        .catch(() => { focusAnalyticsModulePromise = null; });
 }
 
 type FocusFeedResponse = {
@@ -341,15 +343,19 @@ export function FocusFeed() {
     const selectionSourceByIdRef = useRef(new Map<string, FocusSelectionSource>());
     const contextReadyByIdRef = useRef(new Map<string, boolean>());
     const firstVisibleIdRef = useRef<string | null>(null);
+    const openingHasCoverRef = useRef(false);
+    const openingCardVisibleRef = useRef(false);
     const protectedOpeningIdRef = useRef<string | null>(null);
     const firstReadableRecordedRef = useRef(false);
     const firstCoverRecordedRef = useRef(false);
-    const pendingCoverRef = useRef<{ status: "loaded" | "failed"; at: number } | null>(null);
+    const pendingCoverRef = useRef<"loaded" | "failed" | null>(null);
     const mountTimeRef = useRef<number | null>(null);
+    const hiddenSinceRef = useRef<number | null>(null);
+    const hiddenTotalRef = useRef(0);
     const impressedIdsRef = useRef(new Set<string>());
     const engagedIdsRef = useRef(new Set<string>());
     const lastImpressionRef = useRef<{ context: FocusActionContext; at: number } | null>(null);
-    const endWaitRef = useRef<number | null>(null);
+    const endWaitRef = useRef<{ startedAt: number; awaitedCount: number; awaitedIds: Set<string> } | null>(null);
 
     const cards = useMemo(() => buildFocusCards(items), [items]);
     const activeCardId = cards[activeCardIndex]?.id ?? null;
@@ -588,6 +594,7 @@ export function FocusFeed() {
     }, [clearSheetAnimationTimeouts, prefersReducedMotion]);
 
     const getActionContext = useCallback((cardId: string): FocusActionContext => ({
+        measurement_version: FOCUS_MEASUREMENT_VERSION,
         focus_visit_id: visitIdRef.current,
         content_id: cardId,
         variant: openingVariantRef.current,
@@ -603,22 +610,54 @@ export function FocusFeed() {
         markFocusReadIntent(getActionContext(card.id));
     }, [getActionContext]);
 
-    const handleCoverSettled = useCallback((card: FocusCard, status: "loaded" | "failed") => {
-        if (firstCoverRecordedRef.current || firstVisibleIdRef.current !== card.id) return;
-        if (!firstReadableRecordedRef.current || document.visibilityState !== "visible") {
-            pendingCoverRef.current = { status, at: performance.now() };
-            return;
-        }
+    const handlePreviewTakeaways = useCallback((card: FocusCard) => {
+        markFocusPreviewIntent(getActionContext(card.id));
+    }, [getActionContext]);
+
+    const getForegroundElapsed = useCallback((at = performance.now()) => {
+        const hiddenMs = hiddenTotalRef.current + (hiddenSinceRef.current === null ? 0 : at - hiddenSinceRef.current);
+        return Math.max(0, Math.round(at - (mountTimeRef.current ?? at) - hiddenMs));
+    }, []);
+
+    const recordOpeningCover = useCallback((measure: "cover_visible" | "cover_failed" | "cover_absent" | "cover_left_before_ready") => {
+        if (firstCoverRecordedRef.current) return;
         firstCoverRecordedRef.current = true;
+        pendingCoverRef.current = null;
         captureFocusEvent("focus_feed_timing", {
+            measurement_version: FOCUS_MEASUREMENT_VERSION,
             focus_visit_id: visitIdRef.current,
             variant: openingVariantRef.current,
             entry_kind: entryKindRef.current,
-            device_class: isFocusDesktop ? "desktop" : "mobile",
-            measure: status === "loaded" ? "cover_visible" : "cover_failed",
-            elapsed_ms: Math.round(performance.now() - (mountTimeRef.current ?? performance.now())),
+            device_class: window.matchMedia?.(VIEWPORT_QUERIES.focusDesktop).matches ? "desktop" : "mobile",
+            measure,
+            elapsed_ms: getForegroundElapsed(),
         });
-    }, [isFocusDesktop]);
+    }, [getForegroundElapsed]);
+
+    const handleCoverSettled = useCallback((card: FocusCard, status: "loaded" | "failed") => {
+        if (firstCoverRecordedRef.current || firstVisibleIdRef.current !== card.id || activeCardId !== card.id) return;
+        if (!firstReadableRecordedRef.current || !openingCardVisibleRef.current || document.visibilityState !== "visible") {
+            pendingCoverRef.current = status;
+            return;
+        }
+        recordOpeningCover(status === "loaded" ? "cover_visible" : "cover_failed");
+    }, [activeCardId, recordOpeningCover]);
+
+    const settleEndWait = useCallback((outcome: "ready" | "failed" | "abandoned" | "moved_away" | "backgrounded" | "exhausted") => {
+        const wait = endWaitRef.current;
+        if (!wait) return;
+        endWaitRef.current = null;
+        captureFocusEvent("focus_feed_timing", {
+            measurement_version: FOCUS_MEASUREMENT_VERSION,
+            focus_visit_id: visitIdRef.current,
+            variant: openingVariantRef.current,
+            entry_kind: entryKindRef.current,
+            device_class: window.matchMedia?.(VIEWPORT_QUERIES.focusDesktop).matches ? "desktop" : "mobile",
+            measure: "end_wait",
+            elapsed_ms: Math.max(0, Math.round(performance.now() - wait.startedAt)),
+            outcome,
+        });
+    }, []);
 
     const handleToggleSave = useCallback(async (card: FocusCard) => {
         const wasSaved = myListIdSetRef.current.has(card.id);
@@ -701,6 +740,19 @@ export function FocusFeed() {
                 contextReadyByIdRef.current.set(item.id, personalizationReady);
             });
             const isFreshOpening = freshOpeningRef.current && itemsRef.current.length === 0;
+            if (isFreshOpening) {
+                captureFocusEvent("focus_opening_batch", {
+                    measurement_version: FOCUS_MEASUREMENT_VERSION,
+                    focus_visit_id: visitIdRef.current,
+                    variant: openingVariantRef.current,
+                    assignment_stable: assignmentStableRef.current,
+                    device_class: isFocusDesktop ? "desktop" : "mobile",
+                    personalization_ready: personalizationReady,
+                    outcome: data.length > 0 ? "loaded" : "empty",
+                    contains_personalized: data.some((item) => personalizedIds.has(item.id)),
+                    item_count: data.length,
+                });
+            }
             const shuffledData = orderFocusBatch(
                 data,
                 openingVariantRef.current,
@@ -709,6 +761,7 @@ export function FocusFeed() {
             );
             if (isFreshOpening && shuffledData[0]) {
                 firstVisibleIdRef.current = shuffledData[0].id;
+                openingHasCoverRef.current = Boolean(shuffledData[0].cover_image_url);
                 if (!isLoaded) protectedOpeningIdRef.current = shuffledData[0].id;
                 freshOpeningRef.current = false;
             }
@@ -726,6 +779,19 @@ export function FocusFeed() {
             nextCursorRef.current = resolvedNextCursor;
             setNextCursor(resolvedNextCursor);
         } catch (err) {
+            if (freshOpeningRef.current && itemsRef.current.length === 0) {
+                captureFocusEvent("focus_opening_batch", {
+                    measurement_version: FOCUS_MEASUREMENT_VERSION,
+                    focus_visit_id: visitIdRef.current,
+                    variant: openingVariantRef.current,
+                    assignment_stable: assignmentStableRef.current,
+                    device_class: isFocusDesktop ? "desktop" : "mobile",
+                    personalization_ready: isLoaded,
+                    outcome: "failed",
+                    contains_personalized: "unknown",
+                    item_count: 0,
+                });
+            }
             const isAbortError = err instanceof DOMException && err.name === "AbortError";
             if (!isAbortError) {
                 console.error(err);
@@ -743,7 +809,7 @@ export function FocusFeed() {
             isFetchingRef.current = false;
             setLoading(false);
         }
-    }, [completedIds, isLoaded, myListIds]);
+    }, [completedIds, isFocusDesktop, isLoaded, myListIds]);
 
     const retryFocusFeed = useCallback(() => {
         setError(null);
@@ -833,10 +899,13 @@ export function FocusFeed() {
         }
         visitIdRef.current = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
         mountTimeRef.current = performance.now();
+        hiddenSinceRef.current = document.visibilityState === "visible" ? null : mountTimeRef.current;
         if (restoredState) {
             entryKindRef.current = "restored";
             firstVisibleIdRef.current = restoredState.items[restoredState.activeCardIndex]?.id ?? null;
+            openingHasCoverRef.current = Boolean(restoredState.items[restoredState.activeCardIndex]?.cover_image_url);
             captureFocusEvent("focus_visit_started", {
+                measurement_version: FOCUS_MEASUREMENT_VERSION,
                 focus_visit_id: visitIdRef.current,
                 variant: openingVariantRef.current,
                 assignment_stable: assignmentStableRef.current,
@@ -870,6 +939,7 @@ export function FocusFeed() {
         entryKindRef.current = "fresh";
         freshOpeningRef.current = true;
         captureFocusEvent("focus_visit_started", {
+            measurement_version: FOCUS_MEASUREMENT_VERSION,
             focus_visit_id: visitIdRef.current,
             variant: openingVariantRef.current,
             assignment_stable: assignmentStableRef.current,
@@ -885,7 +955,32 @@ export function FocusFeed() {
     }, [fetchBatch, isFocusDesktop, isLoaded]);
 
     useEffect(() => {
+        const onVisibilityChange = () => {
+            const now = performance.now();
+            if (document.visibilityState !== "visible") {
+                hiddenSinceRef.current ??= now;
+                openingCardVisibleRef.current = false;
+                settleEndWait("backgrounded");
+                return;
+            }
+            if (hiddenSinceRef.current !== null) {
+                hiddenTotalRef.current += now - hiddenSinceRef.current;
+                hiddenSinceRef.current = null;
+            }
+            if (cards.length > 0 && activeCardIndex === cards.length - 1 && hasMore && !error && endWaitRef.current === null) {
+                endWaitRef.current = { startedAt: now, awaitedCount: cards.length, awaitedIds: new Set(cards.map((card) => card.id)) };
+            }
+        };
+        document.addEventListener("visibilitychange", onVisibilityChange);
+        return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    }, [activeCardIndex, cards, error, hasMore, settleEndWait]);
+
+    useEffect(() => {
         if (!activeCardId) return;
+        if (firstVisibleIdRef.current && firstVisibleIdRef.current !== activeCardId) {
+            openingCardVisibleRef.current = false;
+            if (openingHasCoverRef.current) recordOpeningCover("cover_left_before_ready");
+        }
         const previous = lastImpressionRef.current;
         if (previous && previous.context.content_id !== activeCardId) {
             if (
@@ -899,7 +994,7 @@ export function FocusFeed() {
             }
             lastImpressionRef.current = null;
         }
-    }, [activeCardId]);
+    }, [activeCardId, recordOpeningCover]);
 
     useEffect(() => {
         if (!activeCardId) return;
@@ -916,6 +1011,9 @@ export function FocusFeed() {
         const observer = new IntersectionObserver((entries) => {
             const entry = entries[0];
             visibleEnough = Boolean(entry && entry.isIntersecting && entry.intersectionRatio >= 0.75);
+            if (firstVisibleIdRef.current === activeCardId) {
+                openingCardVisibleRef.current = visibleEnough && document.visibilityState === "visible";
+            }
             if (!visibleEnough || document.visibilityState !== "visible") {
                 clearTimer();
                 return;
@@ -923,8 +1021,9 @@ export function FocusFeed() {
 
             if (firstVisibleIdRef.current === activeCardId && !firstReadableRecordedRef.current) {
                 firstReadableRecordedRef.current = true;
-                const elapsed = Math.round(performance.now() - (mountTimeRef.current ?? performance.now()));
+                const elapsed = getForegroundElapsed();
                 captureFocusEvent("focus_feed_timing", {
+                    measurement_version: FOCUS_MEASUREMENT_VERSION,
                     focus_visit_id: visitIdRef.current,
                     variant: openingVariantRef.current,
                     entry_kind: entryKindRef.current,
@@ -933,29 +1032,11 @@ export function FocusFeed() {
                     elapsed_ms: elapsed,
                 });
                 if (!cards[activeCardIndex]?.cover_image_url && !firstCoverRecordedRef.current) {
-                    firstCoverRecordedRef.current = true;
-                    captureFocusEvent("focus_feed_timing", {
-                        focus_visit_id: visitIdRef.current,
-                        variant: openingVariantRef.current,
-                        entry_kind: entryKindRef.current,
-                        device_class: isFocusDesktop ? "desktop" : "mobile",
-                        measure: "cover_absent",
-                        elapsed_ms: elapsed,
-                    });
+                    recordOpeningCover("cover_absent");
                 }
-                const pendingCover = pendingCoverRef.current;
-                if (pendingCover && !firstCoverRecordedRef.current) {
-                    firstCoverRecordedRef.current = true;
-                    pendingCoverRef.current = null;
-                    captureFocusEvent("focus_feed_timing", {
-                        focus_visit_id: visitIdRef.current,
-                        variant: openingVariantRef.current,
-                        entry_kind: entryKindRef.current,
-                        device_class: isFocusDesktop ? "desktop" : "mobile",
-                        measure: pendingCover.status === "loaded" ? "cover_visible" : "cover_failed",
-                        elapsed_ms: Math.round(Math.max(performance.now(), pendingCover.at) - (mountTimeRef.current ?? performance.now())),
-                    });
-                }
+            }
+            if (firstVisibleIdRef.current === activeCardId && firstReadableRecordedRef.current && pendingCoverRef.current) {
+                recordOpeningCover(pendingCoverRef.current === "loaded" ? "cover_visible" : "cover_failed");
             }
 
             if (impressedIdsRef.current.has(activeCardId) || impressionTimer !== null) return;
@@ -967,13 +1048,16 @@ export function FocusFeed() {
                 lastImpressionRef.current = { context, at: performance.now() };
                 captureFocusEvent("focus_card_impression", {
                     ...context,
-                    readable_ms: Math.round(performance.now() - (mountTimeRef.current ?? performance.now())),
+                    readable_ms: getForegroundElapsed(),
                 });
             }, 500);
         }, { root: list, threshold: [0, 0.75, 1] });
         observer.observe(element);
         const onVisibilityChange = () => {
-            if (document.visibilityState !== "visible") clearTimer();
+            if (document.visibilityState !== "visible") {
+                openingCardVisibleRef.current = false;
+                clearTimer();
+            }
             else {
                 observer.unobserve(element);
                 observer.observe(element);
@@ -985,28 +1069,20 @@ export function FocusFeed() {
             observer.disconnect();
             document.removeEventListener("visibilitychange", onVisibilityChange);
         };
-    }, [activeCardId, activeCardIndex, cards, getActionContext, isFocusDesktop]);
+    }, [activeCardId, activeCardIndex, cards, getActionContext, getForegroundElapsed, isFocusDesktop, recordOpeningCover]);
 
     useEffect(() => {
-        if (endWaitRef.current !== null) {
-            const outcome = error ? "failed" : cards.length > activeCardIndex + 1 || !hasMore ? "ready" : null;
-            if (outcome) {
-                captureFocusEvent("focus_feed_timing", {
-                    focus_visit_id: visitIdRef.current,
-                    variant: openingVariantRef.current,
-                    entry_kind: entryKindRef.current,
-                    device_class: isFocusDesktop ? "desktop" : "mobile",
-                    measure: "end_wait",
-                    elapsed_ms: Math.round(performance.now() - endWaitRef.current),
-                    outcome,
-                });
-                endWaitRef.current = null;
-            }
+        const wait = endWaitRef.current;
+        if (wait) {
+            if (error) settleEndWait("failed");
+            else if (activeCardIndex !== wait.awaitedCount - 1) settleEndWait("moved_away");
+            else if (cards.some((card) => !wait.awaitedIds.has(card.id))) settleEndWait("ready");
+            else if (!hasMore) settleEndWait("exhausted");
         }
-        if (endWaitRef.current === null && cards.length > 0 && activeCardIndex === cards.length - 1 && hasMore && !error) {
-            endWaitRef.current = performance.now();
+        if (endWaitRef.current === null && document.visibilityState === "visible" && cards.length > 0 && activeCardIndex === cards.length - 1 && hasMore && !error) {
+            endWaitRef.current = { startedAt: performance.now(), awaitedCount: cards.length, awaitedIds: new Set(cards.map((card) => card.id)) };
         }
-    }, [activeCardIndex, cards.length, error, hasMore, isFocusDesktop]);
+    }, [activeCardIndex, cards, error, hasMore, settleEndWait]);
 
     useOverlayInteractions({
         enabled: isTakeawaysSheetOpen,
@@ -1379,18 +1455,8 @@ export function FocusFeed() {
 
     useEffect(() => {
         return () => {
-            if (endWaitRef.current !== null) {
-                captureFocusEvent("focus_feed_timing", {
-                    focus_visit_id: visitIdRef.current,
-                    variant: openingVariantRef.current,
-                    entry_kind: entryKindRef.current,
-                    device_class: window.matchMedia?.(VIEWPORT_QUERIES.focusDesktop).matches ? "desktop" : "mobile",
-                    measure: "end_wait",
-                    elapsed_ms: Math.round(performance.now() - endWaitRef.current),
-                    outcome: "abandoned",
-                });
-                endWaitRef.current = null;
-            }
+            settleEndWait("abandoned");
+            if (openingHasCoverRef.current) recordOpeningCover("cover_left_before_ready");
             clearDesktopScrollCueTimeout();
             clearMobileScrollHintTimeouts();
             clearCardTransitionTimeout();
@@ -1405,6 +1471,8 @@ export function FocusFeed() {
         clearMobileScrollHintTimeouts,
         clearSheetAnimationTimeouts,
         flushRestoreStateWrite,
+        recordOpeningCover,
+        settleEndWait,
     ]);
 
     useEffect(() => {
@@ -1515,6 +1583,7 @@ export function FocusFeed() {
                                             onOpenTakeaways={openTakeawaysSheet}
                                             onToggleSave={handleToggleSave}
                                             onReadSummary={handleReadSummary}
+                                            onPreviewTakeaways={handlePreviewTakeaways}
                                             onCoverSettled={handleCoverSettled}
                                         />
                                     ))}

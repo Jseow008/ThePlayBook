@@ -12,6 +12,7 @@ import { ShareButton } from "@/components/ui/ShareButton";
 import { SaveToLibraryButton } from "@/components/ui/SaveToLibraryButton";
 import { APP_NAME } from "@/lib/brand";
 import { buildReadPath } from "@/lib/content-paths";
+import { promoteFocusPreviewReadIntent } from "@/lib/focus-read-attribution";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
@@ -50,6 +51,9 @@ export function ContentPreview({
             ? "Continue Reading"
             : "Read Summary";
     const readCtaHref = buildReadPath(item);
+    const handleReadCta = () => {
+        if (initialShowAllTakeaways) promoteFocusPreviewReadIntent(item.id);
+    };
     const titleRef = useRef<HTMLHeadingElement>(null);
     const hookRef = useRef<HTMLDivElement>(null);
     const [isTruncated, setIsTruncated] = useState(false);
@@ -297,6 +301,7 @@ export function ContentPreview({
                             <div className="flex items-center gap-2.5">
                                 <Link
                                     href={readCtaHref}
+                                    onClick={handleReadCta}
                                     className="inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-2.5 rounded-xl bg-primary text-primary-foreground text-base font-bold hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/15"
                                 >
                                     <BookOpen className="size-5" />
@@ -447,6 +452,7 @@ export function ContentPreview({
                 <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl gap-2 rounded-2xl border border-border/45 bg-background/75 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.32)] backdrop-blur-xl">
                     <Link
                         href={readCtaHref}
+                        onClick={handleReadCta}
                         className="focus-ring inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95"
                     >
                         <BookOpen className="size-4 shrink-0" />
