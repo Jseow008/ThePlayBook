@@ -395,6 +395,33 @@ describe("FocusFeed", () => {
         expect(covers[3]).toHaveAttribute("loading", "eager");
     });
 
+    it.each([
+        { viewport: "mobile", isDesktop: false },
+        { viewport: "desktop", isDesktop: true },
+    ])("keeps the $viewport cover placeholder visible through an image retry", async ({ isDesktop }) => {
+        mediaQueryState.value.isDesktop = isDesktop;
+
+        render(<FocusFeed />);
+
+        const card = (await screen.findAllByTestId("focus-feed-card"))[0]!;
+        const cover = within(card).getByRole("img", { name: "Essentialism" });
+        expect(within(card).getByTestId("focus-cover-placeholder")).toBeInTheDocument();
+        expect(cover).toHaveClass("opacity-0");
+
+        fireEvent.error(cover);
+
+        const retriedCover = within(card).getByRole("img", { name: "Essentialism" });
+        expect(within(card).getByTestId("focus-cover-placeholder")).toBeInTheDocument();
+        expect(retriedCover).toHaveClass("opacity-0");
+
+        fireEvent.load(retriedCover);
+
+        await waitFor(() => {
+            expect(within(card).queryByTestId("focus-cover-placeholder")).not.toBeInTheDocument();
+            expect(within(card).getByRole("img", { name: "Essentialism" })).toHaveClass("opacity-100");
+        });
+    });
+
     it("calculates a hook clamp that preserves viewport containment when the card would overflow", () => {
         expect(
             getMobileHookMaxHeight({
