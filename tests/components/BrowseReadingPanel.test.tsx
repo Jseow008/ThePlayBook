@@ -62,8 +62,9 @@ describe("BrowseReadingPanel", () => {
         render(<BrowseReadingPanel />);
 
         expect(screen.getByRole("link", { name: /view progress/i })).toHaveAttribute("href", "/profile");
-        expect(screen.getAllByText("2")).toHaveLength(2);
-        expect(screen.getByText("reads completed this month")).toBeInTheDocument();
+        expect(screen.getByText("2")).toBeInTheDocument();
+        expect(screen.getByText("reading days this week")).toBeInTheDocument();
+        expect(screen.queryByText(/reads completed this month/i)).not.toBeInTheDocument();
         expect(screen.getByRole("link", { name: /continue reading/i })).toHaveAttribute(
             "href", `/read/${resumeId}/deep-work`,
         );
@@ -107,5 +108,16 @@ describe("BrowseReadingPanel", () => {
 
         expect(screen.getByTestId("browse-reading-panel")).toBeInTheDocument();
         expect(screen.queryByRole("heading", { name: "Continue reading" })).not.toBeInTheDocument();
+    });
+
+    it("uses singular wording for one reading day", () => {
+        mockUseQuery.mockReturnValue({
+            data: [{ activity_date: "2026-10-05", duration_seconds: 60 }],
+            isPending: false,
+        });
+        render(<BrowseReadingPanel />);
+
+        expect(screen.getByText("1")).toBeInTheDocument();
+        expect(screen.getByText("reading day this week")).toBeInTheDocument();
     });
 });
