@@ -200,6 +200,25 @@ describe("BrowseReadingPanel", () => {
         expect(mockRetryHydration).toHaveBeenCalledOnce();
     });
 
+    it("keeps both retry actions available when activity and progress fail together", () => {
+        mockUseBatchContentItems.mockReturnValue({ data: [], isPending: false, isError: false, refetch: mockRefetchResume });
+        mockUseReadingProgress.mockReturnValue({
+            completedIds: [], inProgressIds: [], isLoaded: false, user: { id: "reader-1" },
+            hydrationStatus: "error", retryHydration: mockRetryHydration, getProgress: vi.fn(),
+        });
+        mockUseQuery.mockReturnValue({ data: undefined, isPending: false, isError: true, refetch: mockRefetchActivity });
+        render(<BrowseReadingPanel />);
+
+        const activityAlert = screen.getByText("Reading activity is unavailable.").closest('[role="alert"]');
+        const progressAlert = screen.getByText(/Could not check unfinished reads/).closest('[role="alert"]');
+        expect(activityAlert).toBeInTheDocument();
+        expect(progressAlert).toBeInTheDocument();
+        fireEvent.click(activityAlert!.querySelector("button")!);
+        fireEvent.click(progressAlert!.querySelector("button")!);
+        expect(mockRefetchActivity).toHaveBeenCalledOnce();
+        expect(mockRetryHydration).toHaveBeenCalledOnce();
+    });
+
     it("keeps unfinished-read recovery in its own card when an item is known", () => {
         mockUseReadingProgress.mockReturnValue({
             completedIds: [], inProgressIds: [resumeId], isLoaded: true, user: { id: "reader-1" },
