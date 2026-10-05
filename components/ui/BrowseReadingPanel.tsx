@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { useAuthUser } from "@/hooks/useAuthUser";
 import { useBatchContentItems } from "@/hooks/use-content-queries";
 import { buildReadPath } from "@/lib/content-paths";
 import { ResilientImage } from "@/components/ui/ResilientImage";
@@ -40,9 +41,11 @@ function useDesktopViewport() {
 }
 
 export function BrowseReadingPanel() {
+    const authUser = useAuthUser();
     const { completedIds, getProgress, inProgressIds, isLoaded, user } = useReadingProgress();
     const isDesktop = useDesktopViewport();
-    const isReady = isDesktop && isLoaded && Boolean(user);
+    const isAuthenticatedDesktop = isDesktop && Boolean(authUser);
+    const isReady = isAuthenticatedDesktop && isLoaded && user?.id === authUser?.id;
     const resumeIds = inProgressIds.slice(0, 3);
     const { data: resumeItems = [], isPending: resumePending } = useBatchContentItems(resumeIds, {
         enabled: isReady,
@@ -51,8 +54,8 @@ export function BrowseReadingPanel() {
     const week = getCurrentUtcWeek();
 
     const { data: activityDays, isPending: activityPending } = useQuery({
-        queryKey: ["browse-reading-days", user?.id ?? null, week.start, week.end],
-        enabled: isReady,
+        queryKey: ["browse-reading-days", authUser?.id ?? null, week.start, week.end],
+        enabled: isAuthenticatedDesktop,
         queryFn: async (): Promise<ActivityDay[]> => {
             const params = new URLSearchParams({ start: week.start, end: week.end });
             const response = await fetch(`/api/activity/history?${params}`);
@@ -66,9 +69,13 @@ export function BrowseReadingPanel() {
     const daysReadThisWeek = new Set(
         activityDays?.filter((day) => day.duration_seconds > 0).map((day) => day.activity_date) ?? [],
     ).size;
-    if (!isReady || (completedIds.length === 0 && inProgressIds.length === 0 && daysReadThisWeek === 0)) {
+    if (!isAuthenticatedDesktop) {
         return null;
     }
+
+    const hasLocalReading = isReady && (completedIds.length > 0 || inProgressIds.length > 0);
+    const isLoading = !isReady || activityPending;
+    if (!isLoading && !hasLocalReading && daysReadThisWeek === 0) return null;
 
     const resumeProgress = resumeItem ? getProgress(resumeItem.id) : null;
     const totalSegments = resumeProgress?.totalSegments ?? 0;
@@ -80,21 +87,30 @@ export function BrowseReadingPanel() {
     return (
         <div className="hidden px-6 lg:block lg:px-16" data-testid="browse-reading-panel">
             <div className={`grid gap-4 ${showResumeCard ? "lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]" : "grid-cols-1"}`}>
-                <section aria-labelledby="browse-reading-title" className="flex min-h-36 flex-col justify-between rounded-2xl border border-border bg-card/70 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.15)] xl:p-6">
+                <section aria-labelledby="browse-reading-title" aria-busy={isLoading} className="flex min-h-36 flex-col justify-between rounded-2xl border border-border bg-card/70 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.15)] xl:p-6">
                     <div className="flex items-start justify-between gap-4">
                         <h2 id="browse-reading-title" className="font-display text-lg font-semibold text-foreground">Your reading</h2>
-                        <Link href="/profile" className="focus-ring touch-target-44 inline-flex shrink-0 items-center gap-1 rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                            View progress <ArrowRight className="size-4" aria-hidden="true" />
-                        </Link>
+                        {isReady ? (
+                            <Link href="/profile" className="focus-ring touch-target-44 inline-flex shrink-0 items-center gap-1 rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                                View progress <ArrowRight className="size-4" aria-hidden="true" />
+                            </Link>
+                        ) : <span className="h-4 w-24 animate-pulse rounded bg-secondary/70" aria-hidden="true" />}
                     </div>
-                    <p className="mt-5 flex items-baseline gap-2 text-foreground">
-                        <span className="font-display text-4xl font-semibold tabular-nums">
-                            {activityPending ? "–" : activityDays ? daysReadThisWeek : "–"}
-                        </span>
-                        <span className="text-sm leading-5 text-muted-foreground">
-                            reading {daysReadThisWeek === 1 ? "day" : "days"} this week
-                        </span>
-                    </p>
+                    {activityPending || !isReady ? (
+                        <div className="mt-5 flex items-center gap-2" role="status" aria-label="Loading reading activity">
+                            <span className="h-9 w-8 animate-pulse rounded bg-secondary/70" aria-hidden="true" />
+                            <span className="h-4 w-40 animate-pulse rounded bg-secondary/70" aria-hidden="true" />
+                        </div>
+                    ) : (
+                        <p className="mt-5 flex items-baseline gap-2 text-foreground">
+                            <span className="font-display text-4xl font-semibold tabular-nums">
+                                {activityDays ? daysReadThisWeek : "–"}
+                            </span>
+                            <span className="text-sm leading-5 text-muted-foreground">
+                                reading {daysReadThisWeek === 1 ? "day" : "days"} this week
+                            </span>
+                        </p>
+                    )}
                 </section>
 
                 {showResumeCard ? (

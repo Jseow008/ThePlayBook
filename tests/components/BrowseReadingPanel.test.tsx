@@ -3,11 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BrowseReadingPanel } from "@/components/ui/BrowseReadingPanel";
 
 const mockUseReadingProgress = vi.fn();
+const mockUseAuthUser = vi.fn();
 const mockUseBatchContentItems = vi.fn();
 const mockUseQuery = vi.fn();
 
 vi.mock("@/hooks/useReadingProgress", () => ({
     useReadingProgress: () => mockUseReadingProgress(),
+}));
+
+vi.mock("@/hooks/useAuthUser", () => ({
+    useAuthUser: () => mockUseAuthUser(),
 }));
 
 vi.mock("@/hooks/use-content-queries", () => ({
@@ -31,6 +36,7 @@ describe("BrowseReadingPanel", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockUseAuthUser.mockReturnValue({ id: "reader-1" });
         vi.stubGlobal("matchMedia", vi.fn(() => ({
             matches: true,
             addEventListener: vi.fn(),
@@ -73,6 +79,7 @@ describe("BrowseReadingPanel", () => {
     });
 
     it("does not load personal data for guests or mobile widths", () => {
+        mockUseAuthUser.mockReturnValue(null);
         mockUseReadingProgress.mockReturnValue({
             completedIds: [], inProgressIds: [], isLoaded: true, user: null, getProgress: vi.fn(),
         });
@@ -86,6 +93,7 @@ describe("BrowseReadingPanel", () => {
             removeEventListener: vi.fn(),
         })));
         unmount();
+        mockUseAuthUser.mockReturnValue({ id: "reader-1" });
         mockUseReadingProgress.mockReturnValue({
             completedIds: [completedId], inProgressIds: [resumeId], isLoaded: true,
             user: { id: "reader-1" }, getProgress: vi.fn(),
@@ -93,6 +101,32 @@ describe("BrowseReadingPanel", () => {
         render(<BrowseReadingPanel />);
         expect(screen.queryByTestId("browse-reading-panel")).not.toBeInTheDocument();
         expect(mockUseQuery.mock.lastCall?.[0]).toMatchObject({ enabled: false });
+    });
+
+    it("reserves the card while account progress loads and starts activity in parallel", () => {
+        mockUseReadingProgress.mockReturnValue({
+            completedIds: [], inProgressIds: [], isLoaded: false, user: null, getProgress: vi.fn(),
+        });
+        mockUseQuery.mockReturnValue({ data: undefined, isPending: true });
+        render(<BrowseReadingPanel />);
+
+        expect(screen.getByTestId("browse-reading-panel")).toBeInTheDocument();
+        expect(screen.getByRole("status", { name: "Loading reading activity" })).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Your reading" }).closest("section"))
+            .toHaveAttribute("aria-busy", "true");
+        expect(mockUseQuery.mock.lastCall?.[0]).toMatchObject({ enabled: true });
+        expect(mockUseBatchContentItems.mock.lastCall?.[1]).toMatchObject({ enabled: false });
+    });
+
+    it("hides the placeholder when a loaded account has no reading activity", () => {
+        mockUseReadingProgress.mockReturnValue({
+            completedIds: [], inProgressIds: [], isLoaded: true,
+            user: { id: "reader-1" }, getProgress: vi.fn(),
+        });
+        mockUseQuery.mockReturnValue({ data: [], isPending: false });
+        render(<BrowseReadingPanel />);
+
+        expect(screen.queryByTestId("browse-reading-panel")).not.toBeInTheDocument();
     });
 
     it("omits the continuation card when there is no unfinished read", () => {
