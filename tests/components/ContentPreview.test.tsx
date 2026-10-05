@@ -4,6 +4,7 @@ import { ContentPreview } from '@/components/ui/ContentPreview';
 import { READER_COVER_IMAGE_SIZES } from '@/components/ui/content-card-standards';
 import { vi } from 'vitest';
 import type { ContentItem } from '@/types/database';
+import { FOCUS_MEASUREMENT_VERSION, consumeConfirmedFocusRead, markFocusPreviewIntent } from '@/lib/focus-read-attribution';
 
 const { mockGetProgress, mockReaderTheme } = vi.hoisted(() => ({
     mockGetProgress: vi.fn(),
@@ -26,8 +27,8 @@ vi.mock('@/hooks/useReaderSettings', () => ({
 }));
 
 vi.mock('next/link', () => ({
-    default: ({ children, href }: { children: React.ReactNode, href: string }) => (
-        <a href={href}>{children}</a>
+    default: ({ children, href, onClick, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+        <a href={href} {...props} onClick={(event) => { event.preventDefault(); onClick?.(event); }}>{children}</a>
     ),
 }));
 
@@ -82,6 +83,7 @@ describe('ContentPreview', () => {
         vi.clearAllMocks();
         mockGetProgress.mockReturnValue(null);
         mockReaderTheme.mockReturnValue('dark');
+        window.sessionStorage.clear();
     });
 
     it.each([
@@ -127,6 +129,26 @@ describe('ContentPreview', () => {
 
         expect(html).toContain('data-testid="mobile-preview-action-rail"');
         expect(html.match(/href="\/read\/test-item-1\/test-title"/g)).toHaveLength(2);
+    });
+
+    it('promotes a Focus preview visit to a confirmed reading intent only on the read CTA', () => {
+        const context = {
+            measurement_version: FOCUS_MEASUREMENT_VERSION,
+            focus_visit_id: 'visit-1',
+            content_id: mockItem.id,
+            variant: 'ranked' as const,
+            entry_kind: 'fresh' as const,
+            selection_source: 'personalized' as const,
+            personalization_ready: true,
+            device_class: 'desktop' as const,
+            position: 1,
+        };
+        markFocusPreviewIntent(context);
+        render(<ContentPreview {...defaultProps} initialShowAllTakeaways />);
+
+        expect(consumeConfirmedFocusRead(mockItem.id)).toBeNull();
+        fireEvent.click(screen.getAllByRole('link', { name: 'Read Summary' })[0]!);
+        expect(consumeConfirmedFocusRead(mockItem.id)).toEqual(context);
     });
 
     it('renders the content metadata', () => {

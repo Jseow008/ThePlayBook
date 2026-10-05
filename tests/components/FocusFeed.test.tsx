@@ -13,6 +13,7 @@ import {
     FEED_LIST_VIEWPORT_CLASS,
     FOCUS_COVER_WIDTHS,
 } from "@/components/focus/focus-feed-layout";
+import { consumeConfirmedFocusRead, promoteFocusPreviewReadIntent } from "@/lib/focus-read-attribution";
 
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
 const FOCUS_FEED_SEED_STORAGE_KEY = "focus-feed-seed-v1";
@@ -87,12 +88,13 @@ vi.mock("next/link", () => ({
     default: ({
         children,
         href,
+        onClick,
         ...props
     }: {
         children: React.ReactNode;
         href: string;
     } & React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-        <a href={href} {...props}>
+        <a href={href} {...props} onClick={(event) => { event.preventDefault(); onClick?.(event); }}>
             {children}
         </a>
     ),
@@ -375,6 +377,50 @@ describe("FocusFeed", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
+    it("records personalized availability from the returned batch before control ordering", async () => {
+        vi.mocked(window.localStorage.getItem).mockImplementation((key) =>
+            key === "focus-opening-order-v1" ? "control" : null
+        );
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                items: focusItems,
+                pageInfo: { hasMore: false, nextCursor: null, personalizedIds: [focusItems[1]!.id] },
+            }),
+        });
+
+        render(<FocusFeed />);
+        const firstCard = (await screen.findAllByTestId("focus-feed-card"))[0]!;
+        expect(within(firstCard).getByText("Essentialism")).toBeInTheDocument();
+        await act(async () => {});
+        await waitFor(() => expect(analyticsCaptureMock).toHaveBeenCalledWith(
+            "focus_opening_batch",
+            expect.objectContaining({
+                measurement_version: 2,
+                variant: "control",
+                outcome: "loaded",
+                contains_personalized: true,
+                item_count: 3,
+            }),
+        ));
+    });
+
+    it("carries the opening card's visit attribution through the desktop preview link", async () => {
+        mediaQueryState.value.isDesktop = true;
+        render(<FocusFeed />);
+        await screen.findByText("Essentialism");
+
+        fireEvent.click(screen.getByRole("link", { name: "Preview Essentialism" }));
+        expect(consumeConfirmedFocusRead(focusItems[0]!.id)).toBeNull();
+        promoteFocusPreviewReadIntent(focusItems[0]!.id);
+        expect(consumeConfirmedFocusRead(focusItems[0]!.id)).toEqual(expect.objectContaining({
+            measurement_version: 2,
+            content_id: focusItems[0]!.id,
+            position: 1,
+            device_class: "desktop",
+        }));
+    });
+
     it("counts a card impression only after meaningful foreground visibility and suppresses repeats", async () => {
         render(<FocusFeed />);
         const card = (await screen.findAllByTestId("focus-feed-card"))[0]!;
@@ -400,6 +446,131 @@ describe("FocusFeed", () => {
         });
         act(() => impressionObserver!.trigger(card, 0.85));
         expect(analyticsCaptureMock.mock.calls.filter(([event]) => event === "focus_card_impression")).toHaveLength(1);
+    });
+
+    it("does not report an opening cover as visible after moving to another card", async () => {
+        render(<FocusFeed />);
+        const cards = await screen.findAllByTestId("focus-feed-card");
+        const impressionObserver = observerInstances.find((observer) => observer.thresholds.length === 3)!;
+        const navigationObserver = observerInstances.find((observer) => observer.thresholds.length === 5)!;
+
+        act(() => impressionObserver.trigger(cards[0]!, 0.85));
+        act(() => navigationObserver.trigger(cards[1]!));
+        await act(async () => {});
+        await waitFor(() => expect(analyticsCaptureMock).toHaveBeenCalledWith(
+            "focus_feed_timing",
+            expect.objectContaining({ measure: "cover_left_before_ready" }),
+        ));
+
+        fireEvent.load(within(cards[0]!).getByRole("img", { name: "Essentialism" }));
+        await new Promise((resolve) => window.setTimeout(resolve, 180));
+        expect(analyticsCaptureMock.mock.calls.filter(([event, properties]) =>
+            event === "focus_feed_timing" && properties.measure === "cover_visible"
+        )).toHaveLength(0);
+    });
+
+    it("reports a cover completed in the background only after its card is visible again", async () => {
+        render(<FocusFeed />);
+        const card = (await screen.findAllByTestId("focus-feed-card"))[0]!;
+        const impressionObserver = observerInstances.find((observer) => observer.thresholds.length === 3)!;
+        act(() => impressionObserver.trigger(card, 0.85));
+        const originalVisibility = Object.getOwnPropertyDescriptor(document, "visibilityState");
+        try {
+            Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+            act(() => document.dispatchEvent(new Event("visibilitychange")));
+            fireEvent.load(within(card).getByRole("img", { name: "Essentialism" }));
+            await new Promise((resolve) => window.setTimeout(resolve, 180));
+            expect(analyticsCaptureMock.mock.calls.filter(([event, properties]) =>
+                event === "focus_feed_timing" && properties.measure === "cover_visible"
+            )).toHaveLength(0);
+
+            Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+            act(() => document.dispatchEvent(new Event("visibilitychange")));
+            act(() => impressionObserver.trigger(card, 0.85));
+            await waitFor(() => expect(analyticsCaptureMock).toHaveBeenCalledWith(
+                "focus_feed_timing",
+                expect.objectContaining({ measure: "cover_visible" }),
+            ));
+        } finally {
+            if (originalVisibility) Object.defineProperty(document, "visibilityState", originalVisibility);
+            else Reflect.deleteProperty(document, "visibilityState");
+        }
+    });
+
+    it("marks a last-card wait as moved away when the user moves backward without new cards", async () => {
+        window.sessionStorage.setItem(FOCUS_FEED_RESTORE_STORAGE_KEY, JSON.stringify({
+            items: focusItems,
+            activeCardIndex: 2,
+            hasMore: true,
+            nextCursor: null,
+            seenIds: focusItems.map((item) => item.id),
+        }));
+        fetchMock.mockImplementation(() => new Promise(() => {}));
+        render(<FocusFeed />);
+        const cards = await screen.findAllByTestId("focus-feed-card");
+        const navigationObserver = observerInstances.find((observer) => observer.thresholds.length === 5)!;
+        act(() => navigationObserver.trigger(cards[1]!));
+        await act(async () => {});
+
+        await waitFor(() => expect(analyticsCaptureMock).toHaveBeenCalledWith(
+            "focus_feed_timing",
+            expect.objectContaining({ measure: "end_wait", outcome: "moved_away" }),
+        ));
+        expect(analyticsCaptureMock.mock.calls.filter(([event, properties]) =>
+            event === "focus_feed_timing" && properties.measure === "end_wait" && properties.outcome === "ready"
+        )).toHaveLength(0);
+    });
+
+    it("reports a last-card wait as ready only after a new card arrives", async () => {
+        window.sessionStorage.setItem(FOCUS_FEED_RESTORE_STORAGE_KEY, JSON.stringify({
+            items: focusItems,
+            activeCardIndex: 2,
+            hasMore: true,
+            nextCursor: null,
+            seenIds: focusItems.map((item) => item.id),
+        }));
+        let resolveFetch!: (value: { ok: boolean; json: () => Promise<unknown> }) => void;
+        fetchMock.mockImplementation(() => new Promise((resolve) => { resolveFetch = resolve; }));
+        render(<FocusFeed />);
+        await screen.findAllByTestId("focus-feed-card");
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+        await act(async () => resolveFetch({
+            ok: true,
+            json: async () => ({
+                items: [{ ...focusItems[0]!, id: "123e4567-e89b-12d3-a456-426614174555", title: "The One Thing" }],
+                pageInfo: { hasMore: false, nextCursor: null, personalizedIds: [] },
+            }),
+        }));
+        await waitFor(() => expect(analyticsCaptureMock).toHaveBeenCalledWith(
+            "focus_feed_timing",
+            expect.objectContaining({ measure: "end_wait", outcome: "ready" }),
+        ));
+    });
+
+    it("ends a last-card wait when the tab goes into the background", async () => {
+        window.sessionStorage.setItem(FOCUS_FEED_RESTORE_STORAGE_KEY, JSON.stringify({
+            items: focusItems,
+            activeCardIndex: 2,
+            hasMore: true,
+            nextCursor: null,
+            seenIds: focusItems.map((item) => item.id),
+        }));
+        fetchMock.mockImplementation(() => new Promise(() => {}));
+        render(<FocusFeed />);
+        await screen.findAllByTestId("focus-feed-card");
+        const originalVisibility = Object.getOwnPropertyDescriptor(document, "visibilityState");
+        try {
+            Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+            act(() => document.dispatchEvent(new Event("visibilitychange")));
+            await waitFor(() => expect(analyticsCaptureMock).toHaveBeenCalledWith(
+                "focus_feed_timing",
+                expect.objectContaining({ measure: "end_wait", outcome: "backgrounded" }),
+            ));
+        } finally {
+            if (originalVisibility) Object.defineProperty(document, "visibilityState", originalVisibility);
+            else Reflect.deleteProperty(document, "visibilityState");
+        }
     });
 
     it("does not replace an opening card when late library hydration marks it completed", async () => {
@@ -939,6 +1110,8 @@ describe("FocusFeed", () => {
         expect(await screen.findByText("Essentialism")).toBeInTheDocument();
         expect(fetchMock).toHaveBeenCalledTimes(2);
         expect(getFocusRequestBody(1).cursor).toBeUndefined();
+        await waitFor(() => expect(analyticsCaptureMock.mock.calls.filter(([event]) => event === "focus_opening_batch")
+            .map(([, properties]) => properties.outcome)).toEqual(["failed", "loaded"]));
     });
 
     it("keeps existing cards and the cursor when retrying a failed later batch", async () => {

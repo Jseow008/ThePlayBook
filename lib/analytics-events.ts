@@ -141,6 +141,7 @@ export interface AnalyticsEventPropertiesByName {
     save_state?: "saved";
   };
   focus_card_impression: AnalyticsCommonProperties & {
+    measurement_version: 2;
     focus_visit_id: string;
     content_id: string;
     variant: "control" | "ranked";
@@ -152,6 +153,7 @@ export interface AnalyticsEventPropertiesByName {
     readable_ms: number;
   };
   focus_visit_started: AnalyticsCommonProperties & {
+    measurement_version: 2;
     focus_visit_id: string;
     variant: "control" | "ranked";
     assignment_stable: boolean;
@@ -159,7 +161,19 @@ export interface AnalyticsEventPropertiesByName {
     personalization_ready: boolean;
     device_class: "mobile" | "desktop";
   };
+  focus_opening_batch: AnalyticsCommonProperties & {
+    measurement_version: 2;
+    focus_visit_id: string;
+    variant: "control" | "ranked";
+    assignment_stable: boolean;
+    device_class: "mobile" | "desktop";
+    personalization_ready: boolean;
+    outcome: "loaded" | "empty" | "failed";
+    contains_personalized: boolean | "unknown";
+    item_count: number;
+  };
   focus_card_action: AnalyticsCommonProperties & {
+    measurement_version: 2;
     focus_visit_id: string;
     content_id: string;
     variant: "control" | "ranked";
@@ -171,13 +185,14 @@ export interface AnalyticsEventPropertiesByName {
     action: "summary_opened" | "saved" | "rapid_skip";
   };
   focus_feed_timing: AnalyticsCommonProperties & {
+    measurement_version: 2;
     focus_visit_id: string;
     variant: "control" | "ranked";
     entry_kind: "fresh" | "restored";
     device_class: "mobile" | "desktop";
-    measure: "first_readable" | "cover_visible" | "cover_failed" | "cover_absent" | "end_wait";
+    measure: "first_readable" | "cover_visible" | "cover_failed" | "cover_absent" | "cover_left_before_ready" | "end_wait";
     elapsed_ms: number;
-    outcome?: "ready" | "failed" | "abandoned";
+    outcome?: "ready" | "failed" | "abandoned" | "moved_away" | "backgrounded" | "exhausted";
   };
   share_clicked: AnalyticsCommonProperties & {
     source: string;
@@ -357,32 +372,40 @@ export const ANALYTICS_EVENT_CONTRACTS = {
   focus_card_impression: {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,
     description: "Focus card remains at least 75% visible for 500 ms in a foreground tab.",
-    requiredProperties: ["focus_visit_id", "content_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "readable_ms"],
-    allowedProperties: eventProperties(["focus_visit_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "readable_ms"]),
+    requiredProperties: ["measurement_version", "focus_visit_id", "content_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "readable_ms"],
+    allowedProperties: eventProperties(["measurement_version", "focus_visit_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "readable_ms"]),
     privacy: "behavioral_metadata",
     delivery: "client_only",
   },
   focus_visit_started: {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,
     description: "Focus visit begins, including visits with no card impression.",
-    requiredProperties: ["focus_visit_id", "variant", "assignment_stable", "entry_kind", "personalization_ready", "device_class"],
-    allowedProperties: eventProperties(["focus_visit_id", "variant", "assignment_stable", "entry_kind", "personalization_ready", "device_class"]),
+    requiredProperties: ["measurement_version", "focus_visit_id", "variant", "assignment_stable", "entry_kind", "personalization_ready", "device_class"],
+    allowedProperties: eventProperties(["measurement_version", "focus_visit_id", "variant", "assignment_stable", "entry_kind", "personalization_ready", "device_class"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
+  },
+  focus_opening_batch: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "Pre-order Focus opening batch availability, including failed and empty openings.",
+    requiredProperties: ["measurement_version", "focus_visit_id", "variant", "assignment_stable", "device_class", "personalization_ready", "outcome", "contains_personalized", "item_count"],
+    allowedProperties: eventProperties(["measurement_version", "focus_visit_id", "variant", "assignment_stable", "device_class", "personalization_ready", "outcome", "contains_personalized", "item_count"]),
     privacy: "behavioral_metadata",
     delivery: "client_only",
   },
   focus_card_action: {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,
     description: "Focus summary actually opens, a save succeeds, or a card is skipped rapidly.",
-    requiredProperties: ["focus_visit_id", "content_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "action"],
-    allowedProperties: eventProperties(["focus_visit_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "action"]),
+    requiredProperties: ["measurement_version", "focus_visit_id", "content_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "action"],
+    allowedProperties: eventProperties(["measurement_version", "focus_visit_id", "variant", "entry_kind", "selection_source", "personalization_ready", "device_class", "position", "action"]),
     privacy: "behavioral_metadata",
     delivery: "client_only",
   },
   focus_feed_timing: {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,
     description: "User-visible Focus paint, cover and end-of-feed wait timing.",
-    requiredProperties: ["focus_visit_id", "variant", "entry_kind", "device_class", "measure", "elapsed_ms"],
-    allowedProperties: eventProperties(["focus_visit_id", "variant", "entry_kind", "device_class", "measure", "elapsed_ms", "outcome"]),
+    requiredProperties: ["measurement_version", "focus_visit_id", "variant", "entry_kind", "device_class", "measure", "elapsed_ms"],
+    allowedProperties: eventProperties(["measurement_version", "focus_visit_id", "variant", "entry_kind", "device_class", "measure", "elapsed_ms", "outcome"]),
     privacy: "behavioral_metadata",
     delivery: "client_only",
   },

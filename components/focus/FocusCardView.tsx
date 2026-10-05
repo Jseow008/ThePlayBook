@@ -115,6 +115,7 @@ export const FocusCardView = memo(function FocusCardView({
     onOpenTakeaways,
     onToggleSave,
     onReadSummary,
+    onPreviewTakeaways,
     onCoverSettled,
 }: {
     card: FocusCard;
@@ -128,6 +129,7 @@ export const FocusCardView = memo(function FocusCardView({
     onOpenTakeaways: (card: FocusCard, opener: HTMLElement) => void;
     onToggleSave: (card: FocusCard) => void;
     onReadSummary?: (card: FocusCard) => void;
+    onPreviewTakeaways?: (card: FocusCard) => void;
     onCoverSettled?: (card: FocusCard, status: "loaded" | "failed") => void;
 }) {
     const duration = formatDuration(card.duration_seconds);
@@ -478,6 +480,7 @@ export const FocusCardView = memo(function FocusCardView({
                             {isDesktopTakeawaysTruncated ? (
                                 <Link
                                     href={`/preview/${card.id}?takeaways=all`}
+                                    onClick={() => onPreviewTakeaways?.(card)}
                                     className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-border/70 bg-card/50 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
                                     aria-label={`Preview ${card.title}`}
                                 >
