@@ -24,7 +24,7 @@ describe("LibrarySearchShell", () => {
         mocks.batch.mockReset();
         mocks.batch.mockReturnValue({
             data: [
-                { id: "shared", title: "Thinking Clearly", author: "Alex" },
+                { id: "shared", title: "Thinking Clearly", author: "Alex", audio_url: "https://example.com/audio.mp3" },
                 { id: "saved", title: "Another Book", author: "Taylor" },
                 { id: "completed", title: "Other Work", author: "Jordan" },
             ],
@@ -55,6 +55,10 @@ describe("LibrarySearchShell", () => {
         expect(screen.getByText("In progress")).toBeInTheDocument();
         expect(screen.getByText("Saved")).toBeInTheDocument();
         expect(screen.getByText("Completed")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Listen to Thinking Clearly" })).toHaveAttribute(
+            "href",
+            "/read/shared/thinking-clearly#audio-player",
+        );
         expect(screen.queryByText("Saved view")).not.toBeInTheDocument();
 
         fireEvent.click(screen.getByRole("button", { name: "Clear library search" }));

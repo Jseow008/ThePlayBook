@@ -6,7 +6,7 @@ const { cacheStore, cacheOptions, fromMock, rpcMock, statsMock, recentResult } =
     fromMock: vi.fn(),
     rpcMock: vi.fn(),
     statsMock: vi.fn(),
-    recentResult: { current: { data: [] as Array<{ id: string }>, count: 0 as number | null, error: null as Error | null } },
+    recentResult: { current: { data: [] as Array<{ id: string; audio_url?: string | null }>, count: 0 as number | null, error: null as Error | null } },
 }));
 
 vi.mock("next/cache", () => ({
@@ -97,6 +97,22 @@ describe("Search catalog data cache", () => {
         expect(rpcMock).toHaveBeenCalledTimes(1);
         await getPopularCatalogItems({ categoryValues: ["Business"], type: "podcast" });
         expect(rpcMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("adds audio availability to Popular items before caching them", async () => {
+        recentResult.current = {
+            data: [{ id: "popular", audio_url: "https://example.com/audio.mp3" }],
+            count: 1,
+            error: null,
+        };
+
+        const first = await getPopularCatalogItems({ type: "book" });
+        const second = await getPopularCatalogItems({ type: "book" });
+
+        expect(first[0].audio_url).toBe("https://example.com/audio.mp3");
+        expect(second).toEqual(first);
+        expect(rpcMock).toHaveBeenCalledTimes(1);
+        expect(fromMock).toHaveBeenCalledTimes(1);
     });
 
     it("does not cache a failed database read", async () => {

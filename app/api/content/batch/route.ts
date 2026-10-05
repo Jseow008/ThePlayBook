@@ -7,7 +7,7 @@ const BatchRequestSchema = z.object({
     ids: z.array(z.string().uuid()).min(1).max(50),
 });
 
-const CONTENT_BATCH_SELECT = "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, created_at";
+const CONTENT_BATCH_SELECT = "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, created_at";
 
 /**
  * POST /api/content/batch

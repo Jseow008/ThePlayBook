@@ -1,4 +1,5 @@
 import { ContentCard } from "@/components/ui/ContentCard";
+import { AudioListenLink } from "@/components/ui/AudioListenLink";
 import { SearchAnalyticsTracker } from "@/app/(public)/search/SearchAnalyticsTracker";
 import { getPopularCatalogItems, getRecentCatalogPage, type RecentCatalogPage } from "@/lib/server/search-catalog";
 import { CatalogSearchError, searchCatalog, type CatalogSearchResponse, type CatalogSearchResult } from "@/lib/server/catalog-search";
@@ -188,6 +189,7 @@ export function ContentGrid({ items }: { items: Array<ContentItem | CatalogSearc
                             titleDensity="app-compact"
                             priority={index === 0}
                         />
+                        <AudioListenLink item={item} />
                         {searchResult ? <SearchSnippet result={searchResult} /> : null}
                     </div>
                 );

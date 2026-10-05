@@ -405,7 +405,8 @@ describe("SearchPage", () => {
         });
         expect(screen.getByText("Popular Books")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Personal Development" })).toBeInTheDocument();
-        expect(fromMock).not.toHaveBeenCalled();
+        expect(fromMock).toHaveBeenCalledWith("content_item");
+        expect(getLatestQueryBuilder()?.select).toHaveBeenCalledWith("id, audio_url");
     });
 
     it("renders Popular filters and result placeholders before popular items resolve", async () => {
@@ -440,6 +441,34 @@ describe("SearchPage", () => {
             type: "podcast",
             cursor: null,
         });
+    });
+
+    it("offers Listen only on search results with audio", async () => {
+        searchCatalogMock.mockResolvedValueOnce({
+            outcome: "results",
+            results: [
+                {
+                    id: "audio-item", type: "book", title: "Audio Book", author: null, category: "Business", cover_image_url: null,
+                    duration_seconds: null, audio_url: "https://example.com/audio.mp3", created_at: "2026-09-17T00:00:00.000Z", quick_mode_json: {}, rank: 1,
+                    snippet: { source: "Summary", text: "A matching snippet", highlights: [] },
+                },
+                {
+                    id: "text-item", type: "book", title: "Text Book", author: null, category: "Business", cover_image_url: null,
+                    duration_seconds: null, audio_url: null, created_at: "2026-09-17T00:00:00.000Z", quick_mode_json: {}, rank: 2,
+                    snippet: { source: "Summary", text: "Another snippet", highlights: [] },
+                },
+            ],
+            pageInfo: { nextCursor: null, previousCursor: null, page: 1 },
+        });
+
+        const results = await runSearchResultsFromPage({ q: "book" });
+        await act(async () => { render(results); });
+
+        expect(screen.getByRole("link", { name: "Listen to Audio Book" })).toHaveAttribute(
+            "href",
+            "/read/audio-item/audio-book#audio-player",
+        );
+        expect(screen.queryByRole("link", { name: "Listen to Text Book" })).not.toBeInTheDocument();
     });
 
     it("binds the next search page to its opaque cursor and preserves its filters in pagination links", async () => {
