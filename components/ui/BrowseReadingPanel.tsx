@@ -42,18 +42,18 @@ function useDesktopViewport() {
 
 export function BrowseReadingPanel() {
     const authUser = useAuthUser();
-    const { completedIds, getProgress, inProgressIds, isLoaded, user } = useReadingProgress();
+    const { getProgress, hydrationStatus, inProgressIds, isLoaded, retryHydration, user } = useReadingProgress();
     const isDesktop = useDesktopViewport();
     const isAuthenticatedDesktop = isDesktop && Boolean(authUser);
     const isReady = isAuthenticatedDesktop && isLoaded && user?.id === authUser?.id;
     const resumeIds = inProgressIds.slice(0, 3);
-    const { data: resumeItems = [], isPending: resumePending } = useBatchContentItems(resumeIds, {
+    const { data: resumeItems = [], isError: resumeError, isPending: resumePending, refetch: refetchResume } = useBatchContentItems(resumeIds, {
         enabled: isReady,
     });
-    const resumeItem = resumeItems[0] ?? null;
+    const resumeItem = isReady ? resumeItems[0] ?? null : null;
     const week = getCurrentUtcWeek();
 
-    const { data: activityDays, isPending: activityPending } = useQuery({
+    const { data: activityDays, isError: activityError, isPending: activityPending, refetch: refetchActivity } = useQuery({
         queryKey: ["browse-reading-days", authUser?.id ?? null, week.start, week.end],
         enabled: isAuthenticatedDesktop,
         queryFn: async (): Promise<ActivityDay[]> => {
@@ -64,6 +64,7 @@ export function BrowseReadingPanel() {
         },
         staleTime: 30_000,
         refetchOnMount: "always",
+        retry: 1,
     });
 
     const daysReadThisWeek = new Set(
@@ -73,50 +74,62 @@ export function BrowseReadingPanel() {
         return null;
     }
 
-    const hasLocalReading = isReady && (completedIds.length > 0 || inProgressIds.length > 0);
-    const isLoading = !isReady || activityPending;
-    if (!isLoading && !hasLocalReading && daysReadThisWeek === 0) return null;
-
+    const progressError = hydrationStatus === "error";
+    const progressPending = !isReady && !progressError;
     const resumeProgress = resumeItem ? getProgress(resumeItem.id) : null;
     const totalSegments = resumeProgress?.totalSegments ?? 0;
     const progressPercent = totalSegments > 0
         ? Math.min(100, Math.round((resumeProgress?.completed.length ?? 0) / totalSegments * 100))
         : null;
-    const showResumeCard = Boolean(resumeItem) || (resumeIds.length > 0 && resumePending);
+    const showResumeCard = Boolean(resumeItem) || (resumeIds.length > 0 && (resumePending || resumeError || progressPending || progressError));
 
     return (
         <div className="hidden px-6 lg:block lg:px-16" data-testid="browse-reading-panel">
             <div className={`grid gap-4 ${showResumeCard ? "lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]" : "grid-cols-1"}`}>
-                <section aria-labelledby="browse-reading-title" aria-busy={isLoading} className="flex min-h-36 flex-col justify-between rounded-2xl border border-border bg-card/70 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.15)] xl:p-6">
+                <section aria-labelledby="browse-reading-title" aria-busy={activityPending} className="relative flex min-h-36 flex-col justify-between rounded-2xl border border-border bg-card/70 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.15)] xl:p-6">
                     <div className="flex items-start justify-between gap-4">
                         <h2 id="browse-reading-title" className="font-display text-lg font-semibold text-foreground">Your reading</h2>
-                        {isReady ? (
-                            <Link href="/profile" className="focus-ring touch-target-44 inline-flex shrink-0 items-center gap-1 rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                                View progress <ArrowRight className="size-4" aria-hidden="true" />
-                            </Link>
-                        ) : <span className="h-4 w-24 animate-pulse rounded bg-secondary/70" aria-hidden="true" />}
+                        <Link href="/profile" className="focus-ring touch-target-44 inline-flex shrink-0 items-center gap-1 rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                            View progress <ArrowRight className="size-4" aria-hidden="true" />
+                        </Link>
                     </div>
-                    {activityPending || !isReady ? (
+                    {activityPending ? (
                         <div className="mt-5 flex items-center gap-2" role="status" aria-label="Loading reading activity">
                             <span className="h-9 w-8 animate-pulse rounded bg-secondary/70" aria-hidden="true" />
                             <span className="h-4 w-40 animate-pulse rounded bg-secondary/70" aria-hidden="true" />
                         </div>
-                    ) : (
+                    ) : activityError && !activityDays ? (
+                        <div className="mt-5 flex items-center gap-3 text-sm text-muted-foreground" role="alert">
+                            <span>Reading activity is unavailable.</span>
+                            <button type="button" onClick={() => void refetchActivity()} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>
+                        </div>
+                    ) : daysReadThisWeek > 0 ? (
                         <p className="mt-5 flex items-baseline gap-2 text-foreground">
                             <span className="font-display text-4xl font-semibold tabular-nums">
-                                {activityDays ? daysReadThisWeek : "–"}
+                                {daysReadThisWeek}
                             </span>
                             <span className="text-sm leading-5 text-muted-foreground">
                                 reading {daysReadThisWeek === 1 ? "day" : "days"} this week
                             </span>
                         </p>
-                    )}
+                    ) : <p className="mt-5 text-sm text-muted-foreground">No reading days yet this week</p>}
+                    {activityError && activityDays ? (
+                        <p className="mt-1 text-xs text-muted-foreground">Could not refresh activity. <button type="button" onClick={() => void refetchActivity()} className="focus-ring rounded-sm font-medium text-foreground hover:underline">Retry</button></p>
+                    ) : null}
+                    {progressError && resumeIds.length === 0 ? (
+                        <p className="absolute bottom-5 right-5 max-w-[40%] text-right text-xs text-muted-foreground xl:bottom-6 xl:right-6">Could not check unfinished reads. <button type="button" onClick={retryHydration} className="focus-ring rounded-sm font-medium text-foreground hover:underline">Retry</button></p>
+                    ) : null}
                 </section>
 
                 {showResumeCard ? (
                     <section aria-labelledby="browse-resume-title" className="min-h-36 rounded-2xl border border-border bg-card/70 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.15)] xl:p-6">
                         <h2 id="browse-resume-title" className="font-display text-lg font-semibold text-foreground">Continue reading</h2>
-                        {resumeItem ? (
+                        {progressError ? (
+                            <div className="mt-3 flex min-h-20 items-center gap-3 text-sm text-muted-foreground" role="alert">
+                                <span>Reading progress is unavailable.</span>
+                                <button type="button" onClick={retryHydration} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>
+                            </div>
+                        ) : resumeItem ? (
                             <div className="mt-3 flex min-w-0 items-center gap-4">
                                 <div className="relative aspect-[2/3] w-14 shrink-0 overflow-hidden rounded-md bg-secondary xl:w-16">
                                     {resumeItem.cover_image_url ? (
@@ -145,6 +158,11 @@ export function BrowseReadingPanel() {
                                 <Link href={buildReadPath(resumeItem)} className="focus-ring touch-target-44 inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 xl:px-5">
                                     Continue reading <ArrowRight className="size-4" aria-hidden="true" />
                                 </Link>
+                            </div>
+                        ) : resumeError ? (
+                            <div className="mt-3 flex min-h-20 items-center gap-3 text-sm text-muted-foreground" role="alert">
+                                <span>Continue reading is unavailable.</span>
+                                <button type="button" onClick={() => void refetchResume()} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>
                             </div>
                         ) : (
                             <div className="mt-3 h-20 animate-pulse rounded-lg bg-secondary/50" aria-hidden="true" />
