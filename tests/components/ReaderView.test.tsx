@@ -961,7 +961,11 @@ describe('ReaderView', () => {
         expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-2');
     });
 
-    it('waits for the target segment to expand before scrolling drawer jumps to the segment top', async () => {
+    it.each([
+        { reducedMotion: false, behavior: 'smooth' },
+        { reducedMotion: true, behavior: 'auto' },
+    ] as const)('waits for the target segment before a $behavior drawer jump', async ({ reducedMotion, behavior }) => {
+        vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: reducedMotion }));
         highlightsState.value = [
             {
                 id: 'highlight-1',
@@ -1047,9 +1051,11 @@ describe('ReaderView', () => {
         const panel = container.querySelector<HTMLElement>('[data-reader-segment-id="seg-2"] [data-reader-segment-panel="true"]');
         expect(panel).not.toBeNull();
 
-        act(() => {
-            panel!.dispatchEvent(new TransitionEvent('transitionend', { bubbles: true }));
-        });
+        if (!reducedMotion) {
+            act(() => {
+                panel!.dispatchEvent(new TransitionEvent('transitionend', { bubbles: true }));
+            });
+        }
 
         await act(async () => {
             await jumpPromise;
@@ -1057,7 +1063,7 @@ describe('ReaderView', () => {
 
         expect(scrollToSpy).toHaveBeenCalledWith({
             top: 360,
-            behavior: 'smooth',
+            behavior,
         });
         expect(mark).toHaveAttribute('data-highlight-spotlight', 'true');
     });

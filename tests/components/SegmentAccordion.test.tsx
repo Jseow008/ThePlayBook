@@ -205,6 +205,37 @@ describe('SegmentAccordion', () => {
         }
     });
 
+    it('scrolls after one frame without an expansion delay when reduced motion is preferred', async () => {
+        vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
+        vi.useFakeTimers();
+
+        try {
+            const scrollToSpy = vi.fn();
+            window.scrollTo = scrollToSpy;
+            const { container } = render(
+                <SegmentAccordion
+                    {...defaultProps}
+                    expandedSegmentId="seg-2"
+                    scrollRequest={{ segmentId: 'seg-2', initialScrollY: 0, requestId: 1, focusAfterScroll: true }}
+                />
+            );
+
+            const segmentNode = container.querySelector<HTMLElement>('[data-reader-segment-id="seg-2"]');
+            expect(segmentNode).not.toBeNull();
+            segmentNode!.getBoundingClientRect = vi.fn(() => ({ top: 240 } as DOMRect));
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(20);
+            });
+
+            expect(scrollToSpy).toHaveBeenCalledWith({ top: 140, behavior: 'auto' });
+            expect(document.activeElement).toBe(screen.getByText('Chapter 1').closest('button'));
+        } finally {
+            vi.useRealTimers();
+            vi.unstubAllGlobals();
+        }
+    });
+
     it('does not run a queued scroll after its section closes', async () => {
         vi.useFakeTimers();
 

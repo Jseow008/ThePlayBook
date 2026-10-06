@@ -796,6 +796,10 @@ export function ReaderView({ content }: ReaderViewProps) {
             const isExpanded = segmentEl?.querySelector<HTMLButtonElement>('button[aria-expanded="true"]');
 
             if (panelEl && isExpanded) {
+                if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+                    return;
+                }
+
                 await new Promise<void>((resolve) => {
                     let didResolve = false;
                     let timeoutId: number | null = null;
@@ -854,7 +858,8 @@ export function ReaderView({ content }: ReaderViewProps) {
         if (!segmentEl) return false;
 
         const top = segmentEl.getBoundingClientRect().top + window.scrollY - 100;
-        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+        const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        window.scrollTo({ top: Math.max(0, top), behavior: reducedMotion ? "auto" : "smooth" });
         return true;
     }, []);
 
@@ -890,7 +895,8 @@ export function ReaderView({ content }: ReaderViewProps) {
         if (!didScrollToSegment && marks.length > 0) {
             const [firstMark] = marks;
             const top = firstMark.getBoundingClientRect().top + window.scrollY - 120;
-            window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+            const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+            window.scrollTo({ top: Math.max(0, top), behavior: reducedMotion ? "auto" : "smooth" });
         }
 
         if (marks.length > 0) {
