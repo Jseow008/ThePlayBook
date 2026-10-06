@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, MessageCircleQuestion, List } from "lucide-react";
 import { toast } from "sonner";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
+import type { AudioTimeChangeMetadata } from "./AudioPlayer";
 import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
 import { useReadingProgress, type ReadingProgressData } from "@/hooks/useReadingProgress";
@@ -182,7 +183,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         });
     }, [content.category, content.id, content.type]);
 
-    const handleAudioTimeChange = useCallback((timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => {
+    const handleAudioTimeChange = useCallback((timeSec: number, metadata?: AudioTimeChangeMetadata) => {
         latestAudioStateRef.current = {
             timeSec,
             durationSec: metadata?.durationSec ?? 0,
@@ -191,6 +192,10 @@ export function ReaderView({ content }: ReaderViewProps) {
         setHasCompletedAudioPlayback(Boolean(metadata?.isEnded));
         setAudioCurrentTimeSec(timeSec);
         setAudioDurationSec(metadata?.durationSec ?? 0);
+        if (metadata?.source === "hero-seek") {
+            setIsAudioFollowEnabled(false);
+            setSegmentScrollRequest(null);
+        }
     }, []);
     const handleExpandedSegmentChange = useCallback((segmentId: string | null) => {
         setExpandedSegmentId(segmentId);

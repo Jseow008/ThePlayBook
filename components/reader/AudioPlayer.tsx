@@ -14,6 +14,12 @@ import { APP_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { useVisualViewportGeometry } from "@/hooks/useVisualViewportGeometry";
 
+export interface AudioTimeChangeMetadata {
+    durationSec: number;
+    isEnded: boolean;
+    source?: "hero-seek";
+}
+
 interface AudioPlayerProps {
     src: string;
     title?: string;
@@ -26,7 +32,7 @@ interface AudioPlayerProps {
     isNotesDrawerOpen?: boolean;
     onMiniPlayerVisibilityChange?: (isVisible: boolean) => void;
     onMiniPlayerBottomInsetChange?: (bottomInsetPx: number) => void;
-    onTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
+    onTimeChange?: (timeSec: number, metadata?: AudioTimeChangeMetadata) => void;
     onPlaybackStateChange?: (isPlaying: boolean) => void;
     onPlaybackStarted?: (timeSec: number) => void;
     onResumeAudioFollow?: () => void;
@@ -277,7 +283,7 @@ export function AudioPlayer({
         setIsMuted(!isMuted);
     };
 
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>, surface: "hero" | "mini") => {
         const audio = audioRef.current;
         if (!audio) return;
 
@@ -288,6 +294,7 @@ export function AudioPlayer({
         onTimeChange?.(newTime, {
             durationSec: Number.isFinite(audio.duration) ? audio.duration : 0,
             isEnded: false,
+            ...(surface === "hero" ? { source: "hero-seek" as const } : {}),
         });
     };
 
@@ -401,7 +408,7 @@ export function AudioPlayer({
                             min="0"
                             max={duration || 0}
                             value={currentTime}
-                            onChange={handleSeek}
+                            onChange={(event) => handleSeek(event, "hero")}
                             disabled={!hasLoadedDuration}
                             className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-wait"
                             aria-label="Seek timeline"
@@ -501,7 +508,7 @@ export function AudioPlayer({
                                             min="0"
                                             max={duration || 0}
                                             value={currentTime}
-                                            onChange={handleSeek}
+                                            onChange={(event) => handleSeek(event, "mini")}
                                             className="h-1.5 min-w-16 flex-1 cursor-pointer accent-primary"
                                             aria-label="Seek mini player timeline"
                                         />

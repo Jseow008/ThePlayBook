@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Clock, BookOpen } from "lucide-react";
-import { AudioPlayer } from "./AudioPlayer";
+import { AudioPlayer, type AudioTimeChangeMetadata } from "./AudioPlayer";
 import { APP_NAME } from "@/lib/brand";
 import { ContentShareMenu } from "@/components/ui/ContentShareMenu";
 import { ReaderSettingsMenu } from "./ReaderSettingsMenu";
@@ -38,7 +38,7 @@ interface ReaderHeroHeaderProps {
     onMiniPlayerBottomInsetChange?: (bottomInsetPx: number) => void;
     onResumeAudioFollow?: () => void;
     initialAudioTimeSec?: number;
-    onAudioTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
+    onAudioTimeChange?: (timeSec: number, metadata?: AudioTimeChangeMetadata) => void;
     onAudioPlaybackStateChange?: (isPlaying: boolean) => void;
     onAudioPlaybackStarted?: (timeSec: number) => void;
 }
@@ -199,7 +199,7 @@ export function ReaderHeroHeader({
                     {showResumeAudioFollow && (
                         <div className="mt-3 flex flex-col gap-2 rounded-xl border border-border/60 bg-card/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-sm text-muted-foreground">
-                                Audio follow is paused while you browse another section.
+                                Audio follow is paused. Select Follow audio to jump to the current section.
                             </p>
                             <button
                                 type="button"

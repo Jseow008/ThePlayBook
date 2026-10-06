@@ -364,6 +364,7 @@ export function SegmentAccordion({
     const hoveredHighlightIdRef = useRef<string | null>(null);
     const pendingScrollCleanupRef = useRef<(() => void) | null>(null);
     const lastProcessedScrollRequestRef = useRef<string | null>(null);
+    const hadScrollRequestRef = useRef(false);
     const { fontSize, fontFamily, lineHeight } = useReaderSettings();
     const isReaderInteractionDesktop = useMediaQuery(VIEWPORT_QUERIES.readerInteractionDesktop);
     const currentExpandedId = expandedSegmentId !== undefined ? expandedSegmentId : uncontrolledExpandedId;
@@ -474,7 +475,18 @@ export function SegmentAccordion({
     );
 
     useEffect(() => {
-        if (!scrollRequestSegmentId || currentExpandedId !== scrollRequestSegmentId) {
+        if (!scrollRequestSegmentId) {
+            if (hadScrollRequestRef.current) {
+                cancelPendingScroll();
+            }
+            hadScrollRequestRef.current = false;
+            lastProcessedScrollRequestRef.current = null;
+            return;
+        }
+
+        hadScrollRequestRef.current = true;
+
+        if (currentExpandedId !== scrollRequestSegmentId) {
             return;
         }
 
@@ -488,6 +500,7 @@ export function SegmentAccordion({
             focusAfterScroll: scrollRequestFocusAfterScroll,
         });
     }, [
+        cancelPendingScroll,
         currentExpandedId,
         scheduleScrollAfterExpansion,
         scrollRequestFocusAfterScroll,
