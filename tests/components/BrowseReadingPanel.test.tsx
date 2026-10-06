@@ -82,14 +82,14 @@ describe("BrowseReadingPanel", () => {
         expect(screen.getByText("2")).toBeInTheDocument();
         expect(screen.getByText("reading days this week")).toBeInTheDocument();
         expect(screen.queryByText(/reads completed this month/i)).not.toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /continue reading/i })).toHaveAttribute(
+        expect(screen.getAllByRole("link", { name: /continue reading/i })[0]).toHaveAttribute(
             "href", `/read/${resumeId}/deep-work`,
         );
         expect(screen.getByRole("progressbar", { name: /reading progress for deep work/i }))
             .toHaveAttribute("aria-valuenow", "60");
     });
 
-    it("does not load personal data for guests or mobile widths", () => {
+    it("does not load personal data for guests, but shows the cards on mobile for signed-in readers", () => {
         mockUseAuthUser.mockReturnValue(null);
         mockUseReadingProgress.mockReturnValue({
             completedIds: [], inProgressIds: [], isLoaded: true, user: null, getProgress: vi.fn(),
@@ -110,8 +110,13 @@ describe("BrowseReadingPanel", () => {
             user: { id: "reader-1" }, getProgress: vi.fn(),
         });
         render(<BrowseReadingPanel />);
-        expect(screen.queryByTestId("browse-reading-panel")).not.toBeInTheDocument();
-        expect(mockUseQuery.mock.lastCall?.[0]).toMatchObject({ enabled: false });
+        expect(screen.getByTestId("browse-reading-panel")).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Your reading" })).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Continue reading" })).toBeInTheDocument();
+        expect(screen.getAllByRole("link", { name: /continue reading/i })[0]).toHaveAttribute(
+            "href", `/read/${resumeId}/deep-work`,
+        );
+        expect(mockUseQuery.mock.lastCall?.[0]).toMatchObject({ enabled: true });
     });
 
     it("reserves the card while account progress loads and starts activity in parallel", () => {
@@ -281,7 +286,7 @@ describe("BrowseReadingPanel", () => {
         mockUseBatchContentItems.mockReturnValue({ data: [{ id: resumeId, title: "Deep Work", cover_image_url: null }], isPending: false, isError: false, refetch: mockRefetchResume });
         rerender(<BrowseReadingPanel />);
         expect(screen.getByTestId("browse-reading-panel")).toBe(panel);
-        expect(screen.getByRole("link", { name: /continue reading/i })).toBeInTheDocument();
+        expect(screen.getAllByRole("link", { name: /continue reading/i })[0]).toBeInTheDocument();
     });
 
     it("waits for the preferred item instead of showing an older 0% item while its batch loads", () => {
@@ -324,7 +329,7 @@ describe("BrowseReadingPanel", () => {
         rerender(<BrowseReadingPanel />);
         expect(screen.getByText("The Singapore Story")).toBeInTheDocument();
         expect(screen.getByRole("progressbar", { name: /the singapore story/i })).toHaveAttribute("aria-valuenow", "80");
-        expect(screen.getByRole("link", { name: /continue reading/i })).toHaveAttribute(
+        expect(screen.getAllByRole("link", { name: /continue reading/i })[0]).toHaveAttribute(
             "href", `/read/${nextResumeId}/the-singapore-story`,
         );
     });
@@ -384,7 +389,7 @@ describe("BrowseReadingPanel", () => {
         });
         rerender(<BrowseReadingPanel />);
         expect(screen.getByText("Deep Work")).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /continue reading/i })).toHaveAttribute("href", `/read/${resumeId}/deep-work`);
+        expect(screen.getAllByRole("link", { name: /continue reading/i })[0]).toHaveAttribute("href", `/read/${resumeId}/deep-work`);
     });
 
     it("removes the continuation card when the completed batch contains no accessible items", () => {
