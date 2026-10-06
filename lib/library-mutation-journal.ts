@@ -20,7 +20,7 @@ const requestSchema = z.object({
 const entrySchema = z.object({
     version: z.literal(1), id: z.string().uuid(), accountId: z.string().min(1), itemId: z.string().min(1),
     sequence: z.number().int().nonnegative(), createdAt: z.string().datetime(), isBookmarked: z.boolean(), progress: progressSchema,
-    base: boundarySchema.optional(), predecessorId: z.string().uuid().optional(),
+    base: boundarySchema.optional(), predecessorId: z.string().uuid().optional(), replacesIntentId: z.string().uuid().optional(),
     request: requestSchema.optional(), guestImport: guestSchema.optional(),
     acknowledgement: boundarySchema.extend({ outcome: z.enum(["applied", "skipped"]).optional(), reason: z.enum(["destination_exists", "source_already_imported"]).optional() }).optional(),
     needsAttention: z.boolean().optional(), status: z.enum(["pending", "needs_attention", "acknowledged"]),

@@ -23,10 +23,11 @@ export function LibraryRecovery() {
         <div>
             <p className="font-medium text-foreground">Library sync</p>
             <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
-                {attention ? "Needs attention" : recovery.pending ? `${recovery.pending} changes pending on this device`
-                    : hydrationStatus === "ready" ? "Synced" : hydrationStatus === "error" ? "Could not verify your library" : "Checking your library…"}
+                {hydrationStatus === "error" ? "Sync unavailable" : attention ? "Needs attention" : recovery.pending ? `${recovery.pending} changes pending on this device`
+                    : hydrationStatus === "ready" ? "Synced" : "Checking your library…"}
             </p>
         </div>
+        {hydrationStatus === "error" && <p className="text-sm text-muted-foreground">Your library could not be verified. Changes on this device are not confirmed saved. Refresh your library to try again.</p>}
         {(recovery.pending > 0 || attention) && <p className="text-sm text-muted-foreground">Pending changes retry when you reconnect. Conflicts need review; refreshing never resubmits them. Discarding a local change does not undo a server write.</p>}
         <div className="flex flex-wrap gap-2">
             {recovery.pending > 0 && <button className={buttonClass} disabled={busy} onClick={() => void run(retryPending)}>Retry pending changes</button>}
@@ -44,7 +45,9 @@ export function LibraryRecovery() {
         {recovery.attention.map(entry => <div className="rounded-lg border border-border p-3 space-y-2" key={entry.id}>
             <p className="text-sm">{entry.guest ? "Guest import" : entry.isBookmarked ? "Save to Library" : "Library change"} needs review{entry.skipped ? ": the account already has this item." : "."}</p>
             <Link className="text-sm underline" href={`/preview/${encodeURIComponent(entry.itemId)}`}>View item</Link>
-            <p className="text-sm text-muted-foreground">Refresh and compare your current library before applying this as a new change.</p>
+            {entry.canReapply
+                ? <p className="text-sm text-muted-foreground">Your device: {entry.localCompleted} sections complete. Library: {entry.serverCompleted} sections complete. Applying this change can restore progress removed elsewhere.</p>
+                : <p className="text-sm text-muted-foreground">Refresh and compare your current library before applying this as a new change.</p>}
             <div className="flex flex-wrap gap-2">
                 {!entry.skipped && <button className={buttonClass} disabled={busy || !entry.canReapply} onClick={() => void run(() => reapplyIntent(entry.id))}>Apply as a new change</button>}
                 <button className={buttonClass} disabled={busy} onClick={() => discard(entry.id, () => discardIntent(entry.id))}>{confirmDiscard === entry.id ? "Confirm discard" : "Discard local change"}</button>

@@ -764,6 +764,93 @@ describe("useReadingProgress", () => {
         expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ baseRevision: 12 }), expect.any(AbortSignal), expect.any(Function));
     });
 
+    it("saves twelve sequential reading completions with acknowledged revisions", async () => {
+        currentAuthUser = { id: "user-a" };
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(26) as never);
+        commitMutationMock.mockImplementation(async (request: { baseRevision: number }) => ({
+            resetEpoch: 0, libraryRevision: request.baseRevision + 1, outcome: "applied",
+        }));
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        for (let section = 1; section <= 12; section++) {
+            act(() => result.current.saveReadingProgress("article", {
+                itemId: "article", completed: Array.from({ length: section }, (_, index) => `section-${index + 1}`),
+                lastSegmentIndex: section - 1, lastReadAt: new Date().toISOString(), isCompleted: section === 12,
+            }));
+            await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(section));
+        }
+        await waitFor(() => expect(result.current.getItemSyncStatus("article")).toBe("saved"));
+        expect(commitMutationMock.mock.calls.map(call => call[0].baseRevision)).toEqual(
+            Array.from({ length: 12 }, (_, index) => 26 + index),
+        );
+        expect(result.current.getProgress("article")?.completed).toHaveLength(12);
+        expect(result.current.recovery.attention).toHaveLength(0);
+    });
+
+    it("keeps an unsent completion visible through failed refresh and requires explicit review", async () => {
+        currentAuthUser = { id: "user-a" };
+        const snapshot = vi.mocked(fetchCompleteLibrarySnapshot);
+        snapshot.mockRejectedValue(new LibrarySnapshotClientError("Unavailable", "CONFIGURATION"));
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("error"));
+        const progress: ReadingProgressData = {
+            itemId: "article", completed: ["section-1"], lastSegmentIndex: 0,
+            lastReadAt: new Date().toISOString(), isCompleted: false,
+        };
+        act(() => result.current.saveReadingProgress("article", progress));
+        await waitFor(() => expect(result.current.recovery.attention).toHaveLength(1));
+        expect(result.current.getItemSyncStatus("article")).toBe("unavailable");
+        expect(commitMutationMock).not.toHaveBeenCalled();
+        expect(readLibraryIntents(localStorage, "user-a").entries[0].request).toBeUndefined();
+
+        act(() => result.current.retryHydration());
+        await waitFor(() => expect(snapshot).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("error"));
+        expect(result.current.getProgress("article")?.completed).toEqual(["section-1"]);
+        expect(result.current.recovery.attention).toHaveLength(1);
+
+        snapshot.mockResolvedValue(snapshotAt(26) as never);
+        act(() => result.current.retryHydration());
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        expect(result.current.getProgress("article")).toBeNull();
+        expect(result.current.recovery.attention[0]).toMatchObject({
+            localCompleted: 1, serverCompleted: 0, canReapply: true,
+        });
+        expect(commitMutationMock).not.toHaveBeenCalled();
+
+        commitMutationMock.mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 27, outcome: "applied" });
+        await act(async () => result.current.reapplyIntent(result.current.recovery.attention[0].id));
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
+        expect(commitMutationMock).toHaveBeenCalledWith(expect.objectContaining({ baseRevision: 26 }), expect.any(AbortSignal), expect.any(Function));
+        expect(result.current.getProgress("article")?.completed).toEqual(["section-1"]);
+        expect(result.current.recovery.attention).toHaveLength(0);
+    });
+
+    it("keeps reviewed work through an uncertain reapply until its frozen request is acknowledged", async () => {
+        currentAuthUser = { id: "user-a" };
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(10) as never);
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        commitMutationMock.mockRejectedValueOnce(new LibraryMutationConflictError({ resetEpoch: 0, libraryRevision: 12 }));
+        await act(async () => { await result.current.addToMyList("article"); });
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(12) as never);
+        act(() => result.current.retryHydration());
+        await waitFor(() => expect(result.current.recovery.attention[0]?.canReapply).toBe(true));
+
+        commitMutationMock.mockRejectedValueOnce(new Error("Response lost"));
+        await act(async () => result.current.reapplyIntent(result.current.recovery.attention[0].id));
+        expect(result.current.recovery.attention).toHaveLength(1);
+        expect(result.current.recovery.attention[0].canReapply).toBe(false);
+        expect(result.current.getItemSyncStatus("article")).toBe("pending");
+        const frozen = commitMutationMock.mock.calls[1][0];
+
+        commitMutationMock.mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 13, outcome: "applied" });
+        await act(async () => result.current.retryPending());
+        expect(commitMutationMock.mock.calls[2][0]).toEqual(frozen);
+        expect(result.current.recovery.attention).toHaveLength(0);
+        expect(result.current.getItemSyncStatus("article")).toBe("saved");
+    });
+
     it("keeps a newer pending removal ahead of an older acknowledged save during hydration", async () => {
         let resolveRemoval!: (value: unknown) => void;
         const pendingRemoval = new Promise((resolve) => { resolveRemoval = resolve; });
