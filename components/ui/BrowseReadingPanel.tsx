@@ -47,10 +47,14 @@ export function BrowseReadingPanel() {
     const isAuthenticatedDesktop = isDesktop && Boolean(authUser);
     const isReady = isAuthenticatedDesktop && isLoaded && user?.id === authUser?.id;
     const resumeIds = inProgressIds.slice(0, 3);
-    const { data: resumeItems = [], isError: resumeError, isPending: resumePending, refetch: refetchResume } = useBatchContentItems(resumeIds, {
+    const { data: resumeItems = [], isError: resumeError, isPending: resumePending, isPlaceholderData: resumeIsPlaceholder, refetch: refetchResume } = useBatchContentItems(resumeIds, {
         enabled: isReady,
     });
-    const resumeItem = isReady ? resumeItems[0] ?? null : null;
+    const preferredResumeItem = resumeItems.find((item) => item.id === resumeIds[0]) ?? null;
+    const fallbackResumeItem = !resumePending && !resumeIsPlaceholder && !resumeError
+        ? resumeIds.slice(1).map((id) => resumeItems.find((item) => item.id === id)).find((item) => item !== undefined) ?? null
+        : null;
+    const resumeItem = isReady ? preferredResumeItem ?? fallbackResumeItem : null;
     const week = getCurrentUtcWeek();
 
     const { data: activityDays, isError: activityError, isPending: activityPending, refetch: refetchActivity } = useQuery({
@@ -81,7 +85,7 @@ export function BrowseReadingPanel() {
     const progressPercent = totalSegments > 0
         ? Math.min(100, Math.round((resumeProgress?.completed.length ?? 0) / totalSegments * 100))
         : null;
-    const showResumeCard = Boolean(resumeItem) || (resumeIds.length > 0 && (resumePending || resumeError || progressPending || progressError));
+    const showResumeCard = Boolean(resumeItem) || (resumeIds.length > 0 && (resumePending || resumeIsPlaceholder || resumeError || progressPending || progressError));
 
     return (
         <div className="hidden px-6 lg:block lg:px-16" data-testid="browse-reading-panel">

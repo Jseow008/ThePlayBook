@@ -34,6 +34,8 @@ vi.mock("next/link", () => ({
 
 describe("BrowseReadingPanel", () => {
     const resumeId = "11111111-1111-1111-1111-111111111111";
+    const nextResumeId = "44444444-4444-4444-4444-444444444444";
+    const thirdResumeId = "55555555-5555-5555-5555-555555555555";
     const completedId = "22222222-2222-2222-2222-222222222222";
     const secondCompletedId = "33333333-3333-3333-3333-333333333333";
 
@@ -172,6 +174,36 @@ describe("BrowseReadingPanel", () => {
         expect(mockUseBatchContentItems.mock.lastCall?.[1]).toMatchObject({ enabled: false });
     });
 
+    it("waits for the new account's preferred item when the prior account's content is retained", () => {
+        const { rerender } = render(<BrowseReadingPanel />);
+        expect(screen.getByText("Deep Work")).toBeInTheDocument();
+
+        mockUseAuthUser.mockReturnValue({ id: "reader-2" });
+        rerender(<BrowseReadingPanel />);
+        expect(screen.queryByText("Deep Work")).not.toBeInTheDocument();
+
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [nextResumeId], isLoaded: true, hydrationStatus: "ready",
+            user: { id: "reader-2" }, getProgress: () => ({ completed: ["one", "two", "three", "four"], totalSegments: 5 }),
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [{ id: resumeId, title: "Deep Work", cover_image_url: null }],
+            isPending: false, isError: false, isPlaceholderData: true, refetch: mockRefetchResume,
+        });
+        rerender(<BrowseReadingPanel />);
+        expect(screen.getByRole("heading", { name: "Continue reading" })).toBeInTheDocument();
+        expect(screen.queryByText("Deep Work")).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /continue reading/i })).not.toBeInTheDocument();
+
+        mockUseBatchContentItems.mockReturnValue({
+            data: [{ id: nextResumeId, title: "The Singapore Story", cover_image_url: null }],
+            isPending: false, isError: false, isPlaceholderData: false, refetch: mockRefetchResume,
+        });
+        rerender(<BrowseReadingPanel />);
+        expect(screen.getByText("The Singapore Story")).toBeInTheDocument();
+        expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "80");
+    });
+
     it("offers a retry when weekly activity is unavailable", () => {
         mockUseBatchContentItems.mockReturnValue({ data: [], isPending: false, isError: false, refetch: mockRefetchResume });
         mockUseReadingProgress.mockReturnValue({
@@ -250,6 +282,150 @@ describe("BrowseReadingPanel", () => {
         rerender(<BrowseReadingPanel />);
         expect(screen.getByTestId("browse-reading-panel")).toBe(panel);
         expect(screen.getByRole("link", { name: /continue reading/i })).toBeInTheDocument();
+    });
+
+    it("waits for the preferred item instead of showing an older 0% item while its batch loads", () => {
+        const olderItem = { id: resumeId, title: "Deep Work", cover_image_url: null };
+        const preferredItem = { id: nextResumeId, title: "The Singapore Story", cover_image_url: null };
+        const getProgress = (id: string) => ({
+            completed: id === nextResumeId ? ["one", "two", "three", "four"] : [],
+            totalSegments: 5,
+        });
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [resumeId], isLoaded: true, hydrationStatus: "ready",
+            user: { id: "reader-1" }, getProgress,
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [olderItem], isPending: false, isError: false, isPlaceholderData: false,
+            refetch: mockRefetchResume,
+        });
+        const { rerender } = render(<BrowseReadingPanel />);
+        expect(screen.getByText("Deep Work")).toBeInTheDocument();
+        expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
+
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [nextResumeId, resumeId], isLoaded: true, hydrationStatus: "ready",
+            user: { id: "reader-1" }, getProgress,
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [olderItem], isPending: false, isError: false, isPlaceholderData: true,
+            refetch: mockRefetchResume,
+        });
+        rerender(<BrowseReadingPanel />);
+        expect(screen.getByRole("heading", { name: "Continue reading" })).toBeInTheDocument();
+        expect(screen.queryByText("Deep Work")).not.toBeInTheDocument();
+        expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /continue reading/i })).not.toBeInTheDocument();
+
+        mockUseBatchContentItems.mockReturnValue({
+            data: [preferredItem, olderItem], isPending: false, isError: false, isPlaceholderData: false,
+            refetch: mockRefetchResume,
+        });
+        rerender(<BrowseReadingPanel />);
+        expect(screen.getByText("The Singapore Story")).toBeInTheDocument();
+        expect(screen.getByRole("progressbar", { name: /the singapore story/i })).toHaveAttribute("aria-valuenow", "80");
+        expect(screen.getByRole("link", { name: /continue reading/i })).toHaveAttribute(
+            "href", `/read/${nextResumeId}/the-singapore-story`,
+        );
+    });
+
+    it("shows the preferred item immediately when it is already in placeholder data", () => {
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [nextResumeId, resumeId], isLoaded: true, hydrationStatus: "ready",
+            user: { id: "reader-1" },
+            getProgress: (id: string) => ({ completed: id === nextResumeId ? ["one", "two", "three", "four"] : [], totalSegments: 5 }),
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [{ id: nextResumeId, title: "The Singapore Story", cover_image_url: null }],
+            isPending: false, isError: false, isPlaceholderData: true, refetch: mockRefetchResume,
+        });
+        render(<BrowseReadingPanel />);
+
+        expect(screen.getByText("The Singapore Story")).toBeInTheDocument();
+        expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "80");
+    });
+
+    it("does not reuse an older item through consecutive placeholder batches", () => {
+        const olderItem = { id: resumeId, title: "Deep Work", cover_image_url: null };
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [nextResumeId, resumeId], isLoaded: true, hydrationStatus: "ready",
+            user: { id: "reader-1" }, getProgress: vi.fn(),
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [olderItem], isPending: false, isError: false, isPlaceholderData: true, refetch: mockRefetchResume,
+        });
+        const { rerender } = render(<BrowseReadingPanel />);
+        expect(screen.queryByText("Deep Work")).not.toBeInTheDocument();
+
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [thirdResumeId], isLoaded: true, hydrationStatus: "ready",
+            user: { id: "reader-1" }, getProgress: vi.fn(),
+        });
+        rerender(<BrowseReadingPanel />);
+        expect(screen.getByRole("heading", { name: "Continue reading" })).toBeInTheDocument();
+        expect(screen.queryByText("Deep Work")).not.toBeInTheDocument();
+    });
+
+    it("falls back only after the current batch confirms the preferred item is unavailable", () => {
+        const olderItem = { id: resumeId, title: "Deep Work", cover_image_url: null };
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [nextResumeId, resumeId], isLoaded: true, hydrationStatus: "ready",
+            user: { id: "reader-1" },
+            getProgress: (id: string) => id === resumeId ? { completed: [], totalSegments: 5 } : null,
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [olderItem], isPending: false, isError: false, isPlaceholderData: true, refetch: mockRefetchResume,
+        });
+        const { rerender } = render(<BrowseReadingPanel />);
+        expect(screen.queryByText("Deep Work")).not.toBeInTheDocument();
+
+        mockUseBatchContentItems.mockReturnValue({
+            data: [olderItem], isPending: false, isError: false, isPlaceholderData: false, refetch: mockRefetchResume,
+        });
+        rerender(<BrowseReadingPanel />);
+        expect(screen.getByText("Deep Work")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /continue reading/i })).toHaveAttribute("href", `/read/${resumeId}/deep-work`);
+    });
+
+    it("removes the continuation card when the completed batch contains no accessible items", () => {
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [nextResumeId], isLoaded: true, hydrationStatus: "ready",
+            user: { id: "reader-1" }, getProgress: vi.fn(),
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [], isPending: false, isError: false, isPlaceholderData: false, refetch: mockRefetchResume,
+        });
+        render(<BrowseReadingPanel />);
+
+        expect(screen.queryByRole("heading", { name: "Continue reading" })).not.toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Your reading" })).toBeInTheDocument();
+    });
+
+    it("keeps a fresh-load placeholder until the account's preferred item is available", () => {
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [], isLoaded: false, hydrationStatus: "hydrating",
+            user: { id: "reader-1" }, getProgress: vi.fn(),
+        });
+        mockUseBatchContentItems.mockReturnValue({ data: [], isPending: false, isError: false, refetch: mockRefetchResume });
+        const { rerender } = render(<BrowseReadingPanel />);
+        expect(screen.queryByRole("heading", { name: "Continue reading" })).not.toBeInTheDocument();
+
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [nextResumeId], isLoaded: true, hydrationStatus: "ready",
+            user: { id: "reader-1" }, getProgress: () => ({ completed: ["one", "two", "three", "four"], totalSegments: 5 }),
+        });
+        mockUseBatchContentItems.mockReturnValue({ data: [], isPending: true, isError: false, refetch: mockRefetchResume });
+        rerender(<BrowseReadingPanel />);
+        expect(screen.getByRole("heading", { name: "Continue reading" })).toBeInTheDocument();
+        expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+
+        mockUseBatchContentItems.mockReturnValue({
+            data: [{ id: nextResumeId, title: "The Singapore Story", cover_image_url: null }],
+            isPending: false, isError: false, refetch: mockRefetchResume,
+        });
+        rerender(<BrowseReadingPanel />);
+        expect(screen.getByText("The Singapore Story")).toBeInTheDocument();
+        expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "80");
     });
 
     it("keeps the weekly count visible when an unfinished read is discovered later", () => {
