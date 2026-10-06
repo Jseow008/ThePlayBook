@@ -37,6 +37,7 @@ import {
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 import { REFLECTION_RESUME_PARAM } from "@/lib/auth-redirect";
 import { GuestProgressChoice } from "./GuestProgressChoice";
+import { ReaderSyncStatus } from "./ReaderSyncStatus";
 
 /**
  * Reader View — Accordion Layout
@@ -1020,6 +1021,8 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onAudioPlaybackStateChange={setIsAudioPlaying}
                     onAudioPlaybackStarted={handleAudioPlaybackStarted}
                 />
+
+                <ReaderSyncStatus itemId={content.id} hasProgress={Boolean(savedProgress)} saveQueued={hasPendingProgressSave} />
 
                 <GuestProgressChoice
                     contentId={content.id}

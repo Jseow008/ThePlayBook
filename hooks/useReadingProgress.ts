@@ -96,6 +96,7 @@ function normalizeCloudSyncError(error: unknown) {
         return {
             name: error.name,
             message: error.message,
+            code: error instanceof LibrarySnapshotClientError ? error.code : undefined,
         };
     }
 
@@ -133,6 +134,16 @@ function logRecoverableCloudSync(
     });
 }
 
+// Enabled per browser tab for a live reproduction. Never include article text,
+// account identifiers, credentials, or the progress payload.
+function logLibrarySyncDiagnostic(stage: string, fields: Record<string, unknown>) {
+    try {
+        if (sessionStorage.getItem("netflux.library-sync-diagnostics") === "1") {
+            console.info("[ReadingProgress sync]", { stage, ...fields });
+        }
+    } catch { /* Diagnostics cannot affect a save. */ }
+}
+
 function hasProgressData(value: ReadingProgressData | null) {
     return Boolean(value && Object.keys(value).length > 0);
 }
@@ -158,9 +169,17 @@ type LocalLibraryMutation = {
     guestImport?: LibraryGuestImport;
     base?: LibraryBoundary;
     predecessor?: LocalLibraryMutation;
+    replacesIntentId?: string;
     needsAttention?: boolean;
     reviewed?: boolean;
 };
+
+class LibrarySyncUnavailableError extends Error {
+    constructor() {
+        super("A current library snapshot is unavailable.");
+        this.name = "LibrarySyncUnavailableError";
+    }
+}
 
 const terminalSnapshotOutcomeCodes = new Set([
     "SNAPSHOT_BUSY",
@@ -205,6 +224,8 @@ function useReadingProgressController(initialUser?: User | null) {
     const installedSnapshotStateRef = useRef(new Map<StorageScope, { resetEpoch: number; boundaryRevision: number }>());
 
     const confirmedBoundaryRef = useRef<LibraryBoundary | undefined>(undefined);
+    const snapshotReadyRef = useRef(false);
+    const canonicalProgressRef = useRef(new Map<string, ReadingProgressData | null>());
     const latestMutationRef = useRef<LocalLibraryMutation | undefined>(undefined);
     const mutationTailRef = useRef<Promise<unknown>>(Promise.resolve());
     const syncBlockedRef = useRef(false);
@@ -216,7 +237,7 @@ function useReadingProgressController(initialUser?: User | null) {
             sequence: mutation.sequence, createdAt: mutation.createdAt, isBookmarked: mutation.isBookmarked,
             progress: mutation.progress, base: mutation.base, predecessorId: mutation.predecessor?.acknowledgement ? undefined : mutation.predecessor?.id,
             request: mutation.request, acknowledgement: mutation.acknowledgement, guestImport: mutation.guestImport,
-            needsAttention: mutation.needsAttention, status: mutation.status,
+            needsAttention: mutation.needsAttention, status: mutation.status, replacesIntentId: mutation.replacesIntentId,
         });
         setJournalVersion(value => value + 1);
     }, []);
@@ -254,6 +275,7 @@ function useReadingProgressController(initialUser?: User | null) {
         isBookmarked: boolean,
         progress: ReadingProgressData | null,
         guestImport?: LibraryGuestImport,
+        replacesIntentId?: string,
     ) => {
         const currentUser = userRef.current;
         if (!currentUser) return null;
@@ -271,9 +293,16 @@ function useReadingProgressController(initialUser?: User | null) {
             base: confirmedBoundaryRef.current,
             predecessor: latestMutationRef.current,
             needsAttention: syncBlockedRef.current,
+            replacesIntentId,
         };
         latestMutationRef.current = mutation;
         localMutationsRef.current.set(mutation.id, mutation);
+        logLibrarySyncDiagnostic("completion_attempt", {
+            sequence: mutation.sequence, snapshotReady: snapshotReadyRef.current,
+            confirmedRevision: confirmedBoundaryRef.current?.libraryRevision ?? null,
+            resetEpoch: confirmedBoundaryRef.current?.resetEpoch ?? null,
+            hasBase: Boolean(mutation.base),
+        });
         try { persistMutation(mutation); } catch {
             mutation.needsAttention = true; mutation.status = "needs_attention";
             setJournalError(true);
@@ -309,6 +338,18 @@ function useReadingProgressController(initialUser?: User | null) {
                 || (acknowledgement.resetEpoch === prior.resetEpoch && acknowledgement.libraryRevision > prior.libraryRevision)) {
                 confirmedBoundaryRef.current = acknowledgement;
                 storeLibraryBoundary(localStorage, mutation.accountId, acknowledgement);
+            }
+            if (mutation.replacesIntentId && mutation.status === "acknowledged") {
+                const replaced = localMutationsRef.current.get(mutation.replacesIntentId);
+                for (const older of localMutationsRef.current.values()) {
+                    if (older.accountId === mutation.accountId && older.itemId === mutation.itemId
+                        && older.status === "needs_attention" && !older.guestImport
+                        && older.sequence <= (replaced?.sequence ?? -1)) {
+                        removeLibraryIntent(localStorage, older.accountId, older.id);
+                        localMutationsRef.current.delete(older.id);
+                    }
+                }
+                setJournalVersion(value => value + 1);
             }
             // A newer acknowledgement for the same item supersedes an older
             // confirmed overlay, unless an unresolved child still needs it.
@@ -407,6 +448,7 @@ function useReadingProgressController(initialUser?: User | null) {
         const mutation = localMutationsRef.current.get(mutationId);
         if (!mutation) return false;
         const commit = async () => {
+            let requestSent = false;
             const isCurrent = () => mutation.sessionGeneration === authenticationGenerationRef.current
                 && currentUser.id === userRef.current?.id && scope === scopeRef.current;
             if (!isCurrent()) return false;
@@ -424,7 +466,8 @@ function useReadingProgressController(initialUser?: User | null) {
                     && predecessorBoundary.resetEpoch === mutation.base.resetEpoch
                     && predecessorBoundary.libraryRevision > mutation.base.libraryRevision
                     ? predecessorBoundary : mutation.base;
-                if (mutation.needsAttention || (mutation.predecessor?.needsAttention && !mutation.predecessor.acknowledgement) || !base
+                if (!snapshotReadyRef.current || !base) throw new LibrarySyncUnavailableError();
+                if (mutation.needsAttention || (mutation.predecessor?.needsAttention && !mutation.predecessor.acknowledgement)
                     || base.resetEpoch !== mutation.base?.resetEpoch
                     || base.resetEpoch !== confirmedBoundaryRef.current?.resetEpoch) throw new LibraryMutationConflictError();
                 if (!mutation.request) {
@@ -436,15 +479,27 @@ function useReadingProgressController(initialUser?: User | null) {
                 // Persist the final wire request before sending it. Lost responses
                 // must never cause a retry with a new base, timestamp or ID.
                 persistMutation(mutation);
+                requestSent = true;
+                logLibrarySyncDiagnostic("request_sent", {
+                    sequence: mutation.sequence, outgoingRevision: mutation.request.baseRevision,
+                    resetEpoch: mutation.request.resetEpoch,
+                });
                 const data = await commitUserLibraryMutation({ ...mutation.request, expectedAccountId: mutation.accountId }, controller.signal, () => {
                     if (isCurrent()) toast.info("Your changes are saved on this device. Sync will retry shortly.", { id: "library-sync-wait" });
                 });
                 if (!isCurrent() || mutation.needsAttention || localMutationsRef.current.get(mutation.id) !== mutation) return false;
                 acknowledgeMutation(mutationId, data);
+                logLibrarySyncDiagnostic("acknowledged", {
+                    sequence: mutation.sequence, requestSent,
+                    outgoingRevision: mutation.request?.baseRevision ?? null,
+                    responseCode: data.outcome ?? "applied",
+                    acknowledgedRevision: data.libraryRevision,
+                });
                 return data.outcome !== "skipped";
             } catch (error) {
                 if (!isCurrent() || localMutationsRef.current.get(mutation.id) !== mutation) return false;
-                const terminal = error instanceof LibraryMutationConflictError || error instanceof LibraryMutationReceiptError;
+                const terminal = error instanceof LibraryMutationConflictError || error instanceof LibraryMutationReceiptError
+                    || error instanceof LibrarySyncUnavailableError;
                 mutation.needsAttention = terminal;
                 mutation.reviewed = false;
                 mutation.status = terminal ? "needs_attention" : "pending";
@@ -453,11 +508,21 @@ function useReadingProgressController(initialUser?: User | null) {
                     && mutation.base.resetEpoch < confirmedBoundaryRef.current.resetEpoch)) return false;
                 syncBlockedRef.current = terminal;
                 setSyncNeedsAttention(terminal);
-                toast.error(error instanceof LibraryMutationConflictError
-                    ? "Your library changed. Refresh it and review your change before saving again."
-                    : "This change is pending on this device. Retry it in Settings when connected.", {
+                toast.error(error instanceof LibrarySyncUnavailableError
+                    ? "Sync unavailable. Your change is on this device and needs review after your library refreshes."
+                    : error instanceof LibraryMutationConflictError
+                        ? "Your library changed. Refresh it and review your change before saving again."
+                        : "This change is pending on this device. Retry it in Settings when connected.", {
                     id: "library-sync-attention", duration: Infinity,
                     action: { label: "Refresh library", onClick: () => refreshLibraryRef.current() },
+                });
+                logLibrarySyncDiagnostic("rejected", {
+                    sequence: mutation.sequence, snapshotReady: snapshotReadyRef.current,
+                    confirmedRevision: confirmedBoundaryRef.current?.libraryRevision ?? null,
+                    requestSent, outgoingRevision: mutation.request?.baseRevision ?? null,
+                    responseCode: error instanceof LibraryMutationConflictError ? "LIBRARY_CONFLICT"
+                        : error instanceof LibraryMutationReceiptError ? error.code
+                            : error instanceof LibrarySyncUnavailableError ? "SNAPSHOT_UNAVAILABLE" : "REQUEST_FAILED",
                 });
                 logRecoverableCloudSync("Library change needs attention", error, { itemId, scope });
                 return false;
@@ -645,6 +710,12 @@ function useReadingProgressController(initialUser?: User | null) {
             else localStorage.removeItem(progressKey(scope, mutation.itemId));
         }
         writeScopedMyList(localStorage, scope, bookmarkedIds);
+        canonicalProgressRef.current = new Map(snapshot.records.map(row => [row.content_id, row.progress as ReadingProgressData | null]));
+        snapshotReadyRef.current = true;
+        logLibrarySyncDiagnostic("refresh_installed", {
+            installedRevision: snapshot.manifest.boundaryLibraryRevision,
+            resetEpoch: snapshot.manifest.resetEpoch,
+        });
         installedSnapshotStateRef.current.set(scope, {
             resetEpoch: snapshot.manifest.resetEpoch,
             boundaryRevision: snapshot.manifest.boundaryLibraryRevision,
@@ -684,6 +755,8 @@ function useReadingProgressController(initialUser?: User | null) {
             authenticationGenerationRef.current += 1;
             localMutationsRef.current.clear();
             confirmedBoundaryRef.current = undefined;
+            snapshotReadyRef.current = false;
+            canonicalProgressRef.current.clear();
             latestMutationRef.current = undefined;
             mutationTailRef.current = Promise.resolve();
             syncBlockedRef.current = false;
@@ -751,7 +824,17 @@ function useReadingProgressController(initialUser?: User | null) {
                 if (error instanceof LibrarySnapshotClientError && terminalSnapshotOutcomeCodes.has(error.code)) {
                     clearLibrarySnapshotIdempotencyKey(nextUser.id);
                 }
-                if (runId === hydrateRunRef.current) setHydrationStatus("error");
+                if (runId === hydrateRunRef.current) {
+                    setHydrationStatus("error");
+                    logLibrarySyncDiagnostic("refresh_failed", {
+                        responseCode: error instanceof LibrarySnapshotClientError ? error.code : "SNAPSHOT_FAILED",
+                        installedRevision: null,
+                    });
+                    toast.error("Sync unavailable. Your changes remain on this device. Refresh your library to try again.", {
+                        id: "library-sync-attention", duration: Infinity,
+                        action: { label: "Refresh library", onClick: () => refreshLibraryRef.current() },
+                    });
+                }
                 logRecoverableCloudSync("Fetch complete library snapshot failed", error, {
                     scope: nextScope,
                     userId: nextUser.id,
@@ -825,6 +908,7 @@ function useReadingProgressController(initialUser?: User | null) {
                 resetEpoch: detail.resetEpoch ?? (prior?.resetEpoch ?? 0) + 1,
                 libraryRevision: detail.boundaryRevision ?? prior?.boundaryRevision ?? 0,
             };
+            canonicalProgressRef.current.clear();
             for (const mutation of localMutationsRef.current.values()) {
                 if (mutation.scope === detail.scope) {
                     mutation.needsAttention = true;
@@ -1094,16 +1178,21 @@ function useReadingProgressController(initialUser?: User | null) {
         const mutation = localMutationsRef.current.get(id);
         if (!mutation || mutation.accountId !== userRef.current?.id || mutation.status !== "needs_attention"
             || !mutation.reviewed || hydrationStatus !== "ready" || !confirmedBoundaryRef.current) return;
-        // Explicit review is a NEW action; the rejected request is never mutated.
+        if ([...localMutationsRef.current.values()].some(candidate => candidate.accountId === mutation.accountId
+            && candidate.itemId === mutation.itemId && candidate.sequence > mutation.sequence && candidate.status === "pending")) return;
+        // Explicit review is a NEW action; keep rejected work until a new
+        // acknowledgement proves the intended state reached the server.
         latestMutationRef.current = undefined;
         syncBlockedRef.current = false;
-        const replacement = recordLocalMutation(scopeRef.current, mutation.itemId, mutation.isBookmarked, mutation.progress, mutation.guestImport);
+        const replacement = recordLocalMutation(scopeRef.current, mutation.itemId, mutation.isBookmarked, mutation.progress, mutation.guestImport, mutation.id);
         if (!replacement) return;
-        removeLibraryIntent(localStorage, mutation.accountId, id);
-        localMutationsRef.current.delete(id);
-        await syncItemToCloud(userRef.current, scopeRef.current, mutation.itemId, mutation.isBookmarked, mutation.progress, replacement);
+        if (mutation.progress) localStorage.setItem(progressKey(scopeRef.current, mutation.itemId), JSON.stringify(mutation.progress));
+        else localStorage.removeItem(progressKey(scopeRef.current, mutation.itemId));
+        loadProgress(scopeRef.current);
+        const didSync = await syncItemToCloud(userRef.current, scopeRef.current, mutation.itemId, mutation.isBookmarked, mutation.progress, replacement);
+        if (!didSync) return;
         refreshLibraryRef.current();
-    }, [hydrationStatus, recordLocalMutation, syncItemToCloud]);
+    }, [hydrationStatus, loadProgress, recordLocalMutation, syncItemToCloud]);
 
     const recovery = useMemo(() => {
         void journalVersion; // Recompute when the mutable journal changes.
@@ -1119,12 +1208,29 @@ function useReadingProgressController(initialUser?: User | null) {
         return { pending: entries.filter(mutation => mutation.status === "pending").length,
             attention: entries.filter(mutation => mutation.status === "needs_attention").map(mutation => ({
                 id: mutation.id, itemId: mutation.itemId, isBookmarked: mutation.isBookmarked,
-                createdAt: mutation.createdAt, canReapply: Boolean(mutation.reviewed) && hydrationStatus === "ready" && !(mutation.guestImport && mutation.acknowledgement?.outcome === "skipped"), guest: Boolean(mutation.guestImport), skipped: mutation.acknowledgement?.outcome === "skipped",
+                createdAt: mutation.createdAt, canReapply: Boolean(mutation.reviewed) && hydrationStatus === "ready"
+                    && !(mutation.guestImport && mutation.acknowledgement?.outcome === "skipped")
+                    && !entries.some(candidate => candidate.itemId === mutation.itemId && candidate.sequence > mutation.sequence && candidate.status === "pending"),
+                guest: Boolean(mutation.guestImport), skipped: mutation.acknowledgement?.outcome === "skipped",
+                localCompleted: mutation.progress?.completed.length ?? 0,
+                serverCompleted: canonicalProgressRef.current.get(mutation.itemId)?.completed.length ?? 0,
+                localIsCompleted: mutation.progress?.isCompleted ?? false,
+                serverIsCompleted: canonicalProgressRef.current.get(mutation.itemId)?.isCompleted ?? false,
             })), guestCount, importableGuestCount, storageError: journalError };
     }, [journalVersion, journalError, user, hydrationStatus]);
 
     const isInMyList = useCallback((itemId: string) => myListIds.includes(itemId), [myListIds]);
     const getProgress = useCallback((itemId: string) => progressMap[itemId] || null, [progressMap]);
+    const getItemSyncStatus = useCallback((itemId: string) => {
+        if (!user) return "guest" as const;
+        if (recovery.storageError) return "storage_error" as const;
+        if (hydrationStatus === "error") return "unavailable" as const;
+        const hasPending = [...localMutationsRef.current.values()].some(mutation => mutation.accountId === user.id
+            && mutation.itemId === itemId && mutation.status === "pending");
+        if (hasPending || hydrationStatus !== "ready") return "pending" as const;
+        if (recovery.attention.some(entry => entry.itemId === itemId)) return "needs_review" as const;
+        return "saved" as const;
+    }, [hydrationStatus, recovery, user]);
     const totalLibraryItems = inProgressIds.length + completedIds.length + myListIds.length;
 
     const refresh = useCallback(() => loadProgress(scopeRef.current), [loadProgress]);
@@ -1147,6 +1253,7 @@ function useReadingProgressController(initialUser?: User | null) {
         removeFromHistory,
         saveReadingProgress,
         getProgress,
+        getItemSyncStatus,
         myListIds,
         myListCount: myListIds.length,
         addToMyList,
@@ -1158,7 +1265,7 @@ function useReadingProgressController(initialUser?: User | null) {
         user,
     }), [inProgressIds, completedIds, isLoaded, hydrationStatus, syncNeedsAttention, recovery, retryPending, discardIntent, reapplyIntent, importGuestLibrary, retryJournalStorage, discardUnreadableIntents, refresh, retryHydration, archiveFromProgressList,
         restoreProgressListArchive, removeFromProgress, removeFromHistory, saveReadingProgress,
-        getProgress, myListIds, addToMyList, removeFromMyList, toggleMyList, isInMyList,
+        getProgress, getItemSyncStatus, myListIds, addToMyList, removeFromMyList, toggleMyList, isInMyList,
         totalLibraryItems, storageScope, user]);
 }
 
