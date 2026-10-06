@@ -180,7 +180,7 @@ describe("AI narration helpers", () => {
         expect(options.headers.model).toBe("s2.1-pro-free");
         const body = JSON.parse(options.body);
         expect(body.reference_id).toBe("e3cd384158934cc9a01029cd7d278634");
-        expect(body.text).toBe("[speak in a calm, grounded conversational tone, with natural pauses and understated emphasis] A brief test passage.");
+        expect(body.text).toBe("[clear, natural book narration] A brief test passage.");
         expect(body.temperature).toBe(0.7);
         expect(body.top_p).toBe(0.85);
         expect(body.format).toBe("wav");
