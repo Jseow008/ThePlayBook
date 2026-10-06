@@ -89,7 +89,7 @@ export function BrowseReadingPanel() {
 
     return (
         <div className="hidden px-6 lg:block lg:px-16" data-testid="browse-reading-panel">
-            <div className={`grid gap-4 ${showResumeCard ? "lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]" : "grid-cols-1"}`}>
+            <div className={`grid gap-4 ${showResumeCard ? "lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] xl:grid-cols-[minmax(0,0.84fr)_minmax(0,1.16fr)]" : "grid-cols-1"}`}>
                 <section aria-labelledby="browse-reading-title" aria-busy={activityPending} className="flex min-h-48 flex-col justify-between rounded-2xl border border-border bg-card/70 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.15)] xl:p-6">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <h2 id="browse-reading-title" className="font-display text-lg font-semibold text-foreground">Your reading</h2>
