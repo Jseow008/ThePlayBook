@@ -327,6 +327,7 @@ interface SegmentAccordionProps {
     completedSegments: Set<string>;
     onSegmentOpen: (segmentId: string, index: number) => void;
     onSegmentComplete?: (segmentId: string, index: number) => void;
+    onSegmentIncomplete?: (segmentId: string, index: number) => void;
     onFinishReading?: () => void;
     highlights?: HighlightWithContent[];
     onHighlightActivate?: (highlightId: string, position: HighlightPosition) => void;
@@ -348,6 +349,7 @@ export function SegmentAccordion({
     completedSegments,
     onSegmentOpen,
     onSegmentComplete,
+    onSegmentIncomplete,
     onFinishReading,
     highlights = [],
     onHighlightActivate,
@@ -743,7 +745,16 @@ export function SegmentAccordion({
                                         />
                                     </div>
 
-                                    <div className="mt-8 flex justify-center">
+                                    <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                                        {isCompleted && onSegmentIncomplete && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onSegmentIncomplete(segment.id, index)}
+                                                className="focus-ring inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:min-h-0"
+                                            >
+                                                Mark incomplete
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => {
                                                 if (isLastSegment) {
@@ -755,7 +766,7 @@ export function SegmentAccordion({
                                                     return;
                                                 }
 
-                                                if (onSegmentComplete) {
+                                                if (!isCompleted && onSegmentComplete) {
                                                     onSegmentComplete(segment.id, index);
                                                 }
 
@@ -771,11 +782,13 @@ export function SegmentAccordion({
                                                     : "border-border/70 bg-background/60 text-foreground/90 hover:border-primary/30 hover:bg-accent/35 hover:text-foreground"
                                             )}
                                         >
-                                            {!isLastSegment ? (
-                                                <>
-                                                    <CheckCircle2 className="size-4" aria-hidden="true" />
-                                                    <span>Mark complete and continue</span>
-                                                </>
+                                                {!isLastSegment ? (
+                                                    <>
+                                                        {isCompleted
+                                                            ? <ChevronRight className="size-4" aria-hidden="true" />
+                                                            : <CheckCircle2 className="size-4" aria-hidden="true" />}
+                                                        <span>{isCompleted ? "Continue" : "Mark complete and continue"}</span>
+                                                    </>
                                             ) : isContentCompleted ? (
                                                 <>
                                                     <span>Close section</span>

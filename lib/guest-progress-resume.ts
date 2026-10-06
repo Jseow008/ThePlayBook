@@ -17,6 +17,10 @@ export function readGuestProgress(
 
         const completedSet = new Set(saved.completed);
         const completed = segmentIds.filter((id) => completedSet.has(id));
+        const manuallyIncompleteSet = new Set(Array.isArray(saved.manuallyIncomplete)
+            ? saved.manuallyIncomplete.filter((id): id is string => typeof id === "string")
+            : []);
+        const manuallyIncomplete = segmentIds.filter((id) => manuallyIncompleteSet.has(id) && !completedSet.has(id));
         const furthestCompleted = segmentIds.reduce(
             (last, id, index) => completedSet.has(id) ? index : last,
             -1
@@ -36,6 +40,7 @@ export function readGuestProgress(
         return {
             itemId: contentId,
             completed,
+            ...(manuallyIncomplete.length > 0 ? { manuallyIncomplete } : {}),
             lastSegmentIndex,
             maxSegmentIndex: lastSegmentIndex,
             lastReadAt: saved.lastReadAt,
@@ -56,6 +61,8 @@ export function combineReadingProgress(
 ): ReadingProgressData {
     const knownCompleted = new Set([...(guest.completed ?? []), ...(account?.completed ?? [])]);
     const completed = segmentIds.filter((id) => knownCompleted.has(id));
+    const knownManuallyIncomplete = new Set([...(guest.manuallyIncomplete ?? []), ...(account?.manuallyIncomplete ?? [])]);
+    const manuallyIncomplete = segmentIds.filter((id) => knownManuallyIncomplete.has(id) && !knownCompleted.has(id));
     const furthestCompleted = segmentIds.reduce(
         (last, id, index) => knownCompleted.has(id) ? index : last,
         -1
@@ -71,6 +78,7 @@ export function combineReadingProgress(
     return {
         itemId: guest.itemId,
         completed,
+        ...(manuallyIncomplete.length > 0 ? { manuallyIncomplete } : {}),
         lastSegmentIndex,
         maxSegmentIndex: lastSegmentIndex,
         lastReadAt: new Date().toISOString(),

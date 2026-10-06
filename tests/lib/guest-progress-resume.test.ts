@@ -52,6 +52,23 @@ describe("guest progress on sign-in return", () => {
         expect(readGuestProgress(localStorage, "read-1", segmentIds)).toBeNull();
     });
 
+    it("preserves manually incomplete sections that stay incomplete after sign-in", () => {
+        localStorage.setItem(progressKey("guest", "read-1"), JSON.stringify({
+            itemId: "read-1",
+            completed: ["first"],
+            manuallyIncomplete: ["second", "removed-section", "first"],
+            lastSegmentIndex: 1,
+            lastReadAt: "2026-10-02T00:00:00.000Z",
+            isCompleted: false,
+        }));
+        const guest = readGuestProgress(localStorage, "read-1", segmentIds);
+        expect(guest?.manuallyIncomplete).toEqual(["second"]);
+
+        const merged = combineReadingProgress(guest!, null, segmentIds);
+        expect(merged.manuallyIncomplete).toEqual(["second"]);
+        expect(merged.completed).toEqual(["first"]);
+    });
+
     it("keeps account-only sections when browser progress adds a different section", () => {
         const guest: ReadingProgressData = {
             itemId: "read-1",
