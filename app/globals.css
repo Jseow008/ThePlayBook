@@ -689,7 +689,7 @@ mark[data-highlight-spotlight="true"] {
 /* Browse hero responsiveness */
 .browse-hero-shell {
   min-height: 420px;
-  height: 56svh;
+  height: 50svh;
 }
 
 .browse-hero-title {
