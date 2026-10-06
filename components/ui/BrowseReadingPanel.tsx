@@ -125,7 +125,7 @@ export function BrowseReadingPanel() {
                                 <button type="button" onClick={retryHydration} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>
                             </div>
                         ) : resumeItem ? (
-                            <div className="flex min-w-0 items-center gap-3 lg:mt-3 lg:flex-wrap lg:gap-4">
+                            <div className="flex min-w-0 items-start gap-3 lg:mt-3 lg:flex-wrap lg:items-center lg:gap-4">
                                 <div className="relative aspect-[2/3] w-10 shrink-0 overflow-hidden rounded-md bg-secondary lg:w-14 xl:w-16">
                                     {resumeItem.cover_image_url ? (
                                         <ResilientImage
@@ -140,7 +140,7 @@ export function BrowseReadingPanel() {
                                     ) : <BookOpen className="absolute left-1/2 top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="truncate font-display text-sm font-semibold text-foreground lg:text-base xl:text-lg" title={resumeItem.title}>{resumeItem.title}</p>
+                                    <p className="line-clamp-2 break-words font-display text-sm font-semibold leading-5 text-foreground lg:line-clamp-none lg:truncate lg:text-base lg:leading-normal xl:text-lg" title={resumeItem.title}>{resumeItem.title}</p>
                                     {progressPercent !== null ? (
                                         <>
                                             <div role="progressbar" aria-label={`Reading progress for ${resumeItem.title}`} aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100} className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary lg:mt-3">
