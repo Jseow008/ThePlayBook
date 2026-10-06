@@ -107,6 +107,25 @@ describe('SegmentAccordion', () => {
         expect(defaultProps.onSegmentOpen).toHaveBeenCalledWith('seg-1', 0);
     });
 
+    it('still scrolls after a manually opened section expands', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const scrollToSpy = vi.fn();
+            window.scrollTo = scrollToSpy;
+            render(<SegmentAccordion {...defaultProps} />);
+
+            fireEvent.click(screen.getByText('Introduction').closest('button')!);
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(450);
+            });
+
+            expect(scrollToSpy).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('labels the continue action as completing the current section', () => {
         render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-1" />);
 
@@ -226,6 +245,55 @@ describe('SegmentAccordion', () => {
             });
 
             expect(scrollToSpy).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('cancels a queued audio-follow scroll when the request is cleared', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const scrollToSpy = vi.fn();
+            window.scrollTo = scrollToSpy;
+            const { rerender } = render(
+                <SegmentAccordion
+                    {...defaultProps}
+                    expandedSegmentId="seg-2"
+                    scrollRequest={{ segmentId: 'seg-2', initialScrollY: 0, requestId: 1 }}
+                />
+            );
+
+            rerender(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-2" scrollRequest={null} />);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(450);
+            });
+
+            expect(scrollToSpy).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('accepts a new follow request for the same section after a seek', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const scrollToSpy = vi.fn();
+            window.scrollTo = scrollToSpy;
+            const request = { segmentId: 'seg-2', initialScrollY: 0, requestId: 1 };
+            const { rerender } = render(
+                <SegmentAccordion {...defaultProps} expandedSegmentId="seg-2" scrollRequest={request} />
+            );
+            rerender(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-2" scrollRequest={null} />);
+            rerender(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-2" scrollRequest={request} />);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(450);
+            });
+
+            expect(scrollToSpy).toHaveBeenCalledTimes(1);
         } finally {
             vi.useRealTimers();
         }

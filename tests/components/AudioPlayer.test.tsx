@@ -139,6 +139,7 @@ describe("AudioPlayer", () => {
             expect(onTimeChange).toHaveBeenCalledWith(30, {
                 durationSec: 90,
                 isEnded: false,
+                source: "hero-seek",
             });
             expect(screen.getByText("0:30")).toBeInTheDocument();
         });
@@ -392,6 +393,12 @@ describe("AudioPlayer", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Forward 10 seconds" }));
         expect(onTimeChange).toHaveBeenLastCalledWith(24, {
+            durationSec: 120,
+            isEnded: false,
+        });
+
+        fireEvent.change(screen.getByLabelText("Seek mini player timeline"), { target: { value: "40" } });
+        expect(onTimeChange).toHaveBeenLastCalledWith(40, {
             durationSec: 120,
             isEnded: false,
         });

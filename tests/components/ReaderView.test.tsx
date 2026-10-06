@@ -1228,6 +1228,53 @@ describe('ReaderView', () => {
         });
     });
 
+    it('keeps the page in place after a hero seek until Follow audio is chosen', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                { id: 'seg-1', item_id: 'item-1', order_index: 0, title: 'Segment 1', markdown_body: 'Body 1', start_time_sec: 0, end_time_sec: 30 },
+                { id: 'seg-2', item_id: 'item-1', order_index: 1, title: 'Segment 2', markdown_body: 'Body 2', start_time_sec: 30, end_time_sec: 60 },
+            ],
+        } as ContentItemWithSegments;
+
+        render(<ReaderView content={timedContent} />);
+        fireEvent.click(screen.getByTestId('sync-audio-seg-1'));
+
+        await waitFor(() => {
+            expect(segmentAccordionSpy.mock.lastCall?.[0]?.scrollRequest?.segmentId).toBe('seg-1');
+        });
+
+        act(() => {
+            readerHeroHeaderSpy.mock.lastCall?.[0]?.onAudioTimeChange?.(35, {
+                durationSec: 60,
+                isEnded: false,
+                source: 'hero-seek',
+            });
+        });
+
+        const accordionProps = segmentAccordionSpy.mock.lastCall?.[0];
+        expect(accordionProps?.expandedSegmentId).toBe('seg-1');
+        expect(accordionProps?.scrollRequest).toBeNull();
+        expect(screen.getByTestId('mock-active-audio-segment')).toHaveTextContent('seg-2');
+        expect(readerHeroHeaderSpy.mock.lastCall?.[0]?.showResumeAudioFollow).toBe(true);
+
+        act(() => {
+            readerHeroHeaderSpy.mock.lastCall?.[0]?.onAudioTimeChange?.(40, {
+                durationSec: 60,
+                isEnded: false,
+            });
+        });
+        expect(segmentAccordionSpy.mock.lastCall?.[0]?.scrollRequest).toBeNull();
+
+        fireEvent.click(screen.getByTestId('resume-audio-follow'));
+        await waitFor(() => {
+            const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
+            expect(latestProps?.expandedSegmentId).toBe('seg-2');
+            expect(latestProps?.scrollRequest?.segmentId).toBe('seg-2');
+        });
+    });
+
     it('restores the saved local audio position and expands the matching segment on return', async () => {
         const timedContent = {
             ...mockContent,
