@@ -160,7 +160,7 @@ describe("AI narration helpers", () => {
         expect(estimate.estimatedCostUsd).toBe(0);
     });
 
-    it("sends Fish narration to the selected model and WISDOM RISE voice", async () => {
+    it("sends Fish narration to the selected model and Laura voice", async () => {
         vi.stubEnv("NARRATION_PROVIDER", "fish");
         vi.stubEnv("FISH_AUDIO_MODEL", "s2.1-pro-free");
         vi.stubEnv("FISH_AUDIO_API_KEY", "test-fish-key");
@@ -179,7 +179,7 @@ describe("AI narration helpers", () => {
         expect(url).toBe("https://api.fish.audio/v1/tts");
         expect(options.headers.model).toBe("s2.1-pro-free");
         const body = JSON.parse(options.body);
-        expect(body.reference_id).toBe("03647a8ad0e04a0ea11ec99c4e9da5a7");
+        expect(body.reference_id).toBe("e3cd384158934cc9a01029cd7d278634");
         expect(body.text).toBe("[speak in a calm, grounded conversational tone, with natural pauses and understated emphasis] A brief test passage.");
         expect(body.temperature).toBe(0.7);
         expect(body.top_p).toBe(0.85);
