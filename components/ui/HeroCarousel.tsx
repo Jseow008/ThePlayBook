@@ -391,7 +391,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Description */}
                         <p
                             className={cn(
-                                "max-w-lg text-[0.95rem] font-medium leading-relaxed text-white/90 drop-shadow-md transition-all duration-[1100ms] delay-200 md:max-w-xl md:text-lg lg:text-xl",
+                                "line-clamp-3 max-w-lg text-[0.95rem] font-medium leading-relaxed text-white/90 drop-shadow-md transition-all duration-[1100ms] delay-200 md:line-clamp-none md:max-w-xl md:text-lg lg:text-xl",
                                 contentVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                             )}
                         >
@@ -401,23 +401,27 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Action Buttons */}
                         <div
                             className={cn(
-                                "flex flex-wrap items-center gap-3 pt-1 transition-all duration-[1100ms] delay-300 md:gap-4 md:pt-3 lg:pt-4",
+                                "flex flex-nowrap items-center gap-2 pt-1 transition-all duration-[1100ms] delay-300 md:flex-wrap md:gap-4 md:pt-3 lg:pt-4",
                                 contentVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                             )}
                         >
                             <Link
                                 href={buildReadPath(contentItem)}
-                                className="focus-ring pointer-events-auto flex items-center gap-2 rounded-full bg-white px-4.5 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/95 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 md:gap-2.5 md:px-6 md:py-2.5 md:text-base lg:px-6 lg:py-2.5"
+                                aria-label="Read Summary"
+                                className="focus-ring pointer-events-auto flex min-h-11 items-center gap-2 rounded-full bg-white px-4.5 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/95 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 md:min-h-0 md:gap-2.5 md:px-6 md:py-2.5 md:text-base lg:px-6 lg:py-2.5"
                             >
                                 <BookOpen className="h-4 w-4 fill-black md:h-5 md:w-5" />
-                                Read Summary
+                                <span className="md:hidden">Read</span>
+                                <span className="hidden md:inline">Read Summary</span>
                             </Link>
                             <Link
                                 href={`/preview/${contentItem.id}`}
-                                className="focus-ring pointer-events-auto flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-4.5 py-2 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/40 active:scale-95 md:gap-2.5 md:px-6 md:py-2.5 md:text-base lg:px-6 lg:py-2.5"
+                                aria-label="Preview Takeaways"
+                                className="focus-ring pointer-events-auto flex min-h-11 items-center gap-2 rounded-full border border-white/20 bg-black/20 px-4.5 py-2 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/40 active:scale-95 md:min-h-0 md:gap-2.5 md:px-6 md:py-2.5 md:text-base lg:px-6 lg:py-2.5"
                             >
                                 <Info className="h-4 w-4 md:h-5 md:w-5" />
-                                Preview Takeaways
+                                <span className="md:hidden">Preview</span>
+                                <span className="hidden md:inline">Preview Takeaways</span>
                             </Link>
                         </div>
                     </div>
