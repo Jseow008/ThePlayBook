@@ -52,6 +52,7 @@ export type ProgressLibraryList = "reading" | "completed";
 export interface ReadingProgressData {
     itemId: string;
     completed: string[];
+    manuallyIncomplete?: string[];
     lastSegmentIndex: number;
     lastReadAt: string;
     completedAt?: string;

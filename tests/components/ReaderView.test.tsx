@@ -25,7 +25,7 @@ const {
     localStorageState: new Map<string, string>(),
     notesDrawerSpy: vi.fn(),
     progressState: {
-        value: null as { completed?: string[]; maxSegmentIndex?: number; lastSegmentIndex?: number; isCompleted?: boolean } | null,
+        value: null as { completed?: string[]; manuallyIncomplete?: string[]; maxSegmentIndex?: number; lastSegmentIndex?: number; isCompleted?: boolean } | null,
     },
     readerHeroHeaderSpy: vi.fn(),
     removeFromProgressMock: vi.fn(),
@@ -167,6 +167,10 @@ vi.mock('@/components/reader/SegmentAccordion', () => ({
                 <button
                     data-testid="manual-complete-seg-2"
                     onClick={() => props.onSegmentComplete?.('seg-2', 1)}
+                />
+                <button
+                    data-testid="manual-incomplete-seg-1"
+                    onClick={() => props.onSegmentIncomplete?.('seg-1', 0)}
                 />
                 <button
                     data-testid="activate-highlight"
@@ -640,6 +644,81 @@ describe('ReaderView', () => {
 
         expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBeNull();
         expect(routerReplaceMock).not.toHaveBeenCalled();
+    });
+
+    it('reopens a finished read when one section is marked incomplete', async () => {
+        vi.useFakeTimers();
+        try {
+            progressState.value = {
+                completed: ['seg-1'],
+                maxSegmentIndex: -1,
+                lastSegmentIndex: -1,
+                isCompleted: true,
+            };
+            render(<ReaderView content={mockContent} />);
+            expect(screen.getByTestId('mock-completion-card')).toBeInTheDocument();
+
+            fireEvent.click(screen.getByTestId('manual-incomplete-seg-1'));
+            expect(screen.queryByTestId('mock-completion-card')).not.toBeInTheDocument();
+            expect(readerHeroHeaderSpy.mock.lastCall?.[0]?.segmentsCompleted).toBe(0);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(1100);
+            });
+            expect(saveReadingProgressMock).toHaveBeenLastCalledWith('test-item-1', expect.objectContaining({
+                completed: [],
+                manuallyIncomplete: ['seg-1'],
+                isCompleted: false,
+                maxSegmentIndex: 0,
+            }));
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('keeps an explicitly incomplete section unchecked when audio resumes past it', async () => {
+        vi.useFakeTimers();
+        try {
+            const timedContent = {
+                ...mockContent,
+                audio_url: 'https://example.com/audio.mp3',
+                segments: [
+                    { ...mockContent.segments[0], start_time_sec: 0, end_time_sec: 30 },
+                    { ...mockContent.segments[0], id: 'seg-2', order_index: 1, start_time_sec: 30, end_time_sec: 60 },
+                ],
+            } as ContentItemWithSegments;
+            progressState.value = {
+                completed: ['seg-1'],
+                maxSegmentIndex: 1,
+                lastSegmentIndex: 1,
+                isCompleted: false,
+            };
+            const { unmount } = render(<ReaderView content={timedContent} />);
+            fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
+            fireEvent.click(screen.getByTestId('manual-incomplete-seg-1'));
+            expect(segmentAccordionSpy.mock.lastCall?.[0]?.completedSegments.has('seg-1')).toBe(false);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(1100);
+            });
+            const saved = saveReadingProgressMock.mock.lastCall?.[1];
+            expect(saved).toEqual(expect.objectContaining({ completed: [], manuallyIncomplete: ['seg-1'] }));
+
+            unmount();
+            progressState.value = saved;
+            render(<ReaderView content={timedContent} />);
+            fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
+            expect(segmentAccordionSpy.mock.lastCall?.[0]?.completedSegments.has('seg-1')).toBe(false);
+
+            fireEvent.click(screen.getByTestId('manual-complete-seg-1'));
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(1100);
+            });
+            expect(saveReadingProgressMock.mock.lastCall?.[1]).toEqual(expect.objectContaining({ completed: ['seg-1'] }));
+            expect(saveReadingProgressMock.mock.lastCall?.[1]?.manuallyIncomplete).toBeUndefined();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('finishes all segments and lets undo restore the prior reading state', async () => {

@@ -86,6 +86,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const segmentIds = useMemo(() => content.segments.map((segment) => segment.id), [content.segments]);
     const [maxSegmentIndex, setMaxSegmentIndex] = useState(-1);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
+    const [manuallyIncompleteSegments, setManuallyIncompleteSegments] = useState<Set<string>>(new Set());
     const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
     const [popoverHighlightId, setPopoverHighlightId] = useState<string | null>(null);
     const [activeHighlightPosition, setActiveHighlightPosition] = useState<{
@@ -222,11 +223,13 @@ export function ReaderView({ content }: ReaderViewProps) {
     }, []);
     const handleProgressChosen = useCallback((progress: ReadingProgressData | null) => {
         const completed = new Set((progress?.completed ?? []).filter((id) => segmentIdSet.has(id)));
+        const manuallyIncomplete = new Set((progress?.manuallyIncomplete ?? []).filter((id) => segmentIdSet.has(id) && !completed.has(id)));
         const nextSegment = content.segments.find((segment) => !completed.has(segment.id));
         const savedIndex = progress?.maxSegmentIndex ?? progress?.lastSegmentIndex ?? -1;
 
         handledReaderEntryRef.current = readerEntryKey;
         setCompletedSegments(completed);
+        setManuallyIncompleteSegments(manuallyIncomplete);
         setMaxSegmentIndex(Math.min(content.segments.length - 1, Math.max(-1, savedIndex)));
         setHasPendingProgressSave(false);
         setSegmentScrollRequest(null);
@@ -279,6 +282,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const buildProgressSnapshot = useCallback((
         completedSegmentIds: Set<string>,
         lastSegmentIndex: number,
+        manuallyIncompleteSegmentIds = manuallyIncompleteSegments,
     ): ReadingProgressData | null => {
         const hasMeaningfulProgress = completedSegmentIds.size > 0 || lastSegmentIndex >= 0;
         if (!hasMeaningfulProgress) {
@@ -287,9 +291,12 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         const isCompleted = content.segments.length > 0
             && content.segments.every((segment) => completedSegmentIds.has(segment.id));
+        const manuallyIncomplete = Array.from(manuallyIncompleteSegmentIds)
+            .filter((id) => !completedSegmentIds.has(id));
 
         return {
             completed: Array.from(completedSegmentIds),
+            ...(manuallyIncomplete.length > 0 ? { manuallyIncomplete } : {}),
             lastSegmentIndex,
             maxSegmentIndex: lastSegmentIndex,
             lastReadAt: new Date().toISOString(),
@@ -297,7 +304,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             itemId: content.id,
             totalSegments: content.segments.length,
         };
-    }, [content.id, content.segments]);
+    }, [content.id, content.segments, manuallyIncompleteSegments]);
     const progressSnapshot = useMemo<ReadingProgressData | null>(
         () => buildProgressSnapshot(completedSegments, maxSegmentIndex),
         [buildProgressSnapshot, completedSegments, maxSegmentIndex]
@@ -357,6 +364,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     useEffect(() => {
         if (!savedProgress) {
             setCompletedSegments(new Set());
+            setManuallyIncompleteSegments(new Set());
             setMaxSegmentIndex(-1);
             setHasPendingProgressSave(false);
             return;
@@ -364,6 +372,8 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         const sanitizedCompletedSegments = (savedProgress.completed || []).filter((segmentId) => segmentIdSet.has(segmentId));
         setCompletedSegments(new Set(sanitizedCompletedSegments));
+        setManuallyIncompleteSegments(new Set((savedProgress.manuallyIncomplete ?? [])
+            .filter((segmentId) => segmentIdSet.has(segmentId) && !sanitizedCompletedSegments.includes(segmentId))));
         setMaxSegmentIndex(
             Math.min(
                 content.segments.length - 1,
@@ -541,8 +551,26 @@ export function ReaderView({ content }: ReaderViewProps) {
             next.add(segmentId);
             return next;
         });
+        setManuallyIncompleteSegments((prev) => {
+            if (!prev.has(segmentId)) return prev;
+            const next = new Set(prev);
+            next.delete(segmentId);
+            return next;
+        });
 
         // Update max opened index just in case
+        setMaxSegmentIndex((prev) => Math.max(prev, index));
+        setHasPendingProgressSave(true);
+    };
+
+    const handleSegmentIncomplete = (segmentId: string, index: number) => {
+        setCompletedSegments((prev) => {
+            if (!prev.has(segmentId)) return prev;
+            const next = new Set(prev);
+            next.delete(segmentId);
+            return next;
+        });
+        setManuallyIncompleteSegments((prev) => new Set(prev).add(segmentId));
         setMaxSegmentIndex((prev) => Math.max(prev, index));
         setHasPendingProgressSave(true);
     };
@@ -553,13 +581,15 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
 
         const previousCompletedSegments = new Set(completedSegments);
+        const previousManuallyIncompleteSegments = new Set(manuallyIncompleteSegments);
         const previousMaxSegmentIndex = maxSegmentIndex;
-        const previousProgress = buildProgressSnapshot(previousCompletedSegments, previousMaxSegmentIndex);
+        const previousProgress = buildProgressSnapshot(previousCompletedSegments, previousMaxSegmentIndex, previousManuallyIncompleteSegments);
         const finalCompletedSegments = new Set(content.segments.map((segment) => segment.id));
         const finalMaxSegmentIndex = content.segments.length - 1;
-        const finalProgress = buildProgressSnapshot(finalCompletedSegments, finalMaxSegmentIndex);
+        const finalProgress = buildProgressSnapshot(finalCompletedSegments, finalMaxSegmentIndex, new Set());
 
         setCompletedSegments(finalCompletedSegments);
+        setManuallyIncompleteSegments(new Set());
         setMaxSegmentIndex(finalMaxSegmentIndex);
         setExpandedSegmentId(null);
         progressSnapshotRef.current = finalProgress;
@@ -576,6 +606,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                 label: "Undo",
                 onClick: () => {
                     setCompletedSegments(new Set(previousCompletedSegments));
+                    setManuallyIncompleteSegments(new Set(previousManuallyIncompleteSegments));
                     setMaxSegmentIndex(previousMaxSegmentIndex);
                     progressSnapshotRef.current = previousProgress;
 
@@ -598,6 +629,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     }, [
         buildProgressSnapshot,
         completedSegments,
+        manuallyIncompleteSegments,
         content.id,
         content.segments,
         maxSegmentIndex,
@@ -950,18 +982,19 @@ export function ReaderView({ content }: ReaderViewProps) {
         const completedByAudio = hasCompletedAudioPlayback
             ? content.segments.map((segment) => segment.id)
             : findCompletedSegmentIdsForPlaybackTime(content.segments, audioCurrentTimeSec);
-        if (completedByAudio.length === 0) {
+        const eligibleCompletedByAudio = completedByAudio.filter((id) => !manuallyIncompleteSegments.has(id));
+        if (eligibleCompletedByAudio.length === 0) {
             return;
         }
 
         const nextCompletedSegments = new Set(completedSegments);
-        for (const segmentId of completedByAudio) {
+        for (const segmentId of eligibleCompletedByAudio) {
             nextCompletedSegments.add(segmentId);
         }
 
         const didAdvanceCompletedSegments = nextCompletedSegments.size !== completedSegments.size;
 
-        const completedSegmentIdSet = new Set(completedByAudio);
+        const completedSegmentIdSet = new Set(eligibleCompletedByAudio);
         const furthestCompletedIndex = content.segments.reduce((maxIndex, segment, index) => {
             if (!completedSegmentIdSet.has(segment.id)) {
                 return maxIndex;
@@ -988,7 +1021,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
 
         setHasPendingProgressSave(true);
-    }, [audioCurrentTimeSec, completedSegments, content.segments, hasCompletedAudioPlayback, hasSyncedAudioPosition, maxSegmentIndex]);
+    }, [audioCurrentTimeSec, completedSegments, content.segments, hasCompletedAudioPlayback, hasSyncedAudioPosition, manuallyIncompleteSegments, maxSegmentIndex]);
 
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
@@ -1124,6 +1157,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     completedSegments={completedSegments}
                     onSegmentOpen={handleSegmentOpen}
                     onSegmentComplete={handleSegmentComplete}
+                    onSegmentIncomplete={handleSegmentIncomplete}
                     onFinishReading={handleFinishReading}
                     highlights={highlights}
                     expandedSegmentId={expandedSegmentId}

@@ -45,6 +45,7 @@ describe('SegmentAccordion', () => {
         completedSegments: new Set(['seg-1']),
         onSegmentOpen: vi.fn(),
         onSegmentComplete: vi.fn(),
+        onSegmentIncomplete: vi.fn(),
         onHighlightActivate: vi.fn(),
         highlights: [],
     };
@@ -127,13 +128,26 @@ describe('SegmentAccordion', () => {
     });
 
     it('labels the continue action as completing the current section', () => {
-        render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-1" />);
+        render(<SegmentAccordion {...defaultProps} completedSegments={new Set()} expandedSegmentId="seg-1" />);
 
         const completeButton = screen.getByRole('button', { name: 'Mark complete and continue' });
         expect(completeButton).toBeInTheDocument();
         expect(completeButton).toHaveClass('border-primary/35', 'bg-primary/10', 'text-primary');
         expect(completeButton).toHaveClass('min-h-11', 'sm:min-h-0');
         expect(completeButton.querySelector('svg')).toBeInTheDocument();
+    });
+
+    it('lets a completed section be marked incomplete without completing it again', () => {
+        const { rerender } = render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-1" />);
+
+        expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Mark incomplete' }));
+        expect(defaultProps.onSegmentIncomplete).toHaveBeenCalledWith('seg-1', 0);
+        expect(defaultProps.onSegmentComplete).not.toHaveBeenCalled();
+
+        rerender(<SegmentAccordion {...defaultProps} completedSegments={new Set()} expandedSegmentId="seg-1" />);
+        expect(screen.queryByRole('button', { name: 'Mark incomplete' })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Mark complete and continue' })).toBeInTheDocument();
     });
 
     it('uses Finish Reading on the final section until every section is complete', () => {
