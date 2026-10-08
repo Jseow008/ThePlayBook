@@ -2,7 +2,7 @@
 
 ## Save recovery checkpoint — 8 October 2026
 
-Branch `codex/snapshot-recovery`, managed worktree `/Users/j/.codex/worktrees/snapshot-recovery/Lifebook`, based on `origin/main` `dfb9c37b`. The focused change is ready for PR review; its commit and PR number will be recorded after publishing. No migration or production database write is included.
+Branch `codex/snapshot-recovery`, managed worktree `/Users/j/.codex/worktrees/snapshot-recovery/Lifebook`, based on `origin/main` `dfb9c37b`. Focused implementation commit `784c92cc` is in [PR #267](https://github.com/Jseow008/ThePlayBook/pull/267), open for review. No migration or production database write is included.
 
 Before the single production Retry, the browser held five rejected changes awaiting review and zero pending changes. Retry returned a ready snapshot (201); no save request followed, and the five journal entries were unchanged. The existing Disney book reopened at 1 of 11 sections (library revision 38). The earlier failure's cause remains unknown; rate limiting was not demonstrated. The historical conflict remains open for separate evidence.
 
