@@ -125,7 +125,7 @@ export function BrowseReadingPanel() {
                                 <button type="button" onClick={retryHydration} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>
                             </div>
                         ) : resumeItem ? (
-                            <div className="flex min-w-0 items-start gap-3 lg:mt-3 lg:flex-wrap lg:items-center lg:gap-4">
+                            <div className="mt-4 flex min-w-0 items-start gap-3 lg:mt-3 lg:flex-wrap lg:items-center lg:gap-4">
                                 <div className="relative aspect-[2/3] w-10 shrink-0 overflow-hidden rounded-md bg-secondary lg:w-14 xl:w-16">
                                     {resumeItem.cover_image_url ? (
                                         <ResilientImage
