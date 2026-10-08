@@ -20,10 +20,17 @@ type SnapshotPageResponse = {
 };
 
 export class LibrarySnapshotClientError extends Error {
-    constructor(message: string, readonly code = "SNAPSHOT_UNAVAILABLE") {
+    constructor(message: string, readonly code = "SNAPSHOT_UNAVAILABLE", readonly status?: number, readonly retryAfterMs?: number) {
         super(message);
         this.name = "LibrarySnapshotClientError";
     }
+}
+
+function retryAfterMs(response: Response) {
+    const value = response.headers.get("Retry-After");
+    if (!value) return undefined;
+    const seconds = /^\d+$/.test(value) ? Number(value) * 1000 : Date.parse(value) - Date.now();
+    return Number.isFinite(seconds) ? Math.max(1000, seconds) : undefined;
 }
 
 const idempotencyKeyPrefix = "netflux.account-data-snapshot.idempotency.";
@@ -89,7 +96,7 @@ function assertSnapshotPage(value: unknown): asserts value is SnapshotPageRespon
  * validated. Callers must still discard the result when their auth generation
  * changes before installation.
  */
-export async function fetchCompleteLibrarySnapshot(idempotencyKey = crypto.randomUUID()): Promise<{
+export async function fetchCompleteLibrarySnapshot(idempotencyKey = crypto.randomUUID(), onBuilding?: () => void): Promise<{
     manifest: Manifest;
     records: LibrarySnapshotRecord[];
 }> {
@@ -105,14 +112,43 @@ export async function fetchCompleteLibrarySnapshot(idempotencyKey = crypto.rando
         snapshotId?: string;
     } | null;
 
-    if (!creation.ok || creationPayload?.state !== "ready" || !creationPayload.manifest) {
+    if (creation.status === 429) {
+        throw new LibrarySnapshotClientError("Library requests are temporarily limited. Your local work is unchanged.",
+            getErrorCode(creationPayload) === "SNAPSHOT_UNAVAILABLE" ? "RATE_LIMITED" : getErrorCode(creationPayload),
+            429, retryAfterMs(creation) ?? 60_000);
+    }
+    if (!creation.ok || !creationPayload || (creationPayload.state !== "ready" && creationPayload.state !== "building")) {
         throw new LibrarySnapshotClientError(
             "A complete library snapshot is not available yet. Your existing local library was left unchanged.",
-            getErrorCode(creationPayload),
+            getErrorCode(creationPayload), creation.status, retryAfterMs(creation),
         );
     }
 
-    const manifest = creationPayload.manifest;
+    let manifest = creationPayload.manifest;
+    if (creationPayload.state === "building") {
+        if (!creationPayload.snapshotId) throw new LibrarySnapshotClientError("The snapshot reference was missing.", "SNAPSHOT_INVALID", 202);
+        onBuilding?.();
+        const deadline = Date.now() + 35_000;
+        let delay = retryAfterMs(creation) ?? 1000;
+        while (Date.now() < deadline) {
+            await new Promise(resolve => setTimeout(resolve, Math.min(delay, Math.max(0, deadline - Date.now()))));
+            const response = await fetch(`/api/account-data/snapshots/${encodeURIComponent(creationPayload.snapshotId)}`, {
+                cache: "no-store", headers: { "Cache-Control": "no-store" },
+            });
+            const payload = await responsePayload(response) as { state?: string; manifest?: Manifest } | null;
+            if (response.status === 202 && payload?.state === "building") {
+                delay = retryAfterMs(response) ?? 1000;
+                continue;
+            }
+            if (!response.ok || payload?.state !== "ready" || !payload.manifest) {
+                throw new LibrarySnapshotClientError("The library snapshot could not be prepared.", getErrorCode(payload), response.status);
+            }
+            manifest = payload.manifest;
+            break;
+        }
+        if (!manifest) throw new LibrarySnapshotClientError("The library snapshot is still being prepared.", "SNAPSHOT_BUILDING", 202);
+    }
+    if (!manifest) throw new LibrarySnapshotClientError("The library snapshot response was incomplete.", "SNAPSHOT_INVALID", creation.status);
     const records: LibrarySnapshotRecord[] = [];
     let cursor: string | null = null;
 

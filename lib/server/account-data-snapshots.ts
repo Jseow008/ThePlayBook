@@ -990,6 +990,32 @@ export async function getAccountDataSnapshotManifest(accountId: string, snapshot
     }
 }
 
+/** Polls a library-only operation without creating another rate-limited snapshot. */
+export async function getLibrarySnapshotStatus(accountId: string, snapshotId: string): Promise<CreateLibrarySnapshotResult> {
+    const client = await getPool().connect();
+    try {
+        return await withRestrictedWorkerTransaction(client, accountId, async () => {
+            const operation = await client.query<Pick<SnapshotOperationRow, "status" | "failure_code" | "collection_names">>(
+                `SELECT status, failure_code, collection_names
+                 FROM snapshot_private.account_data_snapshot_operations
+                 WHERE account_id = $1 AND snapshot_id = $2`,
+                [accountId, snapshotId],
+            );
+            const row = operation.rows[0];
+            if (!row || row.collection_names.length !== 1 || row.collection_names[0] !== LIBRARY_SNAPSHOT_COLLECTION) {
+                throw new AccountDataSnapshotError("NOT_FOUND", "Snapshot not found.");
+            }
+            const manifest = await getReadyManifest(client, accountId, snapshotId, true);
+            if (manifest) return { state: "ready", manifest };
+            if (row.status === "building") return { state: "building", snapshotId };
+            return { state: "failed", snapshotId, code: row.failure_code ?? "SNAPSHOT_EXPIRED" };
+        });
+    } finally {
+        await releaseRestrictedWorker(client);
+        client.release();
+    }
+}
+
 export async function getLibrarySnapshotPage(accountId: string, snapshotId: string, afterOrdinal: number, pageSize: number, resumeSessionId?: string): Promise<LibrarySnapshotPage> {
     const page = await getAccountDataSnapshotPage(accountId, snapshotId, LIBRARY_SNAPSHOT_COLLECTION, afterOrdinal, pageSize, resumeSessionId);
     return {

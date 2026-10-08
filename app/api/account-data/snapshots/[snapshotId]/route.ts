@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
-import { AccountDataSnapshotError, getAccountDataSnapshotManifest } from "@/lib/server/account-data-snapshots";
+import { AccountDataSnapshotError, getAccountDataSnapshotManifest, getLibrarySnapshotStatus } from "@/lib/server/account-data-snapshots";
 import { getVerifiedAccountDataSession } from "@/lib/server/account-data-snapshot-auth";
 
 const ParamsSchema = z.object({ snapshotId: z.string().uuid() });
@@ -16,12 +16,21 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         const session = await getVerifiedAccountDataSession();
         if (!session) return apiError("UNAUTHORIZED", "Sign in to resume your export.", 401, requestId);
 
-        const manifest = await getAccountDataSnapshotManifest(
-            session.accountId,
-            parsedParams.data.snapshotId,
-            session.sessionId,
-        );
-        return NextResponse.json({ manifest }, { headers: { "Cache-Control": "no-store" } });
+        try {
+            const result = await getLibrarySnapshotStatus(session.accountId, parsedParams.data.snapshotId);
+            if (result.state === "building") {
+                return NextResponse.json(result, { status: 202, headers: { "Cache-Control": "no-store", "Retry-After": "1" } });
+            }
+            if (result.state === "failed") {
+                return apiError("INTERNAL_ERROR", "Could not prepare the library snapshot.", 503, requestId, { snapshot_error: result.code });
+            }
+            return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
+        } catch (error) {
+            if (!(error instanceof AccountDataSnapshotError) || error.code !== "NOT_FOUND") throw error;
+            // Complete account exports remain restricted to their originating session.
+            const manifest = await getAccountDataSnapshotManifest(session.accountId, parsedParams.data.snapshotId, session.sessionId);
+            return NextResponse.json({ manifest }, { headers: { "Cache-Control": "no-store" } });
+        }
     } catch (error) {
         if (error instanceof AccountDataSnapshotError) {
             const status = error.code === "NOT_FOUND" ? 404 : error.code === "EXPIRED" || error.code === "INVALIDATED" ? 410 : 503;

@@ -1,5 +1,15 @@
 # Netflux release and workstream status
 
+## Save recovery checkpoint — 8 October 2026
+
+Branch `codex/snapshot-recovery`, managed worktree `/Users/j/.codex/worktrees/snapshot-recovery/Lifebook`, based on `origin/main` `dfb9c37b`. The focused change is ready for PR review; its commit and PR number will be recorded after publishing. No migration or production database write is included.
+
+Before the single production Retry, the browser held five rejected changes awaiting review and zero pending changes. Retry returned a ready snapshot (201); no save request followed, and the five journal entries were unchanged. The existing Disney book reopened at 1 of 11 sections (library revision 38). The earlier failure's cause remains unknown; rate limiting was not demonstrated. The historical conflict remains open for separate evidence.
+
+The candidate handles a 202 by checking the same snapshot, honors `Retry-After` for 429, preserves local progress through failures, labels server-confirmed versus pending or rejected work, and shows last-known Browse progress. Rejected changes stay review-only; an older rejected change cannot be applied while a newer one for the same item remains unresolved. A signed-in local run recovered the 1/11 record and the new snapshot-status GET returned ready (200). Later local 429 reproduced the intended reader and Browse fallback: the 1/11 copy and resume link remained visible, labeled last-known, with the retry time. Focused tests, lint, typecheck, and build passed. At 390px, mobile Browse had no document overflow; the repository Playwright route check stopped on local CSP/Insights console errors after its layout assertions, so that command is not counted as passing. No product failure was found in that mobile observation.
+
+Release blocker: [OPS §2.2](OPS.md#22-disposable-hosted-database-verification) requires a temporary hosted database gate for database-facing releases. The only listed Supabase project is production, so no candidate check has run. Production `db push` is not involved. Next action: publish and scope-check the PR, then complete the temporary hosted gate in the selected organization before auto-merge; keep the historical conflict open.
+
 **Reconciled 1 October 2026:** core capture/search/evidence/citation/export work is shipped, but neither all 32 findings nor the complete first-load performance objective is closed. The selector-only Luna release (#217, `e9276438`) passed the frozen quality evaluation and one production smoke; the response took about 11.8 seconds in that browser sample. This establishes functioning, cheaper retrieval, not a general latency target. Factual wait feedback (#218, `23bdaf05`) is merged; production deployment verification is pending. See the [latest checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#luna-production-rollout-and-factual-wait-feedback--1-october-2026).
 
 ## CI Stage 1 — 4 October 2026

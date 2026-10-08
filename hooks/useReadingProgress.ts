@@ -192,6 +192,7 @@ const terminalSnapshotOutcomeCodes = new Set([
     "SNAPSHOT_ACCOUNT_CAPACITY",
     "SNAPSHOT_CLEANUP_FAILED",
     "SNAPSHOT_EXPIRED",
+    "INVALIDATED",
     "IDEMPOTENCY_KEY_REUSED",
     "NOT_FOUND",
     "EXPIRED",
@@ -211,6 +212,10 @@ function useReadingProgressController(initialUser?: User | null) {
     const activeWritesRef = useRef(new Set<AbortController>());
     const [isLoaded, setIsLoaded] = useState(false);
     const [hydrationStatus, setHydrationStatus] = useState<"idle" | "hydrating" | "ready" | "error">("idle");
+    const [hydrationIssue, setHydrationIssue] = useState<{ kind: "rate_limited" | "preparing" | "configuration" | "service"; code: string; retryAt?: number } | null>(null);
+    const [snapshotBuilding, setSnapshotBuilding] = useState(false);
+    const retryAfterRef = useRef(0);
+    const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [user, setUser] = useState<User | null>(initialUser ?? null);
     const [storageScope, setStorageScope] = useState<StorageScope>(getStorageScope(initialUser?.id));
     const scopeRef = useRef<StorageScope>(getStorageScope(null));
@@ -227,6 +232,7 @@ function useReadingProgressController(initialUser?: User | null) {
     const confirmedBoundaryRef = useRef<LibraryBoundary | undefined>(undefined);
     const snapshotReadyRef = useRef(false);
     const canonicalProgressRef = useRef(new Map<string, ReadingProgressData | null>());
+    const canonicalBookmarkRef = useRef(new Map<string, boolean>());
     const latestMutationRef = useRef<LocalLibraryMutation | undefined>(undefined);
     const mutationTailRef = useRef<Promise<unknown>>(Promise.resolve());
     const syncBlockedRef = useRef(false);
@@ -619,7 +625,9 @@ function useReadingProgressController(initialUser?: User | null) {
         runId: number,
         mutationGeneration: number,
     ) => {
-        const snapshot = await fetchCompleteLibrarySnapshot(getLibrarySnapshotIdempotencyKey(currentUser.id));
+        const snapshot = await fetchCompleteLibrarySnapshot(getLibrarySnapshotIdempotencyKey(currentUser.id), () => {
+            if (runId === hydrateRunRef.current) setSnapshotBuilding(true);
+        });
 
         // Do not install a response from an earlier sign-in session or let an
         // older complete snapshot overwrite a local mutation made while it was
@@ -712,6 +720,7 @@ function useReadingProgressController(initialUser?: User | null) {
         }
         writeScopedMyList(localStorage, scope, bookmarkedIds);
         canonicalProgressRef.current = new Map(snapshot.records.map(row => [row.content_id, row.progress as ReadingProgressData | null]));
+        canonicalBookmarkRef.current = new Map(snapshot.records.map(row => [row.content_id, row.is_bookmarked === true]));
         snapshotReadyRef.current = true;
         logLibrarySyncDiagnostic("refresh_installed", {
             installedRevision: snapshot.manifest.boundaryLibraryRevision,
@@ -752,12 +761,16 @@ function useReadingProgressController(initialUser?: User | null) {
         const nextUserId = nextUser?.id ?? null;
 
         if (currentUserId !== nextUserId) {
+            if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+            retryTimerRef.current = null;
+            retryAfterRef.current = 0;
             activeWritesRef.current.forEach(controller => controller.abort());
             authenticationGenerationRef.current += 1;
             localMutationsRef.current.clear();
             confirmedBoundaryRef.current = undefined;
             snapshotReadyRef.current = false;
             canonicalProgressRef.current.clear();
+            canonicalBookmarkRef.current.clear();
             latestMutationRef.current = undefined;
             mutationTailRef.current = Promise.resolve();
             syncBlockedRef.current = false;
@@ -779,8 +792,12 @@ function useReadingProgressController(initialUser?: User | null) {
             return;
         }
 
+        if (nextUser && currentUserId === nextUserId && Date.now() < retryAfterRef.current) return;
+
         const runId = ++hydrateRunRef.current;
         resetState();
+        setHydrationIssue(null);
+        setSnapshotBuilding(false);
 
         userRef.current = nextUser;
         scopeRef.current = nextScope;
@@ -807,6 +824,11 @@ function useReadingProgressController(initialUser?: User | null) {
                 if (syncSucceeded) {
                     loadProgress(nextScope);
                     setHydrationStatus("ready");
+                    setHydrationIssue(null);
+                    setSnapshotBuilding(false);
+                    retryAfterRef.current = 0;
+                    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+                    retryTimerRef.current = null;
                     void retryPendingRef.current();
                     return;
                 }
@@ -826,14 +848,34 @@ function useReadingProgressController(initialUser?: User | null) {
                     clearLibrarySnapshotIdempotencyKey(nextUser.id);
                 }
                 if (runId === hydrateRunRef.current) {
+                    const snapshotError = error instanceof LibrarySnapshotClientError ? error : null;
+                    const kind = snapshotError?.status === 429 ? "rate_limited"
+                        : snapshotError?.code === "SNAPSHOT_BUILDING" ? "preparing"
+                            : snapshotError?.code === "CONFIGURATION" ? "configuration" : "service";
+                    const retryAt = kind === "rate_limited" ? Date.now() + (snapshotError?.retryAfterMs ?? 60_000) : undefined;
+                    if (retryAt) {
+                        retryAfterRef.current = retryAt;
+                        if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+                        retryTimerRef.current = setTimeout(() => {
+                            retryTimerRef.current = null;
+                            retryAfterRef.current = 0;
+                            void hydrateForUser(nextUser, true);
+                        }, Math.max(0, retryAt - Date.now()));
+                    }
                     setHydrationStatus("error");
+                    setSnapshotBuilding(false);
+                    setHydrationIssue({ kind, code: snapshotError?.code ?? "SNAPSHOT_FAILED", retryAt });
                     logLibrarySyncDiagnostic("refresh_failed", {
                         responseCode: error instanceof LibrarySnapshotClientError ? error.code : "SNAPSHOT_FAILED",
                         installedRevision: null,
                     });
-                    toast.error("Sync unavailable. Your changes remain on this device. Refresh your library to try again.", {
+                    toast.error(kind === "rate_limited"
+                        ? "Library requests are limited. Your changes remain on this device; sync will retry when allowed."
+                        : kind === "preparing"
+                            ? "Your library is still preparing. Your changes remain on this device."
+                            : "Sync unavailable. Your changes remain on this device. Refresh your library to try again.", {
                         id: "library-sync-attention", duration: Infinity,
-                        action: { label: "Refresh library", onClick: () => refreshLibraryRef.current() },
+                        action: kind === "rate_limited" ? undefined : { label: "Refresh library", onClick: () => refreshLibraryRef.current() },
                     });
                 }
                 logRecoverableCloudSync("Fetch complete library snapshot failed", error, {
@@ -844,7 +886,6 @@ function useReadingProgressController(initialUser?: User | null) {
     }, [hydrateCloudSnapshot, loadProgress, resetState, restoreJournal]);
 
     refreshLibraryRef.current = () => {
-        if (userRef.current) clearLibrarySnapshotIdempotencyKey(userRef.current.id);
         void hydrateForUser(userRef.current, true);
     };
 
@@ -859,6 +900,7 @@ function useReadingProgressController(initialUser?: User | null) {
             // Account changes are invalidated by hydrateForUser; only unmount
             // cancels here. Clear readiness so Strict Mode can restart setup.
             hydrateRunRef.current += 1;
+            if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
             isLoadedRef.current = false;
             activeWrites.forEach(controller => controller.abort());
         };
@@ -910,6 +952,7 @@ function useReadingProgressController(initialUser?: User | null) {
                 libraryRevision: detail.boundaryRevision ?? prior?.boundaryRevision ?? 0,
             };
             canonicalProgressRef.current.clear();
+            canonicalBookmarkRef.current.clear();
             for (const mutation of localMutationsRef.current.values()) {
                 if (mutation.scope === detail.scope) {
                     mutation.needsAttention = true;
@@ -1180,7 +1223,8 @@ function useReadingProgressController(initialUser?: User | null) {
         if (!mutation || mutation.accountId !== userRef.current?.id || mutation.status !== "needs_attention"
             || !mutation.reviewed || hydrationStatus !== "ready" || !confirmedBoundaryRef.current) return;
         if ([...localMutationsRef.current.values()].some(candidate => candidate.accountId === mutation.accountId
-            && candidate.itemId === mutation.itemId && candidate.sequence > mutation.sequence && candidate.status === "pending")) return;
+            && candidate.itemId === mutation.itemId && candidate.sequence > mutation.sequence
+            && (candidate.status === "pending" || candidate.status === "needs_attention"))) return;
         // Explicit review is a NEW action; keep rejected work until a new
         // acknowledgement proves the intended state reached the server.
         latestMutationRef.current = undefined;
@@ -1211,12 +1255,16 @@ function useReadingProgressController(initialUser?: User | null) {
                 id: mutation.id, itemId: mutation.itemId, isBookmarked: mutation.isBookmarked,
                 createdAt: mutation.createdAt, canReapply: Boolean(mutation.reviewed) && hydrationStatus === "ready"
                     && !(mutation.guestImport && mutation.acknowledgement?.outcome === "skipped")
-                    && !entries.some(candidate => candidate.itemId === mutation.itemId && candidate.sequence > mutation.sequence && candidate.status === "pending"),
+                    && !entries.some(candidate => candidate.itemId === mutation.itemId && candidate.sequence > mutation.sequence
+                        && (candidate.status === "pending" || candidate.status === "needs_attention")),
                 guest: Boolean(mutation.guestImport), skipped: mutation.acknowledgement?.outcome === "skipped",
                 localCompleted: mutation.progress?.completed.length ?? 0,
                 serverCompleted: canonicalProgressRef.current.get(mutation.itemId)?.completed.length ?? 0,
                 localIsCompleted: mutation.progress?.isCompleted ?? false,
                 serverIsCompleted: canonicalProgressRef.current.get(mutation.itemId)?.isCompleted ?? false,
+                localHasProgress: Boolean(mutation.progress),
+                serverHasProgress: hasProgressData(canonicalProgressRef.current.get(mutation.itemId) ?? null),
+                serverIsBookmarked: canonicalBookmarkRef.current.get(mutation.itemId) ?? false,
             })), guestCount, importableGuestCount, storageError: journalError };
     }, [journalVersion, journalError, user, hydrationStatus]);
 
@@ -1225,11 +1273,12 @@ function useReadingProgressController(initialUser?: User | null) {
     const getItemSyncStatus = useCallback((itemId: string) => {
         if (!user) return "guest" as const;
         if (recovery.storageError) return "storage_error" as const;
-        if (hydrationStatus === "error") return "unavailable" as const;
         const hasPending = [...localMutationsRef.current.values()].some(mutation => mutation.accountId === user.id
             && mutation.itemId === itemId && mutation.status === "pending");
-        if (hasPending || hydrationStatus !== "ready") return "pending" as const;
+        if (hasPending) return "pending" as const;
         if (recovery.attention.some(entry => entry.itemId === itemId)) return "needs_review" as const;
+        if (hydrationStatus === "error") return "unavailable" as const;
+        if (hydrationStatus !== "ready") return "pending" as const;
         return "saved" as const;
     }, [hydrationStatus, recovery, user]);
     const totalLibraryItems = inProgressIds.length + completedIds.length + myListIds.length;
@@ -1244,6 +1293,8 @@ function useReadingProgressController(initialUser?: User | null) {
         completedCount: completedIds.length,
         isLoaded: isLoaded && (!user || hydrationStatus !== "hydrating"),
         hydrationStatus,
+        hydrationIssue,
+        snapshotBuilding,
         syncNeedsAttention,
         recovery, retryPending, discardIntent, reapplyIntent, importGuestLibrary, retryJournalStorage, discardUnreadableIntents,
         refresh,
@@ -1264,7 +1315,7 @@ function useReadingProgressController(initialUser?: User | null) {
         totalLibraryItems,
         storageScope,
         user,
-    }), [inProgressIds, completedIds, isLoaded, hydrationStatus, syncNeedsAttention, recovery, retryPending, discardIntent, reapplyIntent, importGuestLibrary, retryJournalStorage, discardUnreadableIntents, refresh, retryHydration, archiveFromProgressList,
+    }), [inProgressIds, completedIds, isLoaded, hydrationStatus, hydrationIssue, snapshotBuilding, syncNeedsAttention, recovery, retryPending, discardIntent, reapplyIntent, importGuestLibrary, retryJournalStorage, discardUnreadableIntents, refresh, retryHydration, archiveFromProgressList,
         restoreProgressListArchive, removeFromProgress, removeFromHistory, saveReadingProgress,
         getProgress, getItemSyncStatus, myListIds, addToMyList, removeFromMyList, toggleMyList, isInMyList,
         totalLibraryItems, storageScope, user]);

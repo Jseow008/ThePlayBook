@@ -27,7 +27,7 @@ function getCurrentUtcWeek() {
 
 export function BrowseReadingPanel() {
     const authUser = useAuthUser();
-    const { getProgress, hydrationStatus, inProgressIds, isLoaded, retryHydration, user } = useReadingProgress();
+    const { getProgress, hydrationStatus, hydrationIssue, snapshotBuilding, inProgressIds, isLoaded, retryHydration, user } = useReadingProgress();
     const isAuthenticated = Boolean(authUser);
     const isReady = isAuthenticated && isLoaded && user?.id === authUser?.id;
     const resumeIds = inProgressIds.slice(0, 3);
@@ -63,6 +63,12 @@ export function BrowseReadingPanel() {
     }
 
     const progressError = hydrationStatus === "error";
+    const rateLimited = hydrationIssue?.kind === "rate_limited";
+    const recoveryMessage = rateLimited && hydrationIssue.retryAt
+        ? `We'll retry after ${new Date(hydrationIssue.retryAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`
+        : hydrationIssue?.kind === "configuration" ? "Library sync needs service attention."
+            : hydrationIssue?.kind === "preparing" ? "Your library is still preparing."
+                : "Could not check current reading progress.";
     const progressPending = !isReady && !progressError;
     const resumeProgress = resumeItem ? getProgress(resumeItem.id) : null;
     const totalSegments = resumeProgress?.totalSegments ?? 0;
@@ -105,7 +111,9 @@ export function BrowseReadingPanel() {
                         <p className="mt-1 text-xs text-muted-foreground">Could not refresh activity. <button type="button" onClick={() => void refetchActivity()} className="focus-ring rounded-sm font-medium text-foreground hover:underline">Retry</button></p>
                     ) : null}
                     {progressError && resumeIds.length === 0 ? (
-                        <p className="mt-2 text-xs text-muted-foreground" role="alert">Could not check unfinished reads. <button type="button" onClick={retryHydration} className="focus-ring rounded-sm font-medium text-foreground hover:underline">Retry</button></p>
+                        <p className="mt-2 text-xs text-muted-foreground" role="alert">{recoveryMessage} {!rateLimited && <button type="button" onClick={retryHydration} className="focus-ring rounded-sm font-medium text-foreground hover:underline">Retry</button>}</p>
+                    ) : snapshotBuilding && resumeIds.length === 0 ? (
+                        <p className="mt-2 text-xs text-muted-foreground" role="status">Preparing your library…</p>
                     ) : null}
                 </section>
 
@@ -119,10 +127,10 @@ export function BrowseReadingPanel() {
                                 </Link>
                             ) : null}
                         </div>
-                        {progressError ? (
+                        {progressError && !resumeItem ? (
                             <div className="mt-3 flex min-h-20 items-center gap-3 text-sm text-muted-foreground" role="alert">
-                                <span>Reading progress is unavailable.</span>
-                                <button type="button" onClick={retryHydration} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>
+                                <span>{recoveryMessage}</span>
+                                {!rateLimited && <button type="button" onClick={retryHydration} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>}
                             </div>
                         ) : resumeItem ? (
                             <div className="flex min-w-0 items-start gap-3 lg:mt-3 lg:flex-wrap lg:items-center lg:gap-4">
@@ -146,9 +154,10 @@ export function BrowseReadingPanel() {
                                             <div role="progressbar" aria-label={`Reading progress for ${resumeItem.title}`} aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100} className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary lg:mt-3">
                                                 <div className="h-full rounded-full bg-primary/75" style={{ width: `${progressPercent}%` }} />
                                             </div>
-                                            <p className="mt-1 text-xs text-muted-foreground lg:mt-2">{progressPercent}% complete</p>
+                                            <p className="mt-1 text-xs text-muted-foreground lg:mt-2">{progressPercent}% complete{progressError ? " · Last known progress" : ""}</p>
                                         </>
-                                    ) : <p className="mt-2 text-xs text-muted-foreground">Pick up where you left off</p>}
+                                    ) : <p className="mt-2 text-xs text-muted-foreground">{progressError ? "Last known progress" : "Pick up where you left off"}</p>}
+                                    {progressError && <p className="mt-1 text-xs text-muted-foreground" role="status">{recoveryMessage} {!rateLimited && <button type="button" onClick={retryHydration} className="focus-ring rounded-sm font-medium text-foreground hover:underline">Retry</button>}</p>}
                                 </div>
                                 <Link href={buildReadPath(resumeItem)} className="focus-ring touch-target-44 ml-auto hidden shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 lg:inline-flex xl:px-5">
                                     Continue reading <ArrowRight className="size-4" aria-hidden="true" />
@@ -159,6 +168,8 @@ export function BrowseReadingPanel() {
                                 <span>Continue reading is unavailable.</span>
                                 <button type="button" onClick={() => void refetchResume()} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>
                             </div>
+                        ) : snapshotBuilding ? (
+                            <p className="mt-3 text-sm text-muted-foreground" role="status">Preparing your library…</p>
                         ) : (
                             <div className="mt-3 h-20 animate-pulse rounded-lg bg-secondary/50" aria-hidden="true" />
                         )}
