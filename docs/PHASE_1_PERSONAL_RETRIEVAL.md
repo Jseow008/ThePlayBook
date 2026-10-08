@@ -4253,3 +4253,39 @@ the switch is carried by the code default with an environment rollback option.
 Pending: publish this branch through a scoped PR, let required checks gate the
 merge, and perform a production Author chat smoke after deployment. Temporary
 local test accounts were not created for this candidate.
+
+### Local reading-progress recovery — 8 October 2026
+
+Branch `codex/save-progress-recovery` in Codex worktree
+`/Users/j/.codex/worktrees/save-progress-recovery/Lifebook`, based on fetched
+`origin/main` `d3f7de33`. The original checkout's dev server still runs on
+localhost:3000 from an older branch; the existing Chrome reader tab retains
+device-local progress. Neither the tab nor its local storage has been reset or
+reloaded during this task.
+
+The earlier live trace established a local `503 CONFIGURATION` snapshot failure:
+`SNAPSHOT_WORKER_DATABASE_URL` is absent from the original checkout's
+`.env.local`, and no save request was sent for that completed section. The local
+app points at the hosted Supabase project. Vercel lists the worker connection
+as a hidden Production Secret; the connector denies listing (403), and the CLI
+can list only its name, not retrieve its value. No credential was copied, role
+rotated, or production setting/database record changed. The existing restricted
+worker connection must be supplied to the local server before live recovery.
+
+Current `main` already includes #255's visible unavailable/pending/review state.
+The existing focused test covers configuration failure, failed refresh, explicit
+review, reapplication and acknowledgement. Added a regression case for a
+concurrent deletion or account reset: an unsent local completion remains in the
+durable journal for review, but neither overlays the server snapshot nor sends
+an automatic mutation. The 41 focused hook/reader tests, typecheck, focused lint
+and diff check pass. OPS now states the required local restricted worker setup.
+The historical recurring save-to-save conflict remains open; this known local
+configuration failure does not explain it.
+
+Pending input: an authorized copy of the existing restricted worker URL in the
+original checkout's `.env.local`. Next: verify the URL's role/project without
+printing it, restart the local server on current `main` while preserving the
+localhost browser origin, refresh the snapshot once, compare device/server
+progress and reset epoch, explicitly reapply only if appropriate, then confirm
+server acknowledgement and persistence after a reload. Do not create additional
+unsaved sections, clear storage, or replay a change over a concurrent reset.

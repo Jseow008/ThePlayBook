@@ -826,6 +826,38 @@ describe("useReadingProgress", () => {
         expect(result.current.recovery.attention).toHaveLength(0);
     });
 
+    it.each([
+        { change: "deletion", revision: 27, resetEpoch: 0 },
+        { change: "account reset", revision: 27, resetEpoch: 1 },
+    ])("does not replay device progress after a concurrent $change", async ({ revision, resetEpoch }) => {
+        currentAuthUser = { id: "user-a" };
+        const snapshot = vi.mocked(fetchCompleteLibrarySnapshot);
+        snapshot.mockRejectedValueOnce(new LibrarySnapshotClientError("Unavailable", "CONFIGURATION"));
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("error"));
+
+        act(() => result.current.saveReadingProgress("article", {
+            itemId: "article", completed: ["section-1"], lastSegmentIndex: 0,
+            lastReadAt: new Date().toISOString(), isCompleted: false,
+        }));
+        await waitFor(() => expect(result.current.recovery.attention).toHaveLength(1));
+        expect(commitMutationMock).not.toHaveBeenCalled();
+
+        snapshot.mockResolvedValue(snapshotAt(revision, false, resetEpoch) as never);
+        act(() => result.current.retryHydration());
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+
+        expect(commitMutationMock).not.toHaveBeenCalled();
+        expect(result.current.getProgress("article")).toBeNull();
+        expect(result.current.getItemSyncStatus("article")).toBe("needs_review");
+        expect(result.current.recovery.attention[0]).toMatchObject({
+            localCompleted: 1, serverCompleted: 0,
+        });
+        expect(readLibraryIntents(localStorage, "user-a").entries[0]).toMatchObject({
+            status: "needs_attention", progress: { completed: ["section-1"] },
+        });
+    });
+
     it("keeps reviewed work through an uncertain reapply until its frozen request is acknowledged", async () => {
         currentAuthUser = { id: "user-a" };
         vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(10) as never);
