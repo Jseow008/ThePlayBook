@@ -48,6 +48,17 @@ GEMINI_API_KEY=...
 NEXT_PUBLIC_SENTRY_DSN=...
 ```
 
+Authenticated library hydration and reading-progress sync also require
+`SNAPSHOT_WORKER_DATABASE_URL` and `ACCOUNT_DATA_CURSOR_SECRET` on the local server.
+Use the existing restricted `netflux_snapshot_worker` connection for the same
+Supabase project as `NEXT_PUBLIC_SUPABASE_URL`; never substitute an administrator
+or service-role connection. Without the worker URL, the snapshot endpoint returns
+`503 CONFIGURATION`. A section completed in that state remains on the device,
+unconfirmed by the server. Preserve the browser's local data, repair the server
+configuration, refresh the library, compare both versions, and explicitly reapply
+the intended change only after checking for a concurrent reset or deletion.
+Vercel's Production Secret value is not available through a local env pull.
+
 Optional:
 
 ```env
