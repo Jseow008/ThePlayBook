@@ -26,7 +26,7 @@ export function assertCriticalCss(html) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const htmlPath = [
     '.next/server/app/index.html',
-    '.vercel/output/static/index.html',
+    '.vercel/output/functions/index.prerender-fallback.html',
   ].find((path) => fs.existsSync(path));
   if (!htmlPath) throw new Error('No generated homepage HTML found for critical CSS check');
   assertCriticalCss(fs.readFileSync(htmlPath, 'utf8'));
