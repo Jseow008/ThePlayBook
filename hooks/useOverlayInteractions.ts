@@ -87,7 +87,9 @@ export function useOverlayInteractions({
     const previousActiveElementRef = useRef<HTMLElement | null>(null);
     const onEscapeRef = useRef(onEscape);
 
-    onEscapeRef.current = onEscape;
+    useEffect(() => {
+        onEscapeRef.current = onEscape;
+    }, [onEscape]);
 
     const shouldLockScroll = Boolean(scrollLock);
     const freezePosition = typeof scrollLock === "object"
