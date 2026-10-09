@@ -228,6 +228,7 @@ test.describe("PostHog analytics verification", () => {
         const filterOutcome = events.find((event) => event.event === "search_journey_settled" && event.properties?.action_kind === "filter");
         expect(filterOutcome?.properties?.journey_id).toBe(filterStart?.properties?.journey_id);
         expect(filterOutcome?.properties?.navigation_kind).toBe("in_app");
+        expect(filterOutcome?.properties?.visibility_state).toBe("foreground");
         expect(filterOutcome?.properties?.filter_kind).toBe("type");
         expect(filterOutcome?.properties?.outcome).toMatch(/^(results|no_results|failed|input_empty)$/);
         expect(filterOutcome?.properties?.$current_url).toBe(`${new URL(page.url()).origin}/search`);
