@@ -36,6 +36,8 @@ Landing-page work defaults to polish in `components/ui/LandingPage.tsx`, `app/gl
 
 Auto-merge does not authorize production database changes. Follow the [database-facing release gate](docs/OPS.md#22-disposable-hosted-database-verification), including the reviewed production dry-run and explicit authorization before `db push`. For application/type updates whose migration is already applied, record that fact in the PR; do not reapply it or repeat the full database rollout.
 
+A request to deploy directly, or a statement that there are no users, does not waive the database-facing release gate. Before promoting a database-facing application change, link its hosted verification evidence in the PR. If the gate cannot run, stop and present the specific missing check, risk, and proposed exception to the owner; proceed only after the owner explicitly accepts that exception and it is recorded in the PR before deployment. A later hosted run is retrospective verification, not proof that the pre-release gate passed.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
