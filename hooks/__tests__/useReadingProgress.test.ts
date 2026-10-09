@@ -70,7 +70,7 @@ vi.mock("@/lib/user-library-mutation-client", () => ({
 
 vi.mock("@/lib/account-data-client", () => ({
     LibrarySnapshotClientError: class LibrarySnapshotClientError extends Error {
-        constructor(message: string, readonly code = "SNAPSHOT_UNAVAILABLE") { super(message); }
+        constructor(message: string, readonly code = "SNAPSHOT_UNAVAILABLE", readonly status?: number, readonly retryAfterMs?: number) { super(message); }
     },
     fetchCompleteLibrarySnapshot: vi.fn(),
     getLibrarySnapshotIdempotencyKey: vi.fn(() => "00000000-0000-4000-8000-000000000099"),
@@ -799,7 +799,7 @@ describe("useReadingProgress", () => {
         };
         act(() => result.current.saveReadingProgress("article", progress));
         await waitFor(() => expect(result.current.recovery.attention).toHaveLength(1));
-        expect(result.current.getItemSyncStatus("article")).toBe("unavailable");
+        expect(result.current.getItemSyncStatus("article")).toBe("needs_review");
         expect(commitMutationMock).not.toHaveBeenCalled();
         expect(readLibraryIntents(localStorage, "user-a").entries[0].request).toBeUndefined();
 
@@ -824,6 +824,27 @@ describe("useReadingProgress", () => {
         expect(commitMutationMock).toHaveBeenCalledWith(expect.objectContaining({ baseRevision: 26 }), expect.any(AbortSignal), expect.any(Function));
         expect(result.current.getProgress("article")?.completed).toEqual(["section-1"]);
         expect(result.current.recovery.attention).toHaveLength(0);
+    });
+
+    it("does not offer an older rejected change while a newer one needs review", async () => {
+        currentAuthUser = { id: "user-a" };
+        const snapshot = vi.mocked(fetchCompleteLibrarySnapshot);
+        snapshot.mockRejectedValueOnce(new LibrarySnapshotClientError("Unavailable", "CONFIGURATION"));
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("error"));
+        for (let section = 1; section <= 2; section++) {
+            act(() => result.current.saveReadingProgress("article", {
+                itemId: "article", completed: Array.from({ length: section }, (_, index) => `section-${index + 1}`),
+                lastSegmentIndex: section - 1, lastReadAt: new Date().toISOString(), isCompleted: false,
+            }));
+        }
+        await waitFor(() => expect(result.current.recovery.attention).toHaveLength(2));
+        snapshot.mockResolvedValue(snapshotAt(26) as never);
+        act(() => result.current.retryHydration());
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        expect(result.current.recovery.attention.map(change => change.canReapply)).toEqual([false, true]);
+        await act(async () => result.current.reapplyIntent(result.current.recovery.attention[0].id));
+        expect(commitMutationMock).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -1004,6 +1025,25 @@ describe("useReadingProgress", () => {
 
         await waitFor(() => expect(result.current.hydrationStatus).toBe("error"));
         expect(clearLibrarySnapshotIdempotencyKey).toHaveBeenCalledWith("user-a");
+    });
+
+    it("keeps local progress and blocks early retries while the server rate limit is active", async () => {
+        currentAuthUser = { id: "user-a" };
+        localStorage.setItem(progressKey(getStorageScope("user-a"), "article"), JSON.stringify({
+            itemId: "article", completed: ["segment-1"], lastSegmentIndex: 1,
+            lastReadAt: "2026-10-08T12:00:00.000Z", isCompleted: false,
+        }));
+        vi.mocked(fetchCompleteLibrarySnapshot).mockRejectedValueOnce(
+            new LibrarySnapshotClientError("Limited", "RATE_LIMITED", 429, 60_000),
+        );
+        const view = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(view.result.current.hydrationIssue?.kind).toBe("rate_limited"));
+        expect(view.result.current.getProgress("article")?.completed).toEqual(["segment-1"]);
+        expect(view.result.current.getItemSyncStatus("article")).toBe("unavailable");
+        expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(1);
+        act(() => view.result.current.retryHydration());
+        expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(1);
+        view.unmount();
     });
 
     it("falls back to the guest flow when auth bootstrap errors", async () => {

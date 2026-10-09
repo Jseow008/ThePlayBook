@@ -62,7 +62,9 @@ export async function POST(request: NextRequest) {
             completeExport ? { resumeSessionId: session.sessionId } : undefined,
         );
         if (result.state === "building") {
-            return NextResponse.json({ state: result.state, snapshotId: result.snapshotId }, { status: 202 });
+            return NextResponse.json({ state: result.state, snapshotId: result.snapshotId }, {
+                status: 202, headers: { "Cache-Control": "no-store", "Retry-After": "1" },
+            });
         }
         if (result.state === "failed") {
             return apiError("INTERNAL_ERROR", "Could not create a complete library snapshot.", 503, requestId, {

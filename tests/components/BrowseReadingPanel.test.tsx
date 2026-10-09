@@ -231,7 +231,7 @@ describe("BrowseReadingPanel", () => {
         });
         render(<BrowseReadingPanel />);
 
-        expect(screen.getByText(/could not check unfinished reads/i)).toBeInTheDocument();
+        expect(screen.getByText(/could not check current reading progress/i)).toBeInTheDocument();
         expect(screen.queryByRole("heading", { name: "Continue reading" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Retry" }));
         expect(mockRetryHydration).toHaveBeenCalledOnce();
@@ -247,7 +247,7 @@ describe("BrowseReadingPanel", () => {
         render(<BrowseReadingPanel />);
 
         const activityAlert = screen.getByText("Reading activity is unavailable.").closest('[role="alert"]');
-        const progressAlert = screen.getByText(/Could not check unfinished reads/).closest('[role="alert"]');
+        const progressAlert = screen.getByText(/Could not check current reading progress/).closest('[role="alert"]');
         expect(activityAlert).toBeInTheDocument();
         expect(progressAlert).toBeInTheDocument();
         fireEvent.click(activityAlert!.querySelector("button")!);
@@ -265,9 +265,21 @@ describe("BrowseReadingPanel", () => {
         render(<BrowseReadingPanel />);
 
         expect(screen.getByRole("heading", { name: "Continue reading" })).toBeInTheDocument();
-        expect(screen.getByRole("alert")).toHaveTextContent("Reading progress is unavailable");
+        expect(screen.getByRole("alert")).toHaveTextContent("Could not check current reading progress");
         fireEvent.click(screen.getByRole("button", { name: "Retry" }));
         expect(mockRetryHydration).toHaveBeenCalledOnce();
+    });
+
+    it("keeps the last known resume action available when hydration fails", () => {
+        mockUseReadingProgress.mockReturnValue({
+            completedIds: [], inProgressIds: [resumeId], isLoaded: true, user: { id: "reader-1" },
+            hydrationStatus: "error", retryHydration: mockRetryHydration,
+            getProgress: () => ({ completed: ["one"], totalSegments: 5 }),
+        });
+        render(<BrowseReadingPanel />);
+
+        expect(screen.getByText(/20% complete · Last known progress/)).toBeInTheDocument();
+        expect(screen.getAllByRole("link", { name: /continue reading/i })[0]).toHaveAttribute("href", `/read/${resumeId}/deep-work`);
     });
 
     it("keeps the second card through a slow unfinished-read load and handles failure", () => {
