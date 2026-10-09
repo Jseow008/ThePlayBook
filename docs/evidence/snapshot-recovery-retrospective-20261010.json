@@ -70,6 +70,9 @@
       "rejected_change_automatically_replayed_after_refresh": false
     }
   },
+  "supporting_unit_cases": {
+    "concurrent_deletion_and_account_reset_no_replay": "2 passed in hooks/__tests__/useReadingProgress.test.ts; these are unit cases, not hosted concurrency proof."
+  },
   "investigated_test_setup_failures": [
     "Initial smoke: five of seven passed; the isolated production server lacked its admin IP allowlist and its loopback callback chose HTTPS. With the allowlist and distinct loopback host, seven of seven passed.",
     "Initial controlled run: 202 passed; a first-visit tour covered the Browse resume link. The runner dismissed the tour through Skip tour; the next run and timed final run passed."
