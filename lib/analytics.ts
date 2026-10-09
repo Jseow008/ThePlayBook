@@ -30,7 +30,17 @@ export function captureAnalyticsEvent<E extends AnalyticsEvent>(
 ) {
   if (typeof window === "undefined") return;
 
-  posthog.capture(event, sanitizeAnalyticsProperties(event, properties));
+  const sanitized = sanitizeAnalyticsProperties(event, properties);
+  // PostHog otherwise appends the browser URL, including the private Search query.
+  if (event.startsWith("search_")) {
+    posthog.capture(event, {
+      ...sanitized,
+      $current_url: new URL("/search", window.location.origin).toString(),
+    });
+    return;
+  }
+
+  posthog.capture(event, sanitized);
 }
 
 export function captureAnalyticsPageview(properties: AnalyticsPageviewProperties) {

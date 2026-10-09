@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { beginSearchJourney } from "@/lib/search-journey-measurement";
 
 const RECENT_SEARCHES_KEY = "netflux_recent_searches";
 const MAX_RECENT_SEARCHES = 5;
@@ -123,7 +124,11 @@ export function SearchInput({
     // Navigate to search results
     const performSearch = useCallback((
         searchQuery: string,
-        { saveHistory = true, replace = false }: { saveHistory?: boolean; replace?: boolean } = {}
+        { saveHistory = true, replace = false, trigger = "submit" }: {
+            saveHistory?: boolean;
+            replace?: boolean;
+            trigger?: "submit" | "debounced" | "recent" | "clear";
+        } = {}
     ) => {
         const normalizedSearchQuery = normalizeQuery(searchQuery);
         pendingSearchQueryRef.current = normalizedSearchQuery === normalizeQuery(initialQuery)
@@ -135,6 +140,7 @@ export function SearchInput({
         }
 
         const href = buildSearchHref(searchQuery);
+        beginSearchJourney(href, "query", trigger);
         if (replace) {
             router.replace(href);
             return;
@@ -152,7 +158,7 @@ export function SearchInput({
         if (query.trim() !== initialQuery.trim()) {
             debounceRef.current = setTimeout(() => {
                 debounceRef.current = null;
-                performSearch(query, { saveHistory: false, replace: true });
+                performSearch(query, { saveHistory: false, replace: true, trigger: "debounced" });
             }, SEARCH_DEBOUNCE_MS);
         }
 
@@ -177,7 +183,7 @@ export function SearchInput({
     const handleRecentClick = (term: string) => {
         latestQueryRef.current = term;
         setQuery(term);
-        performSearch(term, { saveHistory: true });
+        performSearch(term, { saveHistory: true, trigger: "recent" });
         isFocusedRef.current = false;
         setIsFocused(false);
     };
@@ -187,7 +193,7 @@ export function SearchInput({
         latestQueryRef.current = "";
         setQuery("");
         inputRef.current?.focus();
-        performSearch("", { saveHistory: false, replace: true });
+        performSearch("", { saveHistory: false, replace: true, trigger: "clear" });
     };
 
     // Clear a specific recent search

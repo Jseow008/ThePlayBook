@@ -286,6 +286,25 @@ describe("SearchPage", () => {
         });
     });
 
+    it("distinguishes unqueried catalog failures from empty filter results", async () => {
+        const { RecentCatalog, PopularCatalog } = await import("@/app/(public)/search/search-components");
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+        render(await RecentCatalog({
+            page: 1,
+            preloadedPage: Promise.reject(new Error("recent unavailable")),
+        }));
+        expect(screen.getByRole("alert")).toHaveTextContent("Search is temporarily unavailable");
+        expect(screen.queryByText("No content matches these filters.")).not.toBeInTheDocument();
+
+        render(await PopularCatalog({
+            preloadedItems: Promise.reject(new Error("popular unavailable")),
+        }));
+        expect(screen.getAllByRole("alert")).toHaveLength(2);
+        expect(screen.queryByText("No popular content matches these filters yet.")).not.toBeInTheDocument();
+        consoleError.mockRestore();
+    });
+
     it("defaults the full catalog to newest-first when no query or category is present", async () => {
         rpcMock.mockImplementation((fn: string) => {
             if (fn === "get_category_stats") {

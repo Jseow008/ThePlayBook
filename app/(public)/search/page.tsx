@@ -287,6 +287,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 ) : (
                     <Suspense fallback={<ResultsSkeleton />}>
                         <PopularCatalog
+                            categoryLabel={selectedTopicLabel}
                             categoryValues={selectedTopicValues}
                             type={selectedType}
                             preloadedItems={preloadedPopular}
