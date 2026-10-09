@@ -3,6 +3,7 @@
 import { Loader2 } from "lucide-react";
 import Link, { useLinkStatus } from "next/link";
 import type { ComponentProps, ReactNode } from "react";
+import { beginSearchJourney } from "@/lib/search-journey-measurement";
 
 function PendingIndicator() {
     const { pending } = useLinkStatus();
@@ -20,10 +21,20 @@ function PendingIndicator() {
 export function SearchFilterLink({
     children,
     className,
+    href,
+    onNavigate,
     ...props
 }: ComponentProps<typeof Link> & { children: ReactNode }) {
     return (
-        <Link {...props} className={`relative ${className ?? ""}`}>
+        <Link
+            {...props}
+            href={href}
+            onNavigate={(event) => {
+                if (typeof href === "string") beginSearchJourney(href, "filter", "link");
+                onNavigate?.(event);
+            }}
+            className={`relative ${className ?? ""}`}
+        >
             {children}
             <PendingIndicator />
         </Link>

@@ -1,5 +1,68 @@
 # Netflux release and workstream status
 
+## Bounded Search outcome measurement — 10 October 2026
+
+Branch `codex/search-outcome-measurement` starts from `origin/main` at
+`87aca121`. PR #269 merged with PR scope, validate, Security Validation,
+Catalog Search Evidence, and Vercel checks passing. Browse recovery and the
+controlled 202/429/conflict paths are verified within their recorded scope;
+the historical recurring conflict and original live failure cause stay open.
+The hosted gate for that release occurred retrospectively.
+
+**One journey:** submit a catalog query or change a Search filter, then reach
+clickable results or an explicit empty/error state. **Primary outcome:** time
+from the action to the rendered outcome, reported separately for query and
+filter actions and for in-app versus document navigation. A result click is an
+intent signal; it does not by itself prove relevance. **Hypothesis:** topic
+filter changes with an active query take longer than plain query submissions,
+because category stats currently resolve before those filtered searches start.
+No rendering optimization is authorized from historical browser timings alone.
+
+PostHog project 450488, last 30 days at 2026-10-09 17:25 UTC: 65
+`search_performed` events on `/search` across five people; 57 unfiltered and
+eight filtered. Person-property segmentation finds 19 events marked internal,
+27 marked noninternal from one person, and 19 without an internal label.
+Those groups overlap in people and are not a representative external cohort.
+Existing events fire only after results render, do not record the action start
+or readiness time, and do not distinguish filter changes from a query with a
+filter. `search_failed` was not seen in the last 30 days. This is a coverage
+baseline, **not** a latency or relevance baseline.
+
+The branch adds action and settled timing events without raw query text,
+plus result-click intent, while preserving normal Search layout, ordering,
+cache behavior, and result logic. Unqueried catalog read failures now show an
+error instead of being mislabeled as empty results. Before any later rendering experiment, use
+only known noninternal traffic for the field baseline; report anonymous or
+unclassified traffic separately. Require at least 30 settled actions from at
+least 10 noninternal people in each compared action group; otherwise the
+comparison is inconclusive. Stop the baseline collection at 14 days after
+release, even if the sample is insufficient. A later experiment must hold
+Search failures and zero-result behavior to the matched baseline and must not
+regress primary p75 action-to-outcome time by more than 20%. Live
+publish/withdrawal freshness remains unverified and requires its own check.
+
+A read-only PostHog count found 124 earlier Search outcome events whose
+automatically attached `$current_url` contained `?q=`. No query values were
+retrieved. The branch overrides that property for future Search events; the
+historical events remain in PostHog and are outside this measurement PR.
+
+Local evidence: focused typecheck, lint, and 50 Search/analytics component and
+unit tests pass. Search route desktop and mobile responsive checks pass with
+only public Supabase settings. One local browser setup initially lacked those
+settings; it made no valid UI assertion. A focused PostHog browser check then
+exposed a Strict Mode effect restart that canceled the paint timer; the guard
+was corrected and the same query-to-filter event check passed. This check uses
+intercepted analytics requests and does not establish production field latency.
+
+Implementation commit `d8c300d0` is in managed worktree
+`/Users/j/.codex/worktrees/search-outcome-measurement/Lifebook`. [PR #270](https://github.com/Jseow008/ThePlayBook/pull/270)
+passed PR Scope and has squash auto-merge queued; validate, Security Validation,
+Catalog Search Evidence, and Vercel were pending at this checkpoint. No product
+decision or database change is pending. Next action after merge: verify the new
+events are collected, then stop baseline collection at the stated 14-day limit
+and report whether the noninternal sample is sufficient. No broad recovery
+retest or rendering change is in scope.
+
 ## Retrospective snapshot release verification — 10 October 2026
 
 Released implementation: PR #267, squash commit `53171382`. The signed-in production Browse → Continue reading journey restored the Disney book at 1/11 and showed Saved. This does not exercise the 202 or 429 paths, and the historical recurring conflict remains open. The required disposable hosted verification was not run before promotion; the owner's direct-production request was incorrectly treated as a waiver. Any later hosted result must be labeled retrospective and cannot change that release-process fact.

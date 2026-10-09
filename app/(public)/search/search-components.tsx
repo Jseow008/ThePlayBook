@@ -98,21 +98,32 @@ export async function RecentCatalog({
     page: number;
     preloadedPage?: Promise<RecentCatalogPage>;
 }) {
-    const { items, totalItems, totalPages } = await (preloadedPage ?? getRecentCatalogPage({ categoryValues, type, page }))
-        .catch((error): RecentCatalogPage => {
+    const result = await (preloadedPage ?? getRecentCatalogPage({ categoryValues, type, page }))
+        .then((value) => ({ value, failed: false }), (error): { value: RecentCatalogPage; failed: boolean } => {
             console.error("Search newest catalog read failed", error);
-            return { items: [], totalItems: 0, totalPages: 1 };
+            return { value: { items: [], totalItems: 0, totalPages: 1 }, failed: true };
         });
+    const { items, totalItems, totalPages } = result.value;
 
     return (
         <div className="animate-in fade-in duration-500">
+            <SearchAnalyticsTracker
+                queryPresent={false}
+                resultCount={items.length}
+                filtersCount={Number(Boolean(categoryLabel)) + Number(Boolean(type))}
+                outcome={result.failed ? "failed" : items.length > 0 ? "results" : "no_results"}
+                searchKey={buildSearchHref({ category: categoryLabel, type, sort: "recent", page })}
+                trackLegacyEvents={false}
+            />
             <div className="mb-6 flex items-center gap-2">
                 <Clock3 className="size-5 text-primary" />
                 <h2 className="text-lg font-semibold text-foreground">All Content</h2>
-                <span className="text-sm text-muted-foreground">({totalItems})</span>
+                {!result.failed ? <span className="text-sm text-muted-foreground">({totalItems})</span> : null}
             </div>
 
-            {items.length > 0 ? (
+            {result.failed ? (
+                <p role="alert" className="py-12 text-center text-muted-foreground">Search is temporarily unavailable. Refresh the page to try again.</p>
+            ) : items.length > 0 ? (
                 <>
                     <ContentGrid items={items} />
                     <CatalogPagination
@@ -130,30 +141,47 @@ export async function RecentCatalog({
 }
 
 export async function PopularCatalog({
+    categoryLabel,
     categoryValues,
     type,
     preloadedItems,
 }: {
+    categoryLabel?: string;
     categoryValues?: string[];
     type?: ContentType;
     preloadedItems?: Promise<ContentItem[]>;
 }) {
-    const items = await (preloadedItems ?? getPopularCatalogItems({ categoryValues, type }))
-        .catch((error): ContentItem[] => {
+    const result = await (preloadedItems ?? getPopularCatalogItems({ categoryValues, type }))
+        .then((value) => ({ value, failed: false }), (error): { value: ContentItem[]; failed: boolean } => {
             console.error("Search popular catalog read failed", error);
-            return [];
+            return { value: [], failed: true };
         });
+    const items = result.value;
 
-    return items.length > 0 ? (
-        <div className="animate-in fade-in duration-500">
-            <div className="flex items-center gap-2 mb-6">
-                <TrendingUp className="size-5 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">{formatPopularLabel(type)}</h2>
-            </div>
-            <ContentGrid items={items} />
-        </div>
-    ) : (
-        <p className="py-12 text-center text-muted-foreground">No popular content matches these filters yet.</p>
+    return (
+        <>
+            <SearchAnalyticsTracker
+                queryPresent={false}
+                resultCount={items.length}
+                filtersCount={Number(Boolean(categoryLabel)) + Number(Boolean(type))}
+                outcome={result.failed ? "failed" : items.length > 0 ? "results" : "no_results"}
+                searchKey={buildSearchHref({ category: categoryLabel, type, sort: "popular" })}
+                trackLegacyEvents={false}
+            />
+            {result.failed ? (
+                <p role="alert" className="py-12 text-center text-muted-foreground">Search is temporarily unavailable. Refresh the page to try again.</p>
+            ) : items.length > 0 ? (
+                <div className="animate-in fade-in duration-500">
+                    <div className="flex items-center gap-2 mb-6">
+                        <TrendingUp className="size-5 text-primary" />
+                        <h2 className="text-lg font-semibold text-foreground">{formatPopularLabel(type)}</h2>
+                    </div>
+                    <ContentGrid items={items} />
+                </div>
+            ) : (
+                <p className="py-12 text-center text-muted-foreground">No popular content matches these filters yet.</p>
+            )}
+        </>
     );
 }
 
@@ -183,7 +211,7 @@ export function ContentGrid({ items }: { items: Array<ContentItem | CatalogSearc
             {items.map((item, index) => {
                 const searchResult = "snippet" in item ? item : null;
                 return (
-                    <div key={item.id} className="min-w-0 space-y-2">
+                    <div key={item.id} data-search-result-position={index + 1} className="min-w-0 space-y-2">
                         <ContentCard
                             item={item}
                             titleDensity="app-compact"
@@ -283,6 +311,7 @@ export async function SearchResults({
     const normalizedCategoryValues = categoryValues?.filter(Boolean) ?? [];
     const hasQuery = trimmedQuery.length > 0;
     const filtersCount = Number(normalizedCategoryValues.length > 0) + Number(Boolean(normalizedType));
+    const searchKey = buildSearchHref({ query, category: categoryLabel, type: normalizedType, cursor });
 
     try {
         const response = await (preloadedResponse ?? searchCatalog({
@@ -303,6 +332,7 @@ export async function SearchResults({
             queryLength: trimmedQuery.length,
             requestQuery: trimmedQuery,
             filtersCount,
+            searchKey,
         });
     } catch (error) {
         const message = error instanceof CatalogSearchError && error.code === "CURSOR_INVALID"
@@ -318,6 +348,7 @@ export async function SearchResults({
                     resultCount={0}
                     filtersCount={filtersCount}
                     outcome="failed"
+                    searchKey={searchKey}
                 />
                 <div className="rounded-2xl border border-border bg-card/35 px-6 py-12 text-center">
                     <Search className="mx-auto size-9 text-muted-foreground" />
@@ -347,6 +378,7 @@ function renderSearchResults({
     queryLength,
     requestQuery,
     filtersCount,
+    searchKey,
 }: {
     results: CatalogSearchResult[];
     pageInfo: { nextCursor: string | null; previousCursor: string | null; page: number };
@@ -358,6 +390,7 @@ function renderSearchResults({
     queryLength: number;
     requestQuery: string;
     filtersCount: number;
+    searchKey: string;
 }) {
     return (
         <div className="animate-in fade-in duration-500">
@@ -367,6 +400,7 @@ function renderSearchResults({
                 resultCount={results.length}
                 filtersCount={filtersCount}
                 outcome={outcome}
+                searchKey={searchKey}
             />
             <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <p className="text-muted-foreground text-lg font-medium">

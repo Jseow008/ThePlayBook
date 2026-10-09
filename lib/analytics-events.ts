@@ -135,6 +135,33 @@ export interface AnalyticsEventPropertiesByName {
     filters_count?: number;
     failure_kind: "unavailable" | "invalid_input";
   };
+  search_action_started: AnalyticsCommonProperties & {
+    source: string;
+    journey_id: string;
+    action_kind: "query" | "filter";
+    filter_kind?: "topic" | "type" | "sort" | "other";
+    trigger: "submit" | "debounced" | "recent" | "clear" | "link" | "select";
+    query_present: boolean;
+  };
+  search_journey_settled: AnalyticsCommonProperties & {
+    source: string;
+    journey_id: string;
+    action_kind: "query" | "filter" | "initial_load";
+    filter_kind?: "topic" | "type" | "sort" | "other";
+    navigation_kind: "in_app" | "document";
+    outcome: "results" | "no_results" | "failed" | "input_empty";
+    elapsed_ms: number;
+    result_count: number;
+    filters_count: number;
+    query_present: boolean;
+  };
+  search_result_clicked: AnalyticsCommonProperties & {
+    source: string;
+    journey_id: string;
+    action_kind: "query" | "filter" | "initial_load";
+    navigation_kind: "in_app" | "document";
+    position: number;
+  };
   library_saved: AnalyticsCommonProperties & {
     content_id: string;
     content_type?: string;
@@ -360,6 +387,30 @@ export const ANALYTICS_EVENT_CONTRACTS = {
     allowedProperties: eventProperties(["search_scope", "query_present", "query_length", "filters_count", "failure_kind"]),
     privacy: "behavioral_metadata",
     delivery: "client_intent_server_truth",
+  },
+  search_action_started: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "A catalog query or filter navigation begins. Never include the URL or query text.",
+    requiredProperties: ["source", "journey_id", "action_kind", "trigger", "query_present"],
+    allowedProperties: eventProperties(["journey_id", "action_kind", "filter_kind", "trigger", "query_present"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
+  },
+  search_journey_settled: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "Catalog results, empty state, or error painted after an action or document load. A result count does not establish relevance.",
+    requiredProperties: ["source", "journey_id", "action_kind", "navigation_kind", "outcome", "elapsed_ms", "result_count", "filters_count", "query_present"],
+    allowedProperties: eventProperties(["journey_id", "action_kind", "filter_kind", "navigation_kind", "outcome", "elapsed_ms", "result_count", "filters_count", "query_present"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
+  },
+  search_result_clicked: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "A visible catalog result link is clicked; this is selection intent, not relevance or destination-load proof.",
+    requiredProperties: ["source", "journey_id", "action_kind", "navigation_kind", "position"],
+    allowedProperties: eventProperties(["journey_id", "action_kind", "navigation_kind", "position"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
   },
   library_saved: {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,

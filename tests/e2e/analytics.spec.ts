@@ -212,5 +212,24 @@ test.describe("PostHog analytics verification", () => {
         expect(searchPerformed?.properties).not.toHaveProperty("query");
         expect(searchPerformed?.properties).not.toHaveProperty("raw_query");
         expect(searchPerformed?.properties).not.toHaveProperty("search_query");
+        expect(searchPerformed?.properties?.$current_url).toBe(`${new URL(page.url()).origin}/search`);
+    });
+
+    test("tracks a Search filter action through a painted outcome without raw query URLs", async ({ page }) => {
+        const { events } = await installPostHogCapture(page);
+        await page.goto("/search?q=phase10");
+
+        await waitForEvent(page, events, "search_journey_settled", (event) => event.properties?.navigation_kind === "document");
+        await page.getByRole("link", { name: "Book", exact: true }).click();
+        await waitForEvent(page, events, "search_action_started", (event) => event.properties?.action_kind === "filter");
+        await waitForEvent(page, events, "search_journey_settled", (event) => event.properties?.action_kind === "filter");
+
+        const filterStart = events.find((event) => event.event === "search_action_started" && event.properties?.action_kind === "filter");
+        const filterOutcome = events.find((event) => event.event === "search_journey_settled" && event.properties?.action_kind === "filter");
+        expect(filterOutcome?.properties?.journey_id).toBe(filterStart?.properties?.journey_id);
+        expect(filterOutcome?.properties?.navigation_kind).toBe("in_app");
+        expect(filterOutcome?.properties?.filter_kind).toBe("type");
+        expect(filterOutcome?.properties?.outcome).toMatch(/^(results|no_results|failed|input_empty)$/);
+        expect(filterOutcome?.properties?.$current_url).toBe(`${new URL(page.url()).origin}/search`);
     });
 });
