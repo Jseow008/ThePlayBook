@@ -1,5 +1,15 @@
 # Netflux release and workstream status
 
+## Retrospective snapshot release verification — 10 October 2026
+
+Released implementation: PR #267, squash commit `53171382`. The signed-in production Browse → Continue reading journey restored the Disney book at 1/11 and showed Saved. This does not exercise the 202 or 429 paths, and the historical recurring conflict remains open. The required disposable hosted verification was not run before promotion; the owner's direct-production request was incorrectly treated as a waiver. Any later hosted result must be labeled retrospective and cannot change that release-process fact.
+
+Current verification branch `codex/retrospective-hosted-verification` in managed worktree `/Users/j/.codex/worktrees/retrospective-hosted-verification/Lifebook` is pinned to the released commit. An isolated Supabase workdir has been copied without link metadata; no project has been created or linked and no database has been changed. Supabase's connector cost lookup is unavailable; the official Micro rate is US$0.01344 per billed hour. A request to confirm the sole available organization, Jseow008, and the temporary project's cost is pending. No secrets are in this record. Dependencies were installed with `npm ci`.
+
+Read-only production Settings inspection found five existing rejected journal entries displayed as Needs review. Four Apply controls were disabled; one showed the device's 5 sections against 9 at the last library check. No Apply, Discard, or Retry action was taken. The merged component tests cover Refresh library and explicit conflict review, but controlled production-build failure checks remain pending.
+
+Process correction is drafted in `AGENTS.md` and `docs/OPS.md`: direct-deployment instructions do not silently waive a database-facing hosted gate; any exception must be raised and recorded before promotion. Next action after cost and organization confirmation: create a short-lived hosted project in the approved region, verify the candidate ref guard, replay migrations, compare schema/security/type contracts, build and smoke the released app with synthetic fixtures, then exercise 202, 429, and conflict review. Investigate failures, remove all synthetic resources and credentials, record sanitized evidence here, and publish the docs-only correction through a scoped PR. No rendering change or Search speed claim is part of this run.
+
 ## Save recovery checkpoint — 8 October 2026
 
 Branch `codex/snapshot-recovery`, managed worktree `/Users/j/.codex/worktrees/snapshot-recovery/Lifebook`, based on `origin/main` `dfb9c37b`. Focused implementation commit `784c92cc` is in [PR #267](https://github.com/Jseow008/ThePlayBook/pull/267), open for review. No migration or production database write is included.

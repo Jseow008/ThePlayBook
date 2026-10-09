@@ -182,6 +182,10 @@ Category taxonomy note: Phase 1 keeps temporary aliases for old public search li
 
 Run this gate before any database-facing production release. A [Supabase preview branch](https://supabase.com/docs/guides/deployment/branching) may be used for a higher-risk change now that Pro is active; otherwise use the established separate short-lived hosted project as described below. Do not create a branch merely for a routine, low-risk migration.
 
+This includes application changes to snapshot, hydration, or mutation paths even when no migration or production `db push` is planned. In that case, run the disposable hosted application and behavior checks against the release candidate; mark migration-only production push steps as not applicable rather than claiming the entire gate is unnecessary. Record the candidate commit, hosted project ref, passing checks, cleanup, and any limitation in the PR before promotion.
+
+If a direct-production request conflicts with this gate, stop before promotion. Show the missing verification and its user-visible risk, then obtain an explicit exception decision and record it in the PR. General deployment authorization and the absence of users are not an exception. A hosted run after deployment can reduce uncertainty about the released build, but it cannot make the original release compliant after the fact.
+
 Hard stops:
 
 - Use an isolated Supabase workdir. Never relink the repository workdir away from production.
