@@ -44,6 +44,18 @@ by the local proxy; the second lacked the PostHog token required to capture
 events. A preflight of the four needed public settings preceded the passing
 run. No application or database state was changed by those setup failures.
 
+Implementation `fa8a0a18` is in managed worktree
+`/Users/j/.codex/worktrees/search-measurement-integrity/Lifebook` and
+[PR #271](https://github.com/Jseow008/ThePlayBook/pull/271). PR scope passed;
+squash auto-merge is queued behind required checks. A read-only check of
+PostHog project 450488 did not find `search_action_started` in the current
+event taxonomy, so there is no verified corrected field baseline yet; schema
+discovery alone cannot prove that no event was ingested. Next action after the
+corrected release: confirm start, settled, and superseded collection; then
+collect the 14-day window and report coverage, outcome mix, visibility split,
+and any exploratory foreground p75. No product decision is pending. The
+historical progress conflict and live Search freshness remain open separately.
+
 ## Bounded Search outcome measurement — 10 October 2026
 
 Branch `codex/search-outcome-measurement` starts from `origin/main` at
