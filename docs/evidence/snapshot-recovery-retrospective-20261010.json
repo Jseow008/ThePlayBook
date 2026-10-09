@@ -1,0 +1,85 @@
+{
+  "recorded_at_utc": "2026-10-09T16:44:07.976Z",
+  "release": {
+    "pull_request": 267,
+    "commit": "53171382999c3a813cf07ba411bd04ad8a80b75f",
+    "verification_type": "retrospective",
+    "pre_release_hosted_gate_was_skipped": true,
+    "live_journey": "Signed-in Browse resume opened the Disney book at 1/11 and showed Saved."
+  },
+  "isolation": {
+    "production_project_ref": "xmuqsgfxuaaophxnwure",
+    "candidate_project_ref": "edwncosytodqwxvtizgr",
+    "candidate_region": "ap-south-1",
+    "candidate_size": "micro",
+    "production_database_writes": 0,
+    "synthetic_users_remaining_before_deletion": 0,
+    "synthetic_content_items_remaining_before_deletion": 0,
+    "candidate_deleted_and_absent_from_project_list": true,
+    "owned_application_server_stopped": true,
+    "private_credentials_and_isolated_workdir_removed": true,
+    "generated_build_and_browser_results_removed": true
+  },
+  "hosted_gate": {
+    "migrations_replayed_after_clean_reset": 113,
+    "post_reset_dry_run": "up to date",
+    "production_candidate_schema_fingerprint_categories_matching": 14,
+    "generated_type_contracts_match": true,
+    "candidate_sql_checks_passed": [
+      "function ACLs",
+      "admin RPC ACLs",
+      "analytics RLS",
+      "embedding table reads",
+      "Storage bucket listing",
+      "DB-002 transactional highlight preservation"
+    ],
+    "candidate_only_security_advisor_findings": 0,
+    "existing_security_advisor_findings": [
+      {
+        "name": "anon_security_definer_function_executable",
+        "target": "public.search_catalog",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "target": "public.search_catalog",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+      }
+    ],
+    "performance_advisor": "Candidate reported 29 unused indexes versus 14 in production; the candidate held only synthetic fixtures. No additional design warning appeared.",
+    "production_build": "passed",
+    "typecheck": "passed",
+    "required_application_smoke": "7 of 7 passed"
+  },
+  "controlled_failure_paths": {
+    "build_id": "DQJ7xdKK3c1-xatvIfqRt",
+    "synthetic_fixture_cleanup_verified": true,
+    "snapshot_202": "One creation request; building response checked through the existing snapshot ID with at least two polls before Saved returned.",
+    "snapshot_429": {
+      "retry_after_seconds": 8,
+      "observed_retry_delay_ms": 8015,
+      "reader_and_browse_resume_retained": true,
+      "mutation_requests_during_snapshot_failures": 0,
+      "automatic_recovery_to_saved": true
+    },
+    "conflict_409": {
+      "injected_mutation_requests": 1,
+      "device_sections_complete": 2,
+      "server_sections_complete": 1,
+      "needs_review_shown": true,
+      "rejected_change_automatically_replayed_after_refresh": false
+    }
+  },
+  "supporting_unit_cases": {
+    "concurrent_deletion_and_account_reset_no_replay": "2 passed in hooks/__tests__/useReadingProgress.test.ts; these are unit cases, not hosted concurrency proof."
+  },
+  "investigated_test_setup_failures": [
+    "Initial smoke: five of seven passed; the isolated production server lacked its admin IP allowlist and its loopback callback chose HTTPS. With the allowlist and distinct loopback host, seven of seven passed.",
+    "Initial controlled run: 202 passed; a first-visit tour covered the Browse resume link. The runner dismissed the tour through Skip tour; the next run and timed final run passed."
+  ],
+  "limits": [
+    "The hosted run occurred after production release and cannot satisfy the original pre-release gate.",
+    "The 202, 429, and 409 responses were controlled browser interceptions against a production build backed by a disposable hosted database. They do not establish the cause of the earlier live snapshot failure or reproduce the historical recurring conflict.",
+    "Read-only production Settings inspection found five changes needing review. No production Apply, Discard, Retry, or conflicting write was performed."
+  ]
+}
