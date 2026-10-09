@@ -94,7 +94,7 @@ export function SearchAnalyticsTracker({
         let nextFrame = 0;
         const firstFrame = requestAnimationFrame(() => {
             nextFrame = requestAnimationFrame(() => {
-                settleSearchJourney({ outcome, resultCount, filtersCount, queryPresent });
+                settleSearchJourney({ searchKey, outcome, resultCount, filtersCount, queryPresent });
             });
         });
         return () => {

@@ -143,6 +143,12 @@ export interface AnalyticsEventPropertiesByName {
     trigger: "submit" | "debounced" | "recent" | "clear" | "link" | "select";
     query_present: boolean;
   };
+  search_action_superseded: AnalyticsCommonProperties & {
+    source: string;
+    journey_id: string;
+    action_kind: "query" | "filter";
+    filter_kind?: "topic" | "type" | "sort" | "other";
+  };
   search_journey_settled: AnalyticsCommonProperties & {
     source: string;
     journey_id: string;
@@ -151,6 +157,7 @@ export interface AnalyticsEventPropertiesByName {
     navigation_kind: "in_app" | "document";
     outcome: "results" | "no_results" | "failed" | "input_empty";
     elapsed_ms: number;
+    visibility_state: "foreground" | "backgrounded" | "unknown";
     result_count: number;
     filters_count: number;
     query_present: boolean;
@@ -396,11 +403,19 @@ export const ANALYTICS_EVENT_CONTRACTS = {
     privacy: "behavioral_metadata",
     delivery: "client_only",
   },
+  search_action_superseded: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "A newer catalog action replaces one that has not produced an outcome. Never include the URL or query text.",
+    requiredProperties: ["source", "journey_id", "action_kind"],
+    allowedProperties: eventProperties(["journey_id", "action_kind", "filter_kind"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
+  },
   search_journey_settled: {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,
     description: "Catalog results, empty state, or error painted after an action or document load. A result count does not establish relevance.",
-    requiredProperties: ["source", "journey_id", "action_kind", "navigation_kind", "outcome", "elapsed_ms", "result_count", "filters_count", "query_present"],
-    allowedProperties: eventProperties(["journey_id", "action_kind", "filter_kind", "navigation_kind", "outcome", "elapsed_ms", "result_count", "filters_count", "query_present"]),
+    requiredProperties: ["source", "journey_id", "action_kind", "navigation_kind", "outcome", "elapsed_ms", "visibility_state", "result_count", "filters_count", "query_present"],
+    allowedProperties: eventProperties(["journey_id", "action_kind", "filter_kind", "navigation_kind", "outcome", "elapsed_ms", "visibility_state", "result_count", "filters_count", "query_present"]),
     privacy: "behavioral_metadata",
     delivery: "client_only",
   },

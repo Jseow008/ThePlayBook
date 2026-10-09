@@ -1,5 +1,49 @@
 # Netflux release and workstream status
 
+## Search measurement integrity follow-up — 10 October 2026
+
+PR #270 merged as `786d1902`. Its field events are newly available and do not
+yet establish a latency baseline. The follow-up branch
+`codex/search-measurement-integrity` starts from that merge. It binds painted
+results to their normalized Search route identity, labels an in-app action as
+backgrounded if the tab became hidden before settlement, and emits an explicit
+superseded event when a newer action replaces an unsettled one. A direct
+document load has unknown visibility history before hydration, so its elapsed
+time stays outside the foreground p75. Search layout, ranking, caching, and
+freshness behavior are unchanged.
+
+The bounded baseline report must group **known noninternal**, internal, and
+unclassified people separately, then split query submissions and filter
+changes. For each group, count distinct `search_action_started.journey_id`
+after the corrected release, distinct matching `search_journey_settled` IDs,
+and distinct matching `search_action_superseded` IDs. Classify each start once:
+settled first, then superseded, then unresolved when neither event exists.
+Report coverage as settled/started with all three counts. A start still in
+flight at query time must not
+be called abandoned: exclude the most recent 30 minutes from coverage and
+label the remaining unmatched starts **unresolved**, not proven abandonments.
+Inspect settled failure and no-result counts separately. Report foreground
+in-app p75 only from settled events with `visibility_state=foreground`; report
+backgrounded in-app and unknown/document timings separately. Include click
+through as intent only. Do not publish a p75 comparison without its started
+denominator, outcome mix, and visibility split.
+
+The existing threshold of 30 settled actions from at least 10 known
+noninternal people **per compared group** permits only an exploratory
+comparison. Stop at 14 days after the corrected release and say
+"insufficient evidence" if coverage or sample is weak. Live
+publish/withdrawal freshness remains unverified. No rendering change is
+selected from this follow-up.
+
+Local evidence on this branch: typecheck and targeted lint pass; 11 focused
+analytics tests pass, including stale results after URL advancement and a tab
+hidden between action and settlement. The desktop Chromium Search query →
+filter journey emits a matching action/outcome ID with foreground visibility
+and a sanitized URL. The first browser setup lacked the Supabase key required
+by the local proxy; the second lacked the PostHog token required to capture
+events. A preflight of the four needed public settings preceded the passing
+run. No application or database state was changed by those setup failures.
+
 ## Bounded Search outcome measurement — 10 October 2026
 
 Branch `codex/search-outcome-measurement` starts from `origin/main` at

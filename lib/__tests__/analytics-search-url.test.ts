@@ -16,8 +16,17 @@ describe("Search analytics URL privacy", () => {
             trigger: "submit",
             query_present: true,
         });
+        captureAnalyticsEvent("search_action_superseded", {
+            source: "search_results",
+            route: "/search",
+            journey_id: "test-journey",
+            action_kind: "query",
+        });
 
         expect(posthogCapture).toHaveBeenCalledWith("search_action_started", expect.objectContaining({
+            $current_url: `${window.location.origin}/search`,
+        }));
+        expect(posthogCapture).toHaveBeenCalledWith("search_action_superseded", expect.objectContaining({
             $current_url: `${window.location.origin}/search`,
         }));
         expect(JSON.stringify(posthogCapture.mock.calls)).not.toContain("private");
