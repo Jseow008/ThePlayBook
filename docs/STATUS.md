@@ -4,7 +4,9 @@
 
 Branch `codex/search-filter-save-notice` in managed worktree
 `/Users/j/.codex/worktrees/search-filter-save-notice/Lifebook` starts from freshly
-fetched `origin/main`. The focused change dismisses the snapshot rate-limit
+fetched `origin/main`. Implementation commit `6f6537b1` is in
+[PR #273](https://github.com/Jseow008/ThePlayBook/pull/273); its GitHub file
+list matches the intended scope. The focused change dismisses the snapshot rate-limit
 warning when that snapshot recovers, while retaining a separate warning ID for
 mutation conflicts. Search filter actions now apply their choice to the latest
 pending Search route so rapid Book → Business clicks keep both selections.
