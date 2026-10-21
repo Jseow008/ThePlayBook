@@ -32,10 +32,11 @@ open. Keep the fixed 24 October Search baseline cutoff and the live
 publish/withdrawal freshness gap; do not select a rendering change from this
 repair.
 
-Next action: publish the focused PR, verify its file scope, and queue squash
-auto-merge after `PR scope` passes. Investigate any required-check failure
-before rollout. After merge, verify the two reported interactions in production
-without altering real reading data.
+PR #273's GitHub file list matches the local scope, `PR scope` passed, and
+squash auto-merge is queued behind `validate`, `Security Validation`, and
+`Catalog Search Evidence`. Next action: investigate any required-check failure;
+otherwise, after merge and deployment, verify the two reported interactions in
+production without altering real reading data.
 
 ## Controlled Search collection and save → reload — 21 October 2026
 
