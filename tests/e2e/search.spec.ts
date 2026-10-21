@@ -46,6 +46,24 @@ test.describe('/search', () => {
         await expect(page.getByRole('heading', { name: 'Money & Investments Content' })).toBeVisible();
     });
 
+    test('preserves two filter choices made before the first navigation settles', async ({ page }) => {
+        await page.goto('/search?type=podcast');
+        await expect(page.getByRole('link', { name: 'Business', exact: true })).toBeVisible();
+
+        await page.evaluate(() => {
+            const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href^="/search"]'));
+            const book = links.find((link) => link.textContent?.trim() === 'Book');
+            const business = links.find((link) => link.textContent?.trim() === 'Business');
+            if (!book || !business) throw new Error('Search filters did not render');
+            book.click();
+            business.click();
+        });
+
+        await expect(page).toHaveURL(/\/search\?category=Business&type=book$/);
+        await expect(page.getByRole('link', { name: 'Book', exact: true })).toHaveClass(/bg-primary/);
+        await expect(page.getByRole('link', { name: 'Business', exact: true })).toHaveClass(/bg-primary/);
+    });
+
     test('falls back to All when an invalid type parameter is provided', async ({ page }) => {
         await page.goto('/search?type=invalid');
 

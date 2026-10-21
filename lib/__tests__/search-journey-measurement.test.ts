@@ -54,6 +54,31 @@ describe("Search journey measurement", () => {
         expect(capture.mock.calls[3][1].journey_id).toBe(capture.mock.calls[2][1].journey_id);
     });
 
+    it.each([
+        {
+            firstHref: "/search?type=book", firstParam: "type", firstValue: "book", firstKind: "type",
+            secondRenderedHref: "/search?category=Business&type=podcast", secondParam: "category", secondValue: "Business", secondKind: "topic",
+        },
+        {
+            firstHref: "/search?category=Business&type=podcast", firstParam: "category", firstValue: "Business", firstKind: "topic",
+            secondRenderedHref: "/search?type=book", secondParam: "type", secondValue: "book", secondKind: "type",
+        },
+    ] as const)("keeps rapid $firstKind then $secondKind selections while results load", async (scenario) => {
+        window.history.replaceState(null, "", "/search?type=podcast");
+        const { beginSearchJourney, resolveSearchFilterHref } = await import("@/lib/search-journey-measurement");
+
+        const firstHref = resolveSearchFilterHref(scenario.firstHref, scenario.firstParam, scenario.firstValue);
+        beginSearchJourney(firstHref, "filter", "link", scenario.firstKind);
+        const secondHref = resolveSearchFilterHref(scenario.secondRenderedHref, scenario.secondParam, scenario.secondValue);
+        beginSearchJourney(secondHref, "filter", "link", scenario.secondKind);
+
+        expect(secondHref).toBe("/search?category=Business&type=book");
+        expect(capture.mock.calls.map(([event]) => event)).toEqual([
+            "search_action_started", "search_action_superseded", "search_action_started",
+        ]);
+        expect(capture.mock.calls[2][1]).toMatchObject({ action_kind: "filter", filter_kind: scenario.secondKind });
+    });
+
     it("normalizes equivalent result keys but rejects results from a different query", async () => {
         const { beginSearchJourney, settleSearchJourney } = await import("@/lib/search-journey-measurement");
 

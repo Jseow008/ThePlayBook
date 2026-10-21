@@ -33,6 +33,10 @@ let currentCloudRows: Array<{
 }> = [];
 const upsertMock = vi.fn();
 const { commitMutationMock } = vi.hoisted(() => ({ commitMutationMock: vi.fn() }));
+const { toastErrorMock, toastDismissMock } = vi.hoisted(() => ({
+    toastErrorMock: vi.fn(),
+    toastDismissMock: vi.fn(),
+}));
 const deleteMatchMock = vi.fn();
 const selectMock = vi.fn();
 const eqMock = vi.fn();
@@ -66,6 +70,10 @@ vi.mock("@/lib/supabase/client", () => ({
 
 vi.mock("@/lib/user-library-mutation-client", () => ({
     commitUserLibraryMutation: commitMutationMock,
+}));
+
+vi.mock("sonner", () => ({
+    toast: { error: toastErrorMock, info: vi.fn(), dismiss: toastDismissMock },
 }));
 
 vi.mock("@/lib/account-data-client", () => ({
@@ -1043,6 +1051,27 @@ describe("useReadingProgress", () => {
         expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(1);
         act(() => view.result.current.retryHydration());
         expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(1);
+        view.unmount();
+    });
+
+    it("clears the snapshot limit warning after automatic recovery", async () => {
+        currentAuthUser = { id: "user-a" };
+        vi.mocked(fetchCompleteLibrarySnapshot).mockRejectedValueOnce(
+            new LibrarySnapshotClientError("Limited", "RATE_LIMITED", 429, 400),
+        );
+
+        const view = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(view.result.current.hydrationIssue?.kind).toBe("rate_limited"));
+        expect(toastErrorMock).toHaveBeenCalledWith(
+            expect.stringContaining("Library requests are limited"),
+            expect.objectContaining({ id: "library-snapshot-attention", duration: Infinity }),
+        );
+
+        toastDismissMock.mockClear();
+        await waitFor(() => expect(view.result.current.hydrationStatus).toBe("ready"), { timeout: 2000 });
+        expect(view.result.current.hydrationIssue).toBeNull();
+        expect(toastDismissMock).toHaveBeenCalledWith("library-snapshot-attention");
+        expect(toastDismissMock).not.toHaveBeenCalledWith("library-sync-attention");
         view.unmount();
     });
 

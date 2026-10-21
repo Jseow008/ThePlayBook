@@ -5,6 +5,7 @@ import { captureAnalyticsEvent } from "@/lib/analytics";
 type ActionKind = "query" | "filter";
 type Trigger = "submit" | "debounced" | "recent" | "clear" | "link" | "select";
 type FilterKind = "topic" | "type" | "sort" | "other";
+export type SearchFilterParam = "category" | "type" | "sort";
 type Outcome = "results" | "no_results" | "failed" | "input_empty";
 type VisibilityState = "foreground" | "backgrounded" | "unknown";
 type SettledJourney = {
@@ -76,7 +77,24 @@ function filterKind(current: URL, target: URL): FilterKind {
     return "other";
 }
 
-export function beginSearchJourney(href: string, actionKind: ActionKind, trigger: Trigger) {
+export function resolveSearchFilterHref(href: string, filterParam: SearchFilterParam, value?: string) {
+    if (typeof window === "undefined") return href;
+
+    const renderedTarget = new URL(href, window.location.origin);
+    const current = new URL(window.location.href);
+    if (renderedTarget.origin !== current.origin || renderedTarget.pathname !== "/search" || current.pathname !== "/search") return href;
+
+    // The server-rendered links can still reflect the previous route while a
+    // filter transition is loading. Apply the next choice to the latest intent.
+    const target = new URL(pendingJourney?.target ?? current.href, current.origin);
+    if (value) target.searchParams.set(filterParam, value);
+    else target.searchParams.delete(filterParam);
+    target.searchParams.delete("page");
+    target.searchParams.delete("cursor");
+    return routeKey(target);
+}
+
+export function beginSearchJourney(href: string, actionKind: ActionKind, trigger: Trigger, selectedFilterKind?: FilterKind) {
     if (typeof window === "undefined") return;
 
     const target = new URL(href, window.location.origin);
@@ -93,7 +111,7 @@ export function beginSearchJourney(href: string, actionKind: ActionKind, trigger
     pendingJourney = {
         id: crypto.randomUUID(),
         actionKind,
-        filterKind: actionKind === "filter" ? filterKind(current, target) : undefined,
+        filterKind: actionKind === "filter" ? selectedFilterKind ?? filterKind(current, target) : undefined,
         navigationKind: "in_app",
         target: routeKey(target),
         startedAt: performance.now(),

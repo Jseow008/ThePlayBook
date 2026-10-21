@@ -1,5 +1,40 @@
 # Netflux release and workstream status
 
+## Search filter and save notice repair — 21 October 2026
+
+Branch `codex/search-filter-save-notice` in managed worktree
+`/Users/j/.codex/worktrees/search-filter-save-notice/Lifebook` starts from freshly
+fetched `origin/main`. The focused change dismisses the snapshot rate-limit
+warning when that snapshot recovers, while retaining a separate warning ID for
+mutation conflicts. Search filter actions now apply their choice to the latest
+pending Search route so rapid Book → Business clicks keep both selections.
+Search layout, labels, ranking, cache behavior, and reading data are unchanged.
+No database or production configuration change is included.
+
+Evidence: 80 focused unit/component tests, typecheck, targeted lint, and the
+new rapid-filter browser regression on desktop and mobile passed. The full
+Search browser file passed 8/10 checks; the existing query → clear test failed
+on both viewports because the local catalog returned **Search needs another
+try** instead of the expected **No results found**. That test does not use the
+changed filter interaction. The observed failure remains unresolved and is not
+counted as a passing check. No production write or synthetic production
+analytics event was made during local verification.
+
+User testing also observed a successful 2/11 save → reload, then restoration
+to 1/11, five isolated recovery tests, and two internal superseded-action
+events in PostHog. Those observations do not establish live disconnection
+behavior or verify each superseded event's join. The historical recurring
+conflict and earlier live failure cause remain open; older rejected changes
+were untouched. The previously found empty-state and topic-label issues remain
+open. Keep the fixed 24 October Search baseline cutoff and the live
+publish/withdrawal freshness gap; do not select a rendering change from this
+repair.
+
+Next action: publish the focused PR, verify its file scope, and queue squash
+auto-merge after `PR scope` passes. Investigate any required-check failure
+before rollout. After merge, verify the two reported interactions in production
+without altering real reading data.
+
 ## Controlled Search collection and save → reload — 21 October 2026
 
 PR #271 is merged as `19d7b9f8` and its production deployment was ready on

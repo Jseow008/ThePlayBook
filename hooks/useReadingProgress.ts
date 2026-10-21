@@ -44,6 +44,8 @@ import {
     clearRecentRecommendations,
 } from "@/lib/recommendation-memory";
 
+const LIBRARY_SNAPSHOT_TOAST_ID = "library-snapshot-attention";
+
 /**
  * Reading progress data stored in localStorage
  */
@@ -776,6 +778,7 @@ function useReadingProgressController(initialUser?: User | null) {
             syncBlockedRef.current = false;
             setSyncNeedsAttention(false);
             toast.dismiss("library-sync-attention");
+            toast.dismiss(LIBRARY_SNAPSHOT_TOAST_ID);
         }
 
         if (!didRunLegacyMigrationRef.current) {
@@ -826,6 +829,7 @@ function useReadingProgressController(initialUser?: User | null) {
                     setHydrationStatus("ready");
                     setHydrationIssue(null);
                     setSnapshotBuilding(false);
+                    toast.dismiss(LIBRARY_SNAPSHOT_TOAST_ID);
                     retryAfterRef.current = 0;
                     if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
                     retryTimerRef.current = null;
@@ -874,7 +878,7 @@ function useReadingProgressController(initialUser?: User | null) {
                         : kind === "preparing"
                             ? "Your library is still preparing. Your changes remain on this device."
                             : "Sync unavailable. Your changes remain on this device. Refresh your library to try again.", {
-                        id: "library-sync-attention", duration: Infinity,
+                        id: LIBRARY_SNAPSHOT_TOAST_ID, duration: Infinity,
                         action: kind === "rate_limited" ? undefined : { label: "Refresh library", onClick: () => refreshLibraryRef.current() },
                     });
                 }
@@ -971,6 +975,7 @@ function useReadingProgressController(initialUser?: User | null) {
             activeWritesRef.current.forEach(controller => controller.abort());
             setJournalVersion(value => value + 1);
             toast.dismiss("library-sync-attention");
+            toast.dismiss(LIBRARY_SNAPSHOT_TOAST_ID);
             setHydrationStatus("ready");
         };
 

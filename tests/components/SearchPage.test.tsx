@@ -69,10 +69,12 @@ vi.mock("next/link", () => ({
     default: ({
         children,
         href,
+        onNavigate,
         ...props
     }: {
         children: React.ReactNode;
         href: string | { pathname?: string; query?: Record<string, string | undefined> };
+        onNavigate?: (event: { preventDefault: () => void }) => void;
     }) => {
         const resolvedHref = typeof href === "string"
             ? href
@@ -89,7 +91,11 @@ vi.mock("next/link", () => ({
             })();
 
         return (
-            <a href={resolvedHref} {...props}>
+            <a href={resolvedHref} {...props} onClick={(event) => {
+                // Keep the current URL unchanged while the test models a pending transition.
+                event.preventDefault();
+                onNavigate?.({ preventDefault: () => event.preventDefault() });
+            }}>
             {children}
         </a>
         );
@@ -237,6 +243,7 @@ describe("SearchPage", () => {
     beforeEach(() => {
         vi.resetModules();
         vi.clearAllMocks();
+        window.history.replaceState(null, "", "/search");
         resetSupabaseMocks();
         routerPushMock.mockReset();
         redirectMock.mockClear();
@@ -609,6 +616,16 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "Business" })).toHaveAttribute("href", "/search?q=focus&category=Business&type=podcast");
     });
 
+    it("keeps a rapid Book then Business selection during the first navigation", async () => {
+        window.history.replaceState(null, "", "/search?type=podcast");
+        await renderSearchPage({ type: "podcast" });
+
+        fireEvent.click(screen.getByRole("link", { name: "Book" }));
+        fireEvent.click(screen.getByRole("link", { name: "Business" }));
+
+        expect(routerPushMock).toHaveBeenCalledWith("/search?category=Business&type=book");
+    });
+
     it("clears only the category when selecting all topics", async () => {
         await renderSearchPage({ q: "focus", type: "podcast", category: "Productivity" });
 
@@ -653,6 +670,7 @@ describe("SearchPage", () => {
     });
 
     it("preserves query and type when selecting a dropdown topic", async () => {
+        window.history.replaceState(null, "", "/search?q=focus&type=podcast");
         await renderSearchPage({ q: "focus", type: "podcast" });
 
         fireEvent.change(screen.getByRole("combobox", { name: "More topics" }), {
