@@ -1,5 +1,46 @@
 # Netflux release and workstream status
 
+## Controlled Search collection and save → reload — 21 October 2026
+
+PR #271 is merged as `19d7b9f8` and its production deployment was ready on
+10 October at 02:29 Singapore time. The bounded Search window ends on
+24 October at 02:29 Singapore time; the one-time closeout is scheduled for
+10:00 that day. Do not extend the window or select a rendering change if the
+eligible sample is weak.
+
+One signed-in production visit submitted a Search query and changed the type
+filter. PostHog project 450488 received distinct `search_action_started`
+events for the query and filter, each followed by a
+`search_journey_settled` event with the same `journey_id`. Both settled as
+foreground, in-app results. The filter event had `filter_kind=type`; the
+events carried route, action, outcome, result count, and query-present flags,
+while the captured event URLs contained no query string. The visitor's person
+properties showed `is_internal=true` and `profile_available=true`, so these
+actions must remain in the internal group, outside the organic baseline. No
+superseded action was induced; live collection of
+`search_action_superseded` is still unverified. The controlled visit proves
+collection for these two paths, not relevance, general latency, or organic
+coverage. No raw query text was retrieved from PostHog.
+
+For the deployed save → reload check, the signed-in reader moved an existing
+book from 1/11 to 2/11 sections, showed **Saved**, and reloaded at 2/11 with
+**Saved**. The test change was then reversed; a second reload returned to the
+original 1/11 with **Saved**. Five older rejected changes for a different book
+remained in **Needs review** and were not applied, discarded, or retried. This
+checks one ordinary successful save path; the historical recurring conflict
+and earlier live failure cause remain open.
+
+Next action: on 24 October, report the fixed-window Search baseline using the
+definitions below and state **insufficient evidence** if coverage or sample is
+weak. Separately, recruit a few users for a find → open → resume-later trial
+once invitees and a contact channel are supplied; keep recruited observations
+outside the organic baseline. Live publish/withdrawal freshness remains
+unverified. No code, configuration, schema, or direct database change was
+made; the app-level test progress was restored. Evidence checkpoint branch:
+`codex/search-telemetry-evidence` in
+`/Users/j/.codex/worktrees/search-telemetry-check/Lifebook`, based on
+`origin/main` `19d7b9f8`.
+
 ## Search measurement integrity follow-up — 10 October 2026
 
 PR #270 merged as `786d1902`. Its field events are newly available and do not
