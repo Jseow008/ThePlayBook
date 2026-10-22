@@ -1194,10 +1194,16 @@ describe('ReaderView', () => {
         const position = { top: 12, left: 34, width: 56, height: 18 };
         act(() => segmentAccordionSpy.mock.lastCall?.[0].onHighlightPreview('highlight-1', position));
         expect(screen.getByTestId('floating-highlight-mode')).toHaveTextContent('preview');
+        const stalePreviewEnd = segmentAccordionSpy.mock.lastCall?.[0].onHighlightPreviewEnd;
         fireEvent.click(screen.getByTestId('activate-highlight'));
         expect(screen.getByTestId('floating-highlight-mode')).toHaveTextContent('full');
         act(() => segmentAccordionSpy.mock.lastCall?.[0].onHighlightPreview('highlight-1', position));
         expect(screen.getByTestId('floating-highlight-mode')).toHaveTextContent('full');
+        vi.useFakeTimers();
+        try {
+            act(() => { stalePreviewEnd(); vi.advanceTimersByTime(151); });
+            expect(screen.getByTestId('floating-highlight-mode')).toHaveTextContent('full');
+        } finally { vi.useRealTimers(); }
     });
 
     it('opens the notes drawer to a tapped inline highlight on mobile', async () => {

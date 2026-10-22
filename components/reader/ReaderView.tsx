@@ -97,6 +97,8 @@ export function ReaderView({ content }: ReaderViewProps) {
         height: number;
     } | null>(null);
     const [popoverMode, setPopoverMode] = useState<"preview" | "full">("full");
+    const popoverModeRef = useRef(popoverMode);
+    useLayoutEffect(() => { popoverModeRef.current = popoverMode; }, [popoverMode]);
     const [expandedSegmentId, setExpandedSegmentId] = useState<string | null>(null);
     const [isNotesDrawerOpen, setIsNotesDrawerOpen] = useState(false);
     const [isPopoverHovered, setIsPopoverHovered] = useState(false);
@@ -813,7 +815,9 @@ export function ReaderView({ content }: ReaderViewProps) {
         if (popoverMode !== "preview") return;
 
         clearPopoverCloseTimeout();
-        popoverCloseTimeoutRef.current = window.setTimeout(closeActiveHighlight, 150);
+        popoverCloseTimeoutRef.current = window.setTimeout(() => {
+            if (popoverModeRef.current === "preview") closeActiveHighlight();
+        }, 150);
     }, [clearPopoverCloseTimeout, closeActiveHighlight, popoverMode]);
 
     useEffect(() => () => clearPopoverCloseTimeout(), [clearPopoverCloseTimeout]);
