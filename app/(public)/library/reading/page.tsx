@@ -116,6 +116,14 @@ export default function ContinueReadingPage() {
                     <UnavailableLibraryItems
                         ids={unavailableIds}
                         getProgress={getProgress}
+                        removeLabel="Hide from Continue Reading"
+                        onRemove={(id) => {
+                            archiveFromProgressList(id, "reading");
+                            toast.success("Archived from List", { action: {
+                                label: "Undo",
+                                onClick: () => restoreProgressListArchive(id, "reading"),
+                            } });
+                        }}
                     />
                 )}
 

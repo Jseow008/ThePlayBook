@@ -1,10 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ReadingPage from "@/app/(public)/library/reading/page";
 import CompletedPage from "@/app/(public)/library/completed/page";
 import SavedPage from "@/app/(public)/library/my-list/page";
 
-const mocks = vi.hoisted(() => ({ progress: vi.fn(), batch: vi.fn(), remove: vi.fn(), removeSaved: vi.fn() }));
+const mocks = vi.hoisted(() => ({ progress: vi.fn(), batch: vi.fn(), remove: vi.fn(), removeSaved: vi.fn(), archive: vi.fn() }));
 vi.mock("@/hooks/useReadingProgress", () => ({ useReadingProgress: mocks.progress }));
 vi.mock("@/hooks/use-content-queries", () => ({ useBatchContentItems: mocks.batch }));
 vi.mock("@/hooks/useReflections", () => ({ useReflections: () => ({ data: [] }) }));
@@ -20,7 +20,7 @@ describe.each([["Continue Reading", ReadingPage], ["Completed", CompletedPage], 
             inProgressIds: [oldId], completedIds: [oldId], myListIds: [oldId], isLoaded: true,
             getProgress: () => ({ completed: ["old-segment"], totalSegments: 4, isCompleted: false }),
             removeFromProgress: mocks.remove, removeFromMyList: mocks.removeSaved,
-            archiveFromProgressList: vi.fn(), restoreProgressListArchive: vi.fn(), removeFromHistory: vi.fn(), user: null,
+            archiveFromProgressList: mocks.archive, restoreProgressListArchive: vi.fn(), removeFromHistory: vi.fn(), user: null,
         });
         mocks.batch.mockReturnValue({ data: [], isSuccess: true, isError: false, isLoading: false, refetch: vi.fn() });
     });
@@ -32,6 +32,20 @@ describe.each([["Continue Reading", ReadingPage], ["Completed", CompletedPage], 
         expect(screen.getByRole("region", { name: "Unavailable saved summaries" })).toBeVisible();
         expect(screen.getByRole("link", { name: "View summary status" })).toHaveAttribute("href", `/read/${oldId}`);
         expect(screen.queryByText(/No reading in progress|No completed|No saved/)).not.toBeInTheDocument();
+    });
+
+    it("restores the explicit list action without deleting reading history", () => {
+        render(<Page />);
+        const label = _name === "Saved" ? "Remove from Saved" : `Hide from ${_name}`;
+        fireEvent.click(screen.getByRole("button", { name: label }));
+        if (_name === "Saved") {
+            expect(mocks.removeSaved).toHaveBeenCalledWith(oldId);
+            expect(mocks.archive).not.toHaveBeenCalled();
+        } else {
+            expect(mocks.archive).toHaveBeenCalledWith(oldId, _name === "Completed" ? "completed" : "reading");
+            expect(mocks.removeSaved).not.toHaveBeenCalled();
+        }
+        expect(mocks.remove).not.toHaveBeenCalled();
     });
 
     it("does not interpret loading or failed responses as a removed summary", () => {

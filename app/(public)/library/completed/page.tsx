@@ -279,6 +279,14 @@ export default function CompletedPage() {
                     <UnavailableLibraryItems
                         ids={unavailableIds}
                         getProgress={getProgress}
+                        removeLabel="Hide from Completed"
+                        onRemove={(id) => {
+                            archiveFromProgressList(id, "completed");
+                            toast.success("Archived from List", { action: {
+                                label: "Undo",
+                                onClick: () => restoreProgressListArchive(id, "completed"),
+                            } });
+                        }}
                     />
                 )}
 

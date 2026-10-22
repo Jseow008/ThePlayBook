@@ -891,10 +891,13 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
         sort: sortBy,
     });
     const {
-        data: reflections = initialReflections,
+        data: reflections = [],
         isLoading: reflectionsLoading,
         isError: reflectionsError,
-    } = useReflections(undefined, initialReflections);
+    } = useReflections(
+        selectedItem === DEFAULT_SELECTED_ITEM ? undefined : selectedItem,
+        selectedItem === DEFAULT_SELECTED_ITEM ? initialReflections : undefined,
+    );
 
     const highlights = useMemo(
         () => data?.pages.flatMap((page) => page.data) ?? (highlightSearchIsDefault ? initialPage.data : []),
@@ -1061,17 +1064,16 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     // Do not re-filter loaded pages locally: that would present partial results
     // as a complete note search.
     // Highlights may remain in React Query's cache when its query is disabled.
-    // Reflections are deliberately a separate, incomplete surface in this
-    // delivery, so never render cached highlights under that selected filter.
+    // Reflections use their own account/content scope; never render cached
+    // highlights under the Reflections filter.
     const filteredHighlights = selectedType === "reflection" ? NO_HIGHLIGHTS : highlights;
 
     const filteredReflections = useMemo(() => {
-        const canShowUnfilteredReflections = !searchQuery.trim()
-            && selectedItem === DEFAULT_SELECTED_ITEM
+        const canShowScopedReflections = !searchQuery.trim()
             && selectedColor === DEFAULT_SELECTED_COLOR
             && sortBy === DEFAULT_SORT
             && (selectedType === "all" || selectedType === "reflection");
-        if (!canShowUnfilteredReflections) return [];
+        if (!canShowScopedReflections) return [];
 
         const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -1091,7 +1093,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
             });
     }, [reflections, searchQuery, selectedItem, selectedType, selectedColor, sortBy]);
     const reflectionSearchUnavailable = selectedType === "reflection"
-        && (Boolean(searchQuery.trim()) || selectedItem !== DEFAULT_SELECTED_ITEM || selectedColor !== DEFAULT_SELECTED_COLOR || sortBy !== DEFAULT_SORT);
+        && (Boolean(searchQuery.trim()) || selectedColor !== DEFAULT_SELECTED_COLOR || sortBy !== DEFAULT_SORT);
 
     const shouldVirtualize = filteredHighlights.length >= VIRTUALIZATION_MIN_ITEMS;
 

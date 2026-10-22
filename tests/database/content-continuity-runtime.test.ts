@@ -85,6 +85,34 @@ suite("content replacement on an explicitly disposable database", () => {
             await db.query("ROLLBACK TO SAVEPOINT reject");
         }
     });
+    it("deletes an archived-only series through the real foreign key without altering the archived edition", async () => {
+        const seriesId = randomUUID();
+        await db.query("INSERT INTO public.content_series(id,title,slug) VALUES ($1,'Original series',$2)", [seriesId, `series-${seriesId}`]);
+        await db.query("UPDATE public.content_item SET series_id=$1,series_order=1 WHERE id=$2", [seriesId, oldId]);
+        oldUpdatedAt = (await db.query("SELECT updated_at::text FROM public.content_item WHERE id=$1", [oldId])).rows[0].updated_at;
+        await replace();
+        const before = (await db.query("SELECT to_jsonb(c) - ARRAY['series_id','series_order','updated_at'] AS edition FROM public.content_item c WHERE id=$1", [oldId])).rows[0].edition;
+        const personalBefore = await personalState();
+        expect((await db.query("SELECT count(*)::int AS count FROM public.content_item WHERE series_id=$1 AND deleted_at IS NULL", [seriesId])).rows[0].count).toBe(0);
+        await db.query("DELETE FROM public.content_series WHERE id=$1", [seriesId]);
+        const after = (await db.query("SELECT series_id,series_order,to_jsonb(c) - ARRAY['series_id','series_order','updated_at'] AS edition FROM public.content_item c WHERE id=$1", [oldId])).rows[0];
+        expect(after).toEqual({ series_id: null, series_order: null, edition: before });
+        expect(await personalState()).toEqual(personalBefore);
+        expect((await db.query("SELECT markdown_body FROM public.segment WHERE id=$1", [segmentId])).rows[0].markdown_body).toBe("Original passage");
+    });
+    it("still rejects manual archive detachment while its series exists", async () => {
+        const seriesId = randomUUID();
+        await db.query("INSERT INTO public.content_series(id,title,slug) VALUES ($1,'Retained series',$2)", [seriesId, `series-${seriesId}`]);
+        await db.query("UPDATE public.content_item SET series_id=$1,series_order=1 WHERE id=$2", [seriesId, oldId]);
+        oldUpdatedAt = (await db.query("SELECT updated_at::text FROM public.content_item WHERE id=$1", [oldId])).rows[0].updated_at;
+        await replace();
+        await expect(db.query("UPDATE public.content_item SET series_id=NULL,series_order=NULL WHERE id=$1", [oldId])).rejects.toMatchObject({ code: "23514" });
+    });
+    it("keeps genuinely empty series deletion working", async () => {
+        const seriesId = randomUUID();
+        await db.query("INSERT INTO public.content_series(id,title,slug) VALUES ($1,'Empty series',$2)", [seriesId, `series-${seriesId}`]);
+        expect((await db.query("DELETE FROM public.content_series WHERE id=$1 RETURNING id", [seriesId])).rowCount).toBe(1);
+    });
     it("flattens later replacements and never transfers positions", async () => {
         const before = await personalState();
         await replace();

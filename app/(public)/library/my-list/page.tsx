@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { AlertCircle, Plus } from "lucide-react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { UnavailableLibraryItems } from "@/components/ui/UnavailableLibraryItems";
@@ -21,7 +22,7 @@ import {
  * Shows content manually bookmarked by the user for later reading.
  */
 export default function MyListPage() {
-    const { myListIds, isLoaded } = useReadingProgress();
+    const { myListIds, isLoaded, removeFromMyList, addToMyList } = useReadingProgress();
 
     // Filter/Sort State
     const [activeFilter, setActiveFilter] = useState("all");
@@ -116,6 +117,14 @@ export default function MyListPage() {
                 {!isPageLoading && !isError && (
                     <UnavailableLibraryItems
                         ids={unavailableIds}
+                        removeLabel="Remove from Saved"
+                        onRemove={(id) => {
+                            void removeFromMyList(id);
+                            toast.success("Removed from Saved", { action: {
+                                label: "Undo",
+                                onClick: () => { void addToMyList(id); },
+                            } });
+                        }}
                     />
                 )}
 

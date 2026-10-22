@@ -110,7 +110,19 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE
     original_id uuid;
 BEGIN
-    IF TG_TABLE_NAME = 'content_item' THEN original_id := OLD.id;
+    IF TG_TABLE_NAME = 'content_item' THEN
+        original_id := OLD.id;
+        -- ON DELETE SET NULL runs after the series row has gone. Permit only
+        -- that FK detach (and its paired ordinal), never an archive edit or
+        -- manual reassignment while the series still exists.
+        IF OLD.series_id IS NOT NULL AND NEW.series_id IS NULL
+           AND NOT EXISTS (SELECT 1 FROM public.content_series WHERE id = OLD.series_id)
+           AND (pg_catalog.to_jsonb(NEW) - ARRAY['series_id', 'series_order', 'updated_at'])
+               = (pg_catalog.to_jsonb(OLD) - ARRAY['series_id', 'series_order', 'updated_at'])
+           AND NEW.series_order IS NOT DISTINCT FROM OLD.series_order THEN
+            NEW.series_order := NULL;
+            RETURN NEW;
+        END IF;
     ELSIF TG_OP = 'INSERT' THEN original_id := NEW.item_id;
     ELSE original_id := OLD.item_id;
     END IF;

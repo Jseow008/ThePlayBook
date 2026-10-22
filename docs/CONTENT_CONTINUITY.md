@@ -4,9 +4,9 @@
 
 A catalog lookup is read-only. Missing, hidden, withdrawn, or failed-to-load summaries never authorize automatic bookmark or progress deletion. Saved, Continue Reading, and Completed retain an unavailable entry and its existing section history.
 
-An admin replaces a duplicate from its Edit Content page by choosing the kept published summary, previewing counts, and confirming. The source is soft-deleted and preserved as an immutable archive, including original segment IDs and artifacts. A durable replacement notice links old reader and preview URLs to the kept version. Notices flatten when a kept version is subsequently replaced. Draft or withdrawn destinations are not exposed.
+An admin replaces a duplicate from its Edit Content page by choosing the kept published summary, previewing counts, and confirming. The source is soft-deleted and preserved as an archive with immutable content, original segment IDs and artifacts. A durable replacement notice links old reader and preview URLs to the kept version. Notices flatten when a kept version is subsequently replaced. Draft or withdrawn destinations are not exposed.
 
-Personal library rows, highlights, notes, reflections, and local audio bookmarks remain associated with their original summary. Existing progress on the kept summary is never overwritten. No segment mapping, percentage approximation, or audio timestamp transfer is inferred. The notice links to original Notes using the existing account-scoped filter. This is not a public archive reader.
+Personal library rows, highlights, notes, reflections, and local audio bookmarks remain associated with their original summary. Existing progress on the kept summary is never overwritten. No segment mapping, percentage approximation, or audio timestamp transfer is inferred. The notice links to original Notes using the account/content-scoped queries for highlights and reflections. This is not a public archive reader.
 
 Replacement checks both preview timestamps under transaction locks and rejects a source with narration in progress. A retry of the same committed replacement is idempotent. Permanent deletion is blocked while personal library/capture records remain; replacement foreign keys also prevent purging either linked edition. There is no new automatic purge or restore operation.
 
@@ -36,6 +36,19 @@ An initial broad test run overlapped browser checks and timed out; it was stoppe
 
 No production database, reader records, or backup has been modified. Hosted disposable verification and the reviewed production dry-run remain required by OPS §2.2 before promotion. Production migration requires explicit authorization. Affected titles and backup path have been requested; recovery is pending identification.
 
-Next action: publish the reviewable PR, choose the organization for required disposable hosted verification, then complete OPS §2.2 and obtain explicit production-migration authorization. Do not promote before that gate passes. Recover existing reader history only after the affected summary IDs and backup are identified.
+Next action: finish review of [PR #274](https://github.com/Jseow008/ThePlayBook/pull/274), choose the organization for required disposable hosted verification, then complete OPS §2.2 and obtain explicit production-migration authorization. Do not promote before that gate passes. Recover existing reader history only after the affected summary IDs and backup are identified.
 
 One agent; approximately 30 minutes through local verification and PR preparation. No external generation-provider calls or comparative cost measurement; token usage unavailable. The primary checkout was left on its existing branch. Temporary local services are stopped after verification; the isolated worktree and source remain available for the hosted gate.
+
+
+## Review corrections — 22 October 2026
+
+The owner confirmed three gaps at `8fb698ac`; all three are corrected on the existing PR branch:
+
+- Series deletion may perform only the foreign key's detach of an archived edition. The trigger verifies the former parent is gone and all non-series/non-timestamp fields are unchanged, clears the paired ordinal, and continues to reject manual detachment, reassignment and content edits. The unreleased migration was corrected in place; no production migration was applied.
+- Original-summary Notes links now use the existing per-content reflection endpoint. Reflections remain visible under the summary filter and the Reflections tab, even when the catalog join is null for an archived source. Broader reflection text/color/sort search remains outside this change.
+- Unavailable entries expose Remove from Saved or Hide from Continue Reading/Completed through the existing mutation/archive hooks, with Undo. These explicit actions preserve progress, notes and audio positions; catalog reads remain non-destructive.
+
+Fresh evidence: 44 focused component/API tests plus all 10 full-schema disposable database runtime tests passed. The complete 114-migration local replay, three SQL permission audits, lint, types, production build/Sharp/CSS checks, migration uniqueness and whitespace checks passed. The extended actual-production-app journey passed on desktop and mobile in 17.4 seconds: it checks the scoped reflection API response and both reflection views, all three list actions, archive Undo, and retained reading/audio state. The first browser run found an ambiguous test selector shared by available and unavailable cards; scoping it to the unavailable section corrected the test without changing product behavior. No production data changed. This is local verification, not the required disposable hosted gate.
+
+The earlier 1,816-test run belongs to the initial candidate; the correction evidence above is the current affected-check evidence. Single agent; no provider calls or token-usage measurement. Hosted organization choice and the original affected IDs/backup remain pending.
