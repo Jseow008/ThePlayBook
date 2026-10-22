@@ -2,6 +2,21 @@
 
 ## Search filter and save notice repair — 21 October 2026
 
+**22 October CI repair:** [required `validate` run](https://github.com/Jseow008/ThePlayBook/actions/runs/39623078563)
+failed before the new rapid-filter test exercised either click. Its captured
+page had only the Productivity topic from the CI catalog fixture, while the
+test required a Business link. The browser test now selects an available topic
+and waits for both client-side link handlers to hydrate before dispatching the
+two immediate clicks. The Book → Business component case remains. The first
+local version of the adjusted browser test reached the wrong route when clicks
+preceded hydration; the hydration precondition corrected that setup failure.
+The revised browser regression passed locally across all six configured
+viewports; typecheck, focused lint, and whitespace checks passed. No production
+test or code change has occurred yet from this correction. Next action: push
+the test correction to PR #273 and require the new hosted `validate` result
+before accepting the fix or checking production. The historical conflict and
+other open issues below remain unchanged.
+
 Branch `codex/search-filter-save-notice` in managed worktree
 `/Users/j/.codex/worktrees/search-filter-save-notice/Lifebook` starts from freshly
 fetched `origin/main`. Implementation commit `6f6537b1` is in
