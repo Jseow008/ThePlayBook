@@ -72,7 +72,7 @@
   "production_dependency_audit": {
     "vulnerabilities": 0
   },
-  "application_candidate_commit": "supersedes 5904ee7e; final application identified by source_sha256 and PR head",
+  "application_candidate_commit": "533b8241",
   "pull_request": "https://github.com/Jseow008/ThePlayBook/pull/277",
   "coordinate_regression": {
     "cause": "Markdown syntax-tree positions omitted DOM block separators",
