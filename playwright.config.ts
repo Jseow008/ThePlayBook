@@ -66,7 +66,9 @@ export default defineConfig({
         : {
             command: 'npm run dev -- --port 3100',
             env: { PLAYWRIGHT_TEST: '1' },
-            url: baseURL,
+            // The home route streams catalog data and can keep the readiness
+            // probe waiting even after Next is ready to serve browser tests.
+            url: `${baseURL}/window.svg`,
             reuseExistingServer: false,
         },
 });

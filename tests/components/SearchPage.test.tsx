@@ -312,6 +312,17 @@ describe("SearchPage", () => {
         consoleError.mockRestore();
     });
 
+    it("offers a filter reset for empty newest and popular catalogs", async () => {
+        const { RecentCatalog, PopularCatalog } = await import("@/app/(public)/search/search-components");
+
+        render(await RecentCatalog({ categoryLabel: "Business", type: "podcast", page: 1,
+            preloadedPage: Promise.resolve({ items: [], totalItems: 0, totalPages: 1 }) }));
+        expect(screen.getByRole("link", { name: "Clear all filters" })).toHaveAttribute("href", "/search");
+
+        render(await PopularCatalog({ categoryLabel: "Business", type: "podcast", preloadedItems: Promise.resolve([]) }));
+        expect(screen.getAllByRole("link", { name: "Clear all filters" })[1]).toHaveAttribute("href", "/search?sort=popular");
+    });
+
     it("defaults the full catalog to newest-first when no query or category is present", async () => {
         rpcMock.mockImplementation((fn: string) => {
             if (fn === "get_category_stats") {
@@ -545,6 +556,18 @@ describe("SearchPage", () => {
             "href",
             "/requests?prefill=focus&type=book"
         );
+        expect(screen.getByText("We couldn't find anything matching that title, author, category, or filter.")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Clear all filters" })).toHaveAttribute("href", "/search?q=focus");
+    });
+
+    it("offers to clear the query when a zero-result search has no filters", async () => {
+        searchCatalogMock.mockResolvedValueOnce({ outcome: "no_results", results: [], pageInfo: { nextCursor: null, previousCursor: null, page: 1 } });
+        const results = await runSearchResultsFromPage({ q: "Disney" });
+
+        await act(async () => { render(results); });
+
+        expect(screen.getByRole("link", { name: "Clear search" })).toHaveAttribute("href", "/search");
+        expect(screen.queryByRole("link", { name: "Clear all filters" })).not.toBeInTheDocument();
     });
 
     it("renders stop-word-only input as an input outcome without a request action or zero-result event", async () => {
@@ -661,6 +684,51 @@ describe("SearchPage", () => {
         const optionLabels = Array.from(select.querySelectorAll("option")).map((option) => option.textContent);
 
         expect(optionLabels).toEqual(["More topics", "Religion & Spirituality"]);
+    });
+
+    it("groups reported topic variants without exposing the content-format category", async () => {
+        const categories = [
+            { category: "Self-help", count: 2 }, { category: "Self-Help", count: 1 },
+            { category: "Decision Making", count: 1 }, { category: "Decision-Making", count: 1 },
+            { category: "Science & Technology", count: 1 }, { category: "Science and Technology", count: 1 },
+            { category: "book_summary", count: 1 },
+        ];
+        rpcMock.mockImplementation((fn: string) => {
+            if (fn === "get_category_stats") return Promise.resolve({ data: categories });
+            throw new Error(`Unexpected RPC: ${fn}`);
+        });
+
+        await renderSearchPage({});
+        const labels = Array.from(screen.getByRole("combobox", { name: "More topics" }).querySelectorAll("option"))
+            .map((option) => option.textContent);
+        for (const label of ["Self-Help", "Decision-Making", "Science & Technology"]) {
+            expect(labels.filter((option) => option === label)).toHaveLength(1);
+        }
+        for (const label of ["Self-help", "Decision Making", "Science and Technology", "book_summary"]) {
+            expect(labels).not.toContain(label);
+        }
+
+        for (const [label, rawValues] of [
+            ["Self-Help", ["Self-help", "Self-Help"]],
+            ["Decision-Making", ["Decision Making", "Decision-Making"]],
+            ["Science & Technology", ["Science & Technology", "Science and Technology"]],
+        ] as const) {
+            await runSearchResultsFromPage({ q: "focus", category: label });
+            const actual = searchCatalogMock.mock.lastCall?.[0].categories as string[];
+            expect(actual).toHaveLength(2);
+            expect(actual).toEqual(expect.arrayContaining([...rawValues]));
+        }
+
+        await runRecentCatalogFromPage({ category: "Self-Help" });
+        expect(getLatestQueryBuilder()?.in).toHaveBeenCalledWith("category", expect.arrayContaining(["Self-help", "Self-Help"]));
+    });
+
+    it("redirects old topic spellings and the internal content-format category", async () => {
+        await expect(loadSearchPage({ q: "focus", category: "Self-help" })).rejects.toThrow("NEXT_REDIRECT");
+        expect(redirectMock).toHaveBeenCalledWith("/search?q=focus&category=Self-Help");
+
+        await expect(loadSearchPage({ q: "focus", category: "book_summary", type: "book", cursor: "old-cursor" })).rejects.toThrow("NEXT_REDIRECT");
+        expect(redirectMock).toHaveBeenCalledWith("/search?q=focus&type=book");
     });
 
     it("reflects a selected non-curated topic in the dropdown", async () => {

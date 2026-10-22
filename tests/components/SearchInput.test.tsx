@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { beginSearchJourney } from "@/lib/search-journey-measurement";
 
 const { routerPushMock, routerReplaceMock } = vi.hoisted(() => ({
     routerPushMock: vi.fn(),
@@ -18,6 +19,7 @@ describe("SearchInput", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useRealTimers();
+        window.history.replaceState(null, "", "/");
     });
 
     it("shows recent searches on focus when local storage has entries", async () => {
@@ -165,6 +167,23 @@ describe("SearchInput", () => {
 
         expect(routerReplaceMock).toHaveBeenCalledWith("/search?q=Focus");
         expect(routerPushMock).not.toHaveBeenCalled();
+    });
+
+    it("does not let a delayed query navigation undo a newer type selection", async () => {
+        vi.useFakeTimers();
+        window.history.replaceState(null, "", "/search?q=Disney&type=podcast");
+        const view = render(<SearchInput initialQuery="Disney" type="podcast" />);
+        const input = screen.getByRole("searchbox");
+
+        fireEvent.focus(input);
+        fireEvent.change(input, { target: { value: "Google" } });
+        beginSearchJourney("/search?q=Google&type=book", "filter", "link", "type");
+        fireEvent.blur(input);
+        view.rerender(<SearchInput initialQuery="Disney" type="book" />);
+        expect(input).toHaveValue("Google");
+
+        await act(async () => { vi.advanceTimersByTime(600); });
+        expect(routerReplaceMock).toHaveBeenCalledWith("/search?q=Google&type=book");
     });
 
     it("does not overwrite a newer focused draft when an older debounced route finishes", async () => {
