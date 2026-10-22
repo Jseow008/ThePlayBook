@@ -1,5 +1,60 @@
 # Netflux release and workstream status
 
+## PR #275 correction in progress — 22 October 2026
+
+Branch `codex/search-clear-topic-corrections` in
+`/Users/j/.codex/worktrees/search-clear-topic-corrections/Lifebook` remains based
+on `bdfe353c`; the published PR head is still `6948243f`. Auto-merge was
+disabled after the independent preview review and remains off. Production has
+not changed from this work.
+
+The local correction preserves the Search layout, visual styling, ranking,
+cache behavior, and stored catalog data. Search now combines an unsent query
+draft with an immediate filter selection, and a delayed query navigation uses
+the latest filter intent. Filter-only empty newest and popular catalogs offer
+a reset action. Playwright readiness checks a static asset because the home
+route can stream after Next becomes ready. Missing cursor configuration now
+logs a safe reference so preview failures can be identified without exposing
+the secret or query. No production configuration or database write occurred.
+
+Evidence: 61 focused unit/component tests, typecheck, targeted lint, and
+whitespace checks passed. The query/type race, filter-only reset, and
+query-preserving clear browser checks passed on desktop and 390px mobile with
+a local-only cursor secret and test analytics token. The local production
+dependency audit reported zero high/critical findings. The previous hosted
+Security Validation failure was an npm audit endpoint HTTP 400 and still
+needs a passing required check; the previous hosted validate failed before
+browser assertions waiting for the dev server. No hosted check has passed for
+this correction yet.
+
+Preview Disney text search remains an unresolved blocker. A protected read of
+the exact old preview reproduced its generic error with no reference. Vercel
+environment metadata is inaccessible to this connection (403), and the local
+CLI has no authenticated installation. Missing preview
+`CATALOG_SEARCH_CURSOR_SECRET` is plausible because the local instance failed
+without it and passed with a local value, but it is not yet confirmed for the
+preview. A temporary 15-minute preview bypass used for the read was revoked.
+Next: commit/push the scoped correction, inspect the new preview's safe error
+reference and runtime log, resolve any confirmed configuration issue, and
+check the required CI results. Then verify query clearing and apostrophe on
+preview, plus the pending save/reload/resume journey before release approval.
+Historical progress conflicts and live publish/withdrawal freshness remain
+open. Keep the 24 October Search baseline cutoff and do not select a rendering
+change from this work.
+
+## Independent Search verification — 22 October 2026
+
+No implementation changes requested or made. Reviewed PR #275 at `6948243f4dfc7d543527395a890658952c4c1f26`, branch `codex/search-clear-topic-corrections`, this worktree. PR remains OPEN; preview `dpl_9abjZYxUkAHajmjDSEJizJHA3yoR` is READY but is not production. Required validate failed waiting 60 seconds for the development server (Docker image rate-limit messages also present); Security Validation failed because npm's audit endpoint returned HTTP 400, not a reported dependency finding. Neither failed check establishes a browser regression pass.
+
+Browser observations on the exact preview:
+- Consolidated Self-Help returns three items from both spellings; Decision-Making returns two from both spellings; Science & Technology returns two from both spellings. Each has one picker option; book_summary is absent.
+- Rapid Podcast → Book → Business preserves Book + Business on desktop and verified 390px mobile. Mobile document width matched viewport width without overflow. Self-Help under Book includes both stored spellings.
+- Filter-only Decision-Making + Podcast yields zero results and only “No content matches these filters.” There is no contextual clear/reset action. All topics restores results; this is a remaining recovery usability gap, not a claim that the query-specific clear action failed.
+- Query Disney fails with “Search needs another try”; one Retry did not recover it. Production returned two Disney results. Query-preserving Clear all filters and query-specific apostrophe are therefore NOT browser-verified on this preview. No error logs were returned for the scoped window. Environment metadata access returned 403; missing cursor configuration is a code-supported possibility, not a confirmed cause. No configuration was changed.
+- NEW reproduced interaction bug: starting with Podcast, fill Disney and immediately click Book; settled preview URL is q=Disney&type=podcast. On production, replace Disney with Google and immediately click Book; settled URL is q=Google with no Book filter. The query debounce can overwrite a newer filter choice. Filter-to-filter rapid actions pass separately. SearchInput's delayed navigation derives filters from its earlier props; implementation diagnosis remains bounded to this mechanism.
+
+Temporary preview share access was revoked. Browser viewport override reset. No saved progress or library records were intentionally changed; no merge, deploy, CI rerun, or product/configuration edit. This checkpoint alone is changed locally. Single agent, approximately 12 minutes; no provider calls; token usage unavailable. Next: resolve the preview query blocker and query/filter race before release approval, then rerun the blocked query empty-state checks and continue the complete save/reload/resume journey. No complete persistence journey was claimed in this pass.
+
 ## Search empty-state and topic correction — 22 October 2026
 
 PR #273 is live at `bdfe353c`; the reported Book → Business and offline-warning

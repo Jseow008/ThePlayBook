@@ -78,7 +78,16 @@ export function normalizeCatalogSearchQuery(value: string | undefined) {
 
 function cursorSecret() {
     const secret = process.env.CATALOG_SEARCH_CURSOR_SECRET;
-    if (!secret) throw new CatalogSearchError("UNAVAILABLE", "Catalog search is not configured.");
+    if (!secret) {
+        const requestId = randomUUID();
+        logApiError({
+            requestId,
+            route: "catalog-search-module",
+            message: "Catalog search cursor configuration missing",
+            error: new Error("CATALOG_SEARCH_CURSOR_SECRET is not set"),
+        });
+        throw new CatalogSearchError("UNAVAILABLE", "Catalog search is not configured.", requestId);
+    }
     return secret;
 }
 

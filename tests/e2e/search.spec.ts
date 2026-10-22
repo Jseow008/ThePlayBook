@@ -50,6 +50,13 @@ test.describe('/search', () => {
         await expect(page.getByRole('searchbox', { name: /search content/i })).toHaveValue(searchTerm);
     });
 
+    test('offers a reset when filters alone return no content', async ({ page }) => {
+        await page.goto('/search?category=NoSuchTopic&type=podcast');
+        await expect(page.getByText('No content matches these filters.')).toBeVisible();
+        await page.getByRole('link', { name: 'Clear all filters' }).click();
+        await expect(page).toHaveURL((url) => url.pathname === '/search' && !url.search);
+    });
+
     test('preserves category when switching type filters', async ({ page }) => {
         await page.goto('/search?category=Finance');
 
@@ -95,6 +102,27 @@ test.describe('/search', () => {
         );
         await expect(page.getByRole('link', { name: 'Book', exact: true })).toHaveClass(/bg-primary/);
         await expect(page.getByRole('link', { name: topic.label, exact: true })).toHaveClass(/bg-primary/);
+    });
+
+    test('keeps a newly typed query when its type filter is changed immediately', async ({ page }) => {
+        await page.goto('/search?type=podcast');
+        const input = page.getByRole('searchbox', { name: /search content/i });
+        const book = page.getByRole('link', { name: 'Book', exact: true });
+        await expect(book).toBeVisible();
+        await page.waitForFunction(() => {
+            const link = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href^="/search"]'))
+                .find((element) => element.textContent?.trim() === 'Book');
+            return link && Object.keys(link).some((key) => key.startsWith('__reactProps$'));
+        });
+
+        await input.fill('Google');
+        await book.click();
+        // Let the debounced query navigation run before checking the final state.
+        await page.waitForTimeout(700);
+        await expect(page).toHaveURL((url) => url.pathname === '/search'
+            && url.searchParams.get('q') === 'Google'
+            && url.searchParams.get('type') === 'book');
+        await expect(page.getByRole('link', { name: 'Book', exact: true })).toHaveClass(/bg-primary/);
     });
 
     test('falls back to All when an invalid type parameter is provided', async ({ page }) => {

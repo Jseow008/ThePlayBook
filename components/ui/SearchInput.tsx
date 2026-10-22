@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { beginSearchJourney } from "@/lib/search-journey-measurement";
+import { beginSearchJourney, resolveSearchQueryHref, setSearchDraftQuery } from "@/lib/search-journey-measurement";
 
 const RECENT_SEARCHES_KEY = "netflux_recent_searches";
 const MAX_RECENT_SEARCHES = 5;
@@ -61,6 +61,9 @@ export function SearchInput({
     const latestQueryRef = useRef(initialQuery);
     const isFocusedRef = useRef(false);
     const pendingSearchQueryRef = useRef<string | null>(null);
+    const draftQueryRef = useRef<string | null>(null);
+
+    useEffect(() => () => setSearchDraftQuery(null), []);
 
     // Load recent searches from localStorage
     useEffect(() => {
@@ -83,6 +86,12 @@ export function SearchInput({
         const normalizedInitialQuery = normalizeQuery(initialQuery);
         const normalizedCurrentQuery = normalizeQuery(latestQueryRef.current);
         const pendingSearchQuery = pendingSearchQueryRef.current;
+
+        if (draftQueryRef.current !== null) {
+            if (normalizedInitialQuery !== normalizeQuery(draftQueryRef.current)) return;
+            draftQueryRef.current = null;
+            setSearchDraftQuery(null);
+        }
 
         if (pendingSearchQuery !== null) {
             if (normalizedInitialQuery === pendingSearchQuery) {
@@ -139,7 +148,9 @@ export function SearchInput({
             saveToRecent(normalizedSearchQuery);
         }
 
-        const href = buildSearchHref(searchQuery);
+        const href = resolveSearchQueryHref(buildSearchHref(searchQuery), searchQuery);
+        draftQueryRef.current = null;
+        setSearchDraftQuery(null);
         beginSearchJourney(href, "query", trigger);
         if (replace) {
             router.replace(href);
@@ -219,6 +230,8 @@ export function SearchInput({
                         value={query}
                         onChange={(e) => {
                             latestQueryRef.current = e.target.value;
+                            draftQueryRef.current = e.target.value;
+                            setSearchDraftQuery(e.target.value);
                             setQuery(e.target.value);
                         }}
                         onFocus={() => {

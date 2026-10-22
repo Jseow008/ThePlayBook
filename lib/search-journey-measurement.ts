@@ -27,6 +27,7 @@ let pendingJourney: PendingJourney | null = null;
 let settledJourney: SettledJourney | null = null;
 let documentMeasurementConsumed = false;
 let visibilityListenerAttached = false;
+let draftQuery: string | null = null;
 
 function routeKey(url: URL) {
     if (url.pathname !== "/search") return `${url.pathname}${url.search}`;
@@ -87,8 +88,31 @@ export function resolveSearchFilterHref(href: string, filterParam: SearchFilterP
     // The server-rendered links can still reflect the previous route while a
     // filter transition is loading. Apply the next choice to the latest intent.
     const target = new URL(pendingJourney?.target ?? current.href, current.origin);
+    if (draftQuery !== null) {
+        if (draftQuery) target.searchParams.set("q", draftQuery);
+        else target.searchParams.delete("q");
+    }
     if (value) target.searchParams.set(filterParam, value);
     else target.searchParams.delete(filterParam);
+    target.searchParams.delete("page");
+    target.searchParams.delete("cursor");
+    return routeKey(target);
+}
+
+export function setSearchDraftQuery(query: string | null) {
+    draftQuery = query === null ? null : query.trim();
+}
+
+export function resolveSearchQueryHref(href: string, query: string) {
+    if (typeof window === "undefined") return href;
+
+    const renderedTarget = new URL(href, window.location.origin);
+    const current = new URL(window.location.href);
+    if (renderedTarget.origin !== current.origin || renderedTarget.pathname !== "/search" || current.pathname !== "/search") return href;
+
+    const target = new URL(pendingJourney?.target ?? current.href, current.origin);
+    if (query.trim()) target.searchParams.set("q", query.trim());
+    else target.searchParams.delete("q");
     target.searchParams.delete("page");
     target.searchParams.delete("cursor");
     return routeKey(target);

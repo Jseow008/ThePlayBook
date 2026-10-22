@@ -134,7 +134,14 @@ export async function RecentCatalog({
                     />
                 </>
             ) : (
-                <p className="py-12 text-center text-muted-foreground">No content matches these filters.</p>
+                <div className="py-12 text-center text-muted-foreground">
+                    <p>No content matches these filters.</p>
+                    {(categoryLabel || type) ? (
+                        <Link href="/search" className="focus-ring mt-4 inline-flex rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium transition-colors hover:bg-secondary/50 hover:text-foreground">
+                            Clear all filters
+                        </Link>
+                    ) : null}
+                </div>
             )}
         </div>
     );
@@ -179,7 +186,14 @@ export async function PopularCatalog({
                     <ContentGrid items={items} />
                 </div>
             ) : (
-                <p className="py-12 text-center text-muted-foreground">No popular content matches these filters yet.</p>
+                <div className="py-12 text-center text-muted-foreground">
+                    <p>No popular content matches these filters yet.</p>
+                    {(categoryLabel || type) ? (
+                        <Link href={buildSearchHref({ sort: "popular" })} className="focus-ring mt-4 inline-flex rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium transition-colors hover:bg-secondary/50 hover:text-foreground">
+                            Clear all filters
+                        </Link>
+                    ) : null}
+                </div>
             )}
         </>
     );

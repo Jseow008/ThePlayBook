@@ -79,6 +79,20 @@ describe("Search journey measurement", () => {
         expect(capture.mock.calls[2][1]).toMatchObject({ action_kind: "filter", filter_kind: scenario.secondKind });
     });
 
+    it("keeps a newly typed query and the latest type choice during overlapping navigation", async () => {
+        window.history.replaceState(null, "", "/search?q=Disney&type=podcast");
+        const { beginSearchJourney, resolveSearchFilterHref, resolveSearchQueryHref, setSearchDraftQuery } = await import("@/lib/search-journey-measurement");
+
+        setSearchDraftQuery("Google");
+        const filterHref = resolveSearchFilterHref("/search?q=Disney&type=book", "type", "book");
+        expect(filterHref).toBe("/search?q=Google&type=book");
+        beginSearchJourney(filterHref, "filter", "link", "type");
+
+        const queryHref = resolveSearchQueryHref("/search?q=Google&type=podcast", "Google");
+        expect(queryHref).toBe("/search?q=Google&type=book");
+        setSearchDraftQuery(null);
+    });
+
     it("normalizes equivalent result keys but rejects results from a different query", async () => {
         const { beginSearchJourney, settleSearchJourney } = await import("@/lib/search-journey-measurement");
 

@@ -312,6 +312,17 @@ describe("SearchPage", () => {
         consoleError.mockRestore();
     });
 
+    it("offers a filter reset for empty newest and popular catalogs", async () => {
+        const { RecentCatalog, PopularCatalog } = await import("@/app/(public)/search/search-components");
+
+        render(await RecentCatalog({ categoryLabel: "Business", type: "podcast", page: 1,
+            preloadedPage: Promise.resolve({ items: [], totalItems: 0, totalPages: 1 }) }));
+        expect(screen.getByRole("link", { name: "Clear all filters" })).toHaveAttribute("href", "/search");
+
+        render(await PopularCatalog({ categoryLabel: "Business", type: "podcast", preloadedItems: Promise.resolve([]) }));
+        expect(screen.getAllByRole("link", { name: "Clear all filters" })[1]).toHaveAttribute("href", "/search?sort=popular");
+    });
+
     it("defaults the full catalog to newest-first when no query or category is present", async () => {
         rpcMock.mockImplementation((fn: string) => {
             if (fn === "get_category_stats") {

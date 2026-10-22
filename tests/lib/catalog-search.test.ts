@@ -43,6 +43,22 @@ describe("catalog search server contract", () => {
         });
     });
 
+    it("reports missing cursor configuration without sending a database query", async () => {
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+        delete process.env.CATALOG_SEARCH_CURSOR_SECRET;
+
+        await expect(searchCatalog({ query: "Disney" })).rejects.toMatchObject({
+            code: "UNAVAILABLE",
+            requestId: expect.any(String),
+        });
+        expect(rpc).not.toHaveBeenCalled();
+        expect(consoleError).toHaveBeenCalledWith(
+            expect.objectContaining({ message: "Catalog search cursor configuration missing" }),
+            expect.objectContaining({ error_message: "CATALOG_SEARCH_CURSOR_SECRET is not set" }),
+        );
+        consoleError.mockRestore();
+    });
+
     it("binds a signed continuation cursor to its exact filters", async () => {
         rpc.mockResolvedValueOnce({ data: [...Array(21)].map((_, index) => ({
             ...row,
