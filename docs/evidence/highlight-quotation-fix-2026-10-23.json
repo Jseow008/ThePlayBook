@@ -4,12 +4,12 @@
   "base_commit": "b10fb615c0f2e571e8fcc506fb9bb3e99420fd2b",
   "source_sha256": {
     "components/reader/ReaderView.tsx": "2b6cb3de9bb9f8ea2c21d76d9dd131ebfcfe28547f24b8f804d6ace63565e7c7",
-    "components/reader/SegmentAccordion.tsx": "c4dc8568f6917546afc30fef15e67b514be20a61c68a076eb6b8d317d4dc349b",
+    "components/reader/SegmentAccordion.tsx": "1bb08d1e48b249ae51ec8a90e04c56f1c9c44227a88f6cdc4829f25f57fc23d3",
     "lib/highlight-anchoring.ts": "5103158ab7897fefc1ec594335203b8ee00c27cbf5952c4520a233048ceeee13"
   },
   "focused_tests": {
     "files": 3,
-    "passed": 100
+    "passed": 107
   },
   "historical_replay": {
     "scenarios": 8,
@@ -18,7 +18,7 @@
     "current_marks": []
   },
   "browser": {
-    "harness": "real ReaderView and SegmentAccordion, synthetic hook data and unrelated controls; no API/database verification",
+    "harness": "real ReaderView and SegmentAccordion on final rendered-text anchoring, synthetic hook data and unrelated controls; no API/database verification",
     "viewports": [
       {
         "width": 1440,
@@ -37,10 +37,12 @@
       "validDuplicate",
       "staleDuplicate",
       "legacyDuplicate",
+      "validBlockDuplicate",
+      "staleBlockDuplicate",
       "markdown"
     ],
-    "observations": 16,
-    "correct": 16,
+    "observations": 20,
+    "correct": 20,
     "horizontal_overflow": false,
     "cross_section_marks": false
   },
@@ -53,15 +55,16 @@
   "full_suite": {
     "passed_files": 245,
     "skipped_files": 10,
-    "passed_tests": 1867,
+    "passed_tests": 1874,
     "skipped_tests": 287,
     "capacity_harness_passed": 34,
-    "exit_code": 0
+    "exit_code": 0,
+    "isolated_from_build_lint_and_typecheck": true
   },
-  "lint": "passed",
-  "typecheck": "passed",
+  "lint": "passed after rendered-position correction",
+  "typecheck": "passed after rendered-position correction",
   "build": {
-    "status": "passed",
+    "status": "passed after rendered-position correction",
     "sharp_trace_check": "passed",
     "critical_css": "passed",
     "environment": "synthetic local URL and anon value; no database connection or production credentials"
@@ -69,6 +72,17 @@
   "production_dependency_audit": {
     "vulnerabilities": 0
   },
-  "application_candidate_commit": "5904ee7e",
-  "pull_request": "https://github.com/Jseow008/ThePlayBook/pull/277"
+  "application_candidate_commit": "supersedes 5904ee7e; final application identified by source_sha256 and PR head",
+  "pull_request": "https://github.com/Jseow008/ThePlayBook/pull/277",
+  "coordinate_regression": {
+    "cause": "Markdown syntax-tree positions omitted DOM block separators",
+    "fix": "validate sanitized rendered text with the same coordinates used by DOM Range capture",
+    "real_selection_capture_roundtrips_passed": 3,
+    "linked_block_duplicate_cases_passed": 4
+  },
+  "failed_attempts": [
+    "Temporary diagnostic file removed after initial suite discovery; clean rerun required.",
+    "Initial matcher used Markdown text coordinates; review caught and corrected mismatch with captured DOM positions before auto-merge.",
+    "Concurrent final suite with build/lint/type checks hit unrelated test timeouts; stopped, then isolated suite passed without changing time limits."
+  ]
 }

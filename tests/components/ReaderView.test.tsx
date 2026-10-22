@@ -398,6 +398,8 @@ describe('ReaderView', () => {
             { name: 'ambiguous stale duplicate', body: 'concentration and concentration.', start: 9, end: 22, expected: null },
             { name: 'ambiguous legacy duplicate', body: 'concentration and concentration.', start: null, end: null, expected: null },
             { name: 'unique legacy', body: 'Intro concentration improves.', start: null, end: null, expected: 6 },
+            { name: 'valid second duplicate after heading', body: '## Heading\n\nconcentration and concentration.', start: 26, end: 39, expected: 18 },
+            { name: 'stale duplicate after heading', body: '## Heading\n\nconcentration and concentration.', start: 25, end: 38, expected: null },
             { name: 'Markdown inline nodes', body: 'Intro **concen**tration improves.', start: 0, end: 13, expected: 6 },
         ])('rendering and linked opening agree: $name', async ({ body, start, end, expected }) => {
             realAccordionState.value = true;

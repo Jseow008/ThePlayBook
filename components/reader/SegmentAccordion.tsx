@@ -42,11 +42,19 @@ function collectHighlightableText(node: any): string {
     }, "");
 }
 
-function createMarkHtml(id: string, text: string, color: string, interactive: boolean) {
+function createMarkNode(id: string, text: string, color: string, interactive: boolean) {
     const bgClass = HIGHLIGHT_COLOR_CLASSES[normalizeHighlightColor(color)].bg;
     const cursorClass = interactive ? "cursor-pointer" : "cursor-text";
 
-    return `<mark class="${bgClass} text-inherit rounded-sm -mx-0.5 px-0.5 ${cursorClass} transition-colors" data-id="${id}">${text}</mark>`;
+    return {
+        type: "element",
+        tagName: "mark",
+        properties: {
+            className: `${bgClass} text-inherit rounded-sm -mx-0.5 px-0.5 ${cursorClass} transition-colors`.split(" "),
+            "data-id": id,
+        },
+        children: [{ type: "text", value: text }],
+    };
 }
 
 function applyAnchorHighlightsToTextNode(
@@ -92,10 +100,7 @@ function applyAnchorHighlightsToTextNode(
             continue;
         }
 
-        newNodes.push({
-            type: "html",
-            value: createMarkHtml(activeRange.id, sliceText, activeRange.color, interactive),
-        });
+        newNodes.push(createMarkNode(activeRange.id, sliceText, activeRange.color, interactive));
     }
 
     return newNodes;
@@ -136,12 +141,13 @@ function wrapTextNodesWithHighlights(
     node.children = newChildren;
 }
 
-function createRemarkHighlightPlugin(highlights: HighlightWithContent[], interactive: boolean = true) {
+function createRehypeHighlightPlugin(highlights: HighlightWithContent[], interactive: boolean = true) {
     return () => (tree: any) => {
         if (highlights.length === 0) return;
 
-        // This tree contains only the saved section. Never search other chapters or
-        // write recovered positions back to the saved record during rendering.
+        // Resolve against sanitized rendered text, including Markdown block separators,
+        // so positions use the same text coordinates as getTrimmedSelection's DOM Range.
+        // This tree contains only the saved section; never rewrite the saved record.
         const canonicalText = collectHighlightableText(tree);
         const anchorRanges: HighlightRenderRange[] = highlights.flatMap((highlight) => {
             const anchor = resolveHighlightAnchor(canonicalText, highlight);
@@ -180,13 +186,13 @@ const SegmentMarkdown = memo(function SegmentMarkdown({ body, segmentId, highlig
     segmentId: string;
     highlights: HighlightWithContent[];
 }) {
-    const remarkPlugins = useMemo(() => {
+    const rehypePlugins = useMemo(() => {
         const matching = highlights.filter((highlight) => highlight.segment_id === segmentId);
         return matching.length > 0
-            ? [remarkGfm, remarkBreaks, createRemarkHighlightPlugin(matching, true)]
-            : [remarkGfm, remarkBreaks];
+            ? [...REHYPE_PLUGINS, createRehypeHighlightPlugin(matching, true)]
+            : REHYPE_PLUGINS;
     }, [highlights, segmentId]);
-    return <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={REHYPE_PLUGINS}>{body}</ReactMarkdown>;
+    return <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} rehypePlugins={rehypePlugins}>{body}</ReactMarkdown>;
 });
 
 function LazySegmentMarkdown(props: React.ComponentProps<typeof SegmentMarkdown> & { expanded: boolean }) {
