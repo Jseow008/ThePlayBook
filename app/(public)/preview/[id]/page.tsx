@@ -1,3 +1,5 @@
+import { getContentReplacement } from "@/lib/server/content-replacement";
+import { ContentReplacementNotice } from "@/components/reader/ContentReplacementNotice";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ContentPreview } from "@/components/ui/ContentPreview";
@@ -15,7 +17,10 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { id } = await params;
     const preview = await getPreviewPageData(id);
-    if (!preview) return {};
+    if (!preview) {
+        const replacement = await getContentReplacement(id);
+        return replacement ? { title: "Summary replaced", robots: { index: false, follow: true } } : {};
+    }
 
     return buildPublicContentMetadata(preview.item, "preview");
 }
@@ -32,6 +37,8 @@ export default async function PreviewPage({ params, searchParams }: PageProps) {
     const preview = await getPreviewPageData(id);
 
     if (!preview) {
+        const replacement = await getContentReplacement(id);
+        if (replacement) return <ContentReplacementNotice {...replacement} />;
         notFound();
     }
 

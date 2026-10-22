@@ -368,3 +368,13 @@ and the sanitized maintenance evidence are in scope. The initially guessed old
 workflow filename returned404; workflow listing
 and the deployed cron migration established the replacement, then live SQL verified
 its health. No user data or credentials were read into the record.
+
+
+## Content replacement continuity — 22 October 2026
+
+`codex/content-continuity` preserves missing-summary records in all three Library lists and adds admin preview/confirmation, durable old-link replacement notices, immutable original editions and database deletion protection. Local replay, runtime preservation/ACL proofs, the full unit suite, production build, and desktop/mobile production-browser journey pass. This is a release candidate, not a production deployment. Hosted disposable verification, production dry-run and migration authorization remain outstanding; the existing two-reader recovery needs source/kept IDs and backup identification. See [the continuity checkpoint](CONTENT_CONTINUITY.md).
+
+
+### #274 review corrections — 22 October 2026
+
+The archived-only series deletion, original-reflection recovery link and unavailable-list controls reported at `8fb698ac` are corrected. Fresh focused component/API and full-schema local database proofs pass (54 tests), as do the production build, permission audits and the extended desktop/mobile browser journey. Existing archive protections and reader state remain intact. The [continuity checkpoint](CONTENT_CONTINUITY.md#review-corrections--22-october-2026) distinguishes this evidence from the initial candidate and retains the hosted verification/release hold.

@@ -1,3 +1,5 @@
+import { getContentReplacement } from "@/lib/server/content-replacement";
+import { ContentReplacementNotice } from "@/components/reader/ContentReplacementNotice";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ReaderView } from "@/components/reader/ReaderView";
@@ -18,7 +20,10 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
         searchParams,
     ]);
     const content = await getReadPageData(id);
-    if (!content) return {};
+    if (!content) {
+        const replacement = await getContentReplacement(id);
+        return replacement ? { title: "Summary replaced", robots: { index: false, follow: true } } : {};
+    }
 
     if (!isCanonicalReadSlug(slug, content.title)) {
         permanentRedirect(buildRedirectTarget(buildCanonicalReadPath(content.id, content.title), resolvedSearchParams));
@@ -56,6 +61,8 @@ export default async function ReadPage({ params, searchParams }: PageProps) {
     const content = await getReadPageData(id);
 
     if (!content) {
+        const replacement = await getContentReplacement(id);
+        if (replacement) return <ContentReplacementNotice {...replacement} />;
         notFound();
     }
 

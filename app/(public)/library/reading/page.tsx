@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { UnavailableLibraryItems } from "@/components/ui/UnavailableLibraryItems";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { useBatchContentItems } from "@/hooks/use-content-queries";
 import {
@@ -21,7 +22,7 @@ import {
  * Shows all items the user has started reading but not completed with filters.
  */
 export default function ContinueReadingPage() {
-    const { archiveFromProgressList, getProgress, inProgressIds, isLoaded, removeFromProgress, restoreProgressListArchive } = useReadingProgress();
+    const { archiveFromProgressList, getProgress, inProgressIds, isLoaded, restoreProgressListArchive } = useReadingProgress();
 
     // Filter/Sort State
     const [activeFilter, setActiveFilter] = useState("all");
@@ -31,22 +32,13 @@ export default function ContinueReadingPage() {
         data: allItems = [],
         isError,
         isLoading,
-        isSuccess,
         refetch,
     } = useBatchContentItems(inProgressIds, { enabled: isLoaded });
     const isPageLoading = !isLoaded || isLoading;
-    const shouldShowLibraryControls = isPageLoading || allItems.length > 0;
+    const shouldShowLibraryControls = isPageLoading || inProgressIds.length > 0;
+    const availableIds = new Set(allItems.map((item) => item.id));
+    const unavailableIds = inProgressIds.filter((id) => !availableIds.has(id));
 
-    useEffect(() => {
-        if (!isLoaded || !isSuccess || isLoading || inProgressIds.length === 0) return;
-
-        const validIds = new Set(allItems.map((item) => item.id));
-        const invalidIds = inProgressIds.filter((id) => !validIds.has(id));
-
-        if (invalidIds.length > 0) {
-            invalidIds.forEach((id) => removeFromProgress(id));
-        }
-    }, [allItems, inProgressIds, isLoaded, isLoading, isSuccess, removeFromProgress]);
 
     // Apply Filters & Sort
     const filteredItems = useMemo(() => {
@@ -89,7 +81,7 @@ export default function ContinueReadingPage() {
                         {/* Stats Summary */}
                         {shouldShowLibraryControls && (
                             <LibraryStatBadge
-                                count={allItems.length}
+                                count={inProgressIds.length}
                                 label={allItems.length === 1 ? "Item in Progress" : "Items in Progress"}
                                 isLoading={isPageLoading}
                             />
@@ -120,6 +112,21 @@ export default function ContinueReadingPage() {
                     </div>
                 )}
 
+                {!isPageLoading && !isError && (
+                    <UnavailableLibraryItems
+                        ids={unavailableIds}
+                        getProgress={getProgress}
+                        removeLabel="Hide from Continue Reading"
+                        onRemove={(id) => {
+                            archiveFromProgressList(id, "reading");
+                            toast.success("Archived from List", { action: {
+                                label: "Undo",
+                                onClick: () => restoreProgressListArchive(id, "reading"),
+                            } });
+                        }}
+                    />
+                )}
+
                 {/* Content */}
                 <div>
                     {isPageLoading ? (
@@ -142,7 +149,7 @@ export default function ContinueReadingPage() {
                                 Retry
                             </button>
                         </div>
-                    ) : allItems.length === 0 ? (
+                    ) : allItems.length === 0 && inProgressIds.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-2 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5 sm:py-20">
                             <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border/70">
                                 <Clock className="size-10 text-muted-foreground" />
@@ -160,7 +167,7 @@ export default function ContinueReadingPage() {
                                 Browse Library
                             </Link>
                         </div>
-                    ) : filteredItems.length === 0 ? (
+                    ) : allItems.length === 0 ? null : filteredItems.length === 0 ? (
                         <div className="text-center py-20">
                             <p className="text-muted-foreground">No items match this filter.</p>
                             <button

@@ -177,7 +177,7 @@ describe("ContinueReadingPage", () => {
         expect(restoreProgressListArchive).toHaveBeenCalledWith(item.id, "reading");
     });
 
-    it("removes invalid progress ids through the hook instead of manual localStorage cleanup", () => {
+    it("preserves progress when a successful catalog lookup omits a saved summary", () => {
         const removeFromProgress = vi.fn();
 
         mockUseReadingProgress.mockReturnValue({
@@ -200,7 +200,8 @@ describe("ContinueReadingPage", () => {
 
         render(<ContinueReadingPage />);
 
-        expect(removeFromProgress).toHaveBeenCalledWith("missing-item");
+        expect(removeFromProgress).not.toHaveBeenCalled();
+        expect(screen.getByRole("link", { name: "View summary status" })).toHaveAttribute("href", "/read/missing-item");
     });
 
     it("does not remove progress ids when the batch request is in an error state", () => {

@@ -308,6 +308,56 @@ export type Database = {
           },
         ]
       }
+      content_replacement: {
+        Row: {
+          created_at: string
+          replacement_id: string
+          source_id: string
+          source_title: string
+        }
+        Insert: {
+          created_at?: string
+          replacement_id: string
+          source_id: string
+          source_title: string
+        }
+        Update: {
+          created_at?: string
+          replacement_id?: string
+          source_id?: string
+          source_title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_replacement_replacement_id_fkey"
+            columns: ["replacement_id"]
+            isOneToOne: false
+            referencedRelation: "admin_content_workbench_readiness"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_replacement_replacement_id_fkey"
+            columns: ["replacement_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_replacement_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: true
+            referencedRelation: "admin_content_workbench_readiness"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_replacement_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: true
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_reader_daily: {
         Row: {
           activity_date: string
@@ -1177,6 +1227,15 @@ export type Database = {
           p_segment_timings?: Json
         }
         Returns: boolean
+      }
+      admin_replace_content: {
+        Args: {
+          p_replacement_id: string
+          p_replacement_updated_at: string
+          p_source_id: string
+          p_source_updated_at: string
+        }
+        Returns: Json
       }
       admin_update_content_graph: {
         Args: {

@@ -119,8 +119,8 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
 
     afterAll(async () => {
         await db.query("DELETE FROM public.content_item WHERE title LIKE 'Pagination catalog fixture %'").catch(() => undefined);
-        await db.query("DELETE FROM public.content_item WHERE id = ANY($1::uuid[])", [[contentExact, contentSegment, contentWithdrawn]]).catch(() => undefined);
         await db.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [[accountA, accountB]]).catch(() => undefined);
+        await db.query("DELETE FROM public.content_item WHERE id = ANY($1::uuid[])", [[contentExact, contentSegment, contentWithdrawn]]).catch(() => undefined);
         await db.end();
     });
 

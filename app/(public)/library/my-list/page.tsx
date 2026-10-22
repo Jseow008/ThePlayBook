@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { AlertCircle, Plus } from "lucide-react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { UnavailableLibraryItems } from "@/components/ui/UnavailableLibraryItems";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useBatchContentItems } from "@/hooks/use-content-queries";
@@ -20,7 +22,7 @@ import {
  * Shows content manually bookmarked by the user for later reading.
  */
 export default function MyListPage() {
-    const { myListIds, isLoaded, removeFromMyList } = useReadingProgress();
+    const { myListIds, isLoaded, removeFromMyList, addToMyList } = useReadingProgress();
 
     // Filter/Sort State
     const [activeFilter, setActiveFilter] = useState("all");
@@ -30,22 +32,13 @@ export default function MyListPage() {
         data: allItems = [],
         isError,
         isLoading,
-        isSuccess,
         refetch,
     } = useBatchContentItems(myListIds, { enabled: isLoaded });
     const isPageLoading = !isLoaded || isLoading;
-    const shouldShowLibraryControls = isPageLoading || allItems.length > 0;
+    const shouldShowLibraryControls = isPageLoading || myListIds.length > 0;
+    const availableIds = new Set(allItems.map((item) => item.id));
+    const unavailableIds = myListIds.filter((id) => !availableIds.has(id));
 
-    useEffect(() => {
-        if (!isLoaded || !isSuccess || isLoading || myListIds.length === 0) return;
-
-        const validIds = new Set(allItems.map((item) => item.id));
-        const invalidIds = myListIds.filter((id) => !validIds.has(id));
-
-        if (invalidIds.length > 0) {
-            invalidIds.forEach((id) => removeFromMyList(id));
-        }
-    }, [allItems, isLoaded, isLoading, isSuccess, myListIds, removeFromMyList]);
 
     // Apply Filters & Sort
     const filteredItems = useMemo(() => {
@@ -92,7 +85,7 @@ export default function MyListPage() {
                         {/* Stats Summary - Desktop only for now to save space on mobile */}
                         {shouldShowLibraryControls && (
                             <LibraryStatBadge
-                                count={allItems.length}
+                                count={myListIds.length}
                                 label={allItems.length === 1 ? "Saved Item" : "Saved Items"}
                                 isLoading={isPageLoading}
                             />
@@ -121,6 +114,20 @@ export default function MyListPage() {
                     </div>
                 )}
 
+                {!isPageLoading && !isError && (
+                    <UnavailableLibraryItems
+                        ids={unavailableIds}
+                        removeLabel="Remove from Saved"
+                        onRemove={(id) => {
+                            void removeFromMyList(id);
+                            toast.success("Removed from Saved", { action: {
+                                label: "Undo",
+                                onClick: () => { void addToMyList(id); },
+                            } });
+                        }}
+                    />
+                )}
+
                 {/* Content */}
                 <div>
                     {isPageLoading ? (
@@ -143,7 +150,7 @@ export default function MyListPage() {
                                 Retry
                             </button>
                         </div>
-                    ) : allItems.length === 0 ? (
+                    ) : allItems.length === 0 && myListIds.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-2 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5 sm:py-20">
                             <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-4 border border-border/70 sm:mb-6">
                                 <Plus className="size-10 text-muted-foreground" />
@@ -161,7 +168,7 @@ export default function MyListPage() {
                                 Browse Library
                             </Link>
                         </div>
-                    ) : filteredItems.length === 0 ? (
+                    ) : allItems.length === 0 ? null : filteredItems.length === 0 ? (
                         <div className="text-center py-20">
                             <p className="text-muted-foreground">No items match this filter.</p>
                             <button

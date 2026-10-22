@@ -255,6 +255,22 @@ describe("BrainClientPage", () => {
         expect(reflectionText.closest(".group")).toHaveClass("bg-background/30", "ring-white/8");
     });
 
+    it.each(["item=content-1", "item=content-1&type=reflection"])("shows retained original reflections through %s", (query) => {
+        searchParamsState.value = query;
+        reflectionsState.value = [
+            { id: "old-reflection", user_id: "user-1", content_item_id: "content-1",
+                prompt: "What stayed with you?", reflection_text: "Retained original reflection",
+                created_at: "2026-03-12T12:00:00.000Z", updated_at: null, content_item: null },
+            { id: "other-reflection", user_id: "user-1", content_item_id: "content-2",
+                prompt: "Other", reflection_text: "Unrelated reflection",
+                created_at: "2026-03-12T12:00:00.000Z", updated_at: null, content_item: null },
+        ];
+        render(<BrainClientPage initialPage={initialPage} />);
+        expect(screen.getByText("Retained original reflection")).toBeInTheDocument();
+        expect(screen.queryByText("Unrelated reflection")).not.toBeInTheDocument();
+        expect(screen.queryByText("Reflection search is not available yet")).not.toBeInTheDocument();
+    });
+
     it("lets users edit and delete a reflection from the notes page", async () => {
         reflectionsState.value = [{
             id: "reflection-1",

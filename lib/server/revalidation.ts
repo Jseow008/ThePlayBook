@@ -165,3 +165,8 @@ export function revalidateSeriesAdminSurfaces(slugs: Array<string | null | undef
         ...slugs.filter((slug): slug is string => Boolean(slug)).map((slug) => `/series/${slug}`),
     ]);
 }
+
+export function revalidateReplacementRoutes() {
+    revalidatePath("/read/[id]/[[...slug]]", "page");
+    revalidatePath("/preview/[id]", "page");
+}
