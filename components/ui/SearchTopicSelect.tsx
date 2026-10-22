@@ -3,7 +3,7 @@
 import { ChevronDown, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { beginSearchJourney } from "@/lib/search-journey-measurement";
+import { beginSearchJourney, resolveSearchFilterHref } from "@/lib/search-journey-measurement";
 
 interface SearchTopicSelectProps {
     query?: string;
@@ -56,8 +56,12 @@ export function SearchTopicSelect({ query, type, sort, value = "", options }: Se
                 value={value}
                 onChange={(event) => {
                     const nextCategory = event.target.value || undefined;
-                    const href = buildSearchHref({ query, category: nextCategory, type, sort });
-                    beginSearchJourney(href, "filter", "select");
+                    const href = resolveSearchFilterHref(
+                        buildSearchHref({ query, category: nextCategory, type, sort }),
+                        "category",
+                        nextCategory,
+                    );
+                    beginSearchJourney(href, "filter", "select", "topic");
                     startTransition(() => {
                         router.push(href);
                     });

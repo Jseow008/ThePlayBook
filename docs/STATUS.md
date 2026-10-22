@@ -1,5 +1,60 @@
 # Netflux release and workstream status
 
+## Search filter and save notice repair — 21 October 2026
+
+**22 October CI repair:** [required `validate` run](https://github.com/Jseow008/ThePlayBook/actions/runs/39623078563)
+failed before the new rapid-filter test exercised either click. Its captured
+page had only the Productivity topic from the CI catalog fixture, while the
+test required a Business link. The browser test now selects an available topic
+and waits for both client-side link handlers to hydrate before dispatching the
+two immediate clicks. The Book → Business component case remains. The first
+local version of the adjusted browser test reached the wrong route when clicks
+preceded hydration; the hydration precondition corrected that setup failure.
+The revised browser regression passed locally across all six configured
+viewports; typecheck, focused lint, and whitespace checks passed. Correction
+commit `e140b80e` is pushed to PR #273; its new `PR scope` check passed, and
+squash auto-merge remains enabled. No production application code or test has
+changed yet from this correction. Next action: inspect the new hosted
+`validate` result; investigate a failure, or let required checks gate the
+merge before checking production. The historical conflict and other open
+issues below remain unchanged.
+
+Branch `codex/search-filter-save-notice` in managed worktree
+`/Users/j/.codex/worktrees/search-filter-save-notice/Lifebook` starts from freshly
+fetched `origin/main`. Implementation commit `6f6537b1` is in
+[PR #273](https://github.com/Jseow008/ThePlayBook/pull/273); its GitHub file
+list matches the intended scope. The focused change dismisses the snapshot rate-limit
+warning when that snapshot recovers, while retaining a separate warning ID for
+mutation conflicts. Search filter actions now apply their choice to the latest
+pending Search route so rapid Book → Business clicks keep both selections.
+Search layout, labels, ranking, cache behavior, and reading data are unchanged.
+No database or production configuration change is included.
+
+Evidence: 80 focused unit/component tests, typecheck, targeted lint, and the
+new rapid-filter browser regression on desktop and mobile passed. The full
+Search browser file passed 8/10 checks; the existing query → clear test failed
+on both viewports because the local catalog returned **Search needs another
+try** instead of the expected **No results found**. That test does not use the
+changed filter interaction. The observed failure remains unresolved and is not
+counted as a passing check. No production write or synthetic production
+analytics event was made during local verification.
+
+User testing also observed a successful 2/11 save → reload, then restoration
+to 1/11, five isolated recovery tests, and two internal superseded-action
+events in PostHog. Those observations do not establish live disconnection
+behavior or verify each superseded event's join. The historical recurring
+conflict and earlier live failure cause remain open; older rejected changes
+were untouched. The previously found empty-state and topic-label issues remain
+open. Keep the fixed 24 October Search baseline cutoff and the live
+publish/withdrawal freshness gap; do not select a rendering change from this
+repair.
+
+PR #273's GitHub file list matches the local scope, `PR scope` passed, and
+squash auto-merge is queued behind `validate`, `Security Validation`, and
+`Catalog Search Evidence`. Next action: investigate any required-check failure;
+otherwise, after merge and deployment, verify the two reported interactions in
+production without altering real reading data.
+
 ## Controlled Search collection and save → reload — 21 October 2026
 
 PR #271 is merged as `19d7b9f8` and its production deployment was ready on

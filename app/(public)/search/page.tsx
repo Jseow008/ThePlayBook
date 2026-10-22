@@ -149,6 +149,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             return (
                                 <SearchFilterLink
                                     key={t}
+                                    filterParam="type"
+                                    filterValue={t === "All" ? undefined : t.toLowerCase()}
                                     href={buildSearchHref({
                                         query,
                                         category: selectedTopicLabel,
@@ -174,6 +176,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         </p>
                         <div className="flex flex-wrap justify-start gap-2">
                             <SearchFilterLink
+                                filterParam="category"
                                 href={buildSearchHref({
                                     query,
                                     type: selectedTypeParam,
@@ -193,6 +196,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 return (
                                     <SearchFilterLink
                                         key={item.label}
+                                        filterParam="category"
+                                        filterValue={item.label}
                                         href={buildSearchHref({
                                             query,
                                             category: item.label,
@@ -229,6 +234,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         </p>
                         <div className="flex items-center gap-2">
                             <SearchFilterLink
+                                filterParam="sort"
+                                filterValue="recent"
                                 href={buildSearchHref({
                                     category: selectedTopicLabel,
                                     type: selectedTypeParam,
@@ -244,6 +251,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 Newest
                             </SearchFilterLink>
                             <SearchFilterLink
+                                filterParam="sort"
+                                filterValue="popular"
                                 href={buildSearchHref({
                                     category: selectedTopicLabel,
                                     type: selectedTypeParam,

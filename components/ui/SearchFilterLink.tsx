@@ -2,8 +2,9 @@
 
 import { Loader2 } from "lucide-react";
 import Link, { useLinkStatus } from "next/link";
+import { useRouter } from "next/navigation";
 import type { ComponentProps, ReactNode } from "react";
-import { beginSearchJourney } from "@/lib/search-journey-measurement";
+import { beginSearchJourney, resolveSearchFilterHref, type SearchFilterParam } from "@/lib/search-journey-measurement";
 
 function PendingIndicator() {
     const { pending } = useLinkStatus();
@@ -22,15 +23,30 @@ export function SearchFilterLink({
     children,
     className,
     href,
+    filterParam,
+    filterValue,
     onNavigate,
     ...props
-}: ComponentProps<typeof Link> & { children: ReactNode }) {
+}: Omit<ComponentProps<typeof Link>, "href"> & {
+    children: ReactNode;
+    href: string;
+    filterParam: SearchFilterParam;
+    filterValue?: string;
+}) {
+    const router = useRouter();
+    const selectedFilterKind = filterParam === "category" ? "topic" : filterParam;
+
     return (
         <Link
             {...props}
             href={href}
             onNavigate={(event) => {
-                if (typeof href === "string") beginSearchJourney(href, "filter", "link");
+                const nextHref = resolveSearchFilterHref(href, filterParam, filterValue);
+                beginSearchJourney(nextHref, "filter", "link", selectedFilterKind);
+                if (nextHref !== href) {
+                    event.preventDefault();
+                    router.push(nextHref);
+                }
                 onNavigate?.(event);
             }}
             className={`relative ${className ?? ""}`}

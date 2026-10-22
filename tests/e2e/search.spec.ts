@@ -46,6 +46,42 @@ test.describe('/search', () => {
         await expect(page.getByRole('heading', { name: 'Money & Investments Content' })).toBeVisible();
     });
 
+    test('preserves two filter choices made before the first navigation settles', async ({ page }) => {
+        await page.goto('/search?type=podcast');
+        await expect(page.locator('a[href*="category="]').first()).toBeVisible();
+        // Server-rendered links can be visible before their client navigation
+        // handlers hydrate. Exercise rapid in-app clicks only after both do.
+        await page.waitForFunction(() => {
+            const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href^="/search"]'));
+            const book = links.find((link) => link.textContent?.trim() === 'Book');
+            const topic = links.find((link) => new URL(link.href).searchParams.has('category'));
+            return [book, topic].every((link) =>
+                link && Object.keys(link).some((key) => key.startsWith('__reactProps$')),
+            );
+        });
+
+        const topic = await page.evaluate(() => {
+            const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href^="/search"]'));
+            const book = links.find((link) => link.textContent?.trim() === 'Book');
+            const topicLink = links.find((link) => new URL(link.href).searchParams.has('category'));
+            if (!book || !topicLink) throw new Error('Search filters did not render');
+            const category = new URL(topicLink.href).searchParams.get('category');
+            const label = topicLink.textContent?.trim();
+            if (!category || !label) throw new Error('Search topic is missing its category or label');
+            book.click();
+            topicLink.click();
+            return { category, label };
+        });
+
+        await expect(page).toHaveURL((url) =>
+            url.pathname === '/search'
+            && url.searchParams.get('category') === topic.category
+            && url.searchParams.get('type') === 'book',
+        );
+        await expect(page.getByRole('link', { name: 'Book', exact: true })).toHaveClass(/bg-primary/);
+        await expect(page.getByRole('link', { name: topic.label, exact: true })).toHaveClass(/bg-primary/);
+    });
+
     test('falls back to All when an invalid type parameter is provided', async ({ page }) => {
         await page.goto('/search?type=invalid');
 
