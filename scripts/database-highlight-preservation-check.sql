@@ -353,8 +353,9 @@ BEGIN
         RAISE EXCEPTION 'DB-002 regression: draft transition removed the saved highlight';
     END IF;
 
-    DELETE FROM public.content_item WHERE id = v_content_id;
+    -- Remove synthetic personal records before deleting their protected content.
     DELETE FROM auth.users WHERE id = v_user_id;
+    DELETE FROM public.content_item WHERE id = v_content_id;
 
     IF EXISTS (SELECT 1 FROM public.content_item WHERE id = v_content_id)
        OR EXISTS (SELECT 1 FROM auth.users WHERE id = v_user_id) THEN
