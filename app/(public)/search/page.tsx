@@ -45,6 +45,8 @@ interface NormalizedTopic {
     rawValues: string[];
 }
 
+const NON_TOPIC_CATEGORIES = new Set(["book_summary"]);
+
 function buildNormalizedTopics(categoryStats: CategoryStat[]) {
     return buildCanonicalCategoryStats(categoryStats)
         .map((item) => ({
@@ -67,6 +69,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     if (aliasCategory) {
         redirect(buildSearchHref({ query, category: aliasCategory, type: selectedTypeParam, sort: selectedSort, page: selectedPage, cursor }));
+    }
+    if (NON_TOPIC_CATEGORIES.has(canonicalCategory)) {
+        redirect(buildSearchHref({ query, type: selectedTypeParam, sort: selectedSort }));
     }
 
     const hasContentSearch = (query?.trim().length ?? 0) > 0;
@@ -93,7 +98,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const categoryStats = await categoryStatsPromise;
     const contentTypes = ["All", "Book", "Podcast", "Article"];
     const normalizedTopics = buildNormalizedTopics(categoryStats);
-    const topicsByLabel = new Map(normalizedTopics.map((topic) => [topic.label, topic]));
+    // This catalog classification describes the content format, not a topic.
+    const searchableTopics = normalizedTopics.filter((topic) => !NON_TOPIC_CATEGORIES.has(topic.label));
+    const topicsByLabel = new Map(searchableTopics.map((topic) => [topic.label, topic]));
     const selectedTopic = canonicalCategory
         ? topicsByLabel.get(canonicalCategory) ?? {
             label: canonicalCategory,
@@ -104,7 +111,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const curatedTopicItems = CURATED_SEARCH_TOPICS.map((label) => topicsByLabel.get(label)).filter(
         (item): item is NormalizedTopic => Boolean(item)
     );
-    const dropdownLabels = normalizedTopics
+    const dropdownLabels = searchableTopics
         .map((item) => item.label)
         .filter((label) => !CURATED_SEARCH_TOPICS.includes(label as typeof CURATED_SEARCH_TOPICS[number]));
     const dropdownOptions = Array.from(new Set([

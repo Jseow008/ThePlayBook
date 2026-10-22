@@ -7,6 +7,9 @@ export const CONTENT_CATEGORY_ALIASES = {
     Pregnancy: "Parenting",
     "Money & Finance": "Money & Investments",
     "Science & Learning": "Science",
+    "Science and Technology": "Science & Technology",
+    "Decision Making": "Decision-Making",
+    "Self-help": "Self-Help",
     Technology: "Technology & the Future",
     Wealth: "Money & Investments",
 } as const;

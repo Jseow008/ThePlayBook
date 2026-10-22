@@ -1,5 +1,32 @@
 # Netflux release and workstream status
 
+## Search empty-state and topic correction — 22 October 2026
+
+PR #273 is live at `bdfe353c`; the reported Book → Business and offline-warning
+recovery checks passed in production. The next scoped branch is
+`codex/search-clear-topic-corrections` in
+`/Users/j/.codex/worktrees/search-clear-topic-corrections/Lifebook`, based on
+fresh `origin/main` `bdfe353c`. It keeps Search layout, ranking, cache behavior,
+and stored catalog rows unchanged. The zero-result action now preserves the
+query when clearing type/topic filters, and its apostrophe renders normally.
+When no filters remain, the action explicitly clears the search. The topic
+picker omits `book_summary` and groups only the reported spelling variants.
+
+A read-only production category count confirmed distinct rows for Self-help
+(2) / Self-Help (1), Decision Making (1) / Decision-Making (1), and Science &
+Technology (1) / Science and Technology (1); `book_summary` has one row. The
+Search SQL compares raw category strings exactly, so the variants previously
+split results. The branch passes 60 focused Search/landing tests, typecheck,
+targeted lint, and whitespace checks. A new browser regression covers the
+query-preserving clear action for CI's desktop and responsive projects. Local
+Playwright did not reach an assertion: the development server failed to answer
+requests after two setup attempts, including with local dependencies copied.
+This is a verification limitation, not a passing browser result. No production
+catalog, database schema, configuration, or reading data changed. Next action:
+publish the scoped PR, inspect its file list and required checks, then enable
+squash auto-merge if scope passes. Keep the 24 October Search baseline cutoff,
+historical progress conflict, and live publish/withdrawal freshness separate.
+
 ## Search filter and save notice repair — 21 October 2026
 
 **22 October CI repair:** [required `validate` run](https://github.com/Jseow008/ThePlayBook/actions/runs/39623078563)

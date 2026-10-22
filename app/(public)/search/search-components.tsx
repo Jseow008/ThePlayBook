@@ -427,7 +427,7 @@ function renderSearchResults({
                     <p className="text-sm md:text-base text-muted-foreground max-w-sm mx-auto mb-3 md:mb-6">
                         {outcome === "input_empty"
                             ? "Try a more specific word or phrase."
-                            : "We couldn&apos;t find anything matching that title, author, category, or filter."}
+                            : "We couldn't find anything matching that title, author, category, or filter."}
                     </p>
                     <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                         {outcome !== "input_empty" && hasQuery ? (
@@ -440,10 +440,10 @@ function renderSearchResults({
                             </Link>
                         ) : null}
                         <Link
-                            href="/search"
+                            href={filtersCount > 0 ? buildSearchHref({ query }) : "/search"}
                             className="focus-ring inline-flex items-center gap-2 rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
                         >
-                            Clear all filters
+                            {filtersCount > 0 ? "Clear all filters" : "Clear search"}
                         </Link>
                     </div>
                 </div>

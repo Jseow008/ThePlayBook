@@ -35,6 +35,21 @@ test.describe('/search', () => {
         await expect(searchInput).toHaveValue('');
     });
 
+    test('clears a no-result type filter without clearing the search query', async ({ page }) => {
+        const searchTerm = `unmatched-${Date.now()}`;
+        await page.goto(`/search?q=${searchTerm}&type=book`);
+
+        await expect(page.getByRole('heading', { name: 'No results found' })).toBeVisible();
+        await expect(page.getByText("We couldn't find anything matching that title, author, category, or filter.")).toBeVisible();
+
+        await page.getByRole('link', { name: 'Clear all filters' }).click();
+        await expect(page).toHaveURL((url) => url.pathname === '/search'
+            && url.searchParams.get('q') === searchTerm
+            && !url.searchParams.has('type')
+            && !url.searchParams.has('category'));
+        await expect(page.getByRole('searchbox', { name: /search content/i })).toHaveValue(searchTerm);
+    });
+
     test('preserves category when switching type filters', async ({ page }) => {
         await page.goto('/search?category=Finance');
 
