@@ -93,7 +93,7 @@ export function HighlightPopover({
         updatePlacement();
         window.addEventListener("resize", updatePlacement);
         return () => window.removeEventListener("resize", updatePlacement);
-    }, [mounted, updatePlacement, variant]);
+    }, [mounted, updatePlacement, variant, isEditing, noteDraft.checking, noteDraft.conflict, noteDraft.error]);
 
     useEffect(() => {
         const normalizedColor = normalizeHighlightColor(currentColor);
