@@ -6,6 +6,8 @@
 
 import { notFound } from "next/navigation";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { fetchPublishedContentOptions } from "@/lib/server/content-requests";
+import { ReplaceContentPanel } from "@/components/admin/ReplaceContentPanel";
 import { ContentForm } from "@/components/admin/ContentForm";
 import { getAdminSeriesOptions } from "@/lib/server/admin-series";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
@@ -24,7 +26,7 @@ export default async function EditContentPage({ params, searchParams }: EditCont
     const supabase = getAdminClient();
 
     // Fetch content with segments and artifacts
-    const [seriesOptions, { data: contentItemRaw, error }] = await Promise.all([
+    const [seriesOptions, { data: contentItemRaw, error }, replacementOptions] = await Promise.all([
         getAdminSeriesOptions(),
         supabase
         .from("content_item")
@@ -37,6 +39,7 @@ export default async function EditContentPage({ params, searchParams }: EditCont
         .is("deleted_at", null)
         .order("order_index", { referencedTable: "segment" })
         .single(),
+        fetchPublishedContentOptions(),
     ]);
 
     if (error || !contentItemRaw) {
@@ -109,6 +112,8 @@ export default async function EditContentPage({ params, searchParams }: EditCont
                     Update the content for &quot;{contentItem.title}&quot;
                 </p>
             </div>
+
+            <ReplaceContentPanel contentId={id} options={replacementOptions} />
 
             <ContentForm
                 initialData={formData}

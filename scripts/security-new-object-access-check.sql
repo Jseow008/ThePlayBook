@@ -14,6 +14,9 @@ DECLARE
             ('content_feedback', 'authenticated'),
             ('content_item', 'anon'),
             ('content_item', 'authenticated'),
+            -- Public replacement notices contain no personal records; destination visibility is enforced by RLS.
+            ('content_replacement', 'anon'),
+            ('content_replacement', 'authenticated'),
             ('content_request_notifications', 'anon'),
             ('content_request_notifications', 'authenticated'),
             ('content_request_votes', 'anon'),

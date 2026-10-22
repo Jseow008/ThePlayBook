@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/server/content-replacement", () => ({ getContentReplacement: vi.fn().mockResolvedValue(null) }));
+
 describe("public content routes", () => {
     beforeEach(() => {
         vi.resetModules();
