@@ -260,8 +260,8 @@ describeDatabase("frozen personal retrieval corpus through real Auth and product
             ],
         }, null, 2) + "\n");
         try {
-            if (contentIds.length) await db.query("DELETE FROM public.content_item WHERE id = ANY($1::uuid[])", [contentIds]);
             if (accounts.size) await db.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [[...accounts.values()].map((account) => account.id)]);
+            if (contentIds.length) await db.query("DELETE FROM public.content_item WHERE id = ANY($1::uuid[])", [contentIds]);
         } finally {
             if (fixtureLock) {
                 await fixtureLock.query("SELECT pg_advisory_unlock(91008, 2)");

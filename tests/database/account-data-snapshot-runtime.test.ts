@@ -165,6 +165,10 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         await resetAccountDataSnapshotPoolForTests();
         await db.query("DELETE FROM public.content_requests WHERE id = $1", [requestExport]).catch(() => undefined);
         await db.query(
+            "DELETE FROM auth.users WHERE id = ANY($1::uuid[])",
+            [[accountA, accountB, accountMutation, accountC, accountD, accountMaintenance, accountExport, accountCrossCollectionExport]],
+        ).catch(() => undefined);
+        await db.query(
             "DELETE FROM public.content_item WHERE id = ANY($1::uuid[])",
             [[
                 contentA,
@@ -173,10 +177,6 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
                 crossCollectionAddedLibraryContentId,
                 crossCollectionAddedReflectionContentId,
             ]],
-        ).catch(() => undefined);
-        await db.query(
-            "DELETE FROM auth.users WHERE id = ANY($1::uuid[])",
-            [[accountA, accountB, accountMutation, accountC, accountD, accountMaintenance, accountExport, accountCrossCollectionExport]],
         ).catch(() => undefined);
         await workerDb.end();
         await db.end();

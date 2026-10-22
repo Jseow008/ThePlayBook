@@ -144,8 +144,8 @@ describeDatabase("typed personal retrieval through real ordinary-account Supabas
     afterAll(async () => {
         if (workerToken) await releaseWorker(workerToken);
         if (resetAccountDataSnapshotPoolForTests) await resetAccountDataSnapshotPoolForTests();
-        await db.query("DELETE FROM public.content_item WHERE id = ANY($1::uuid[])", [[contentId, otherContentId, withdrawnContentId]]);
         await db.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [[accountA, accountB].filter(Boolean)]);
+        await db.query("DELETE FROM public.content_item WHERE id = ANY($1::uuid[])", [[contentId, otherContentId, withdrawnContentId]]);
         await db.end();
     }, 30_000);
 
@@ -624,8 +624,9 @@ describeDatabase("account deletion library revision regression", () => {
     afterAll(async () => {
         // Remove library rows before Auth cleanup so a regression cannot leak
         // synthetic users merely because the assertion failed before the fix.
-        await db.query("DELETE FROM public.content_item WHERE id = ANY($1::uuid[])", [contents]);
+        await db.query("DELETE FROM public.user_library WHERE user_id = ANY($1::uuid[])", [accounts]);
         await db.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [accounts]);
+        await db.query("DELETE FROM public.content_item WHERE id = ANY($1::uuid[])", [contents]);
         await db.end();
     }, 30_000);
 
@@ -660,8 +661,10 @@ describeDatabase("account deletion library revision regression", () => {
         // Refill the library so the Auth deletion below exercises the cascade.
         await db.query("INSERT INTO public.user_library(user_id,content_id,is_bookmarked) VALUES($1,$2,true)", [accounts[0], contents[0]]);
         const stateBeforeContentDelete = await revision(accounts[1]);
-        await db.query("DELETE FROM public.content_item WHERE id=$1", [contents[2]]);
-        expect(await revision(accounts[1])).toBe(stateBeforeContentDelete + 1);
+        await expect(db.query("DELETE FROM public.content_item WHERE id=$1", [contents[2]]))
+            .rejects.toMatchObject({ code: "23503" });
+        expect(await revision(accounts[1])).toBe(stateBeforeContentDelete);
+        expect((await db.query("SELECT 1 FROM public.user_library WHERE user_id=$1 AND content_id=$2", [accounts[1], contents[2]])).rowCount).toBe(1);
     });
 
     it("deletes an Auth account with library, captures and state while preserving the other account", async () => {
