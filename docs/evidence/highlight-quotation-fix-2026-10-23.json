@@ -68,5 +68,7 @@
   },
   "production_dependency_audit": {
     "vulnerabilities": 0
-  }
+  },
+  "application_candidate_commit": "5904ee7e",
+  "pull_request": "https://github.com/Jseow008/ThePlayBook/pull/277"
 }
