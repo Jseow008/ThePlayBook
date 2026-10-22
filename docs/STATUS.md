@@ -11,11 +11,13 @@ two immediate clicks. The Book → Business component case remains. The first
 local version of the adjusted browser test reached the wrong route when clicks
 preceded hydration; the hydration precondition corrected that setup failure.
 The revised browser regression passed locally across all six configured
-viewports; typecheck, focused lint, and whitespace checks passed. No production
-test or code change has occurred yet from this correction. Next action: push
-the test correction to PR #273 and require the new hosted `validate` result
-before accepting the fix or checking production. The historical conflict and
-other open issues below remain unchanged.
+viewports; typecheck, focused lint, and whitespace checks passed. Correction
+commit `e140b80e` is pushed to PR #273; its new `PR scope` check passed, and
+squash auto-merge remains enabled. No production application code or test has
+changed yet from this correction. Next action: inspect the new hosted
+`validate` result; investigate a failure, or let required checks gate the
+merge before checking production. The historical conflict and other open
+issues below remain unchanged.
 
 Branch `codex/search-filter-save-notice` in managed worktree
 `/Users/j/.codex/worktrees/search-filter-save-notice/Lifebook` starts from freshly
