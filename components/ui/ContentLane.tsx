@@ -67,7 +67,7 @@ export function ContentLane({
 
         container.scrollTo({
             left: targetScrollLeft,
-            behavior: "smooth",
+            behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
         });
     };
 
@@ -178,7 +178,7 @@ export function ContentLane({
                     <div
                         ref={scrollRef}
                         data-testid="content-lane-scroller"
-                        className="scrollbar-hide snap-x snap-mandatory scroll-px-4 overflow-x-auto px-4 pb-3 pt-3 scroll-smooth md:scroll-px-6 md:px-6 md:pb-4 md:pt-4 lg:scroll-px-16 lg:px-16"
+                        className="scrollbar-hide snap-x snap-mandatory scroll-px-4 overflow-x-auto px-4 pb-3 pt-3 scroll-smooth motion-reduce:scroll-auto md:scroll-px-6 md:px-6 md:pb-4 md:pt-4 lg:scroll-px-16 lg:px-16"
                     >
                         <div className="flex w-max gap-3 md:gap-4">
                             {items.map((item) => (

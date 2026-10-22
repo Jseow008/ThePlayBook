@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ContentLane } from "@/components/ui/ContentLane";
 import { COMPACT_SHELF_CARD_CLASS } from "@/components/ui/content-card-standards";
@@ -175,6 +175,32 @@ describe("ContentLane", () => {
 
         const laneCard = container.querySelector("[data-content-lane-card]");
         expect(laneCard).toHaveClass(...COMPACT_SHELF_CARD_CLASS.split(" "));
+    });
+
+    it.each([
+        { reducedMotion: false, behavior: "smooth" },
+        { reducedMotion: true, behavior: "auto" },
+    ] as const)("uses $behavior scrolling for lane arrows when reduced motion is $reducedMotion", ({ reducedMotion, behavior }) => {
+        vi.mocked(window.matchMedia).mockImplementation((query) =>
+            query.includes("prefers-reduced-motion")
+                ? { matches: reducedMotion } as MediaQueryList
+                : desktop
+        );
+        const { container } = render(<ContentLane title="Scrollable Lane" items={items} />);
+        const scroller = container.querySelector<HTMLElement>("[data-testid='content-lane-scroller']")!;
+        const cards = Array.from(scroller.querySelectorAll<HTMLElement>("[data-content-lane-card]"));
+        Object.defineProperty(scroller, "clientWidth", { configurable: true, value: 180 });
+        Object.defineProperty(scroller, "scrollWidth", { configurable: true, value: 600 });
+        Object.defineProperty(scroller, "scrollLeft", { configurable: true, value: 0 });
+        Object.defineProperty(cards[0], "offsetLeft", { configurable: true, value: 16 });
+        Object.defineProperty(cards[0], "offsetWidth", { configurable: true, value: 160 });
+        Object.defineProperty(cards[1], "offsetLeft", { configurable: true, value: 192 });
+        scroller.scrollTo = vi.fn();
+
+        fireEvent.click(screen.getByRole("button", { name: "Scroll right" }));
+
+        expect(scroller.scrollTo).toHaveBeenCalledWith({ left: 192, behavior });
+        expect(scroller).toHaveClass("motion-reduce:scroll-auto");
     });
 
     it("passes through the requested card title density", () => {
