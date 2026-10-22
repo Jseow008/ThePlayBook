@@ -199,6 +199,10 @@ vi.mock('@/components/reader/NotesDrawer', () => ({
     }
 }));
 
+vi.mock('@/components/reader/HighlightPopover', () => ({
+    HighlightPopover: ({ variant }: { variant: string }) => <div data-testid="floating-highlight-mode">{variant}</div>,
+}));
+
 vi.mock('@/components/reader/TextSelectionToolbar', () => ({
     TextSelectionToolbar: () => <div data-testid="mock-text-toolbar" />
 }));
@@ -1169,6 +1173,22 @@ describe('ReaderView', () => {
             behavior: 'smooth',
         });
         expect(mark).toHaveAttribute('data-highlight-spotlight', 'true');
+    });
+
+    it('keeps clicked desktop controls open when pointer movement requests another preview', () => {
+        highlightsState.value = [{
+            id: 'highlight-1', user_id: 'user-1', content_item_id: 'test-item-1', segment_id: 'seg-1',
+            highlighted_text: 'Body 1', note_body: 'Saved thought', color: 'yellow', anchor_start: 0,
+            anchor_end: 6, created_at: null, updated_at: null, content_item: null, segment: null,
+        }];
+        render(<ReaderView content={mockContent} />);
+        const position = { top: 12, left: 34, width: 56, height: 18 };
+        act(() => segmentAccordionSpy.mock.lastCall?.[0].onHighlightPreview('highlight-1', position));
+        expect(screen.getByTestId('floating-highlight-mode')).toHaveTextContent('preview');
+        fireEvent.click(screen.getByTestId('activate-highlight'));
+        expect(screen.getByTestId('floating-highlight-mode')).toHaveTextContent('full');
+        act(() => segmentAccordionSpy.mock.lastCall?.[0].onHighlightPreview('highlight-1', position));
+        expect(screen.getByTestId('floating-highlight-mode')).toHaveTextContent('full');
     });
 
     it('opens the notes drawer to a tapped inline highlight on mobile', async () => {

@@ -1197,6 +1197,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                         setIsNotesDrawerOpen(true);
                     }}
                     onHighlightPreview={(highlightId, position) => {
+                        if (popoverHighlightId === highlightId && popoverMode === "full") return;
                         const highlight = highlights.find((item) => item.id === highlightId);
                         if (!highlight?.note_body?.trim()) {
                             schedulePreviewClose();
