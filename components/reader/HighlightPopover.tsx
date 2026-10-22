@@ -1,5 +1,7 @@
 "use client";
 
+import { useNoteDraft } from "@/hooks/useNoteDraft";
+import { NoteDraftStatus } from "@/components/reader/NoteDraftStatus";
 import { useCallback, useEffect, useLayoutEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { BookOpen, AlertCircle, Edit3, Trash2, Check, X, Highlighter } from "lucide-react";
@@ -43,8 +45,8 @@ export function HighlightPopover({
     const [mounted, setMounted] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
     const [isEditing, setIsEditing] = useState(false);
-    const [editNote, setEditNote] = useState(noteBody || "");
-    const [editColor, setEditColor] = useState(normalizeHighlightColor(currentColor));
+    const noteDraft = useNoteDraft(isEditing ? { id: highlightId, note_body: noteBody, color: currentColor, updated_at: null } : null);
+    const { note: editNote, color: editColor, setNote: setEditNote, setColor: setEditColor } = noteDraft;
     const [localNoteBody, setLocalNoteBody] = useState(noteBody);
     const [localColor, setLocalColor] = useState(normalizeHighlightColor(currentColor));
     const updateHighlight = useUpdateHighlight();
@@ -91,16 +93,16 @@ export function HighlightPopover({
         updatePlacement();
         window.addEventListener("resize", updatePlacement);
         return () => window.removeEventListener("resize", updatePlacement);
-    }, [mounted, updatePlacement, variant]);
+    }, [mounted, updatePlacement, variant, isEditing, noteDraft.checking, noteDraft.conflict, noteDraft.error]);
 
     useEffect(() => {
         const normalizedColor = normalizeHighlightColor(currentColor);
-        setEditNote(noteBody || "");
-        setEditColor(normalizedColor);
+
         setLocalNoteBody(noteBody);
         setLocalColor(normalizedColor);
-        setIsEditing(false);
     }, [currentColor, highlightId, noteBody]);
+
+    useEffect(() => { setIsEditing(false); }, [highlightId]);
 
     useEffect(() => {
         if (!mounted) return;
@@ -138,6 +140,7 @@ export function HighlightPopover({
             const hadNote = Boolean(localNoteBody?.trim());
             await updateHighlight.mutateAsync({
                 id: highlightId,
+                expected: noteDraft.expected, expected_user_id: noteDraft.owner,
                 note_body: trimmedNote === "" ? null : trimmedNote,
                 color: editColor,
             });
@@ -154,10 +157,12 @@ export function HighlightPopover({
 
             setLocalNoteBody(trimmedNote === "" ? null : trimmedNote);
             setLocalColor(editColor);
+            noteDraft.discard();
             setIsEditing(false);
             toast.success("Highlight updated");
         } catch (error: any) {
             toast.error(error.message || "Failed to update highlight");
+            noteDraft.refresh();
         }
     };
 
@@ -182,8 +187,9 @@ export function HighlightPopover({
                     onMouseLeave();
                 }
             }}
+            // Moving between measured placements must not sweep the preview over its anchor.
             className={cn(
-                "fixed transform -translate-x-1/2 origin-center animate-in fade-in zoom-in-95 duration-200",
+                "fixed transform -translate-x-1/2 origin-center animate-in fade-in zoom-in-95 duration-200 transition-none",
                 "w-[min(20rem,calc(100vw-2rem))] max-h-[calc(100vh-2rem)]",
                 placement?.direction === "above" ? "pb-2.5" : "pt-2.5",
                 OVERLAY_LAYER_CLASS.popover
@@ -210,8 +216,10 @@ export function HighlightPopover({
                         <div className={cn("rounded-lg border p-3 text-sm italic text-foreground/85", colorClasses.border)}>
                             &ldquo;{highlightedText}&rdquo;
                         </div>
+                        <NoteDraftStatus draft={noteDraft} />
                         <textarea
                             autoFocus
+                            readOnly={noteDraft.checking || noteDraft.conflict}
                             value={editNote}
                             onChange={(e) => setEditNote(e.target.value)}
                             placeholder="Add a note..."
@@ -238,17 +246,18 @@ export function HighlightPopover({
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => {
-                                        setEditNote(localNoteBody || "");
-                                        setEditColor(localColor);
+                                        noteDraft.discard();
                                         setIsEditing(false);
                                     }}
+                                    disabled={updateHighlight.isPending}
+                                    aria-label="Cancel note edits"
                                     className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                                 >
                                     <X className="size-4" />
                                 </button>
                                 <button
                                     onClick={handleSave}
-                                    disabled={updateHighlight.isPending}
+                                    disabled={updateHighlight.isPending || !noteDraft.ready || !noteDraft.dirty}
                                     className="px-2.5 py-1.5 text-xs font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors inline-flex items-center gap-1"
                                 >
                                     <Check className="size-3.5" />

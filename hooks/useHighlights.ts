@@ -79,6 +79,23 @@ export function useHighlights(contentItemId?: string, options?: UseHighlightsOpt
     });
 }
 
+export function useHighlight(id: string | null, contentItemId: string) {
+    const { user, sessionEpoch } = useAuthSessionIdentity();
+    const query = useQuery({
+        queryKey: ["highlight-target", user?.id, sessionEpoch, contentItemId, id],
+        enabled: Boolean(user && id), retry: false,
+        queryFn: async ({ signal }): Promise<HighlightWithContent | null> => {
+            const res = await fetch(`/api/library/highlights/${id}`, { signal, cache: "no-store" });
+            if (res.status === 404) return null;
+            if (!res.ok) throw new HighlightSearchRequestError(res.status);
+            const { data } = await res.json();
+            if (data.user_id !== user?.id || data.content_item_id !== contentItemId) return null;
+            return data;
+        },
+    });
+    return { ...query, requiresSignIn: user === null };
+}
+
 // ----------------------------------------------------------------------------
 // Fetch Infinite Highlights
 // ----------------------------------------------------------------------------
@@ -133,6 +150,7 @@ interface CreateHighlightArgs {
     segment_id?: string;
     highlighted_text: string;
     note_body?: string;
+    expected_user_id?: string;
     color?: string;
     anchor_start?: number;
     anchor_end?: number;
@@ -195,6 +213,13 @@ function getHighlightMutationError(errorData: unknown, fallbackMessage: string):
     return new Error(
         typeof response.error?.message === "string" ? response.error.message : fallbackMessage
     );
+}
+
+export async function loadHighlightForUpdate(id: string): Promise<UserHighlight> {
+    const response = await fetch(`/api/library/highlights/${id}`, { cache: "no-store" });
+    if (!response.ok) throw new Error("Could not check the saved note. Your unfinished edits are kept; please retry.");
+    const { data } = await response.json();
+    return data as UserHighlight;
 }
 
 export function useCreateHighlight() {
@@ -266,6 +291,7 @@ export function useCreateHighlight() {
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ["highlights"] });
+            queryClient.invalidateQueries({ queryKey: ["highlight-target"] });
         },
     });
 }
@@ -330,6 +356,7 @@ export function useDeleteHighlight() {
         onSettled: () => {
             // Always refetch after mutation to ensure server consistency
             queryClient.invalidateQueries({ queryKey: ["highlights"] });
+            queryClient.invalidateQueries({ queryKey: ["highlight-target"] });
         },
     });
 }
@@ -339,6 +366,8 @@ export function useDeleteHighlight() {
 // ----------------------------------------------------------------------------
 interface UpdateHighlightArgs {
     id: string;
+    expected_user_id?: string;
+    expected?: import("@/lib/note-draft").NoteBaseline;
     note_body?: string | null;
     color?: string;
     highlighted_text?: string;
@@ -355,6 +384,8 @@ export function useUpdateHighlight() {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    expected: args.expected,
+                    expected_user_id: args.expected_user_id,
                     note_body: args.note_body,
                     color: args.color,
                     highlighted_text: args.highlighted_text,
@@ -434,6 +465,7 @@ export function useUpdateHighlight() {
         onSettled: () => {
             // Always refetch after mutation to ensure server consistency
             queryClient.invalidateQueries({ queryKey: ["highlights"] });
+            queryClient.invalidateQueries({ queryKey: ["highlight-target"] });
         },
     });
 }

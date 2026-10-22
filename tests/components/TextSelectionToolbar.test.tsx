@@ -128,3 +128,5 @@ describe("TextSelectionToolbar overlap handling", () => {
         });
     });
 });
+
+vi.mock("@/hooks/useAuthUser", () => ({ useAuthSessionIdentity: () => ({ user: { id: "user-1" }, sessionEpoch: 0 }) }));

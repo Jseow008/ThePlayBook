@@ -22,6 +22,8 @@ const UpdateHighlightSchema = z
     .object({
         note_body: z.string().trim().max(4_000).nullable().optional(),
         color: HighlightColorSchema.optional(),
+        expected_user_id: z.string().uuid().optional(),
+        expected: z.object({ note_body: z.string().nullable(), color: z.string().nullable(), updated_at: z.string().nullable() }).optional(),
         highlighted_text: z.string().trim().min(1).max(2_000).optional(),
         anchor_start: z.number().int().min(0).optional(),
         anchor_end: z.number().int().min(1).optional(),
@@ -71,6 +73,28 @@ function highlightConflictResponse(overlap: HighlightOverlap, requestId: string)
             relationship: overlap.relationship,
         }
     );
+}
+
+/** Point lookup uses the caller session, RLS, and an explicit ownership predicate. */
+export async function GET(request: NextRequest, { params }: RouteParams) {
+    const requestId = getRequestId();
+    const { id } = await params;
+    if (!HighlightIdSchema.safeParse(id).success) return apiError("VALIDATION_ERROR", "Invalid highlight ID.", 400, requestId);
+    try {
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) return apiError("UNAUTHORIZED", "Sign in to open this saved passage.", 401, requestId);
+        const { data, error } = await supabase.from("user_highlights")
+            .select("*, content_item(id,title,author,cover_image_url), segment(id,title)")
+            .eq("id", id).eq("user_id", user.id).maybeSingle();
+        if (error) return apiError("INTERNAL_ERROR", "Could not load this saved passage. Please retry.", 500, requestId);
+        const highlight = data as (Database["public"]["Tables"]["user_highlights"]["Row"] & { content_item: { id: string } | null }) | null;
+        if (!highlight || !highlight.content_item) return apiError("NOT_FOUND", "This saved passage was deleted or is no longer accessible.", 404, requestId);
+        return NextResponse.json({ data }, { headers: { "Cache-Control": "private, no-store" } });
+    } catch (error) {
+        logApiError({ requestId, route: "GET /api/library/highlights/[id]", message: "Saved passage lookup failed", error });
+        return apiError("INTERNAL_ERROR", "Could not load this saved passage. Please retry.", 500, requestId);
+    }
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
@@ -145,7 +169,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
         const parsed = UpdateHighlightSchema.safeParse(body);
         if (!parsed.success) {
-            return apiError("VALIDATION_ERROR", "No valid update fields provided.", 400, requestId);
+            const noteTooLong = parsed.error.issues.some(issue => issue.path[0] === "note_body" && issue.code === "too_big");
+            return apiError("VALIDATION_ERROR", noteTooLong ? "Keep your note within 4,000 characters. Your unfinished edits are kept." : "No valid update fields provided.", 400, requestId);
         }
 
         const supabase = await createClient();
@@ -155,6 +180,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             return apiError("UNAUTHORIZED", "Must be logged in to update a highlight.", 401, requestId);
         }
 
+        if (parsed.data.expected_user_id && parsed.data.expected_user_id !== user.id) {
+            return apiError("UNAUTHORIZED", "Your signed-in account changed. Reopen this note.", 401, requestId);
+        }
         const { highlighted_text, anchor_start, anchor_end } = parsed.data;
         const isRangeUpdate = (
             highlighted_text !== undefined
@@ -222,14 +250,20 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         if (anchor_start !== undefined) updates.anchor_start = anchor_start;
         if (anchor_end !== undefined) updates.anchor_end = anchor_end;
 
-        const { error, data } = await supabase
+        let update = supabase
             .from("user_highlights")
             // @ts-expect-error - types for user_highlights might be outdated
             .update(updates)
             .eq("id", id)
-            .eq("user_id", user.id)
-            .select()
-            .single();
+            .eq("user_id", user.id);
+        // Compare-and-set in the UPDATE itself; a separate preflight read races other tabs.
+        if (parsed.data.expected) {
+            for (const field of ["note_body", "color", "updated_at"] as const) {
+                const value = parsed.data.expected[field];
+                update = value === null ? update.is(field, null) : update.eq(field, value);
+            }
+        }
+        const { error, data } = await update.select().maybeSingle();
 
         if (error) {
             const admissionFailure = captureWriteFailure(error);
@@ -258,6 +292,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             return apiError("INTERNAL_ERROR", "Failed to update highlight.", 500, requestId);
         }
 
+        if (!data) {
+            return apiError(parsed.data.expected ? "STALE_HIGHLIGHT" : "NOT_FOUND",
+                parsed.data.expected ? "The saved note changed or is no longer available. Recheck it before saving; your draft is kept." : "Highlight not found.",
+                parsed.data.expected ? 409 : 404, requestId);
+        }
         return NextResponse.json({ success: true, data });
     } catch (error) {
         logApiError({ requestId, route: "PATCH /api/library/highlights/[id]", message: "Unexpected error", error });

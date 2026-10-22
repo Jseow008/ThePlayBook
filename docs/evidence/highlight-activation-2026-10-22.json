@@ -1,0 +1,134 @@
+{
+  "date": "2026-10-22",
+  "environment": "Isolated local production build with local Supabase, real Redis/Lua through a loopback REST adapter; no production credentials or data",
+  "viewport": [
+    1440,
+    900
+  ],
+  "protocol": "Two trials each existing highlight, fresh selection, scroll one page, outside-dismiss/reopen; native pointer, one attempt per stage. First baseline readiness issues retained below. Instrumented before/after, then uninstrumented final repeat.",
+  "before": {
+    "completePass": 1,
+    "failed": 5,
+    "partial": 2,
+    "existing": [
+      "fail: down MARK, release DIV, click BODY, preview only",
+      "fail: same interception"
+    ],
+    "fresh": [
+      "pass: Freshword01 selected, Add Note in viewport, editor opened",
+      "partial: ongoing initial smooth scroll changed selection to548 characters; Add Note and editor opened"
+    ],
+    "scroll": [
+      "fail: Anchor08 intercepted after900px scroll; earlier premature scroll before list readiness did not move",
+      "fail: Anchor08 intercepted after900px scroll"
+    ],
+    "reopen": [
+      "fail: initial and reopen activation intercepted",
+      "partial: initial intercepted; reopen and Edit succeeded"
+    ]
+  },
+  "cause": {
+    "confidence": "high",
+    "reproduction": "Open retained link for oldest of52 highlights, wait for rendered mark, click highlight once",
+    "expected": "Highlight receives click and full controls appear without covering/intercepting its anchor",
+    "actual": "Preview appears between press/release and crosses anchor during CSS top transition",
+    "eventExampleMs": {
+      "mousedownMark": 9371,
+      "previewAppears": 9406,
+      "mouseupDiv": 9410,
+      "clickBody": 9411
+    },
+    "geometry": {
+      "inlineTopPx": 28.8984,
+      "renderedTopPx": 112.1875,
+      "transitionMs": 200
+    },
+    "impact": "Existing note controls can be inaccessible, blocking draft protection through the expected entry point"
+  },
+  "fix": "Disable CSS transitions on floating popover positioning element; retain animation classes and existing product layout/copy. No hooks, APIs or schema changed.",
+  "instrumentedAfter": {
+    "completePass": 8,
+    "failed": 0,
+    "partial": 0
+  },
+  "uninstrumentedFinal": {
+    "completePass": 8,
+    "failed": 0,
+    "partial": 0,
+    "existing": 2,
+    "freshExactSelection": 2,
+    "scroll": 2,
+    "dismissReopen": 2,
+    "allControlsInsideViewport": true
+  },
+  "finalDraftChecks": {
+    "escape": "pass: exact draft stays open",
+    "outsideClick": "pass: exact draft stays open",
+    "navigation": "pass: Browse then back, reopen through mark/Edit, exact draft recovered",
+    "cancel": "pass: discard and reopen shows saved baseline",
+    "switch": "pass: Anchor01 and Anchor03 recover distinct exact drafts",
+    "newerSavedConflict": "pass: current saved text/read-only editor, old draft kept separately, Save disabled; explicit Restore retrieves old draft; Cancel discards",
+    "noAutosave": true
+  },
+  "finalLinkChecks": {
+    "rank52": "pass: oldest destination absent initial50, mark resolves",
+    "reload": "pass: highlightId retained, target revealed",
+    "noRepeatedScroll": "pass: scroll1172.5px before/after Notes drawer, retained highlightId",
+    "unavailable": "pass: explicit deleted/inaccessible message",
+    "mobile": "390x844: existing highlight opens Notes; physical touch/software keyboard not claimed",
+    "initial50": {
+      "status": 200,
+      "count": 50,
+      "targetPresent": false
+    }
+  },
+  "finalApi": {
+    "owner": {
+      "status": 200,
+      "cache": "private, no-store"
+    },
+    "other": {
+      "status": 404,
+      "cache": null
+    },
+    "guest": {
+      "status": 401,
+      "cache": null
+    },
+    "missing": {
+      "status": 404
+    },
+    "noAutosave": true,
+    "stale": {
+      "status": 409
+    },
+    "newerPreserved": true
+  },
+  "checks": {
+    "focusedTests": 79,
+    "lint": "passed including policy checks",
+    "productionBuild": "passed; Sharp5routes and criticalCSS passed"
+  },
+  "hostedEvidenceReuse": {
+    "source": "e354108796ff8882215e19973f9fc6e1b3106a36",
+    "unchanged": "API ownership/caching/CAS, auth, draft hook/storage, reader resolution/scroll, schema/security; previous disposable hosted evidence retained",
+    "rerun": "Affected floating activation, draft/recovery/conflict, URL/reload/scroll UI checks rerun on final production build locally. Additional actual HTTP ownership/stale-save probes passed locally. No claim that new CSS build was redeployed against a hosted database."
+  },
+  "limitations": [
+    "Bounded synthetic browser sequence establishes tested paths, not universal reliability or a physical-device result.",
+    "Baseline fresh2 and early scroll readiness issues reported as partial/setup evidence, not hidden retries.",
+    "Synthetic fixture repeated navigations reached existing snapshot quota; quota toast observed. Only own synthetic Redis reset between batches; no application limits changed.",
+    "Full suite1838pass/287skip predates these UI follow-ups; current focused79pass and CI required gates remain."
+  ],
+  "sha256": {
+    "components/reader/HighlightPopover.tsx": "e008c499d03f0bddaae36896152c1d5525ff535bce9594c4b86342e2f431c267",
+    "components/reader/ReaderView.tsx": "d50c8b01e822839475e81120e3da868e33a93911bd2606c8ac286f3b06f13c97",
+    "components/reader/SegmentAccordion.tsx": "fd734db5d5d43912bb00ba04937def07be0f27a1191500dee2163491d7f2956f",
+    "hooks/useNoteDraft.ts": "2b576ea97e61554e3ec6bed1e68c06fde52b0127a023c524802e1a81ca09eb1c",
+    "lib/note-draft.ts": "297643062db6c05348948cf3ee0b48bbbd165e3fc511ef885318f54c25facc66",
+    "app/api/library/highlights/[id]/route.ts": "0c99fc701e2014fe07fbfaec114981acc975b294a31b01640f3a3d9b119805e8"
+  },
+  "cleanup": "Confirmed: own Supabase containers/volumes removed without backup, own Redis removed, ports3040/3041/57380 stopped, test tab closed and viewport reset. Private fixture/credential directory and candidate .next removed.",
+  "pr": "https://github.com/Jseow008/ThePlayBook/pull/276",
+  "merge": "Open; auto-merge disabled"
+}

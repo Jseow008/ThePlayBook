@@ -1,10 +1,13 @@
 "use client";
 
+import { useNoteDraft } from "@/hooks/useNoteDraft";
+import { NoteDraftStatus } from "@/components/reader/NoteDraftStatus";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Highlighter, Edit3, X, Check } from "lucide-react";
 import {
     HighlightConflictError,
+    loadHighlightForUpdate,
     useCreateHighlight,
     useUpdateHighlight,
 } from "@/hooks/useHighlights";
@@ -27,7 +30,11 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
     } | null>(null);
 
     const [isAddingNote, setIsAddingNote] = useState(false);
-    const [noteText, setNoteText] = useState("");
+    const noteDraft = useNoteDraft(isAddingNote && selectionInfo ? {
+        id: `new:${contentItemId}:${selectionInfo.segmentId}:${selectionInfo.anchorStart}:${selectionInfo.anchorEnd}:${selectionInfo.text}`,
+        isNew: true, note_body: null, color: "blue", updated_at: null,
+    } : null);
+    const { note: noteText, setNote: setNoteText } = noteDraft;
     const [mounted, setMounted] = useState(false);
 
     const createHighlight = useCreateHighlight();
@@ -119,7 +126,11 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                 onClick: () => {
                     void (async () => {
                         try {
+                            const current = updates?.note_body !== undefined
+                                ? await loadHighlightForUpdate(error.details.existingHighlightId) : null;
+                            if (current?.note_body && !window.confirm("This passage already has a saved note. Replace it with your unfinished edits?")) return;
                             await updateHighlight.mutateAsync({
+                                ...(current ? { expected: current, expected_user_id: noteDraft.owner } : {}),
                                 id: error.details.existingHighlightId,
                                 highlighted_text: selected.text,
                                 anchor_start: selected.anchorStart,
@@ -128,7 +139,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                             });
                             toast.success("Highlight replaced");
                             clearSelection();
-                            setNoteText("");
+                            noteDraft.discard();
                             setIsAddingNote(false);
                         } catch (replacementError: any) {
                             toast.error(replacementError.message || "Failed to replace highlight");
@@ -179,7 +190,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
     };
 
     const handleSaveNote = async () => {
-        if (!noteText.trim()) return;
+        if (!noteText.trim() || !noteDraft.ready) return;
         const selected = selectionInfo;
         const trimmedNote = noteText.trim();
 
@@ -188,13 +199,16 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                 content_item_id: contentItemId,
                 segment_id: selected.segmentId,
                 highlighted_text: selected.text,
+                expected_user_id: noteDraft.owner,
                 note_body: trimmedNote,
                 anchor_start: selected.anchorStart,
                 anchor_end: selected.anchorEnd,
             });
 
             if (result.disposition === "existing") {
+                if (result.highlight.note_body && !window.confirm("This passage already has a saved note. Replace it with your unfinished edits?")) return;
                 await updateHighlight.mutateAsync({
+                    expected: result.highlight, expected_user_id: noteDraft.owner,
                     id: result.highlight.id,
                     note_body: trimmedNote,
                 });
@@ -215,7 +229,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
             }
 
             // Cleanup
-            setNoteText("");
+            noteDraft.discard();
             setIsAddingNote(false);
             clearSelection();
         } catch (error: any) {
@@ -229,8 +243,8 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
     };
 
     const handleCancelNote = () => {
+        noteDraft.discard();
         setIsAddingNote(false);
-        setNoteText("");
         clearSelection();
     };
 
@@ -283,8 +297,10 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
             ) : (
                 // Note Entry Mode
                 <div className="flex flex-col gap-2 p-1">
+                    <NoteDraftStatus draft={noteDraft} />
                     <textarea
                         autoFocus
+                        readOnly={noteDraft.checking || noteDraft.conflict}
                         value={noteText}
                         onChange={(e) => setNoteText(e.target.value)}
                         placeholder="Add your note..."
@@ -293,6 +309,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                     />
                     <div className="flex items-center justify-end gap-2">
                         <button
+                            disabled={createHighlight.isPending || updateHighlight.isPending}
                             onClick={handleCancelNote}
                             className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                             aria-label="Cancel note"
@@ -301,7 +318,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                         </button>
                         <button
                             onClick={handleSaveNote}
-                            disabled={!noteText.trim() || createHighlight.isPending}
+                            disabled={!noteText.trim() || !noteDraft.ready || createHighlight.isPending || updateHighlight.isPending}
                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
                         >
                             <Check className="size-3.5" />

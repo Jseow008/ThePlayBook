@@ -106,6 +106,7 @@ function highlightOverlapResponse(
 }
 
 const CreateHighlightSchema = z.object({
+    expected_user_id: z.string().uuid().optional(),
     content_item_id: z.string().uuid(),
     segment_id: z.string().uuid().optional().nullable(),
     highlighted_text: z.string().trim().min(1).max(HIGHLIGHT_TEXT_MAX),
@@ -158,6 +159,9 @@ export async function POST(request: NextRequest) {
             return apiError("VALIDATION_ERROR", "Invalid highlight payload.", 400, requestId);
         }
 
+        if (parsed.data.expected_user_id && parsed.data.expected_user_id !== user.id) {
+            return apiError("UNAUTHORIZED", "Your signed-in account changed. Reopen this note.", 401, requestId);
+        }
         const { content_item_id, segment_id, highlighted_text, note_body, color, anchor_start, anchor_end } = parsed.data;
 
         if (

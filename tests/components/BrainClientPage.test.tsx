@@ -486,3 +486,5 @@ describe("BrainClientPage", () => {
         expect(document.body.style.overflow).toBe("");
     });
 });
+
+vi.mock("@/hooks/useAuthUser", () => ({ useAuthSessionIdentity: () => ({ user: { id: "user-1" }, sessionEpoch: 0 }) }));

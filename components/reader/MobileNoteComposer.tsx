@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,9 @@ interface MobileNoteComposerProps {
     canSave: boolean;
     isSaving: boolean;
     onClose: () => void;
+    onCancel?: () => void;
+    draftStatus?: ReactNode;
+    draftReadOnly?: boolean;
     onNoteChange: (value: string) => void;
     onColorChange: (value: HighlightColor) => void;
     onClear: () => void;
@@ -40,6 +43,9 @@ export function MobileNoteComposer({
     canSave,
     isSaving,
     onClose,
+    onCancel,
+    draftStatus,
+    draftReadOnly,
     onNoteChange,
     onColorChange,
     onClear,
@@ -157,6 +163,7 @@ export function MobileNoteComposer({
                     </div>
 
                     <div className="mt-4">
+                        {draftStatus}
                         <div className="flex items-center justify-between gap-3">
                             <label
                                 htmlFor="reader-mobile-note-composer-textarea"
@@ -177,6 +184,7 @@ export function MobileNoteComposer({
                         <textarea
                             ref={textareaRef}
                             id="reader-mobile-note-composer-textarea"
+                            readOnly={draftReadOnly}
                             value={noteValue}
                             onChange={(event) => onNoteChange(event.target.value)}
                             placeholder="Capture why this passage matters."
@@ -187,7 +195,7 @@ export function MobileNoteComposer({
                     <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/35 bg-card/95 pb-2 pt-3">
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={onCancel ?? onClose}
                             className="inline-flex min-h-10 items-center justify-center rounded-full border border-border/85 px-4 py-2 text-sm font-medium text-foreground/78 transition-colors hover:bg-secondary/70 hover:text-foreground"
                         >
                             Cancel

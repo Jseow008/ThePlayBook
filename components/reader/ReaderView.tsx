@@ -1,9 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { createPortal } from "react-dom";
 import Link from "next/link";
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, MessageCircleQuestion, List } from "lucide-react";
 import { toast } from "sonner";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
@@ -18,7 +19,7 @@ import { ContentFeedback } from "@/components/ui/ContentFeedback";
 const CompletionCard = dynamic(() => import("./CompletionCard").then((mod) => mod.CompletionCard));
 import { TextSelectionToolbar } from "./TextSelectionToolbar";
 const NotesDrawer = dynamic(() => import("./NotesDrawer").then((mod) => mod.NotesDrawer));
-import { useHighlights } from "@/hooks/useHighlights";
+import { useHighlights, useHighlight } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { buildCanonicalReadPath } from "@/lib/content-paths";
@@ -96,10 +97,14 @@ export function ReaderView({ content }: ReaderViewProps) {
         height: number;
     } | null>(null);
     const [popoverMode, setPopoverMode] = useState<"preview" | "full">("full");
+    const popoverModeRef = useRef(popoverMode);
+    useLayoutEffect(() => { popoverModeRef.current = popoverMode; }, [popoverMode]);
     const [expandedSegmentId, setExpandedSegmentId] = useState<string | null>(null);
     const [isNotesDrawerOpen, setIsNotesDrawerOpen] = useState(false);
     const [isPopoverHovered, setIsPopoverHovered] = useState(false);
     const [popoverPortalEl, setPopoverPortalEl] = useState<HTMLDivElement | null>(null);
+    const [popoverPortalHost, setPopoverPortalHost] = useState<HTMLElement | null>(null);
+    useEffect(() => { setPopoverPortalHost(document.body); }, []);
     const popoverCloseTimeoutRef = useRef<number | null>(null);
     const [showAuthorChat, setShowAuthorChat] = useState(false);
     const [audioCurrentTimeSec, setAudioCurrentTimeSec] = useState(0);
@@ -136,12 +141,21 @@ export function ReaderView({ content }: ReaderViewProps) {
         storageScope,
     } = useReadingProgress();
     const previousStorageScopeRef = useRef(storageScope);
-    const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id, { limit: 50 });
+    const { data: listedHighlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id, { limit: 50 });
     const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
     const isReaderInteractionDesktop = useMediaQuery(VIEWPORT_QUERIES.readerInteractionDesktop);
-    const router = useRouter();
-    const pathname = usePathname();
     const searchParams = useSearchParams();
+    const destinationId = searchParams.get("highlightId");
+    const destination = useHighlight(destinationId, content.id);
+    const highlights = useMemo(() => destination.data && !listedHighlights.some(item => item.id === destination.data?.id)
+        ? [...listedHighlights, destination.data] : listedHighlights, [listedHighlights, destination.data]);
+    const destinationKey = `${storageScope}:${content.id}:${destinationId ?? ""}`;
+    const [destinationStatus, setDestinationStatus] = useState<{ key: string; state: "locating" | "located" | "unmatched" }>({ key: destinationKey, state: "locating" });
+    const destinationState = destinationStatus.key === destinationKey ? destinationStatus.state : "locating";
+    const currentDestinationRef = useRef(destinationKey);
+    useLayoutEffect(() => { currentDestinationRef.current = destinationKey; }, [destinationKey]);
+    useEffect(() => () => { currentDestinationRef.current = ""; }, []);
+
     const readerEntryKey = `${content.id}:${content.audio_url ?? ""}`;
     const popoverHighlight = popoverHighlightId
         ? highlights.find((highlight) => highlight.id === popoverHighlightId) ?? null
@@ -801,7 +815,9 @@ export function ReaderView({ content }: ReaderViewProps) {
         if (popoverMode !== "preview") return;
 
         clearPopoverCloseTimeout();
-        popoverCloseTimeoutRef.current = window.setTimeout(closeActiveHighlight, 150);
+        popoverCloseTimeoutRef.current = window.setTimeout(() => {
+            if (popoverModeRef.current === "preview") closeActiveHighlight();
+        }, 150);
     }, [clearPopoverCloseTimeout, closeActiveHighlight, popoverMode]);
 
     useEffect(() => () => clearPopoverCloseTimeout(), [clearPopoverCloseTimeout]);
@@ -897,10 +913,10 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     const handleHighlightJump = useCallback(async (
         highlightId: string,
-        options: { target?: HighlightJumpTarget } = {}
+        options: { target?: HighlightJumpTarget; isCurrent?: () => boolean } = {}
     ) => {
         const highlight = highlights.find((item) => item.id === highlightId);
-        if (!highlight) return;
+        if (!highlight || options.isCurrent?.() === false) return false;
 
         setActiveHighlightId(highlightId);
         setPopoverHighlightId(null);
@@ -918,12 +934,14 @@ export function ReaderView({ content }: ReaderViewProps) {
             await waitForSegmentExpansion(targetSegmentId);
         }
 
+        if (options.isCurrent?.() === false) return false;
         const jumpTarget = options.target ?? "highlight";
         const didScrollToSegment = jumpTarget === "segment" && targetSegmentId
             ? scrollSegmentTopIntoView(targetSegmentId)
             : false;
         const marks = await waitForHighlightMarks(highlightId, targetSegmentId);
 
+        if (options.isCurrent?.() === false) return false;
         if (!didScrollToSegment && marks.length > 0) {
             const [firstMark] = marks;
             const top = firstMark.getBoundingClientRect().top + window.scrollY - 120;
@@ -933,31 +951,25 @@ export function ReaderView({ content }: ReaderViewProps) {
         if (marks.length > 0) {
             applyHighlightSpotlight(highlightId, marks);
         }
+        return marks.length > 0;
     }, [expandedSegmentId, highlights, scrollSegmentTopIntoView, waitForHighlightMarks, waitForSegmentExpansion]);
 
     useEffect(() => {
-        const urlHighlightId = searchParams.get("highlightId");
-        if (!urlHighlightId || highlightsLoading) {
+        if (!destinationId || !destination.isSuccess || !destination.data
+            || handledUrlHighlightRef.current === destinationKey) return;
+        const highlight = destination.data;
+        handledUrlHighlightRef.current = destinationKey;
+        setDestinationStatus({ key: destinationKey, state: "locating" });
+        if (!highlight.segment_id || !content.segments.some(segment => segment.id === highlight.segment_id)) {
+            setDestinationStatus({ key: destinationKey, state: "unmatched" });
             return;
         }
-
-        if (handledUrlHighlightRef.current === urlHighlightId) {
-            return;
-        }
-
-        handledUrlHighlightRef.current = urlHighlightId;
-
-        const clearUrlParam = () => {
-            router.replace(pathname, { scroll: false });
-        };
-
-        if (!highlights.some((highlight) => highlight.id === urlHighlightId)) {
-            clearUrlParam();
-            return;
-        }
-
-        void handleHighlightJump(urlHighlightId).finally(clearUrlParam);
-    }, [handleHighlightJump, highlights, highlightsLoading, pathname, router, searchParams]);
+        void handleHighlightJump(destinationId, { isCurrent: () => currentDestinationRef.current === destinationKey })
+            .then(found => {
+                if (currentDestinationRef.current === destinationKey) setDestinationStatus({ key: destinationKey, state: found ? "located" : "unmatched" });
+            });
+        // Keep highlightId in the URL. The handled key prevents refetches and reading from re-scrolling.
+    }, [destinationId, destinationKey, destination.isSuccess, destination.data, content.segments, handleHighlightJump]);
 
     useEffect(() => {
         if (
@@ -1025,7 +1037,10 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
-            <div ref={setPopoverPortalEl} aria-hidden="true" />
+            {popoverPortalHost && createPortal(
+                <div ref={setPopoverPortalEl} className={`font-sans text-foreground reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`} />,
+                popoverPortalHost
+            )}
             <div
                 className={cn(
                     "max-w-3xl mx-auto px-5 sm:px-6 pt-8 transition-[padding-bottom] duration-300 sm:pt-12",
@@ -1151,6 +1166,18 @@ export function ReaderView({ content }: ReaderViewProps) {
                     </div>
                 )}
 
+                {destinationId && (destination.isError || (destination.isSuccess && !destination.data) || destinationState === "unmatched") && (
+                    <div role="alert" className="mb-6 rounded-xl border border-border bg-card p-4 text-sm">
+                        <p>{destination.isError ? "Could not load this saved passage. Please retry."
+                            : !destination.data ? "This saved passage was deleted or is no longer accessible."
+                            : "The saved passage could not be located in the current text. Your saved note is still available in Notes."}</p>
+                        {destination.isError && <button type="button" onClick={() => { void destination.refetch(); }} className="mt-2 underline">Retry saved passage</button>}
+                        <Link href="/notes" className="ml-3 underline">Open Notes</Link>
+                    </div>
+                )}
+                {destinationId && destination.requiresSignIn && <p role="status" className="mb-4 text-sm">Sign in to open this saved passage. <Link href={`/login?next=${encodeURIComponent(`/read/${content.id}?highlightId=${destinationId}`)}`} className="underline">Sign in</Link></p>}
+                {destinationId && !destination.requiresSignIn && destination.isPending && <p role="status" className="mb-4 text-sm text-muted-foreground">Locating saved passage…</p>}
+
                 {/* Accordion Sections */}
                 <SegmentAccordion
                     segments={content.segments}
@@ -1180,6 +1207,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                         setIsNotesDrawerOpen(true);
                     }}
                     onHighlightPreview={(highlightId, position) => {
+                        if (popoverHighlightId === highlightId && popoverMode === "full") return;
                         const highlight = highlights.find((item) => item.id === highlightId);
                         if (!highlight?.note_body?.trim()) {
                             schedulePreviewClose();
@@ -1257,7 +1285,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                 sections={sectionMeta}
                 activeHighlightId={activeHighlightId}
                 isAudioMiniPlayerVisible={isAudioMiniPlayerVisible}
-                onHighlightJump={(highlightId) => handleHighlightJump(highlightId, { target: "segment" })}
+                onHighlightJump={async (highlightId) => { await handleHighlightJump(highlightId, { target: "segment" }); }}
             />
             {isReaderInteractionDesktop && popoverHighlight && activeHighlightPosition && popoverPortalEl && (
                 <HighlightPopover

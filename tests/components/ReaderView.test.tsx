@@ -19,6 +19,7 @@ const {
     storageScopeState,
     highlightsState,
     useHighlightsSpy,
+    resolvedTargetState,
     syncFromCloudMock,
     toastSuccessMock,
 } = vi.hoisted(() => ({
@@ -52,6 +53,7 @@ const {
         }>,
     },
     useHighlightsSpy: vi.fn(),
+    resolvedTargetState: { data: undefined as Record<string, unknown> | null | undefined, error: false },
     syncFromCloudMock: vi.fn(),
     toastSuccessMock: vi.fn(),
 }));
@@ -197,6 +199,10 @@ vi.mock('@/components/reader/NotesDrawer', () => ({
     }
 }));
 
+vi.mock('@/components/reader/HighlightPopover', () => ({
+    HighlightPopover: ({ variant }: { variant: string }) => <div data-testid="floating-highlight-mode">{variant}</div>,
+}));
+
 vi.mock('@/components/reader/TextSelectionToolbar', () => ({
     TextSelectionToolbar: () => <div data-testid="mock-text-toolbar" />
 }));
@@ -275,6 +281,7 @@ vi.mock('@/hooks/useReadingTimer', () => ({
 }));
 
 vi.mock('@/hooks/useHighlights', () => ({
+    useHighlight: (id: string | null) => ({ data: resolvedTargetState.data === undefined ? highlightsState.value.find(item => item.id === id) ?? null : resolvedTargetState.data, isSuccess: !resolvedTargetState.error, isPending: false, isError: resolvedTargetState.error, refetch: vi.fn() }),
     useHighlights: (...args: unknown[]) => {
         useHighlightsSpy(...args);
         return {
@@ -343,6 +350,7 @@ describe('ReaderView', () => {
         readerHeroHeaderSpy.mockClear();
         routerReplaceMock.mockClear();
         searchParamsState.value = '';
+        resolvedTargetState.data = undefined; resolvedTargetState.error = false;
         segmentAccordionSpy.mockClear();
         storageScopeState.value = 'guest';
         highlightsState.value = [];
@@ -601,6 +609,7 @@ describe('ReaderView', () => {
         expect(routerReplaceMock).not.toHaveBeenCalled();
 
         searchParamsState.value = '';
+        resolvedTargetState.data = undefined; resolvedTargetState.error = false;
         storageScopeState.value = 'user:user-a';
         rerender(<ReaderView content={resumableContent} />);
 
@@ -981,7 +990,7 @@ describe('ReaderView', () => {
         expect(readerContent).toHaveStyle('--reader-audio-viewport-bottom: 72px');
     });
 
-    it('consumes a highlightId URL param and clears it after jumping', async () => {
+    it('retains a highlightId URL param after jumping', async () => {
         searchParamsState.value = 'highlightId=highlight-1';
         progressState.value = {
             completed: ['seg-1'],
@@ -1033,11 +1042,36 @@ describe('ReaderView', () => {
             );
         });
 
-        await waitFor(() => {
-            expect(routerReplaceMock).toHaveBeenCalledWith('/read/test-item-1', { scroll: false });
-        });
+        expect(routerReplaceMock).not.toHaveBeenCalled();
 
         expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-2');
+    });
+
+    it('resolves a target outside the first page and does not scroll again after a refetch/render', async () => {
+        searchParamsState.value = 'highlightId=older-highlight';
+        resolvedTargetState.data = { id: 'older-highlight', user_id: 'owner', content_item_id: mockContent.id, segment_id: 'seg-1', highlighted_text: 'Old saved passage', note_body: 'Old thought' };
+        const view = render(<ReaderView content={mockContent} />);
+        await waitFor(() => expect(window.scrollTo).toHaveBeenCalled());
+        expect(notesDrawerSpy.mock.lastCall?.[0].highlights).toEqual(expect.arrayContaining([resolvedTargetState.data]));
+        const scrollCount = vi.mocked(window.scrollTo).mock.calls.length;
+        resolvedTargetState.data = { ...resolvedTargetState.data! };
+        view.rerender(<ReaderView content={{ ...mockContent }} />);
+        expect(vi.mocked(window.scrollTo).mock.calls.length).toBe(scrollCount);
+        expect(routerReplaceMock).not.toHaveBeenCalled();
+        view.unmount();
+        render(<ReaderView content={mockContent} />);
+        await waitFor(() => expect(vi.mocked(window.scrollTo).mock.calls.length).toBeGreaterThan(scrollCount));
+    });
+
+    it('distinguishes retryable target requests from unavailable targets', () => {
+        searchParamsState.value = 'highlightId=missing'; resolvedTargetState.error = true;
+        const view = render(<ReaderView content={mockContent} />);
+        expect(screen.getByText('Could not load this saved passage. Please retry.')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Retry saved passage' })).toBeInTheDocument();
+        resolvedTargetState.error = false; resolvedTargetState.data = null;
+        view.rerender(<ReaderView content={mockContent} />);
+        expect(screen.getByText('This saved passage was deleted or is no longer accessible.')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Retry saved passage' })).not.toBeInTheDocument();
     });
 
     it('waits for the target segment to expand before scrolling drawer jumps to the segment top', async () => {
@@ -1139,6 +1173,37 @@ describe('ReaderView', () => {
             behavior: 'smooth',
         });
         expect(mark).toHaveAttribute('data-highlight-spotlight', 'true');
+    });
+
+    it('mounts the themed interactive portal outside animated reader ancestors and removes it on navigation', () => {
+        const { unmount } = render(<ReaderView content={mockContent} />);
+        const portalRoot = document.body.querySelector(':scope > .reader-light');
+        expect(portalRoot).toBeInTheDocument();
+        expect(portalRoot).not.toHaveAttribute('aria-hidden');
+        unmount();
+        expect(portalRoot).not.toBeInTheDocument();
+    });
+
+    it('keeps clicked desktop controls open when pointer movement requests another preview', () => {
+        highlightsState.value = [{
+            id: 'highlight-1', user_id: 'user-1', content_item_id: 'test-item-1', segment_id: 'seg-1',
+            highlighted_text: 'Body 1', note_body: 'Saved thought', color: 'yellow', anchor_start: 0,
+            anchor_end: 6, created_at: null, updated_at: null, content_item: null, segment: null,
+        }];
+        render(<ReaderView content={mockContent} />);
+        const position = { top: 12, left: 34, width: 56, height: 18 };
+        act(() => segmentAccordionSpy.mock.lastCall?.[0].onHighlightPreview('highlight-1', position));
+        expect(screen.getByTestId('floating-highlight-mode')).toHaveTextContent('preview');
+        const stalePreviewEnd = segmentAccordionSpy.mock.lastCall?.[0].onHighlightPreviewEnd;
+        fireEvent.click(screen.getByTestId('activate-highlight'));
+        expect(screen.getByTestId('floating-highlight-mode')).toHaveTextContent('full');
+        act(() => segmentAccordionSpy.mock.lastCall?.[0].onHighlightPreview('highlight-1', position));
+        expect(screen.getByTestId('floating-highlight-mode')).toHaveTextContent('full');
+        vi.useFakeTimers();
+        try {
+            act(() => { stalePreviewEnd(); vi.advanceTimersByTime(151); });
+            expect(screen.getByTestId('floating-highlight-mode')).toHaveTextContent('full');
+        } finally { vi.useRealTimers(); }
     });
 
     it('opens the notes drawer to a tapped inline highlight on mobile', async () => {

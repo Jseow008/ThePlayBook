@@ -1,4 +1,4 @@
-import { PATCH, DELETE } from '@/app/api/library/highlights/[id]/route';
+import { GET, PATCH, DELETE } from '@/app/api/library/highlights/[id]/route';
 import { NextRequest } from 'next/server';
 import { vi } from 'vitest';
 import { createClient } from '@/lib/supabase/server';
@@ -34,6 +34,8 @@ describe('Highlights API', () => {
     };
     const updateBuilder: any = {
         eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         single: vi.fn().mockReturnThis(),
         then: vi.fn((resolve) => resolve({ data: currentHighlight, error: null })),
@@ -73,10 +75,42 @@ describe('Highlights API', () => {
 
         deleteBuilder.then.mockImplementation((resolve: any) => resolve({ data: null, error: null }));
         updateBuilder.then.mockImplementation((resolve: any) => resolve({ data: currentHighlight, error: null }));
-        currentBuilder.maybeSingle.mockResolvedValue({ data: currentHighlight, error: null });
+        currentBuilder.maybeSingle.mockReset().mockResolvedValue({ data: currentHighlight, error: null });
         overlapBuilder.maybeSingle.mockResolvedValue({ data: null, error: null });
         selectMock.mockReset();
         selectMock.mockReturnValueOnce(currentBuilder).mockReturnValue(overlapBuilder);
+    });
+
+    describe('GET point lookup', () => {
+        const params = { params: Promise.resolve({ id: currentHighlight.id }) };
+        it('checks ownership and returns a target without pagination', async () => {
+            currentBuilder.maybeSingle.mockResolvedValueOnce({ data: { ...currentHighlight, content_item: { id: currentHighlight.content_item_id } }, error: null });
+            const res = await GET(new NextRequest(`http://localhost/api/library/highlights/${currentHighlight.id}`), params);
+            expect(res.status).toBe(200);
+            expect(currentBuilder.eq).toHaveBeenCalledWith('user_id', mockUser.id);
+            expect(res.headers.get('cache-control')).toBe('private, no-store');
+        });
+        it('distinguishes missing or inaccessible targets from request failures', async () => {
+            selectMock.mockReset().mockReturnValue(currentBuilder);
+            currentBuilder.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+            expect((await GET(new NextRequest('http://localhost'), params)).status).toBe(404);
+            currentBuilder.maybeSingle.mockResolvedValueOnce({ data: null, error: { message: 'unavailable database' } });
+            expect((await GET(new NextRequest('http://localhost'), params)).status).toBe(500);
+        });
+        it('requires authentication', async () => {
+            mockAuthUser.mockResolvedValueOnce({ data: { user: null } });
+            expect((await GET(new NextRequest('http://localhost'), params)).status).toBe(401);
+        });
+    });
+
+    it('rejects stale note updates atomically instead of overwriting', async () => {
+        updateBuilder.then.mockImplementationOnce((resolve: any) => resolve({ data: null, error: null }));
+        const res = await PATCH(new NextRequest('http://localhost', { method: 'PATCH', body: JSON.stringify({ note_body: 'stale draft', expected: { note_body: null, color: 'yellow', updated_at: null } }) }), { params: Promise.resolve({ id: currentHighlight.id }) });
+        expect(res.status).toBe(409);
+        expect((await res.json()).error.code).toBe('STALE_HIGHLIGHT');
+        expect(updateBuilder.is).toHaveBeenCalledWith('note_body', null);
+        expect(updateBuilder.is).toHaveBeenCalledWith('updated_at', null);
+        expect(updateBuilder.eq).toHaveBeenCalledWith('color', 'yellow');
     });
 
     describe('DELETE /[id]', () => {
@@ -111,6 +145,13 @@ describe('Highlights API', () => {
             });
             const res = await PATCH(req, { params: Promise.resolve({ id: '123e4567-e89b-12d3-a456-426614174000' }) });
             expect(res.status).toBe(400);
+        });
+
+        it('explains a rejected over-limit note without performing an update', async () => {
+            const res = await PATCH(new NextRequest('http://localhost', { method: 'PATCH', body: JSON.stringify({ note_body: 'x'.repeat(4001) }) }), { params: Promise.resolve({ id: currentHighlight.id }) });
+            expect(res.status).toBe(400);
+            expect((await res.json()).error.message).toContain('4,000 characters');
+            expect(updateMock).not.toHaveBeenCalled();
         });
 
         it('updates highlight color and note', async () => {
