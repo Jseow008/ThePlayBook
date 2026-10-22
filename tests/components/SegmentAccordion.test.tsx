@@ -440,7 +440,7 @@ describe('SegmentAccordion', () => {
         expect(marks.map((mark) => mark.textContent).join('')).toBe('First sentence.');
     });
 
-    it('uses the stored anchor as a proximity hint when repairing repeated text', () => {
+    it('leaves stale repeated text unresolved instead of choosing the nearest occurrence', () => {
         const segments: SegmentFull[] = [
             {
                 id: 'seg-repeated-blocks',
@@ -479,8 +479,7 @@ describe('SegmentAccordion', () => {
 
         fireEvent.click(screen.getByText('Repeated block text').closest('button')!);
 
-        const paragraphHtml = container.querySelector('[data-segment-id="seg-repeated-blocks"] p')?.innerHTML ?? '';
-        expect(paragraphHtml).toMatch(/Alpha Beta <mark[^>]*>Alpha<\/mark>/);
+        expect(container.querySelector('mark[data-id="highlight-repeated-blocks"]')).toBeNull();
     });
 
     it('renders anchor-based highlights across markdown node boundaries', () => {
