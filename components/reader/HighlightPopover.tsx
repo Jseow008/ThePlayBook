@@ -187,8 +187,9 @@ export function HighlightPopover({
                     onMouseLeave();
                 }
             }}
+            // Moving between measured placements must not sweep the preview over its anchor.
             className={cn(
-                "fixed transform -translate-x-1/2 origin-center animate-in fade-in zoom-in-95 duration-200",
+                "fixed transform -translate-x-1/2 origin-center animate-in fade-in zoom-in-95 duration-200 transition-none",
                 "w-[min(20rem,calc(100vw-2rem))] max-h-[calc(100vh-2rem)]",
                 placement?.direction === "above" ? "pb-2.5" : "pt-2.5",
                 OVERLAY_LAYER_CLASS.popover
