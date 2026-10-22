@@ -43,7 +43,7 @@ One agent; approximately 30 minutes through local verification and PR preparatio
 
 ## Review corrections — 22 October 2026
 
-The owner confirmed three gaps at `8fb698ac`; all three are corrected on the existing PR branch:
+The owner confirmed three gaps at `8fb698ac`; correction implementation `e40f1ccb` addresses all three on the existing PR branch:
 
 - Series deletion may perform only the foreign key's detach of an archived edition. The trigger verifies the former parent is gone and all non-series/non-timestamp fields are unchanged, clears the paired ordinal, and continues to reject manual detachment, reassignment and content edits. The unreleased migration was corrected in place; no production migration was applied.
 - Original-summary Notes links now use the existing per-content reflection endpoint. Reflections remain visible under the summary filter and the Reflections tab, even when the catalog join is null for an archived source. Broader reflection text/color/sort search remains outside this change.
