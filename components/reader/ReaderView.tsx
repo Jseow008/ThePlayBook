@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
@@ -100,6 +101,8 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [isNotesDrawerOpen, setIsNotesDrawerOpen] = useState(false);
     const [isPopoverHovered, setIsPopoverHovered] = useState(false);
     const [popoverPortalEl, setPopoverPortalEl] = useState<HTMLDivElement | null>(null);
+    const [popoverPortalHost, setPopoverPortalHost] = useState<HTMLElement | null>(null);
+    useEffect(() => { setPopoverPortalHost(document.body); }, []);
     const popoverCloseTimeoutRef = useRef<number | null>(null);
     const [showAuthorChat, setShowAuthorChat] = useState(false);
     const [audioCurrentTimeSec, setAudioCurrentTimeSec] = useState(0);
@@ -1030,7 +1033,10 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
-            <div ref={setPopoverPortalEl} aria-hidden="true" />
+            {popoverPortalHost && createPortal(
+                <div ref={setPopoverPortalEl} className={`font-sans text-foreground reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`} />,
+                popoverPortalHost
+            )}
             <div
                 className={cn(
                     "max-w-3xl mx-auto px-5 sm:px-6 pt-8 transition-[padding-bottom] duration-300 sm:pt-12",

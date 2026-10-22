@@ -1175,6 +1175,15 @@ describe('ReaderView', () => {
         expect(mark).toHaveAttribute('data-highlight-spotlight', 'true');
     });
 
+    it('mounts the themed interactive portal outside animated reader ancestors and removes it on navigation', () => {
+        const { unmount } = render(<ReaderView content={mockContent} />);
+        const portalRoot = document.body.querySelector(':scope > .reader-light');
+        expect(portalRoot).toBeInTheDocument();
+        expect(portalRoot).not.toHaveAttribute('aria-hidden');
+        unmount();
+        expect(portalRoot).not.toBeInTheDocument();
+    });
+
     it('keeps clicked desktop controls open when pointer movement requests another preview', () => {
         highlightsState.value = [{
             id: 'highlight-1', user_id: 'user-1', content_item_id: 'test-item-1', segment_id: 'seg-1',
