@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import { clearAllNotesChatSessions } from "@/lib/notes-chat-session";
 
+import { clearNoteDrafts } from "@/lib/note-draft";
+
 const AUTH_CONTEXT_MISSING = Symbol("AUTH_CONTEXT_MISSING");
 const AuthUserContext = createContext<User | null | undefined | typeof AUTH_CONTEXT_MISSING>(AUTH_CONTEXT_MISSING);
 const AuthSessionEpochContext = createContext<number>(0);
@@ -49,7 +51,7 @@ export function AuthUserProvider({
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (!isMounted) return;
             // This provider stays mounted when Notes is closed, including on Settings.
-            if (_event === "SIGNED_OUT") clearAllNotesChatSessions();
+            if (_event === "SIGNED_OUT") { clearAllNotesChatSessions(); clearNoteDrafts(); }
             setUser(session?.user ?? null);
             // A token refresh keeps the same authenticated session. A sign-in,
             // sign-out, or replacement session gets a new cache generation.

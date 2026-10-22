@@ -1,5 +1,7 @@
 "use client";
 
+import { useNoteDraft } from "@/hooks/useNoteDraft";
+import { NoteDraftStatus } from "@/components/reader/NoteDraftStatus";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
@@ -548,6 +550,9 @@ interface NoteEditorOverlayProps {
     onDraftNoteChange: (value: string) => void;
     onDraftColorChange: (value: HighlightColor) => void;
     onClearDraft: () => void;
+    onCancel: () => void;
+    draftStatus: React.ReactNode;
+    draftReadOnly: boolean;
     onSave: () => void;
 }
 
@@ -558,6 +563,9 @@ function NoteEditorOverlay({
     canSave,
     isSaving,
     onClose,
+    onCancel,
+    draftStatus,
+    draftReadOnly,
     onDraftNoteChange,
     onDraftColorChange,
     onClearDraft,
@@ -675,6 +683,7 @@ function NoteEditorOverlay({
                         </div>
 
                         <div>
+                            {draftStatus}
                             <div className="flex items-center justify-between gap-3">
                                 <label
                                     htmlFor="note-editor-textarea"
@@ -695,6 +704,7 @@ function NoteEditorOverlay({
                             <textarea
                                 ref={textareaRef}
                                 id="note-editor-textarea"
+                                readOnly={draftReadOnly}
                                 value={draftNote}
                                 onChange={(event) => onDraftNoteChange(event.target.value)}
                                 placeholder="Capture what matters about this passage."
@@ -706,7 +716,7 @@ function NoteEditorOverlay({
                     <div className="flex items-center justify-between gap-3 border-t border-white/8 bg-background/92 px-5 py-4 safe-area-pb-md sm:px-6 sm:pb-4">
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={onCancel}
                             className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-foreground/84 transition-colors hover:bg-card/50 hover:text-foreground"
                         >
                             Cancel
@@ -852,8 +862,8 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     const [itemHeights, setItemHeights] = useState<Record<number, number>>({});
     const [virtualRange, setVirtualRange] = useState({ start: 0, end: 0 });
     const [editingHighlight, setEditingHighlight] = useState<HighlightWithContent | null>(null);
-    const [draftNote, setDraftNote] = useState("");
-    const [draftColor, setDraftColor] = useState<HighlightColor>("yellow");
+    const noteDraft = useNoteDraft(editingHighlight);
+    const { note: draftNote, color: draftColor, setNote: setDraftNote, setColor: setDraftColor } = noteDraft;
     const [editingReflection, setEditingReflection] = useState<ReflectionWithContent | null>(null);
     const [draftReflection, setDraftReflection] = useState("");
     const askToggleButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -1267,15 +1277,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
         return `/ask?${askParams.toString()}`;
     }, [notesChatScope, pathname, searchParams]);
 
-    const hasDraftChanges = useMemo(() => {
-        if (!editingHighlight) {
-            return false;
-        }
-
-        const originalNote = editingHighlight.note_body?.trim() || "";
-        const originalColor = normalizeHighlightColor(editingHighlight.color);
-        return draftNote.trim() !== originalNote || draftColor !== originalColor;
-    }, [draftColor, draftNote, editingHighlight]);
+    const hasDraftChanges = noteDraft.dirty && noteDraft.ready;
 
     const hasReflectionChanges = useMemo(() => {
         return Boolean(
@@ -1302,8 +1304,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
 
     const handleOpenEditor = (item: HighlightWithContent) => {
         setEditingHighlight(item);
-        setDraftNote(item.note_body?.trim() || "");
-        setDraftColor(normalizeHighlightColor(item.color));
+
     };
 
     const handleDeleteReflection = async (id: string) => {
@@ -1368,6 +1369,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
         try {
             await updateHighlight.mutateAsync({
                 id: editingHighlight.id,
+                expected: noteDraft.expected, expected_user_id: noteDraft.owner,
                 note_body: trimmedNote === "" ? null : trimmedNote,
                 color: draftColor,
             });
@@ -1382,6 +1384,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                 });
             }
 
+            noteDraft.discard();
             setEditingHighlight(null);
 
             if (trimmedNote === "") {
@@ -1392,6 +1395,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
             toast.success(hadNote ? "Note updated" : "Note added");
         } catch (error: any) {
             toast.error(error.message || "Failed to save note");
+            noteDraft.refresh();
         }
     };
 
@@ -1937,12 +1941,15 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
             </main>
 
             <NoteEditorOverlay
-                item={editingHighlight}
+                item={noteDraft.ownsTarget ? editingHighlight : null}
                 draftNote={draftNote}
                 draftColor={draftColor}
                 canSave={hasDraftChanges}
                 isSaving={updateHighlight.isPending}
                 onClose={handleCloseEditor}
+                onCancel={() => { if (!updateHighlight.isPending) { noteDraft.discard(); handleCloseEditor(); } }}
+                draftStatus={<NoteDraftStatus draft={noteDraft} />}
+                draftReadOnly={noteDraft.checking || noteDraft.conflict}
                 onDraftNoteChange={setDraftNote}
                 onDraftColorChange={setDraftColor}
                 onClearDraft={() => setDraftNote("")}

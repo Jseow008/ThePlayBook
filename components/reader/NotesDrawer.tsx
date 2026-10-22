@@ -1,5 +1,7 @@
 "use client";
 
+import { useNoteDraft } from "@/hooks/useNoteDraft";
+import { NoteDraftStatus } from "@/components/reader/NoteDraftStatus";
 import { useState, useEffect, useMemo, useCallback, useRef, type TransitionEvent as ReactTransitionEvent } from "react";
 import { createPortal } from "react-dom";
 import { StickyNote, AlertCircle, Trash2, X, MessageSquareQuote, ArrowUpRight, Edit3 } from "lucide-react";
@@ -8,7 +10,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import { toast } from "sonner";
-import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor } from "@/lib/highlight-utils";
+import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
 import { MobileNoteComposer, type MobileNoteComposerContext } from "./MobileNoteComposer";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
@@ -52,22 +54,14 @@ export function NotesDrawer({
     const isCompactReaderControls = useMediaQuery(VIEWPORT_QUERIES.compactReaderControls);
     const prefersReducedMotion = usePrefersReducedMotion();
     const [editingHighlight, setEditingHighlight] = useState<HighlightWithContent | null>(null);
-    const [draftNote, setDraftNote] = useState("");
-    const [draftColor, setDraftColor] = useState<HighlightColor>("yellow");
+    const noteDraft = useNoteDraft(editingHighlight);
+    const { note: draftNote, color: draftColor, setNote: setDraftNote, setColor: setDraftColor } = noteDraft;
     const sectionTitleMap = useMemo(
         () => new Map(sections.map((section) => [section.id, section.title])),
         [sections]
     );
 
-    const hasDraftChanges = useMemo(() => {
-        if (!editingHighlight) {
-            return false;
-        }
-
-        const originalNote = editingHighlight.note_body?.trim() || "";
-        const originalColor = normalizeHighlightColor(editingHighlight.color);
-        return draftNote.trim() !== originalNote || draftColor !== originalColor;
-    }, [draftColor, draftNote, editingHighlight]);
+    const hasDraftChanges = noteDraft.dirty && noteDraft.ready;
 
     const composerContext = useMemo<MobileNoteComposerContext | null>(() => {
         if (!editingHighlight) {
@@ -166,8 +160,7 @@ export function NotesDrawer({
 
     const handleOpenComposer = (item: HighlightWithContent) => {
         setEditingHighlight(item);
-        setDraftNote(item.note_body?.trim() || "");
-        setDraftColor(normalizeHighlightColor(item.color));
+
     };
 
     const handleCloseComposer = () => {
@@ -189,6 +182,7 @@ export function NotesDrawer({
         try {
             await updateHighlight.mutateAsync({
                 id: editingHighlight.id,
+                expected: noteDraft.expected, expected_user_id: noteDraft.owner,
                 note_body: trimmedNote === "" ? null : trimmedNote,
                 color: draftColor,
             });
@@ -203,6 +197,7 @@ export function NotesDrawer({
                 });
             }
 
+            noteDraft.discard();
             setEditingHighlight(null);
 
             if (trimmedNote === "") {
@@ -213,6 +208,7 @@ export function NotesDrawer({
             toast.success(hadNote ? "Note updated" : "Note added");
         } catch (error: any) {
             toast.error(error.message || "Failed to save note");
+            noteDraft.refresh();
         }
     };
 
@@ -445,12 +441,15 @@ export function NotesDrawer({
 
                 <MobileNoteComposer
                     context={composerContext}
-                    isOpen={Boolean(editingHighlight)}
+                    isOpen={Boolean(editingHighlight && noteDraft.ownsTarget)}
                     noteValue={draftNote}
                     colorValue={draftColor}
                     canSave={hasDraftChanges}
                     isSaving={updateHighlight.isPending}
                     onClose={handleCloseComposer}
+                    onCancel={() => { if (!updateHighlight.isPending) { noteDraft.discard(); handleCloseComposer(); } }}
+                    draftStatus={<NoteDraftStatus draft={noteDraft} />}
+                    draftReadOnly={noteDraft.checking || noteDraft.conflict}
                     onNoteChange={setDraftNote}
                     onColorChange={setDraftColor}
                     onClear={() => setDraftNote("")}

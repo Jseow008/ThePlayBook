@@ -278,3 +278,5 @@ describe("NotesDrawer", () => {
         expect(screen.queryByText("   ")).not.toBeInTheDocument();
     });
 });
+
+vi.mock("@/hooks/useAuthUser", () => ({ useAuthSessionIdentity: () => ({ user: { id: "user-1" }, sessionEpoch: 0 }) }));

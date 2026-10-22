@@ -1,6 +1,8 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { HighlightPopover } from '@/components/reader/HighlightPopover';
 import { vi } from 'vitest';
+import { clearNoteDrafts } from '@/lib/note-draft';
+vi.mock('@/hooks/useAuthUser', () => ({ useAuthSessionIdentity: () => ({ user: { id: 'user-1' }, sessionEpoch: 0 }) }));
 
 vi.mock('@/hooks/useHighlights', () => ({
     useUpdateHighlight: () => ({
@@ -14,6 +16,18 @@ vi.mock('@/hooks/useHighlights', () => ({
 }));
 
 describe('HighlightPopover', () => {
+    beforeEach(() => {
+        clearNoteDrafts();
+        const notes: Record<string, { note_body: string; color: string }> = {
+            'highlight-a': { note_body: 'First note', color: 'yellow' },
+            'highlight-b': { note_body: 'Second note', color: 'blue' },
+            'highlight-c': { note_body: 'Color note', color: 'red' },
+        };
+        vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+            const id = url.split('/').pop()!;
+            return { ok: true, json: async () => ({ data: { id, user_id: 'user-1', updated_at: null, ...notes[id] } }) };
+        }));
+    });
     const createPortalContainer = () => {
         const container = document.createElement('div');
         container.className = 'reader-sepia';
@@ -21,7 +35,7 @@ describe('HighlightPopover', () => {
         return container;
     };
 
-    it('resets local edit state when switching to a different highlight', () => {
+    it('resets local edit state when switching to a different highlight', async () => {
         const portalContainer = createPortalContainer();
         const { rerender } = render(
             <HighlightPopover
@@ -36,6 +50,7 @@ describe('HighlightPopover', () => {
         );
 
         fireEvent.click(screen.getByTitle('Edit Color or Note'));
+        await waitFor(() => expect(screen.getByPlaceholderText('Add a note...')).toHaveValue('First note'));
         const textarea = screen.getByPlaceholderText('Add a note...') as HTMLTextAreaElement;
         fireEvent.change(textarea, { target: { value: 'Unsaved edit' } });
 
@@ -53,10 +68,10 @@ describe('HighlightPopover', () => {
 
         expect(screen.getByText(/Second quote/)).toBeInTheDocument();
         fireEvent.click(screen.getByTitle('Edit Color or Note'));
-        expect((screen.getByPlaceholderText('Add a note...') as HTMLTextAreaElement).value).toBe('Second note');
+        await waitFor(() => expect(screen.getByPlaceholderText('Add a note...')).toHaveValue('Second note'));
     });
 
-    it('renders solid color swatches and updates the selected swatch state', () => {
+    it('renders solid color swatches and updates the selected swatch state', async () => {
         const portalContainer = createPortalContainer();
         render(
             <HighlightPopover
@@ -72,6 +87,7 @@ describe('HighlightPopover', () => {
 
         fireEvent.click(screen.getByTitle('Edit Color or Note'));
 
+        await waitFor(() => expect(screen.getByPlaceholderText('Add a note...')).toHaveValue('Color note'));
         const redButton = screen.getByLabelText('Set color to red');
         const blueButton = screen.getByLabelText('Set color to blue');
 

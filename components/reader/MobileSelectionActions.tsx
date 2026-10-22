@@ -1,16 +1,18 @@
 "use client";
 
+import { useNoteDraft } from "@/hooks/useNoteDraft";
+import { NoteDraftStatus } from "@/components/reader/NoteDraftStatus";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Edit3, Highlighter, Loader2, X } from "lucide-react";
 import {
     HighlightConflictError,
+    loadHighlightForUpdate,
     useCreateHighlight,
     useUpdateHighlight,
 } from "@/hooks/useHighlights";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { toast } from "sonner";
-import { type HighlightColor } from "@/lib/highlight-utils";
 import { MobileNoteComposer, type MobileNoteComposerContext } from "./MobileNoteComposer";
 import { findSegmentElement, getTrimmedSelection } from "./selection-utils";
 
@@ -39,8 +41,11 @@ export function MobileSelectionActions({
     const [mounted, setMounted] = useState(false);
     const [selectionInfo, setSelectionInfo] = useState<SelectionInfo | null>(null);
     const [isComposerOpen, setIsComposerOpen] = useState(false);
-    const [draftNote, setDraftNote] = useState("");
-    const [draftColor, setDraftColor] = useState<HighlightColor>("blue");
+    const noteDraft = useNoteDraft(isComposerOpen && selectionInfo ? {
+        id: `new:${contentItemId}:${selectionInfo.segmentId}:${selectionInfo.anchorStart}:${selectionInfo.anchorEnd}:${selectionInfo.text}`,
+        isNew: true, note_body: null, color: "blue", updated_at: null,
+    } : null);
+    const { note: draftNote, color: draftColor, setNote: setDraftNote, setColor: setDraftColor } = noteDraft;
     const createHighlight = useCreateHighlight();
     const updateHighlight = useUpdateHighlight();
     const { readerTheme } = useReaderSettings();
@@ -127,8 +132,7 @@ export function MobileSelectionActions({
         window.getSelection()?.removeAllRanges();
         setSelectionInfo(null);
         setIsComposerOpen(false);
-        setDraftNote("");
-        setDraftColor("blue");
+
     };
 
     const offerHighlightReplacement = (
@@ -143,13 +147,18 @@ export function MobileSelectionActions({
                 onClick: () => {
                     void (async () => {
                         try {
+                            const current = updates?.note_body !== undefined
+                                ? await loadHighlightForUpdate(error.details.existingHighlightId) : null;
+                            if (current?.note_body && !window.confirm("This passage already has a saved note. Replace it with your unfinished edits?")) return;
                             await updateHighlight.mutateAsync({
+                                ...(current ? { expected: current, expected_user_id: noteDraft.owner } : {}),
                                 id: error.details.existingHighlightId,
                                 highlighted_text: selected.text,
                                 anchor_start: selected.anchorStart,
                                 anchor_end: selected.anchorEnd,
                                 ...updates,
                             });
+                            noteDraft.discard();
                             toast.success("Highlight replaced");
                             clearSelectionState();
                         } catch (replacementError: any) {
@@ -194,8 +203,7 @@ export function MobileSelectionActions({
             return;
         }
 
-        setDraftColor("blue");
-        setDraftNote("");
+
         setIsComposerOpen(true);
         window.getSelection()?.removeAllRanges();
     };
@@ -209,7 +217,7 @@ export function MobileSelectionActions({
     };
 
     const handleSaveNote = async () => {
-        if (!selectionInfo || !draftNote.trim()) {
+        if (!selectionInfo || !draftNote.trim() || !noteDraft.ready) {
             return;
         }
 
@@ -221,6 +229,7 @@ export function MobileSelectionActions({
                 content_item_id: contentItemId,
                 segment_id: selected.segmentId,
                 highlighted_text: selected.text,
+                expected_user_id: noteDraft.owner,
                 note_body: trimmedNote,
                 color: draftColor,
                 anchor_start: selected.anchorStart,
@@ -228,13 +237,16 @@ export function MobileSelectionActions({
             });
 
             if (result.disposition === "existing") {
+                if (result.highlight.note_body && !window.confirm("This passage already has a saved note. Replace it with your unfinished edits?")) return;
                 await updateHighlight.mutateAsync({
+                    expected: result.highlight, expected_user_id: noteDraft.owner,
                     id: result.highlight.id,
                     note_body: trimmedNote,
                     color: draftColor,
                 });
             }
 
+            noteDraft.discard();
             toast.success("Highlight & note saved");
             clearSelectionState();
         } catch (error: any) {
@@ -315,9 +327,12 @@ export function MobileSelectionActions({
                 isOpen={isComposerOpen}
                 noteValue={draftNote}
                 colorValue={draftColor}
-                canSave={draftNote.trim().length > 0}
-                isSaving={createHighlight.isPending}
+                canSave={noteDraft.ready && draftNote.trim().length > 0}
+                isSaving={createHighlight.isPending || updateHighlight.isPending}
                 onClose={handleCloseComposer}
+                onCancel={() => { if (!createHighlight.isPending && !updateHighlight.isPending) { noteDraft.discard(); handleCloseComposer(); } }}
+                draftStatus={<NoteDraftStatus draft={noteDraft} />}
+                    draftReadOnly={noteDraft.checking || noteDraft.conflict}
                 onNoteChange={setDraftNote}
                 onColorChange={setDraftColor}
                 onClear={() => setDraftNote("")}
