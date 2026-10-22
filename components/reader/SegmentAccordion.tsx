@@ -565,8 +565,10 @@ export function SegmentAccordion({
                 return;
             }
 
-            if (!isReaderInteractionDesktop && event.type === "click") {
+            if (event.type === "click") {
                 event.preventDefault();
+                // A hover preview may already have an outside-click listener.
+                // Do not let this activation click immediately close its editor.
                 event.stopPropagation();
             }
 
@@ -578,7 +580,7 @@ export function SegmentAccordion({
                 height: rect.height,
             });
         },
-        [isReaderInteractionDesktop, onHighlightActivate]
+        [onHighlightActivate]
     );
 
     const previewHighlight = useCallback(

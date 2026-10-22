@@ -620,6 +620,17 @@ describe('SegmentAccordion', () => {
             'highlight-preview',
             expect.objectContaining({ top: expect.any(Number), left: expect.any(Number) })
         );
+        const outsideClick = vi.fn();
+        window.addEventListener('click', outsideClick);
+        try {
+            fireEvent.click(mark);
+            expect(defaultProps.onHighlightActivate).toHaveBeenCalledWith(
+                'highlight-preview', expect.objectContaining({ top: expect.any(Number) })
+            );
+            expect(outsideClick).not.toHaveBeenCalled();
+        } finally {
+            window.removeEventListener('click', outsideClick);
+        }
         fireEvent.mouseLeave(mark.closest('[data-segment-id]')!);
         expect(onHighlightPreviewEnd).toHaveBeenCalled();
     });
