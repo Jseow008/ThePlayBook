@@ -125,7 +125,9 @@ BEGIN
         -- account-bound, restricted-worker read policies for complete export.
         -- Catalog search adds one explicit deny policy to make the private
         -- projection fail closed even if a browser grant is introduced later.
-        ) <> 64
+        -- Content replacement adds one public notice read policy, restricted
+        -- to published, available destinations.
+        ) <> 65
 
         UNION ALL
 

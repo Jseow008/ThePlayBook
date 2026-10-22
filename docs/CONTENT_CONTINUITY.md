@@ -99,3 +99,11 @@ Created fresh disposable project `owhtzfmigrbpopgqowsl` in the previously author
 Deleted the disposable project and confirmed the project list contains only production. Stopped the isolated app and Redis bridge/container; removed the private copied app, credentials, fixtures and workdir. Sanitized logs retained under `/Users/j/.codex/artifacts/pr274-release-verification-20261022/final-{db002,smoke,build}.log`. No production data or product code changed. One agent; approximately 6 minutes for this follow-up; no provider calls; token usage unavailable.
 
 The two outstanding hosted-verification gaps are closed. PR #274 remains unmerged with auto-merge disabled. Next release action: verify production backup freshness and migration parity, review the exact production dry-run list, and obtain explicit authorization for that list before any production migration or promotion. Original affected reader-history IDs and backup location remain a separate unresolved recovery task.
+
+## Production release authorized — 22 October 2026
+
+Owner explicitly waived completion of the remaining production checks and requested release: “No need to finish production checks as no one uses our website, proceed with releasing 274 and make it in production.” The exception and unverified backup-freshness risk were recorded in the PR before any production change. A read-only production dry-run nevertheless confirmed the exact scope is only `20261022021946_content_replacements_preserve_history.sql`. This authorizes that PR's release; it is not evidence that the waived checks passed.
+
+Required Security Validation exposed a separate stale DB-103 expectation: 64 public RLS policies, while this migration adds the reviewed replacement-notice policy. Owner explicitly approved correcting the expectation to 65 and continuing release. All permission checks are retained. Product/migration implementation remains unchanged. Pending: policy-matrix rerun, required CI, production migration, merge and deployment identity confirmation. No production migration applied at this checkpoint.
+
+The complete DB-103 role matrix passed against the restored disposable local database with the corrected count, ending in ROLLBACK. No role or permission assertion was removed. Production dry-run scope is one migration; the database mutation will be applied only for the authorized #274 release.
