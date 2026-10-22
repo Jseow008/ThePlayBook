@@ -1,0 +1,127 @@
+{
+  "candidateApplicationCommit": "e354108796ff8882215e19973f9fc6e1b3106a36",
+  "candidateProject": "puybjujvbpghjeojhvnk",
+  "productionProject": "xmuqsgfxuaaophxnwure",
+  "syntheticFixtures": {
+    "ordinaryAccounts": 2,
+    "adminAccounts": 1,
+    "contentItems": 1,
+    "segments": 1,
+    "highlights": 52
+  },
+  "hostedChecks": {
+    "migrationReplay": "pass",
+    "guardedResetReplay": "pass",
+    "finalDryRun": "up to date",
+    "schemaFingerprintCategoriesMatched": 14,
+    "publicTypes": "match after PostgREST metadata normalization",
+    "securitySqlChecksPassed": 5,
+    "highlightPreservation": "pass",
+    "securityAdvisorRegression": false,
+    "performanceFindings": [
+      "unused indexes on empty candidate",
+      "Auth connection allocation"
+    ]
+  },
+  "api": {
+    "owner": 200,
+    "other": 404,
+    "guest": 401,
+    "unavailable": 404,
+    "save": 200,
+    "staleSave": 409,
+    "newerSavedNotePreserved": true,
+    "health": {
+      "status": "ok",
+      "timestamp": "2026-10-22T13:35:08.335Z",
+      "environment": "production",
+      "database": "reachable",
+      "readiness": {
+        "supabase_public": "ready",
+        "supabase_admin": "ready",
+        "site_url": "ready",
+        "app_url": "ready",
+        "ai_generation": "ready",
+        "ai_retrieval": "ready",
+        "rate_limiting": "ready",
+        "error_reporting": "ready"
+      },
+      "issues": []
+    }
+  },
+  "smoke": {
+    "login": 200,
+    "missingCode": {
+      "status": 307,
+      "denied": true
+    },
+    "browse": 200,
+    "publicRead": 200,
+    "anonymousAdmin": {
+      "status": 307,
+      "denied": true
+    },
+    "authenticatedAdmin": {
+      "login": 200,
+      "page": 200,
+      "heading": true
+    },
+    "health": {
+      "shallow": 200,
+      "detailed": 200,
+      "database": "reachable"
+    }
+  },
+  "browser": {
+    "rank52ExcludedFromInitial50": true,
+    "rank52Revealed": true,
+    "destinationRetainedAfterReload": true,
+    "readingPositionBeforeAndAfterDrawerRerender": [
+      900,
+      900
+    ],
+    "unavailableTargetShowsExplicitAlert": true,
+    "otherAccountCannotSeeTarget": true,
+    "otherAccountNotesCount": 0,
+    "floatingEscape": "editor/draft retained in successful sessions",
+    "floatingOutsideClick": "editor/draft retained in successful sessions",
+    "floatingNavigation": "exact unfinished text recovered in successful sessions",
+    "floatingCancel": "draft discarded; newer saved baseline returned in successful sessions",
+    "newerSavedNoteConflict": "current saved text shown, older draft separate, Save disabled until explicit choice",
+    "floatingOverall": "NOT PASSED: activation remains intermittent under browser automation; do not merge",
+    "automationLimitations": [
+      "pointer protocol timeouts",
+      "Chrome viewport changed during testing; later fixed at 1440x900",
+      "successful isolated cases do not establish reliable entry"
+    ]
+  },
+  "validation": {
+    "focusedRegressionsPassed": 79,
+    "lint": "pass",
+    "productionBuild": "pass",
+    "sharpRoutesPassed": 5,
+    "criticalCss": "pass",
+    "earlierFullSuitePassed": 1838,
+    "earlierFullSuiteSkipped": 287,
+    "earlierCapacityPassed": 34,
+    "fullSuiteAfterFollowup": "CI pending; not repeated locally"
+  },
+  "productionFixtureAudit": [
+    {
+      "fixture_profiles": 0,
+      "fixture_snapshot_operations": 0
+    }
+  ],
+  "cleanup": {
+    "candidateDeleted": true,
+    "absenceConfirmed": true,
+    "earlierUnexpectedProjectDeleted": "sastpsarhjvrxzkirolk",
+    "testServersStopped": true,
+    "testBrowserClosed": true,
+    "viewportOverridesReset": true,
+    "privateWorkdirRemoval": "complete",
+    "recordedAt": "2026-10-22T14:06:54.108918+00:00",
+    "candidateBuiltOutputRemoved": true
+  },
+  "release": "HOLD: desktop browser gate remains unresolved; auto-merge disabled"
+}
