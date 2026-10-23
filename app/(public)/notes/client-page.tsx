@@ -2,6 +2,7 @@
 
 import { useNoteDraft } from "@/hooks/useNoteDraft";
 import { NoteDraftStatus } from "@/components/reader/NoteDraftStatus";
+import { SavedNoteCopyButton } from "@/components/notes/SavedNoteCopyButton";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
@@ -411,6 +412,7 @@ function HighlightListItem({
                             <Edit3 className="size-3.5" />
                             <span>{noteText ? "Edit" : "Add"}</span>
                         </button>
+                        <SavedNoteCopyButton item={item} passageHref={href} />
                         {href && (
                             <Link
                                 href={href}
