@@ -50,7 +50,8 @@
   "historical_restoration": false,
   "hosted_verification": "not rerun; database-facing code unchanged",
   "pending": [
-    "PR CI/security"
+    "refreshed #277 CI/security",
+    "production original-record and unaffected-highlight checks"
   ],
   "full_suite": {
     "passed_files": 245,
@@ -59,7 +60,8 @@
     "skipped_tests": 287,
     "capacity_harness_passed": 34,
     "exit_code": 0,
-    "isolated_from_build_lint_and_typecheck": true
+    "isolated_from_build_lint_and_typecheck": true,
+    "dependency_context": "historical pre-security dependency candidate; refreshed candidate CI pending"
   },
   "lint": "passed after rendered-position correction",
   "typecheck": "passed after rendered-position correction",
@@ -84,5 +86,40 @@
     "Temporary diagnostic file removed after initial suite discovery; clean rerun required.",
     "Initial matcher used Markdown text coordinates; review caught and corrected mismatch with captured DOM positions before auto-merge.",
     "Concurrent final suite with build/lint/type checks hit unrelated test timeouts; stopped, then isolated suite passed without changing time limits."
-  ]
+  ],
+  "secured_release_candidate": {
+    "security_pr": 278,
+    "secured_base_commit": "dbdb622c0ba224ab5d6b042669e8355104a57cf8",
+    "rebased_application_commit": "e5155a5811a29246235d23e4db7c9f95cc33aecf",
+    "exact_preverified_tree": "ee9a8b350c46d3e0e7062e3bfb43a13fa531f34f",
+    "tree_match": true,
+    "quotation_source_hashes_unchanged": true,
+    "versions": {
+      "next": "16.4.2",
+      "@sentry/nextjs": "10.75.2",
+      "dompurify": "3.4.17"
+    },
+    "local_checks": {
+      "focused_tests_passed": 107,
+      "lint": "passed",
+      "typecheck": "passed",
+      "production_build": "passed",
+      "sharp_traces": "passed",
+      "critical_css": "passed",
+      "fresh_production_audit_vulnerabilities": 0
+    },
+    "security_pr_ci": {
+      "validate": "passed",
+      "security_validation": "passed",
+      "catalog_search": "passed",
+      "unit_tests_passed": 1840,
+      "unit_tests_skipped": 287,
+      "browser_tests_passed": 211,
+      "browser_tests_skipped": 118
+    },
+    "pending": [
+      "refreshed #277 CI/security",
+      "production original-record and unaffected-highlight checks"
+    ]
+  }
 }
