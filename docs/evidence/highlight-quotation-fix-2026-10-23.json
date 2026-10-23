@@ -1,0 +1,125 @@
+{
+  "kind": "local-candidate-verification",
+  "date": "2026-10-23",
+  "base_commit": "b10fb615c0f2e571e8fcc506fb9bb3e99420fd2b",
+  "source_sha256": {
+    "components/reader/ReaderView.tsx": "2b6cb3de9bb9f8ea2c21d76d9dd131ebfcfe28547f24b8f804d6ace63565e7c7",
+    "components/reader/SegmentAccordion.tsx": "1bb08d1e48b249ae51ec8a90e04c56f1c9c44227a88f6cdc4829f25f57fc23d3",
+    "lib/highlight-anchoring.ts": "5103158ab7897fefc1ec594335203b8ee00c27cbf5952c4520a233048ceeee13"
+  },
+  "focused_tests": {
+    "files": 3,
+    "passed": 107
+  },
+  "historical_replay": {
+    "scenarios": 8,
+    "historical_mark": "concentration",
+    "historical_start": 672,
+    "current_marks": []
+  },
+  "browser": {
+    "harness": "real ReaderView and SegmentAccordion on final rendered-text anchoring, synthetic hook data and unrelated controls; no API/database verification",
+    "viewports": [
+      {
+        "width": 1440,
+        "height": 1000
+      },
+      {
+        "width": 390,
+        "height": 844
+      }
+    ],
+    "scenarios": [
+      "unchanged",
+      "shifted",
+      "replaced",
+      "missing",
+      "validDuplicate",
+      "staleDuplicate",
+      "legacyDuplicate",
+      "validBlockDuplicate",
+      "staleBlockDuplicate",
+      "markdown"
+    ],
+    "observations": 20,
+    "correct": 20,
+    "horizontal_overflow": false,
+    "cross_section_marks": false
+  },
+  "mutations": false,
+  "historical_restoration": false,
+  "hosted_verification": "not rerun; database-facing code unchanged",
+  "pending": [
+    "refreshed #277 CI/security",
+    "production original-record and unaffected-highlight checks"
+  ],
+  "full_suite": {
+    "passed_files": 245,
+    "skipped_files": 10,
+    "passed_tests": 1874,
+    "skipped_tests": 287,
+    "capacity_harness_passed": 34,
+    "exit_code": 0,
+    "isolated_from_build_lint_and_typecheck": true,
+    "dependency_context": "historical pre-security dependency candidate; refreshed candidate CI pending"
+  },
+  "lint": "passed after rendered-position correction",
+  "typecheck": "passed after rendered-position correction",
+  "build": {
+    "status": "passed after rendered-position correction",
+    "sharp_trace_check": "passed",
+    "critical_css": "passed",
+    "environment": "synthetic local URL and anon value; no database connection or production credentials"
+  },
+  "production_dependency_audit": {
+    "vulnerabilities": 0
+  },
+  "application_candidate_commit": "533b8241",
+  "pull_request": "https://github.com/Jseow008/ThePlayBook/pull/277",
+  "coordinate_regression": {
+    "cause": "Markdown syntax-tree positions omitted DOM block separators",
+    "fix": "validate sanitized rendered text with the same coordinates used by DOM Range capture",
+    "real_selection_capture_roundtrips_passed": 3,
+    "linked_block_duplicate_cases_passed": 4
+  },
+  "failed_attempts": [
+    "Temporary diagnostic file removed after initial suite discovery; clean rerun required.",
+    "Initial matcher used Markdown text coordinates; review caught and corrected mismatch with captured DOM positions before auto-merge.",
+    "Concurrent final suite with build/lint/type checks hit unrelated test timeouts; stopped, then isolated suite passed without changing time limits."
+  ],
+  "secured_release_candidate": {
+    "security_pr": 278,
+    "secured_base_commit": "dbdb622c0ba224ab5d6b042669e8355104a57cf8",
+    "rebased_application_commit": "e5155a5811a29246235d23e4db7c9f95cc33aecf",
+    "exact_preverified_tree": "ee9a8b350c46d3e0e7062e3bfb43a13fa531f34f",
+    "tree_match": true,
+    "quotation_source_hashes_unchanged": true,
+    "versions": {
+      "next": "16.4.2",
+      "@sentry/nextjs": "10.75.2",
+      "dompurify": "3.4.17"
+    },
+    "local_checks": {
+      "focused_tests_passed": 107,
+      "lint": "passed",
+      "typecheck": "passed",
+      "production_build": "passed",
+      "sharp_traces": "passed",
+      "critical_css": "passed",
+      "fresh_production_audit_vulnerabilities": 0
+    },
+    "security_pr_ci": {
+      "validate": "passed",
+      "security_validation": "passed",
+      "catalog_search": "passed",
+      "unit_tests_passed": 1840,
+      "unit_tests_skipped": 287,
+      "browser_tests_passed": 211,
+      "browser_tests_skipped": 118
+    },
+    "pending": [
+      "refreshed #277 CI/security",
+      "production original-record and unaffected-highlight checks"
+    ]
+  }
+}

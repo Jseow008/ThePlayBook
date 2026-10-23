@@ -14,6 +14,7 @@ import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
+import { resolveHighlightAnchor } from "@/lib/highlight-anchoring";
 
 interface HighlightPosition {
     top: number;
@@ -29,10 +30,6 @@ interface HighlightRenderRange {
     color: ReturnType<typeof normalizeHighlightColor>;
 }
 
-interface AnchoredHighlightRenderRange extends HighlightRenderRange {
-    highlightedText: string;
-}
-
 function collectHighlightableText(node: any): string {
     if (!node.children) return "";
 
@@ -45,99 +42,19 @@ function collectHighlightableText(node: any): string {
     }, "");
 }
 
-function findClosestTextMatch(text: string, matchText: string, preferredStart: number): number {
-    let closestIndex = -1;
-    let closestDistance = Number.POSITIVE_INFINITY;
-    let searchFrom = 0;
-
-    while (searchFrom <= text.length - matchText.length) {
-        const matchIndex = text.indexOf(matchText, searchFrom);
-        if (matchIndex === -1) break;
-
-        const distance = Math.abs(matchIndex - preferredStart);
-        if (distance < closestDistance) {
-            closestIndex = matchIndex;
-            closestDistance = distance;
-        }
-
-        searchFrom = matchIndex + 1;
-    }
-
-    return closestIndex;
-}
-
-function resolveHighlightRange(
-    range: AnchoredHighlightRenderRange,
-    canonicalText: string
-): HighlightRenderRange {
-    if (canonicalText.slice(range.start, range.end) === range.highlightedText) {
-        return range;
-    }
-
-    const resolvedStart = findClosestTextMatch(
-        canonicalText,
-        range.highlightedText,
-        range.start
-    );
-
-    if (resolvedStart === -1) {
-        return range;
-    }
-
-    return {
-        id: range.id,
-        start: resolvedStart,
-        end: resolvedStart + range.highlightedText.length,
-        color: range.color,
-    };
-}
-
-function createMarkHtml(id: string, text: string, color: string, interactive: boolean) {
+function createMarkNode(id: string, text: string, color: string, interactive: boolean) {
     const bgClass = HIGHLIGHT_COLOR_CLASSES[normalizeHighlightColor(color)].bg;
     const cursorClass = interactive ? "cursor-pointer" : "cursor-text";
 
-    return `<mark class="${bgClass} text-inherit rounded-sm -mx-0.5 px-0.5 ${cursorClass} transition-colors" data-id="${id}">${text}</mark>`;
-}
-
-function applyLegacyHighlightsToTextNode(
-    text: string,
-    highlights: HighlightWithContent[],
-    interactive: boolean
-): any[] {
-    if (!text) return [];
-
-    const sorted = [...highlights]
-        .filter((highlight) => highlight.highlighted_text.trim().length > 0)
-        .sort((a, b) => b.highlighted_text.length - a.highlighted_text.length);
-
-    for (const highlight of sorted) {
-        const matchText = highlight.highlighted_text;
-        const idx = text.indexOf(matchText);
-
-        if (idx === -1) continue;
-
-        const before = text.slice(0, idx);
-        const match = text.slice(idx, idx + matchText.length);
-        const after = text.slice(idx + matchText.length);
-        const newNodes: any[] = [];
-
-        if (before) {
-            newNodes.push(...applyLegacyHighlightsToTextNode(before, highlights, interactive));
-        }
-
-        newNodes.push({
-            type: "html",
-            value: createMarkHtml(highlight.id, match, highlight.color || "yellow", interactive),
-        });
-
-        if (after) {
-            newNodes.push(...applyLegacyHighlightsToTextNode(after, highlights, interactive));
-        }
-
-        return newNodes;
-    }
-
-    return [{ type: "text", value: text }];
+    return {
+        type: "element",
+        tagName: "mark",
+        properties: {
+            className: `${bgClass} text-inherit rounded-sm -mx-0.5 px-0.5 ${cursorClass} transition-colors`.split(" "),
+            "data-id": id,
+        },
+        children: [{ type: "text", value: text }],
+    };
 }
 
 function applyAnchorHighlightsToTextNode(
@@ -183,10 +100,7 @@ function applyAnchorHighlightsToTextNode(
             continue;
         }
 
-        newNodes.push({
-            type: "html",
-            value: createMarkHtml(activeRange.id, sliceText, activeRange.color, interactive),
-        });
+        newNodes.push(createMarkNode(activeRange.id, sliceText, activeRange.color, interactive));
     }
 
     return newNodes;
@@ -195,7 +109,6 @@ function applyAnchorHighlightsToTextNode(
 function wrapTextNodesWithHighlights(
     node: any,
     anchorRanges: HighlightRenderRange[],
-    legacyHighlights: HighlightWithContent[],
     offsetRef: { value: number },
     interactive: boolean
 ) {
@@ -216,67 +129,35 @@ function wrapTextNodesWithHighlights(
                 interactive
             );
 
-            anchorNodes.forEach((anchorNode) => {
-                if (anchorNode.type === "text" && legacyHighlights.length > 0) {
-                    newChildren.push(
-                        ...applyLegacyHighlightsToTextNode(anchorNode.value, legacyHighlights, interactive)
-                    );
-                } else {
-                    newChildren.push(anchorNode);
-                }
-            });
+            newChildren.push(...anchorNodes);
 
             continue;
         }
 
-        wrapTextNodesWithHighlights(child, anchorRanges, legacyHighlights, offsetRef, interactive);
+        wrapTextNodesWithHighlights(child, anchorRanges, offsetRef, interactive);
         newChildren.push(child);
     }
 
     node.children = newChildren;
 }
 
-function createRemarkHighlightPlugin(highlights: HighlightWithContent[], interactive: boolean = true) {
-    const anchoredHighlights = highlights
-        .filter(
-            (highlight) =>
-                typeof highlight.anchor_start === "number"
-                && typeof highlight.anchor_end === "number"
-                && highlight.anchor_end > highlight.anchor_start
-        )
-        .map((highlight) => ({
-            id: highlight.id,
-            start: highlight.anchor_start as number,
-            end: highlight.anchor_end as number,
-            color: normalizeHighlightColor(highlight.color),
-            highlightedText: highlight.highlighted_text,
-        }));
-
-    const legacyHighlights = highlights.filter(
-        (highlight) =>
-            typeof highlight.anchor_start !== "number"
-            || typeof highlight.anchor_end !== "number"
-            || highlight.anchor_end <= highlight.anchor_start
-    );
-
+function createRehypeHighlightPlugin(highlights: HighlightWithContent[], interactive: boolean = true) {
     return () => (tree: any) => {
-        if (anchoredHighlights.length === 0 && legacyHighlights.length === 0) return;
+        if (highlights.length === 0) return;
 
+        // Resolve against sanitized rendered text, including Markdown block separators,
+        // so positions use the same text coordinates as getTrimmedSelection's DOM Range.
+        // This tree contains only the saved section; never rewrite the saved record.
         const canonicalText = collectHighlightableText(tree);
-        const anchorRanges = anchoredHighlights
-            .map((highlight) => resolveHighlightRange(highlight, canonicalText))
-            .sort((a, b) => {
-                if (a.start !== b.start) return a.start - b.start;
-                return (b.end - b.start) - (a.end - a.start);
-            });
+        const anchorRanges: HighlightRenderRange[] = highlights.flatMap((highlight) => {
+            const anchor = resolveHighlightAnchor(canonicalText, highlight);
+            return anchor ? [{ ...anchor, id: highlight.id, color: normalizeHighlightColor(highlight.color) }] : [];
+        }).sort((a, b) => {
+            if (a.start !== b.start) return a.start - b.start;
+            return (b.end - b.start) - (a.end - a.start);
+        });
 
-        wrapTextNodesWithHighlights(
-            tree,
-            anchorRanges,
-            legacyHighlights,
-            { value: 0 },
-            interactive
-        );
+        wrapTextNodesWithHighlights(tree, anchorRanges, { value: 0 }, interactive);
     };
 }
 
@@ -305,13 +186,13 @@ const SegmentMarkdown = memo(function SegmentMarkdown({ body, segmentId, highlig
     segmentId: string;
     highlights: HighlightWithContent[];
 }) {
-    const remarkPlugins = useMemo(() => {
+    const rehypePlugins = useMemo(() => {
         const matching = highlights.filter((highlight) => highlight.segment_id === segmentId);
         return matching.length > 0
-            ? [remarkGfm, remarkBreaks, createRemarkHighlightPlugin(matching, true)]
-            : [remarkGfm, remarkBreaks];
+            ? [...REHYPE_PLUGINS, createRehypeHighlightPlugin(matching, true)]
+            : REHYPE_PLUGINS;
     }, [highlights, segmentId]);
-    return <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={REHYPE_PLUGINS}>{body}</ReactMarkdown>;
+    return <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} rehypePlugins={rehypePlugins}>{body}</ReactMarkdown>;
 });
 
 function LazySegmentMarkdown(props: React.ComponentProps<typeof SegmentMarkdown> & { expanded: boolean }) {

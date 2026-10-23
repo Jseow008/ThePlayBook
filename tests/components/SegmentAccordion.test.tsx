@@ -1,4 +1,5 @@
 import { act, render, screen, fireEvent } from '@testing-library/react';
+import { getTrimmedSelection } from '@/components/reader/selection-utils';
 import { SegmentAccordion } from '@/components/reader/SegmentAccordion';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { vi } from 'vitest';
@@ -361,6 +362,37 @@ describe('SegmentAccordion', () => {
         }
     });
 
+    it.each([
+        '## Heading\n\nAlpha Beta Alpha',
+        'First paragraph.\n\nAlpha Beta Alpha',
+        '## Heading\n\nAlpha **Beta** Alpha',
+    ])('preserves a real captured selection when repeated wording follows blocks: %s', (body) => {
+        const segments = [{ ...mockSegments[0], markdown_body: body }];
+        const { container, rerender } = render(<SegmentAccordion {...defaultProps} segments={segments} expandedSegmentId="seg-1" />);
+        const section = container.querySelector<HTMLElement>('[data-segment-id="seg-1"]')!;
+        const paragraph = section.querySelectorAll('p')[section.querySelectorAll('p').length - 1];
+        const lastText = paragraph.lastChild!;
+        const range = document.createRange();
+        const start = lastText.textContent!.lastIndexOf('Alpha');
+        range.setStart(lastText, start);
+        range.setEnd(lastText, start + 5);
+        const selection = getTrimmedSelection(range, section)!;
+        expect(selection.text).toBe('Alpha');
+        const target = Object.freeze({
+            id: 'captured-repeat', user_id: 'user-1', content_item_id: 'item-1', segment_id: 'seg-1',
+            highlighted_text: selection.text, note_body: 'Original thought', color: 'yellow',
+            anchor_start: selection.anchorStart, anchor_end: selection.anchorEnd,
+            created_at: '2026-10-23T00:00:00Z', updated_at: null, content_item: null, segment: null,
+        });
+        rerender(<SegmentAccordion {...defaultProps} segments={segments} expandedSegmentId="seg-1" highlights={[target]} />);
+        const mark = container.querySelector('mark[data-id="captured-repeat"]')!;
+        expect(mark.textContent).toBe('Alpha');
+        const markedRange = document.createRange();
+        markedRange.selectNodeContents(section);
+        markedRange.setEndBefore(mark);
+        expect(markedRange.toString().length).toBe(selection.anchorStart);
+    });
+
     it('renders anchored highlights against the correct repeated text occurrence', () => {
         const { container } = render(
             <SegmentAccordion
@@ -395,7 +427,7 @@ describe('SegmentAccordion', () => {
         expect(paragraphHtml).toMatch(/Alpha Beta <mark[^>]*>Alpha<\/mark>/);
     });
 
-    it('repairs DOM anchor drift introduced by markdown block boundaries', () => {
+    it('validates DOM positions including Markdown block boundaries', () => {
         const segments: SegmentFull[] = [
             {
                 id: 'seg-blocks',
@@ -421,8 +453,7 @@ describe('SegmentAccordion', () => {
                         highlighted_text: 'First sentence.',
                         note_body: null,
                         color: 'yellow',
-                        // DOM text contains a newline after the heading; the Markdown text-node
-                        // index does not, so the stored range is one character too far forward.
+                        // The captured DOM position includes the newline after the heading.
                         anchor_start: 8,
                         anchor_end: 23,
                         created_at: '2026-03-10T00:00:00.000Z',
@@ -440,7 +471,7 @@ describe('SegmentAccordion', () => {
         expect(marks.map((mark) => mark.textContent).join('')).toBe('First sentence.');
     });
 
-    it('uses the stored anchor as a proximity hint when repairing repeated text', () => {
+    it('preserves matching rendered positions for repeated text after a Markdown block', () => {
         const segments: SegmentFull[] = [
             {
                 id: 'seg-repeated-blocks',

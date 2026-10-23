@@ -1,0 +1,247 @@
+{
+  "date": "2026-10-23",
+  "scope": "Investigation only; independent of completed PR276. No application change, production write, migration, deployment or paid project.",
+  "baseCommit": "b10fb615c0f2e571e8fcc506fb9bb3e99420fd2b",
+  "savedRecord": {
+    "quote": "concentration",
+    "rangeConvention": "zero-based, end-exclusive",
+    "start": 672,
+    "end": 685,
+    "createdAtUtc": "2026-04-20 03:12:30.269288+00",
+    "updatedAtUtc": "2026-04-20 03:12:30.269288+00",
+    "noteBodyRead": false,
+    "accountIdentifiersRetained": false,
+    "savedSourceRevisionOrContextFields": false
+  },
+  "historicalSource": {
+    "backups": [
+      {
+        "backup": "db002-production-20260715T061325Z",
+        "found": true,
+        "segment_updated_at": "2026-04-11 17:55:27.49572+00",
+        "same_body_as_current": false,
+        "exact_occurrences": 1,
+        "first_raw_offset": 672,
+        "body_sha256": "3bd4a52cd94a770fddf57d8487a9d8649953fccd796589a9cfa1025e9189e8ec"
+      },
+      {
+        "backup": "db003-production-20260717T085243Z",
+        "found": true,
+        "segment_updated_at": "2026-04-11 17:55:27.49572+00",
+        "same_body_as_current": false,
+        "exact_occurrences": 1,
+        "first_raw_offset": 672,
+        "body_sha256": "3bd4a52cd94a770fddf57d8487a9d8649953fccd796589a9cfa1025e9189e8ec"
+      },
+      {
+        "backup": "db003-production-20260725T042740Z",
+        "found": true,
+        "segment_updated_at": "2026-04-11 17:55:27.49572+00",
+        "same_body_as_current": false,
+        "exact_occurrences": 1,
+        "first_raw_offset": 672,
+        "body_sha256": "3bd4a52cd94a770fddf57d8487a9d8649953fccd796589a9cfa1025e9189e8ec"
+      }
+    ],
+    "title": "The Communist Failure and Neo-Proprietarianism",
+    "sectionNumber": 6,
+    "recordIdPreserved": true,
+    "quoteOccurrences": 1,
+    "quoteOffset": 672,
+    "sourceUpdatedAtUtc": "2026-04-11 17:55:27.49572+00",
+    "sameHistoricalVersionInAllThreeBackups": true
+  },
+  "currentSource": {
+    "title": "The Social-Democratic Compromise of the Twentieth Century",
+    "sectionNumber": 6,
+    "updatedAtUtc": "2026-08-07 17:13:37.277073+00",
+    "quoteOccurrencesInStoredSection": 0,
+    "caseInsensitiveOccurrencesInStoredSection": 0,
+    "historicalSurroundingPhraseOccurrencesInCurrentBook": 0,
+    "sameQuoteElsewhere": {
+      "total": 4,
+      "sectionNumbers": [
+        3,
+        8,
+        9,
+        11
+      ],
+      "oneEach": true
+    },
+    "rawMarkdownAtStoredRange": "It retained h",
+    "renderedCanonicalTextAtStoredRange": " retained hig",
+    "sha256": "ff1a80b2c064b3f1023fbee14242c4305fd2a68e6b9af42f29ff15e1855c3fb6"
+  },
+  "cause": {
+    "finding": "On absent quote, resolveHighlightRange returns original range, which is then rendered as a mark over different current words. ReaderView treats mark existence as successful location and bypasses existing unmatched explanation.",
+    "confidence": "high: read-only live row + same-ID historical backups + unchanged real renderer historical/current replay + prior public DOM observation agree.",
+    "unknown": "Complete edit history, who/why the chapter was rewritten/reused, and which intermediate revisions existed. Current updated_at does not prove exactly one edit."
+  },
+  "reproduction": {
+    "kind": "Real SegmentAccordion + ReactMarkdown/remark/rehype rendered in Vitest/JSDOM; only settings/media-query dependencies mocked. No browser geometry or save/auth code involved.",
+    "runs": 2,
+    "rerunReason": "Added observed DOM start offsets to distinguish which identical occurrence was selected; source/fixtures/assertions unchanged.",
+    "observationalAssertions": "One diagnostic test verified eight observed scenarios. Passing diagnostic assertions reproduce current defects; they are not acceptance passes for a repair.",
+    "cases": [
+      {
+        "name": "exact-unchanged",
+        "quote": "concentration",
+        "start": 0,
+        "end": 13,
+        "canonicalOccurrences": [
+          0
+        ],
+        "oldRangeCurrentText": "concentration",
+        "marks": [
+          "concentration"
+        ],
+        "markDomStarts": [
+          0
+        ],
+        "segmentRendererExplanationVisible": false
+      },
+      {
+        "name": "unique-shift",
+        "quote": "concentration",
+        "start": 0,
+        "end": 13,
+        "canonicalOccurrences": [
+          6
+        ],
+        "oldRangeCurrentText": "Intro concent",
+        "marks": [
+          "concentration"
+        ],
+        "markDomStarts": [
+          6
+        ],
+        "segmentRendererExplanationVisible": false
+      },
+      {
+        "name": "quote-removed-by-revision",
+        "quote": "concentration",
+        "start": 0,
+        "end": 13,
+        "canonicalOccurrences": [],
+        "oldRangeCurrentText": "collaboration",
+        "marks": [
+          "collaboration"
+        ],
+        "markDomStarts": [
+          0
+        ],
+        "segmentRendererExplanationVisible": false
+      },
+      {
+        "name": "duplicate-equidistant-after-revision",
+        "quote": "concentration",
+        "start": 9,
+        "end": 22,
+        "canonicalOccurrences": [
+          0,
+          18
+        ],
+        "oldRangeCurrentText": "tion and conc",
+        "marks": [
+          "concentration"
+        ],
+        "markDomStarts": [
+          0
+        ],
+        "segmentRendererExplanationVisible": false
+      },
+      {
+        "name": "legacy-duplicate-without-positions",
+        "quote": "concentration",
+        "start": null,
+        "end": null,
+        "canonicalOccurrences": [
+          0,
+          18
+        ],
+        "oldRangeCurrentText": null,
+        "marks": [
+          "concentration",
+          "concentration"
+        ],
+        "markDomStarts": [
+          0,
+          18
+        ],
+        "segmentRendererExplanationVisible": false
+      },
+      {
+        "name": "quote-removed-and-old-position-outside-source",
+        "quote": "concentration",
+        "start": 672,
+        "end": 685,
+        "canonicalOccurrences": [],
+        "oldRangeCurrentText": "",
+        "marks": [],
+        "markDomStarts": [],
+        "segmentRendererExplanationVisible": false
+      },
+      {
+        "name": "historical-july-source",
+        "quote": "concentration",
+        "start": 672,
+        "end": 685,
+        "canonicalOccurrences": [
+          672
+        ],
+        "oldRangeCurrentText": "concentration",
+        "marks": [
+          "concentration"
+        ],
+        "markDomStarts": [
+          672
+        ],
+        "segmentRendererExplanationVisible": false
+      },
+      {
+        "name": "current-august-source",
+        "quote": "concentration",
+        "start": 672,
+        "end": 685,
+        "canonicalOccurrences": [],
+        "oldRangeCurrentText": " retained hig",
+        "marks": [
+          " retained hig"
+        ],
+        "markDomStarts": [
+          673
+        ],
+        "segmentRendererExplanationVisible": false
+      }
+    ],
+    "componentScopeCaveat": "segmentRendererExplanationVisible concerns SegmentAccordion only. ReaderView was not mounted in the harness; its existing unmatched explanation is confirmed by source, not a new full-reader integration pass."
+  },
+  "additionalRisks": [
+    {
+      "case": "duplicate-equidistant-after-revision",
+      "observed": "Two exact matches at0 and18; stale start9 silently picks first at0 without context."
+    },
+    {
+      "case": "legacy-duplicate-without-positions",
+      "observed": "Same highlight ID emitted for both occurrences; no confident single original passage."
+    }
+  ],
+  "proposalOnly": [
+    "Validate that any emitted mark matches saved quotation. Never retain mismatching old offsets when quote is absent.",
+    "For a stale or unanchored reference, reanchor only to a confidently identified exact occurrence in original section. Multiple occurrences without disambiguating evidence remain unresolved; distance alone is insufficient.",
+    "Do not search another section or rewrite stored anchors/quote/note on read.",
+    "Route unresolved destinations to the existing ReaderView could-not-locate explanation, preserving saved note access. No new editor or retrieval UX."
+  ],
+  "implementationAcceptance": [
+    "Missing quotation emits no false mark or spotlight and shows an explicit unmatched state.",
+    "Ambiguous stale/legacy references do not select first/closest/all matches silently.",
+    "Valid anchored repeated occurrences, unique unambiguous repairs, Markdown block-boundary and multi-node highlights continue working.",
+    "Stored quote/note/ownership/positions remain untouched on read; no draft behavior changes."
+  ],
+  "files": {
+    "components/reader/SegmentAccordion.tsx": "fd734db5d5d43912bb00ba04937def07be0f27a1191500dee2163491d7f2956f",
+    "components/reader/ReaderView.tsx": "d50c8b01e822839475e81120e3da868e33a93911bd2606c8ac286f3b06f13c97"
+  },
+  "retainedPrivateArtifacts": "/tmp/netflux-quote-investigation (directory0700, source fixtures/harness0600; no credentials or note bodies). Existing backups read-only and unchanged.",
+  "status": "Investigation complete; proposed fix not implemented. Report/evidence committed locally only; no PR/push/deploy."
+}

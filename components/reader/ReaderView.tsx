@@ -1170,7 +1170,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     <div role="alert" className="mb-6 rounded-xl border border-border bg-card p-4 text-sm">
                         <p>{destination.isError ? "Could not load this saved passage. Please retry."
                             : !destination.data ? "This saved passage was deleted or is no longer accessible."
-                            : "The saved passage could not be located in the current text. Your saved note is still available in Notes."}</p>
+                            : "Saved passage could not be located. Your saved note is still available in Notes."}</p>
                         {destination.isError && <button type="button" onClick={() => { void destination.refetch(); }} className="mt-2 underline">Retry saved passage</button>}
                         <Link href="/notes" className="ml-3 underline">Open Notes</Link>
                     </div>

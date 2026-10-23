@@ -20,6 +20,7 @@ const {
     highlightsState,
     useHighlightsSpy,
     resolvedTargetState,
+    realAccordionState,
     syncFromCloudMock,
     toastSuccessMock,
 } = vi.hoisted(() => ({
@@ -53,6 +54,7 @@ const {
         }>,
     },
     useHighlightsSpy: vi.fn(),
+    realAccordionState: { value: false },
     resolvedTargetState: { data: undefined as Record<string, unknown> | null | undefined, error: false },
     syncFromCloudMock: vi.fn(),
     toastSuccessMock: vi.fn(),
@@ -127,70 +129,74 @@ vi.mock('@/components/reader/ReaderHeroHeader', () => ({
     }
 }));
 
-vi.mock('@/components/reader/SegmentAccordion', () => ({
-    SegmentAccordion: (props: any) => {
-        segmentAccordionSpy(props);
-        return (
-            <div>
-                <div data-testid="mock-segment-accordion">{props.expandedSegmentId ?? 'none'}</div>
-                <div data-testid="mock-active-audio-segment">{props.activeNarratedSegmentId ?? 'none'}</div>
-                {props.segments?.map((segment: { id: string }) => (
-                    <div key={segment.id} data-reader-segment-id={segment.id}>
-                        <button aria-expanded={props.expandedSegmentId === segment.id} />
-                        <div data-reader-segment-panel="true">
-                            {props.highlights
-                                ?.filter((highlight: { segment_id: string | null }) => highlight.segment_id === segment.id)
-                                .map((highlight: { id: string; highlighted_text: string }) => (
-                                    <mark key={highlight.id} data-id={highlight.id}>
-                                        {highlight.highlighted_text}
-                                    </mark>
-                                ))}
+vi.mock('@/components/reader/SegmentAccordion', async (importOriginal) => {
+    const { SegmentAccordion: ActualAccordion } = await importOriginal<typeof import('@/components/reader/SegmentAccordion')>();
+    return {
+        SegmentAccordion: (props: any) => {
+            segmentAccordionSpy(props);
+            if (realAccordionState.value) return <ActualAccordion {...props} />;
+            return (
+                <div>
+                    <div data-testid="mock-segment-accordion">{props.expandedSegmentId ?? 'none'}</div>
+                    <div data-testid="mock-active-audio-segment">{props.activeNarratedSegmentId ?? 'none'}</div>
+                    {props.segments?.map((segment: { id: string }) => (
+                        <div key={segment.id} data-reader-segment-id={segment.id}>
+                            <button aria-expanded={props.expandedSegmentId === segment.id} />
+                            <div data-reader-segment-panel="true">
+                                {props.highlights
+                                    ?.filter((highlight: { segment_id: string | null }) => highlight.segment_id === segment.id)
+                                    .map((highlight: { id: string; highlighted_text: string }) => (
+                                        <mark key={highlight.id} data-id={highlight.id}>
+                                            {highlight.highlighted_text}
+                                        </mark>
+                                    ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
-                <button
-                    data-testid="manual-open-seg-1"
-                    onClick={() => {
-                        props.onExpandedSegmentChange?.('seg-1');
-                        props.onSegmentOpen?.('seg-1', 0);
-                    }}
-                />
-                <button
-                    data-testid="manual-open-seg-2"
-                    onClick={() => {
-                        props.onExpandedSegmentChange?.('seg-2');
-                        props.onSegmentOpen?.('seg-2', 1);
-                    }}
-                />
-                <button
-                    data-testid="manual-complete-seg-1"
-                    onClick={() => props.onSegmentComplete?.('seg-1', 0)}
-                />
-                <button
-                    data-testid="manual-complete-seg-2"
-                    onClick={() => props.onSegmentComplete?.('seg-2', 1)}
-                />
-                <button
-                    data-testid="manual-incomplete-seg-1"
-                    onClick={() => props.onSegmentIncomplete?.('seg-1', 0)}
-                />
-                <button
-                    data-testid="activate-highlight"
-                    onClick={() => props.onHighlightActivate?.('highlight-1', {
-                        top: 12,
-                        left: 34,
-                        width: 56,
-                        height: 18,
-                    })}
-                />
-                <button
-                    data-testid="finish-reading"
-                    onClick={() => props.onFinishReading?.()}
-                />
-            </div>
-        );
-    }
-}));
+                    ))}
+                    <button
+                        data-testid="manual-open-seg-1"
+                        onClick={() => {
+                            props.onExpandedSegmentChange?.('seg-1');
+                            props.onSegmentOpen?.('seg-1', 0);
+                        }}
+                    />
+                    <button
+                        data-testid="manual-open-seg-2"
+                        onClick={() => {
+                            props.onExpandedSegmentChange?.('seg-2');
+                            props.onSegmentOpen?.('seg-2', 1);
+                        }}
+                    />
+                    <button
+                        data-testid="manual-complete-seg-1"
+                        onClick={() => props.onSegmentComplete?.('seg-1', 0)}
+                    />
+                    <button
+                        data-testid="manual-complete-seg-2"
+                        onClick={() => props.onSegmentComplete?.('seg-2', 1)}
+                    />
+                    <button
+                        data-testid="manual-incomplete-seg-1"
+                        onClick={() => props.onSegmentIncomplete?.('seg-1', 0)}
+                    />
+                    <button
+                        data-testid="activate-highlight"
+                        onClick={() => props.onHighlightActivate?.('highlight-1', {
+                            top: 12,
+                            left: 34,
+                            width: 56,
+                            height: 18,
+                        })}
+                    />
+                    <button
+                        data-testid="finish-reading"
+                        onClick={() => props.onFinishReading?.()}
+                    />
+                </div>
+            );
+        }
+    };
+});
 
 vi.mock('@/components/reader/NotesDrawer', () => ({
     NotesDrawer: (props: any) => {
@@ -350,6 +356,7 @@ describe('ReaderView', () => {
         readerHeroHeaderSpy.mockClear();
         routerReplaceMock.mockClear();
         searchParamsState.value = '';
+        realAccordionState.value = false;
         resolvedTargetState.data = undefined; resolvedTargetState.error = false;
         segmentAccordionSpy.mockClear();
         storageScopeState.value = 'guest';
@@ -379,6 +386,66 @@ describe('ReaderView', () => {
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
         Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+    });
+
+    describe.each([true, false])('quotation integrity with real Markdown (desktop=%s)', (desktop) => {
+        it.each([
+            { name: 'unchanged', body: 'concentration improves.', start: 0, end: 13, expected: 0 },
+            { name: 'shifted unique', body: 'Intro concentration improves.', start: 0, end: 13, expected: 6 },
+            { name: 'replaced', body: 'collaboration improves.', start: 0, end: 13, expected: null },
+            { name: 'missing out of bounds', body: 'short', start: 672, end: 685, expected: null },
+            { name: 'valid second duplicate', body: 'concentration and concentration.', start: 18, end: 31, expected: 18 },
+            { name: 'ambiguous stale duplicate', body: 'concentration and concentration.', start: 9, end: 22, expected: null },
+            { name: 'ambiguous legacy duplicate', body: 'concentration and concentration.', start: null, end: null, expected: null },
+            { name: 'unique legacy', body: 'Intro concentration improves.', start: null, end: null, expected: 6 },
+            { name: 'valid second duplicate after heading', body: '## Heading\n\nconcentration and concentration.', start: 26, end: 39, expected: 18 },
+            { name: 'stale duplicate after heading', body: '## Heading\n\nconcentration and concentration.', start: 25, end: 38, expected: null },
+            { name: 'Markdown inline nodes', body: 'Intro **concen**tration improves.', start: 0, end: 13, expected: 6 },
+        ])('rendering and linked opening agree: $name', async ({ body, start, end, expected }) => {
+            realAccordionState.value = true;
+            vi.mocked(useMediaQuery).mockReturnValue(desktop);
+            const target = Object.freeze({
+                id: 'integrity-target', user_id: 'synthetic-owner', content_item_id: mockContent.id,
+                segment_id: 'seg-1', highlighted_text: 'concentration', note_body: 'Keep this attached thought.',
+                color: 'yellow', anchor_start: start, anchor_end: end,
+                created_at: '2026-10-23T00:00:00Z', updated_at: null, content_item: null, segment: null,
+            });
+            highlightsState.value = [target];
+            const before = JSON.stringify(target);
+            const content = { ...mockContent, segments: [
+                { ...mockContent.segments[0], markdown_body: body },
+                { ...mockContent.segments[0], id: 'other-section', order_index: 1, title: 'Other section', markdown_body: 'concentration in another chapter.' },
+            ] };
+            const { container, unmount } = render(<ReaderView content={content} />);
+            fireEvent.click(screen.getByRole('button', { name: /Segment 1/ }));
+            const renderedMarks = Array.from(container.querySelectorAll('mark[data-id="integrity-target"]'));
+            expect(renderedMarks.map(mark => mark.textContent).join('')).toBe(expected === null ? '' : target.highlighted_text);
+            unmount();
+
+            searchParamsState.value = 'highlightId=integrity-target';
+            const linked = render(<ReaderView content={content} />);
+            if (expected === null) {
+                expect(await screen.findByRole('alert', {}, { timeout: 3000 })).toHaveTextContent('Saved passage could not be located.');
+                expect(linked.container.querySelector('mark[data-id="integrity-target"]')).toBeNull();
+                expect(linked.container.querySelector('[data-highlight-spotlight]')).toBeNull();
+            } else {
+                await waitFor(() => expect(linked.container.querySelector('mark[data-id="integrity-target"]')).toHaveAttribute('data-highlight-spotlight', 'true'));
+                const marks = Array.from(linked.container.querySelectorAll('mark[data-id="integrity-target"]'));
+                expect(marks.map(mark => mark.textContent).join('')).toBe(target.highlighted_text);
+                const paragraph = marks[0].closest('p')!;
+                const prefix = document.createRange();
+                prefix.setStart(paragraph, 0);
+                prefix.setEndBefore(marks[0]);
+                expect(prefix.toString().length).toBe(expected);
+                expect(marks.every(mark => mark.closest('[data-reader-segment-id]')?.getAttribute('data-reader-segment-id') === 'seg-1')).toBe(true);
+            }
+            // Mount the other chapter too: no recovery is allowed to escape the saved section.
+            fireEvent.click(screen.getByRole('button', { name: /Other section/ }));
+            expect(linked.container.querySelector('[data-reader-segment-id="other-section"] mark')).toBeNull();
+            expect(notesDrawerSpy.mock.lastCall?.[0].highlights).toContainEqual(target);
+            expect(JSON.stringify(target)).toBe(before);
+            expect(routerReplaceMock).not.toHaveBeenCalled();
+        });
     });
 
     it('renders the layout components including header, accordion, and drawers', async () => {
