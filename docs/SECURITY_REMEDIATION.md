@@ -867,3 +867,26 @@ Reason for acceptance:
 Compensating controls:
 Revisit date:
 ```
+
+
+## 23 October 2026 — Release dependency advisories
+
+Status: user approved the separate security dependency patch needed before quotation-integrity PR #277 can release. Worktree `/tmp/netflux-security-dependency-patch`; branch `codex/security-dependency-patch`, freshly fetched base `b10fb615`. Package and lockfile changes only, plus this existing tracker. Primary Lifebook checkout and the quotation implementation are unchanged.
+
+The final #277 head `29a46f61` initially failed container-registry pulls. One unchanged retry passed validate and Catalog Search Evidence, but Security Validation failed the current npm audit with critical advisories in Next.js, @sentry/nextjs and DOMPurify (also reported through posthog-js). This is a required release block, not an accepted exception. The previous zero-vulnerability result is historical; it is not current release evidence. Particular application exploitability has not been asserted.
+
+Approved updates:
+
+| Package | Previous | Candidate |
+| --- | --- | --- |
+| next, @next/bundle-analyzer, eslint-config-next | 16.4.0 | 16.4.2 |
+| @sentry/nextjs | locked 10.60.0 | pinned 10.75.2 |
+| dompurify override | 3.4.16 | 3.4.17 |
+
+The lockfile changes only these families and their telemetry/parser dependencies. No unrestricted audit fix, major Sentry upgrade, application source edits, matching-policy changes, workflow bypass, migration or production data write. Existing sharp 0.35.5 is retained.
+
+References: [Next image optimization](https://github.com/advisories/GHSA-2464-fhr4-w9xw), [Next Server Actions](https://github.com/advisories/GHSA-p3m5-59mp-jv5r), [Next typed-array cache](https://github.com/advisories/GHSA-673q-mjm6-r5xr), [Sentry tunnel middleware](https://github.com/advisories/GHSA-mchm-gjx6-7h55), [DOMPurify template handling](https://github.com/advisories/GHSA-cg2g-xh64-v4q7), [DOMPurify in-place hooks](https://github.com/advisories/GHSA-mrv2-3pqr-j5jr), [DOMPurify XHTML](https://github.com/advisories/GHSA-c6gr-qvv4-5v3f).
+
+Completed: dependency installation with scripts disabled; installed-tree verification; current production audit **0 vulnerabilities**. Local full suite passed: **244 files / 1,840 tests**, with **10 files / 287 tests skipped** (unverified); capacity harness **34/34**. Lint and typecheck passed. Production build, Sharp trace and critical CSS checks passed with synthetic local environment values and no production credentials. Lockfile SHA-256: `78534fd1b1f93c9e6b879aae8a1a9e13263b91b29caa925ddfb106eaf4719e08`. No new tests mirror the package pins; the existing runtime, proxy, security, component and build checks provide regression coverage. Current source paths for database schema, account snapshots, hydration and mutations are unchanged; no paid hosted rehearsal or production database operation is proposed. Required CI retains its disposable local database and browser checks.
+
+Next action: finish local validation, publish the separate security PR and satisfy required checks; merge it through normal protection, refresh #277 on secured main, rerun affected candidate checks, then perform the user-requested read-only production original-record and unaffected-highlight checks after deployment. The 287 previously skipped tests remain outside verified coverage. No production verification of #277 is claimed yet. One agent; provider/model calls and new hosted resources: none. Billing usage unavailable.
