@@ -52,6 +52,7 @@ function createMarkNode(id: string, text: string, color: string, interactive: bo
         properties: {
             className: `${bgClass} text-inherit rounded-sm -mx-0.5 px-0.5 ${cursorClass} transition-colors`.split(" "),
             "data-id": id,
+            ...(interactive ? { tabIndex: -1 } : {}),
         },
         children: [{ type: "text", value: text }],
     };
@@ -211,7 +212,7 @@ interface SegmentAccordionProps {
     onSegmentIncomplete?: (segmentId: string, index: number) => void;
     onFinishReading?: () => void;
     highlights?: HighlightWithContent[];
-    onHighlightActivate?: (highlightId: string, position: HighlightPosition) => void;
+    onHighlightActivate?: (highlightId: string, position: HighlightPosition, trigger: HTMLElement) => void;
     onHighlightPreview?: (highlightId: string, position: HighlightPosition) => void;
     onHighlightPreviewEnd?: () => void;
     expandedSegmentId?: string | null;
@@ -439,7 +440,7 @@ export function SegmentAccordion({
 
     const activateHighlight = useCallback(
         (event: ReactMouseEvent<HTMLElement>) => {
-            const target = (event.target as HTMLElement).closest("mark[data-id]");
+            const target = (event.target as HTMLElement).closest<HTMLElement>("mark[data-id]");
             const highlightId = target?.getAttribute("data-id");
 
             if (!target || !highlightId || !onHighlightActivate) {
@@ -459,7 +460,7 @@ export function SegmentAccordion({
                 left: rect.left,
                 width: rect.width,
                 height: rect.height,
-            });
+            }, target);
         },
         [onHighlightActivate]
     );

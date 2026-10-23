@@ -206,7 +206,7 @@ vi.mock('@/components/reader/NotesDrawer', () => ({
 }));
 
 vi.mock('@/components/reader/HighlightPopover', () => ({
-    HighlightPopover: ({ variant }: { variant: string }) => <div data-testid="floating-highlight-mode">{variant}</div>,
+    HighlightPopover: ({ variant, onEscape }: { variant: string; onEscape: () => void }) => <div data-testid="floating-highlight-mode">{variant}<button onClick={onEscape}>Dismiss read-only note</button></div>,
 }));
 
 vi.mock('@/components/reader/TextSelectionToolbar', () => ({
@@ -1141,7 +1141,8 @@ describe('ReaderView', () => {
         expect(screen.queryByRole('button', { name: 'Retry saved passage' })).not.toBeInTheDocument();
     });
 
-    it('waits for the target segment to expand before scrolling drawer jumps to the segment top', async () => {
+    it.each([{ desktop: false, expectedTop: 200 }, { desktop: true, expectedTop: 360 }])('waits for expansion and keeps the intended drawer target on desktop=$desktop', async ({ desktop, expectedTop }) => {
+        vi.mocked(useMediaQuery).mockReturnValue(desktop);
         highlightsState.value = [
             {
                 id: 'highlight-1',
@@ -1236,9 +1237,61 @@ describe('ReaderView', () => {
         });
 
         expect(scrollToSpy).toHaveBeenCalledWith({
-            top: 360,
+            top: expectedTop,
             behavior: 'smooth',
         });
+        expect(mark).toHaveAttribute('data-highlight-spotlight', 'true');
+    });
+
+    it('returns focus without scrolling to the actual triggering mark, including after a second highlight', () => {
+        realAccordionState.value = true;
+        progressState.value = { lastSegmentIndex: 0 };
+        highlightsState.value = ['Body', '1'].map((quote, index) => ({
+            id: `highlight-${index}`, user_id: 'user-1', content_item_id: mockContent.id,
+            segment_id: 'seg-1', highlighted_text: quote, note_body: 'Thought', color: 'blue',
+            anchor_start: index === 0 ? 0 : 5, anchor_end: index === 0 ? 4 : 6,
+            created_at: null, updated_at: null, content_item: null, segment: null,
+        }));
+        const { container } = render(<ReaderView content={mockContent} />);
+        for (const id of ['highlight-0', 'highlight-1']) {
+            const mark = container.querySelector<HTMLElement>(`mark[data-id="${id}"]`)!;
+            expect(mark).toHaveAttribute('tabindex', '-1');
+            fireEvent.click(mark);
+            vi.mocked(window.scrollTo).mockClear();
+            fireEvent.click(screen.getByRole('button', { name: 'Dismiss read-only note' }));
+            expect(document.activeElement).toBe(mark);
+            expect(window.scrollTo).not.toHaveBeenCalled();
+            expect(screen.queryByTestId('floating-highlight-mode')).not.toBeInTheDocument();
+        }
+    });
+
+    it.each([
+        ['short visible quote', [{ top: 160, bottom: 180 }], false],
+        ['long visible quote', [{ top: 160, bottom: 220 }, { top: 220, bottom: 600 }], false],
+        ['quote partly above the header', [{ top: 40, bottom: 90 }], true],
+        ['quote partly below the viewport', [{ top: 650, bottom: 850 }], true],
+        ['quote taller than the viewport', [{ top: 140, bottom: 1300 }], true],
+        ['second inline fragment is outside the viewport', [{ top: 140, bottom: 180 }, { top: 780, bottom: 820 }], true],
+    ])('preserves only fully visible drawer quotations: %s', async (_name, rects, shouldScroll) => {
+        vi.mocked(useMediaQuery).mockReturnValue(false);
+        highlightsState.value = [{
+            id: 'highlight-1', user_id: 'user-1', content_item_id: mockContent.id,
+            segment_id: 'seg-1', highlighted_text: 'Body 1', note_body: 'Thought', color: 'blue',
+            anchor_start: 0, anchor_end: 6, created_at: null, updated_at: null, content_item: null, segment: null,
+        }];
+        progressState.value = { lastSegmentIndex: 0 };
+        const { container } = render(<><header data-testid="mobile-header" /><ReaderView content={mockContent} /></>);
+        const mark = container.querySelector<HTMLElement>('mark[data-id="highlight-1"]')!;
+        const bounds = rects.map(rect => ({ ...rect, left: 20, right: 200, width: 180, height: rect.bottom - rect.top, x: 20, y: rect.top, toJSON: () => ({}) } as DOMRect));
+        mark.getClientRects = vi.fn(() => bounds as unknown as DOMRectList);
+        mark.getBoundingClientRect = vi.fn(() => bounds[0]);
+        screen.getByTestId('mobile-header').getBoundingClientRect = vi.fn(() => ({ bottom: 56 } as DOMRect));
+        vi.mocked(window.scrollTo).mockClear();
+
+        await act(async () => { await notesDrawerSpy.mock.lastCall?.[0]?.onHighlightJump('highlight-1'); });
+
+        expect(window.scrollTo).toHaveBeenCalledTimes(shouldScroll ? 1 : 0);
+        if (shouldScroll) expect(window.scrollTo).toHaveBeenCalledWith({ top: Math.max(0, bounds[0].top - 120), behavior: 'smooth' });
         expect(mark).toHaveAttribute('data-highlight-spotlight', 'true');
     });
 

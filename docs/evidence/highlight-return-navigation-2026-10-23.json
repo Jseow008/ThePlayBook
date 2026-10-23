@@ -1,0 +1,275 @@
+{
+  "date": "2026-10-23",
+  "base": "281472e697332ece6be00080f4d1a388698b9a6f",
+  "scope": [
+    "desktop read-only Escape with focus return",
+    "mobile saved-row exact target and preserve fully visible quotation"
+  ],
+  "method": "CUA browser interaction with real ReaderView, SegmentAccordion, HighlightPopover, NotesDrawer and draft hooks; synthetic data/auth/progress and mutation adapters in a private Vite harness. No hosted database or real-account writes.",
+  "chromeDesktop": {
+    "viewport": [
+      1151,
+      844
+    ],
+    "verified": [
+      {
+        "case": "short-start",
+        "opened": true,
+        "closed": true,
+        "scroll": [
+          26.5,
+          26.5
+        ],
+        "focus": "first-highlight"
+      },
+      {
+        "case": "short-end",
+        "opened": true,
+        "closed": true,
+        "scroll": [
+          389.5,
+          389.5
+        ],
+        "focus": "first-highlight"
+      },
+      {
+        "case": "long-start",
+        "opened": true,
+        "closed": true,
+        "scroll": [
+          5,
+          5
+        ],
+        "focus": "first-highlight"
+      },
+      {
+        "case": "long-end",
+        "opened": true,
+        "closed": true,
+        "scroll": [
+          429.5,
+          429.5
+        ],
+        "focus": "first-highlight"
+      },
+      {
+        "case": "second-highlight",
+        "opened": true,
+        "closed": true,
+        "scroll": [
+          46,
+          46
+        ],
+        "focus": "second-highlight"
+      }
+    ],
+    "inlineTrigger": "The clicked bold text fragment 'saved thought', not merely the first mark of the same ID, received focus.",
+    "finalCandidate": {
+      "opened": true,
+      "closed": true,
+      "scroll": [
+        11.5,
+        11.5
+      ],
+      "focus": "first-highlight"
+    }
+  },
+  "chromeMobile": {
+    "viewport": [
+      390,
+      844
+    ],
+    "verified": [
+      {
+        "case": "short-start already visible",
+        "scroll": [
+          0,
+          0
+        ],
+        "quoteBounds": [
+          334.5,
+          386.953125
+        ]
+      },
+      {
+        "case": "short-end already visible",
+        "scroll": [
+          987,
+          987
+        ],
+        "quoteBounds": [
+          411.09375,
+          463.546875
+        ]
+      },
+      {
+        "case": "long-start already visible",
+        "scroll": [
+          214.5,
+          214.5
+        ],
+        "quoteBounds": [
+          120,
+          574.84375
+        ]
+      },
+      {
+        "case": "long-end partly below viewport",
+        "scroll": [
+          1002.5,
+          1278
+        ],
+        "beforeBounds": [
+          395.59375,
+          850.4375
+        ],
+        "afterBounds": [
+          120.09375,
+          574.9375
+        ]
+      },
+      {
+        "case": "second highlight already visible",
+        "scroll": [
+          292.5,
+          292.5
+        ],
+        "quoteBounds": [
+          120,
+          172.453125
+        ],
+        "section": "second-section"
+      }
+    ],
+    "finalCandidate": [
+      {
+        "case": "long visible preserve",
+        "scroll": [
+          1278,
+          1278
+        ],
+        "quoteBounds": [
+          120.09375,
+          574.9375
+        ]
+      },
+      {
+        "case": "long partly above header exact return",
+        "scroll": [
+          1414,
+          1278
+        ],
+        "quoteTop": [
+          -15.90625,
+          120.09375
+        ]
+      }
+    ]
+  },
+  "editableRegression": {
+    "escape": "draft retained",
+    "outsideClick": "draft retained",
+    "navigationReopen": "draft recovered",
+    "explicitCancel": "restored saved baseline",
+    "saveCalls": 0,
+    "syntheticDraftOnly": true
+  },
+  "safariDesktop": {
+    "method": "Native Safari via CUA in a separate regular window; private locked window was not unlocked or modified.",
+    "verified": [
+      {
+        "case": "short-start",
+        "viewOpened": true,
+        "escapeClosed": true,
+        "scroll": [
+          194,
+          194
+        ],
+        "focusIdShown": "first-highlight"
+      },
+      {
+        "case": "long-end",
+        "viewOpened": true,
+        "escapeClosed": true,
+        "scroll": [
+          466,
+          466
+        ],
+        "focusIdShown": "first-highlight"
+      },
+      {
+        "case": "second-highlight",
+        "viewOpened": true,
+        "escapeClosed": true,
+        "scroll": [
+          54,
+          54
+        ],
+        "focusIdShown": "second-highlight"
+      }
+    ],
+    "limit": "Basic desktop Safari observations, not iOS, touch, mobile Safari or the full responsive matrix. Reused for Escape after the final routing-only change because the Escape/trigger implementation was unchanged; final mobile routing was rechecked in Chrome."
+  },
+  "scrollingActivation": {
+    "originalFinding": "remains inconclusive; no independent activation fix included",
+    "normalSmoothScroll": "Drawer opened, but traced click was at the final scroll position; not counted as proof of clicking during motion.",
+    "fastContinuousFixture": "Coordinate click did not hit a mark (click trace none); drawer remained closed. Not counted as successful activation.",
+    "slowContinuousFixture": {
+      "start": 214.5,
+      "target": 614.5,
+      "actualMarkClickAt": 219,
+      "observedScrollAfterClick": 220,
+      "stillMoving": true,
+      "drawer": "open",
+      "activeHighlight": "first-highlight",
+      "result": "one bounded pass during controlled continuous scrolling"
+    },
+    "limit": "Controlled fixture scrolling is not proof of all native inertia/touch or loading-time interactions."
+  },
+  "unsuccessfulAttempts": [
+    "Two existing SegmentAccordion callback-argument assertions failed after adding the actual trigger element; updated assertions to validate the new argument. Focused tests then passed.",
+    "Initial lint included the temporary browser adapter and found its missing display name; adapter moved outside the worktree before final repository checks. No lint rule was weakened.",
+    "A wrapped inline fragment's multi-line bounding-center clicks missed its visible text in the long-end mobile case; an explicit visible-line coordinate activated it. Failed attempts retained separately.",
+    "A second-highlight spotlight wait occurred after the intentionally temporary 1.8-second marker expired. Permanent mark/section and return-position observations were used instead.",
+    "The first desktop matrix did not explicitly assert the view was open before Escape; it was superseded by the recorded open-before-close cases."
+  ],
+  "limits": [
+    "no physical phone",
+    "no iOS Safari",
+    "isolated real-component harness, not hosted real-account verification",
+    "full historical content/matching/draft suites retain original scope and skip limitations"
+  ],
+  "cleanup": {
+    "temporaryViewportReset": true,
+    "chromeTestTabsClosed": true,
+    "ownedSafariWindowClosed": true,
+    "serverStopped": true,
+    "privateHarness": "/tmp/netflux-navigation-browser-artifact"
+  },
+  "sourceSha256": {
+    "components/reader/HighlightPopover.tsx": "dc76b41439accafe51b2226668471f8fac9e29790c8034fb9ed7cf35d135b942",
+    "components/reader/ReaderView.tsx": "fce45797ade361317fb0e069179390c5f4498cad0b509161ed89831434f7c896",
+    "components/reader/SegmentAccordion.tsx": "34823f535377b2af730af80e676295c0de21b5ce120b35eca38361645dc737ef"
+  },
+  "validation": {
+    "fullSuite": {
+      "filesPassed": 245,
+      "filesSkipped": 10,
+      "testsPassed": 1884,
+      "testsSkipped": 287,
+      "seconds": 62.57
+    },
+    "capacityHarness": {
+      "passed": 34,
+      "failed": 0
+    },
+    "lint": "passed with repository guards",
+    "types": "passed",
+    "productionBuild": "passed with synthetic local values",
+    "sharpTrace": "passed",
+    "criticalCss": "passed",
+    "productionDependencyAuditVulnerabilities": 0,
+    "remoteCI": "pending",
+    "productionCheck": "not performed for this change"
+  }
+}

@@ -53,7 +53,6 @@ interface ReaderViewProps {
     content: ContentItemWithSegments;
 }
 
-type HighlightJumpTarget = "highlight" | "segment";
 
 const AuthorChat = dynamic(
     () => import("./AuthorChat").then((mod) => mod.AuthorChat),
@@ -90,6 +89,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [manuallyIncompleteSegments, setManuallyIncompleteSegments] = useState<Set<string>>(new Set());
     const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
     const [popoverHighlightId, setPopoverHighlightId] = useState<string | null>(null);
+    const highlightTriggerRef = useRef<HTMLElement | null>(null);
     const [activeHighlightPosition, setActiveHighlightPosition] = useState<{
         top: number;
         left: number;
@@ -811,6 +811,12 @@ export function ReaderView({ content }: ReaderViewProps) {
         setIsPopoverHovered(false);
     }, [clearPopoverCloseTimeout]);
 
+    const dismissReadOnlyHighlight = useCallback(() => {
+        const trigger = highlightTriggerRef.current;
+        closeActiveHighlight();
+        if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+    }, [closeActiveHighlight]);
+
     const schedulePreviewClose = useCallback(() => {
         if (popoverMode !== "preview") return;
 
@@ -905,7 +911,6 @@ export function ReaderView({ content }: ReaderViewProps) {
             `[data-reader-segment-id="${escapeAttributeSelector(segmentId)}"]`
         );
         if (!segmentEl) return false;
-
         const top = segmentEl.getBoundingClientRect().top + window.scrollY - 100;
         window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
         return true;
@@ -913,7 +918,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     const handleHighlightJump = useCallback(async (
         highlightId: string,
-        options: { target?: HighlightJumpTarget; isCurrent?: () => boolean } = {}
+        options: { target?: "highlight" | "segment"; preserveVisible?: boolean; isCurrent?: () => boolean } = {}
     ) => {
         const highlight = highlights.find((item) => item.id === highlightId);
         if (!highlight || options.isCurrent?.() === false) return false;
@@ -935,14 +940,27 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
 
         if (options.isCurrent?.() === false) return false;
-        const jumpTarget = options.target ?? "highlight";
-        const didScrollToSegment = jumpTarget === "segment" && targetSegmentId
+        const didScrollToSegment = options.target === "segment" && targetSegmentId
             ? scrollSegmentTopIntoView(targetSegmentId)
             : false;
         const marks = await waitForHighlightMarks(highlightId, targetSegmentId);
 
+        if (options.preserveVisible) {
+            // Let drawer scroll-lock cleanup and focus restoration finish before measuring.
+            await new Promise<void>(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve())));
+        }
+
         if (options.isCurrent?.() === false) return false;
-        if (!didScrollToSegment && marks.length > 0) {
+        const headerBottom = document.querySelector('[data-testid="mobile-header"]')?.getBoundingClientRect().bottom ?? 0;
+        const opener = document.querySelector('[aria-label="Open notes drawer"]')?.getBoundingClientRect();
+        const alreadyVisible = options.preserveVisible && marks.length > 0 && marks.every(mark => {
+            const rects = Array.from(mark.getClientRects());
+            return rects.length > 0 && rects.every(rect =>
+                rect.top >= Math.max(16, headerBottom) && rect.bottom <= window.innerHeight - 16
+                && (!opener || rect.right <= opener.left || rect.left >= opener.right || rect.bottom <= opener.top || rect.top >= opener.bottom)
+            );
+        });
+        if (!didScrollToSegment && !alreadyVisible && marks.length > 0) {
             const [firstMark] = marks;
             const top = firstMark.getBoundingClientRect().top + window.scrollY - 120;
             window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
@@ -1191,8 +1209,9 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onExpandedSegmentChange={handleExpandedSegmentChange}
                     scrollRequest={segmentScrollRequest}
                     activeNarratedSegmentId={activeNarratedSegmentId}
-                    onHighlightActivate={(highlightId, position) => {
+                    onHighlightActivate={(highlightId, position, trigger) => {
                         clearPopoverCloseTimeout();
+                        highlightTriggerRef.current = trigger;
                         setActiveHighlightId(highlightId);
                         if (isReaderInteractionDesktop) {
                             setPopoverHighlightId(highlightId);
@@ -1285,7 +1304,12 @@ export function ReaderView({ content }: ReaderViewProps) {
                 sections={sectionMeta}
                 activeHighlightId={activeHighlightId}
                 isAudioMiniPlayerVisible={isAudioMiniPlayerVisible}
-                onHighlightJump={async (highlightId) => { await handleHighlightJump(highlightId, { target: "segment" }); }}
+                onHighlightJump={async (highlightId) => {
+                    await handleHighlightJump(highlightId, {
+                        target: isReaderInteractionDesktop ? "segment" : "highlight",
+                        preserveVisible: !isReaderInteractionDesktop,
+                    });
+                }}
             />
             {isReaderInteractionDesktop && popoverHighlight && activeHighlightPosition && popoverPortalEl && (
                 <HighlightPopover
@@ -1299,6 +1323,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     variant={popoverMode}
                     createdAt={popoverHighlight.created_at || undefined}
                     onClose={closeActiveHighlight}
+                    onEscape={dismissReadOnlyHighlight}
                     onMouseEnter={() => {
                         clearPopoverCloseTimeout();
                         setIsPopoverHovered(true);

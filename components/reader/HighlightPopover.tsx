@@ -23,6 +23,7 @@ interface HighlightPopoverProps {
     portalContainer: HTMLElement;
     variant?: "preview" | "full";
     onClose: () => void;
+    onEscape?: () => void;
     onMouseEnter?: () => void;
     onMouseLeave?: () => void;
 }
@@ -39,6 +40,7 @@ export function HighlightPopover({
     portalContainer,
     variant = "full",
     onClose,
+    onEscape,
     onMouseEnter,
     onMouseLeave,
 }: HighlightPopoverProps) {
@@ -103,6 +105,18 @@ export function HighlightPopover({
     }, [currentColor, highlightId, noteBody]);
 
     useEffect(() => { setIsEditing(false); }, [highlightId]);
+
+    useEffect(() => {
+        if (!mounted || isEditing || variant !== "full") return;
+
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key !== "Escape") return;
+            event.preventDefault();
+            (onEscape ?? onClose)();
+        };
+        window.addEventListener("keydown", handleEscape);
+        return () => window.removeEventListener("keydown", handleEscape);
+    }, [mounted, isEditing, variant, onEscape, onClose]);
 
     useEffect(() => {
         if (!mounted) return;
