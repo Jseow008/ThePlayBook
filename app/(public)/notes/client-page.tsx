@@ -301,7 +301,7 @@ function HighlightListItem({
                     aria-hidden="true"
                     className={cn("absolute inset-y-0 left-0 w-[3px]", colorClasses.swatch)}
                 />
-                <div className="flex items-start gap-2 p-3 sm:p-4">
+                <div className="flex flex-col items-stretch gap-2 p-3 sm:flex-row sm:items-start sm:p-4">
                     {href ? (
                         <Link
                             href={href}
