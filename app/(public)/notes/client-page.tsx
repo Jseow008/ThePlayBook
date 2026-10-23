@@ -2,6 +2,7 @@
 
 import { useNoteDraft } from "@/hooks/useNoteDraft";
 import { NoteDraftStatus } from "@/components/reader/NoteDraftStatus";
+import { SavedNoteCopyButton } from "@/components/notes/SavedNoteCopyButton";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
@@ -300,7 +301,7 @@ function HighlightListItem({
                     aria-hidden="true"
                     className={cn("absolute inset-y-0 left-0 w-[3px]", colorClasses.swatch)}
                 />
-                <div className="flex items-start gap-2 p-3 sm:p-4">
+                <div className="flex flex-col items-stretch gap-2 p-3 sm:flex-row sm:items-start sm:p-4">
                     {href ? (
                         <Link
                             href={href}
@@ -411,6 +412,7 @@ function HighlightListItem({
                             <Edit3 className="size-3.5" />
                             <span>{noteText ? "Edit" : "Add"}</span>
                         </button>
+                        <SavedNoteCopyButton item={item} passageHref={href} />
                         {href && (
                             <Link
                                 href={href}
