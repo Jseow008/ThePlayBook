@@ -121,4 +121,28 @@ describe('HighlightPopover', () => {
         expect(screen.queryByTitle('Edit Color or Note')).not.toBeInTheDocument();
         expect(screen.queryByText('Quoted source')).not.toBeInTheDocument();
     });
+
+    it('dismisses the read-only view on Escape, using the focus-return callback', () => {
+        const onClose = vi.fn();
+        const onEscape = vi.fn();
+        render(<HighlightPopover highlightId="highlight-a" noteBody="First note" highlightedText="First quote"
+            currentColor="yellow" position={{ top: 40, left: 40, width: 20, height: 10 }}
+            portalContainer={createPortalContainer()} onClose={onClose} onEscape={onEscape} />);
+        fireEvent.keyDown(window, { key: 'Escape' });
+        expect(onEscape).toHaveBeenCalledTimes(1);
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('does not dismiss or discard editable drafts on Escape', async () => {
+        const onEscape = vi.fn();
+        render(<HighlightPopover highlightId="highlight-a" noteBody="First note" highlightedText="First quote"
+            currentColor="yellow" position={{ top: 40, left: 40, width: 20, height: 10 }}
+            portalContainer={createPortalContainer()} onClose={vi.fn()} onEscape={onEscape} />);
+        fireEvent.click(screen.getByTitle('Edit Color or Note'));
+        await waitFor(() => expect(screen.getByPlaceholderText('Add a note...')).toHaveValue('First note'));
+        fireEvent.change(screen.getByPlaceholderText('Add a note...'), { target: { value: 'Unfinished thought' } });
+        fireEvent.keyDown(screen.getByPlaceholderText('Add a note...'), { key: 'Escape' });
+        expect(onEscape).not.toHaveBeenCalled();
+        expect(screen.getByPlaceholderText('Add a note...')).toHaveValue('Unfinished thought');
+    });
 });

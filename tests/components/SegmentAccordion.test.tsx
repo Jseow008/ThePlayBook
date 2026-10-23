@@ -613,7 +613,8 @@ describe('SegmentAccordion', () => {
                 left: expect.any(Number),
                 width: expect.any(Number),
                 height: expect.any(Number),
-            })
+            }),
+            container.querySelector('mark[data-id="highlight-3"]')
         );
     });
 
@@ -656,7 +657,7 @@ describe('SegmentAccordion', () => {
         try {
             fireEvent.click(mark);
             expect(defaultProps.onHighlightActivate).toHaveBeenCalledWith(
-                'highlight-preview', expect.objectContaining({ top: expect.any(Number) })
+                'highlight-preview', expect.objectContaining({ top: expect.any(Number) }), mark
             );
             expect(outsideClick).not.toHaveBeenCalled();
         } finally {
