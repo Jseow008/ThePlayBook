@@ -4,7 +4,7 @@ import { z } from "zod";
 export const PersonalEvidenceScopeSchema = z.object({
     version: z.literal(1),
     itemType: z.enum(["all", "highlight", "note", "reflection"]),
-    contentItemId: z.string().uuid().optional(),
+    contentItemId: z.guid().optional(),
     color: z.enum(["yellow", "blue", "green", "pink", "purple", "red"]).optional(),
     filterQuery: z.string().trim().max(160).transform((value) => value.replace(/\s+/g, " ")).optional(),
 }).strict();

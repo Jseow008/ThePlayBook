@@ -74,7 +74,7 @@ function decodeHighlightCursor(value: string, accountId: string, sessionId: stri
             || cursor.sessionId !== sessionId
             || cursor.filterHash !== filterHash
             || typeof cursor.createdAt !== "string"
-            || !z.string().uuid().safeParse(cursor.id).success
+            || !z.guid().safeParse(cursor.id).success
         ) return null;
         return cursor;
     } catch {
@@ -106,9 +106,9 @@ function highlightOverlapResponse(
 }
 
 const CreateHighlightSchema = z.object({
-    expected_user_id: z.string().uuid().optional(),
-    content_item_id: z.string().uuid(),
-    segment_id: z.string().uuid().optional().nullable(),
+    expected_user_id: z.guid().optional(),
+    content_item_id: z.guid(),
+    segment_id: z.guid().optional().nullable(),
     highlighted_text: z.string().trim().min(1).max(HIGHLIGHT_TEXT_MAX),
     note_body: z.string().trim().max(NOTE_BODY_MAX).optional().nullable(),
     color: HighlightColorSchema.optional(),
@@ -324,7 +324,7 @@ export async function GET(request: NextRequest) {
         const sort: HighlightSearchSort = sortParam === "oldest" ? "oldest" : "newest";
         const color = HighlightColorSchema.safeParse(colorParam).success ? colorParam : null;
 
-        if (queryText.length > 160 || (contentItemId && !z.string().uuid().safeParse(contentItemId).success)) {
+        if (queryText.length > 160 || (contentItemId && !z.guid().safeParse(contentItemId).success)) {
             return apiError("VALIDATION_ERROR", "Invalid highlight search.", 400, requestId);
         }
 

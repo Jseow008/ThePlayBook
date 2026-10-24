@@ -4,10 +4,10 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { chunkPersonalEvidenceText, PERSONAL_EMBEDDING_DIMENSIONS, PERSONAL_EMBEDDING_MODEL, type PersonalEvidenceTextField } from "@/lib/server/personal-evidence-ranking";
 
 const INDEX_VERSION = "gemini-embedding-001:768:personal-v1";
-const WorkerLeaseSchema = z.object({ worker_token: z.string().uuid(), worker_expires_at: z.string().datetime({ offset: true }) });
+const WorkerLeaseSchema = z.object({ worker_token: z.guid(), worker_expires_at: z.string().datetime({ offset: true }) });
 const ClaimSchema = z.object({
-    evidence_type: z.enum(["highlight", "reflection"]), evidence_id: z.string().uuid(), revision: z.string().uuid(),
-    lease_token: z.string().uuid(), index_version: z.string(), attempts: z.number().int().min(0).max(1_000),
+    evidence_type: z.enum(["highlight", "reflection"]), evidence_id: z.guid(), revision: z.guid(),
+    lease_token: z.guid(), index_version: z.string(), attempts: z.number().int().min(0).max(1_000),
     highlighted_text: z.string().nullable(), note_body: z.string().nullable(),
     prompt: z.string().nullable(), reflection_text: z.string().nullable(),
 });

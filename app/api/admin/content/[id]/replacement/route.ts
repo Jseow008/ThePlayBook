@@ -6,7 +6,7 @@ import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getSeriesSlugsByIds, revalidateContentDeleted, revalidateContentUpdated, revalidateReplacementRoutes } from "@/lib/server/revalidation";
 
-const IdSchema = z.string().uuid();
+const IdSchema = z.guid();
 const ReplaceSchema = z.object({
     replacementId: IdSchema,
     sourceUpdatedAt: z.string().datetime({ offset: true }),

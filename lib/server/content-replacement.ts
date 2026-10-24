@@ -6,7 +6,7 @@ import { createPublicServerClient } from "@/lib/supabase/public-server";
 
 /** Uses the public policy, so a draft/withdrawn destination is never disclosed. */
 export const getContentReplacement = cache(async (id: string) => {
-    if (!z.string().uuid().safeParse(id).success) return null;
+    if (!z.guid().safeParse(id).success) return null;
     const db = createPublicServerClient();
     const { data: notice, error } = await db.from("content_replacement")
         .select("source_id, source_title, replacement_id").eq("source_id", id).maybeSingle();

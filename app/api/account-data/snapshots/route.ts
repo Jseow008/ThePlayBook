@@ -8,7 +8,7 @@ import { rateLimitFailureResponseWithTelemetry, strictPublicRateLimit } from "@/
 import { getVerifiedAccountDataSession } from "@/lib/server/account-data-snapshot-auth";
 
 const CreateSnapshotSchema = z.object({
-    idempotencyKey: z.string().uuid().optional(),
+    idempotencyKey: z.guid().optional(),
     collections: z.array(z.enum(ACCOUNT_DATA_SNAPSHOT_COLLECTIONS)).min(1).max(ACCOUNT_DATA_SNAPSHOT_COLLECTIONS.length).optional(),
 });
 

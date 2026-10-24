@@ -56,7 +56,7 @@ const prices: Record<string, { input: number; cachedInput: number; output: numbe
     "google:gemini-embedding-001": { input: 150, cachedInput: 150, output: 0, context: 2048 },
 };
 const admissionSchema = z.discriminatedUnion("allowed", [
-    z.object({ allowed: z.literal(true), operationId: z.string().uuid(), reservedMicrousd: z.number().int().positive().safe() }),
+    z.object({ allowed: z.literal(true), operationId: z.guid(), reservedMicrousd: z.number().int().positive().safe() }),
     z.object({ allowed: z.literal(false), reason: z.enum(["disabled", "global_budget", "guest_budget", "guest_quota"]),
         retryAfterMs: z.number().int().nonnegative().safe() }),
 ]);

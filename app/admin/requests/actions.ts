@@ -14,7 +14,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { CONTENT_REQUEST_STATUSES } from "@/types/content-requests";
 
 const UpdateRequestSchema = z.object({
-    requestId: z.string().uuid(),
+    requestId: z.guid(),
     status: z.enum(CONTENT_REQUEST_STATUSES),
     publishedContentId: z.string().trim().optional(),
     sourceAvailabilityNote: z.string().trim().max(1000).optional(),
@@ -55,7 +55,7 @@ function getOptionalString(formData: FormData, name: string) {
     return typeof value === "string" ? value : undefined;
 }
 
-function getFieldErrors(error: z.ZodError): UpdateContentRequestState["fieldErrors"] {
+function getFieldErrors(error: z.ZodError<z.infer<typeof UpdateRequestSchema>>): UpdateContentRequestState["fieldErrors"] {
     const flattened = error.flatten().fieldErrors;
 
     return {

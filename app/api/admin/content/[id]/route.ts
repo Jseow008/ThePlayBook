@@ -253,10 +253,10 @@ const UpdateContentSchema = z.object({
         big_idea: z.string(),
         key_takeaways: z.array(z.string()),
     }).optional().nullable(),
-    series_id: z.string().uuid().optional().nullable(),
+    series_id: z.guid().optional().nullable(),
     series_order: z.number().int().positive().optional().nullable(),
     segments: z.array(z.object({
-        id: z.string().uuid().optional(), // Existing segment ID for update
+        id: z.guid().optional(), // Existing segment ID for update
         order_index: z.number().int().nonnegative(),
         title: z.string().optional().nullable(),
         markdown_body: z.string(),
@@ -264,7 +264,7 @@ const UpdateContentSchema = z.object({
         end_time_sec: z.number().int().optional().nullable(),
     })).optional(),
     artifacts: z.array(z.object({
-        id: z.string().uuid().optional(),
+        id: z.guid().optional(),
         type: z.literal("checklist"),
         payload_schema: z.object({
             title: z.string(),
@@ -281,7 +281,7 @@ interface RouteParams {
     params: Promise<{ id: string }>;
 }
 
-const ContentIdSchema = z.string().uuid();
+const ContentIdSchema = z.guid();
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
     const requestId = getRequestId();

@@ -8,14 +8,14 @@ import type { Database } from "@/types/database";
 
 const FOCUS_REQUEST_SCHEMA = z.object({
     limit: z.coerce.number().int().min(1).max(12).default(6),
-    excludeIds: z.array(z.string().uuid()).max(500).default([]),
+    excludeIds: z.array(z.guid()).max(500).default([]),
     cursor: z.string().trim().min(1).max(4096).optional(),
     seed: z.string().trim().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).default("default"),
 });
 
 const FOCUS_PERSONALIZED_REQUEST_SCHEMA = FOCUS_REQUEST_SCHEMA.extend({
-    completedIds: z.array(z.string().uuid()).max(12).default([]),
-    savedIds: z.array(z.string().uuid()).max(12).default([]),
+    completedIds: z.array(z.guid()).max(12).default([]),
+    savedIds: z.array(z.guid()).max(12).default([]),
 });
 
 const FOCUS_SELECT =
@@ -31,8 +31,8 @@ type RecommendationItem = Database["public"]["Functions"]["match_recommendations
 
 const FocusCursorPayloadSchema = z.object({
     v: z.literal(1),
-    scanCursor: z.string().uuid().nullable(),
-    carryIds: z.array(z.string().uuid()).max(PAGE_SIZE),
+    scanCursor: z.guid().nullable(),
+    carryIds: z.array(z.guid()).max(PAGE_SIZE),
 });
 
 type FocusCursorPayload = z.infer<typeof FocusCursorPayloadSchema>;
@@ -76,7 +76,7 @@ function decodeFocusCursor(value: string | undefined) {
         };
     }
 
-    const legacyUuid = z.string().uuid().safeParse(value);
+    const legacyUuid = z.guid().safeParse(value);
     if (legacyUuid.success) {
         return {
             success: true as const,

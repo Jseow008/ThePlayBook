@@ -43,23 +43,23 @@ type LoadInput = {
 };
 
 const sourceSchema = z.object({
-    id: z.string().uuid(), title: z.string(), author: z.string().nullable(),
+    id: z.guid(), title: z.string(), author: z.string().nullable(),
     status: z.string(), deleted_at: z.string().nullable(), updated_at: z.string(),
 });
 const segmentSchema = z.object({
-    id: z.string().uuid(), item_id: z.string().uuid(), title: z.string().nullable(),
+    id: z.guid(), item_id: z.guid(), title: z.string().nullable(),
     markdown_body: z.string(), deleted_at: z.string().nullable(), updated_at: z.string(),
 });
 const relation = <T extends z.ZodTypeAny>(schema: T) => z.union([schema, z.array(schema).max(1)]).nullable();
 const commonShape = {
-    id: z.string().uuid(), user_id: z.string().uuid(), content_item_id: z.string().uuid(),
+    id: z.guid(), user_id: z.guid(), content_item_id: z.guid(),
     created_at: z.string().nullable(), updated_at: z.string().nullable(),
     content_item: relation(sourceSchema),
 };
 const highlightSchema = z.object({
     ...commonShape,
     highlighted_text: z.string(), note_body: z.string().nullable(), color: z.string().nullable(),
-    segment_id: z.string().uuid().nullable(), anchor_start: z.number().int().nullable(),
+    segment_id: z.guid().nullable(), anchor_start: z.number().int().nullable(),
     anchor_end: z.number().int().nullable(), segment: relation(segmentSchema),
 });
 const reflectionSchema = z.object({
@@ -156,7 +156,7 @@ function assertActive(signal: AbortSignal) {
 
 function normalizeInput(input: LoadInput) {
     const parsed = PersonalEvidenceScopeSchema.safeParse(input.scope);
-    if (!parsed.success || !z.string().uuid().safeParse(input.userId).success) throw new PersonalEvidenceRetrievalError("INVALID_SCOPE");
+    if (!parsed.success || !z.guid().safeParse(input.userId).success) throw new PersonalEvidenceRetrievalError("INVALID_SCOPE");
     const deadline = AbortSignal.timeout(PERSONAL_EVIDENCE_TIMEOUT_MS);
     return { scope: parsed.data, signal: input.signal ? AbortSignal.any([input.signal, deadline]) : deadline };
 }
@@ -258,7 +258,7 @@ export async function loadSelectedPersonalEvidence(input: LoadInput & {
     selected: readonly { type: 'highlight' | 'reflection'; id: string }[];
 }): Promise<PersonalEvidenceCandidate[]> {
     const { scope, signal } = normalizeInput(input);
-    if (input.selected.length > 64 || input.selected.some((item) => !z.string().uuid().safeParse(item.id).success)) {
+    if (input.selected.length > 64 || input.selected.some((item) => !z.guid().safeParse(item.id).success)) {
         throw new PersonalEvidenceRetrievalError('INVALID_SCOPE');
     }
     const found = new Map<string, PersonalEvidenceCandidate>();

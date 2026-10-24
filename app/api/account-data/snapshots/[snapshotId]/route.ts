@@ -4,7 +4,7 @@ import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { AccountDataSnapshotError, getAccountDataSnapshotManifest, getLibrarySnapshotStatus } from "@/lib/server/account-data-snapshots";
 import { getVerifiedAccountDataSession } from "@/lib/server/account-data-snapshot-auth";
 
-const ParamsSchema = z.object({ snapshotId: z.string().uuid() });
+const ParamsSchema = z.object({ snapshotId: z.guid() });
 
 /** Returns only an existing snapshot's verified manifest; never its payload. */
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ snapshotId: string }> }) {

@@ -24,7 +24,7 @@ const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 // ---------------------------------------------------------------------------
 
 const AuthorChatBodySchema = z.object({
-    contentId: z.string().uuid(),
+    contentId: z.guid(),
     authorName: z.string().trim().min(1).max(200),
     contentTitle: z.string().trim().min(1).max(500).optional(),
     bookTitle: z.string().trim().min(1).max(500).optional(),

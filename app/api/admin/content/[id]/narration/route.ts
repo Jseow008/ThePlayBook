@@ -9,7 +9,7 @@ import { expireStaleNarrationProcessingJobs } from "@/lib/server/narration-proce
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
 
-const ContentIdSchema = z.string().uuid();
+const ContentIdSchema = z.guid();
 
 interface RouteParams {
     params: Promise<{ id: string }>;
