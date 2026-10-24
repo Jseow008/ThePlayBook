@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { normalizeContentRequestStatus } from "@/types/content-requests";
 
 const ParamsSchema = z.object({
-    id: z.string().uuid(),
+    id: z.guid(),
 });
 
 async function resolveParams(params: Promise<{ id: string }> | { id: string }) {

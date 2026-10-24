@@ -9,14 +9,14 @@ import type { Database } from "@/types/database";
 type ContentFeedbackInsert = Database["public"]["Tables"]["content_feedback"]["Insert"];
 
 const PosFeedbackSchema = z.object({
-    content_id: z.string().uuid("Invalid content ID"),
+    content_id: z.guid("Invalid content ID"),
     is_positive: z.boolean(),
     reason: z.string().max(256).optional().nullable(),
     details: z.string().max(4000).optional().nullable(),
 });
 
 const DelSchema = z.object({
-    content_id: z.string().uuid("Invalid content ID"),
+    content_id: z.guid("Invalid content ID"),
 });
 
 export async function GET(request: NextRequest) {

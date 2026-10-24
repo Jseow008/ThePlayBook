@@ -234,3 +234,106 @@ Cleanup completed: exact Supabase project stopped with no backup; owned applicat
 Visual review caught a failed narrow-screen attempt despite functional copying and zero overflow: adding the action squeezed the quotation alongside the controls. The first mobile screenshot is not a layout pass. A one-class responsive correction places the existing action group below content below the sm breakpoint, retaining desktop placement. Final affected focused tests passed 23/23 and targeted lint passed; a fresh production build and desktop/mobile recheck are in progress. The 1,892-test full-suite result predates this CSS-only correction. Owned disposable services were briefly recreated solely for final-candidate verification.
 
 Final candidate after responsive correction: production build `aXJ-sdV3qNgikaHC4kKFu`, TypeScript, targeted lint, 23 focused tests, Sharp traces and critical CSS passed. Desktop keyboard copy and responsive mobile click each matched the entire expected text and displayed success. At 390×844, content width was 326px, controls were below content, copy button was 36×36px and no horizontal overflow occurred. Final-candidate database comparisons before/after again retained all fields/timestamps. The earlier draft-retention evidence applies unchanged because the correction alters only the card flex layout. Final screenshots `desktop-final.png` and `mobile-final.png` supersede the first mobile layout attempt. No public-site check is claimed.
+
+## Zod application security candidate (2026-10-24; release held)
+
+User approved a separate Zod security migration, representative v3/v4 comparison,
+explicit compatibility decisions and inspection of the complete dependency tree.
+Fresh branch codex/zod-security-upgrade, worktree /tmp/netflux-zod-security-upgrade,
+base 66b63cec25cbffecb833e32306b7f646233b4d83. Source-return PR 281 / 76a1fd03 and
+diagnostics cbd826d2 are NOT included; they remain held and must refresh only
+after an accepted security base. No merge, deployment or production journeys.
+
+Application change: pin Zod 4.6.7; preserve the v3 generic UUID-format contract by
+replacing 80 validator expressions across 37 source files with Zod 4 GUID
+validators. The earlier inventory counted 68 matching lines, not expressions.
+No runtime v3 compatibility import was introduced. Type admin request field
+errors against UpdateRequestSchema; retain batch API error details via issues.
+No SQL, RLS, query or saved-data format change. Intentionally reject Infinity
+query offsets and unsafe integer counters; supported finite values, defaults,
+normalization and quotation text are preserved. These are explicit acceptance
+decisions, not fixture rewrites to obtain green tests.
+
+Baseline evidence: 31 representative actual-schema/counter cases captured under
+3.25.76 before migration; all unchanged cases match under 4.6.7, with the two
+intentional tightenings asserted. Added a real saved-boundary read/write check.
+Actual AI SDK adapter schema and per-provider outgoing schemas were captured
+under v3, then compared under v4. OpenAI, Anthropic and the existing Luna adapter
+have identical schema wire contracts in this sample. The first Anthropic test
+incorrectly compared its sanitized wire to the unsanitized adapter schema; real
+v3 capture showed the keyword removal already existed. The test now compares
+actual provider traffic before/after. Controlled HTTP fixtures exercise real
+SDK parsing/Output.object; no live provider call, prompt, model, retry or budget
+change. Valid assessments pass; truncated JSON, wrong shape, extra properties,
+unknown/duplicate IDs, blank required text and excessive arrays fail closed.
+Private synthetic error content is not retained in surfaced selector failures.
+
+Targeted API coverage: batch 1/50 valid inputs, malformed/0/51/1000 invalid batches
+rejected before DB access with 400 details; admin publication link, skip/failure
+reason, field mapping, authorization and hide/default behavior. Oversized-array
+regression confirms no per-item work for an already exceeded max and one bounded
+issue. Normal 50-item input still validates. Existing image-route test mock had
+redeclared the old validator; it now imports the actual schema export (while
+mocking its DB client), retaining the original legacy-ID fixture.
+
+Final local validation: 251 files / 1961 tests passed, 287 conditional skips;
+34/34 capacity checks; TypeScript, full lint/guards, production build, Sharp
+traces and critical CSS passed. Build ID yaqg18NFlChLBtvPphIxo, synthetic local
+environment only. Separately enabled ordinary-account personal-evidence and AI
+quota runtime suites passed 32/32 against a disposable local Supabase instance,
+including ownership/revalidation and citation states. Those 32 tests are separate
+runtime evidence; the full run's skipped count is not claimed as coverage of all
+conditional suites. No paid hosted project, production credential or user record
+used. Physical phones, mobile Safari and the other conditional suites unverified.
+
+Dependency inventory: npm ls zod --all resolves only 4.6.7; production audit has
+zero vulnerabilities and no Zod advisory. All-dependency audit still reports
+unrelated development-only findings (5 moderate, 4 high), outside this upgrade.
+Physical inspection additionally found Next.js's versionless vendored legacy
+parser, absent from npm's Zod dependency graph/audit. It produces 1001 issues on
+the bounded oversized-array probe. Latest stable Next 16.4.3 contains the identical
+bundle as installed 16.4.2 (SHA-256 af7deaaff50a14c7d8b52f518e10dac800a350bf8eef43f8454006fa7a44e4da),
+so a framework patch-version bump alone would not fix it. No Next update or
+private vendor patch was made. Traced consumers include configuration/build,
+segment configuration, devtools and development MCP. Production-request exposure
+is NOT established. Zod's v3 compatibility entry point also retains the legacy
+probe behavior and is not proposed as a remedy. No app code imports that entry
+point. The production trace scan found no explicit legacy paths/markers, but
+that is not proof of exclusion from all bundled code or proof of remediation.
+
+User explicitly answered Include bundled copy; keep release held. Therefore the
+application candidate must remain unmerged with auto-merge disabled even if its
+normal audit/CI passes. No assertion that all bundled copies are patched, no
+audit suppression and no automatic resumption of source/diagnostic release.
+Next work is a reviewed framework-parser remediation/maintenance plan; an
+unsupported shim/backport or framework prerelease is not authorized by this
+candidate. Historical Ask failure remains unexplained until the improved
+diagnostics capture a natural failure; local test counts do not explain it.
+
+Failed attempts retained: initial full suite had two image-route mock failures
+(1958 other cases passed); actual-schema mock correction then passed and final
+full suite passed. A new saved-boundary test initially used the globally mocked
+storage, then misunderstood the existing write-time parse guard; corrected to
+own functional storage and explicit rejected-write/legacy-read assertions.
+Disposable setup first collided with Spotify's local port 57621; Spotify was
+untouched, ports moved to verified-free 58621/58622. Own local resources are being
+removed after verification. The setup log was inadvertently tailed once and
+included a disposable local key; no production key was involved. Private runtime,
+credential and raw setup logs will be removed after teardown. A build-stop
+attempt found its process already exited successfully; no CI run was cancelled.
+
+Artifacts: /tmp/netflux-zod-plan/candidate-validation-summary.json,
+physical-zod-copies.json, next-zod-consumers.txt, legacy-build-traces.json; npm tree
+/tmp/netflux-zod-tree-all.json; production audit /tmp/netflux-zod-audit-prod.json;
+full run /tmp/netflux-zod-suite-final.log; migration/capture logs under
+/tmp/netflux-zod-plan/. Golden baselines and provenance README are committed test
+fixtures. Existing prior reports remain in /tmp/netflux-copy-saved-note. One
+agent; no new automation; billed usage unavailable. Next: finish owned cleanup,
+commit/publish this reviewable security candidate with explicit hold and no
+auto-merge, attach it, verify its scope, and report remaining bundled-parser work.
+
+Owned cleanup complete: exact Supabase project stopped with no backup, dedicated
+Redis bridge/container/volume removed, private status/runtime/fixture/raw logs
+removed. No owned listeners remain. Existing primary development server PID
+48914 remains running. Sanitized validation artifacts and public package probes
+retained; no temporary browser tab or viewport was created for this upgrade.

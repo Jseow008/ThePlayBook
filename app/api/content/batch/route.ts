@@ -4,7 +4,7 @@ import { z } from "zod";
 import { rateLimitFailureResponse, strictPublicRateLimit } from "@/lib/server/rate-limit";
 
 const BatchRequestSchema = z.object({
-    ids: z.array(z.string().uuid()).min(1).max(50),
+    ids: z.array(z.guid()).min(1).max(50),
 });
 
 const CONTENT_BATCH_SELECT = "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, created_at";
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(
-                { error: "Invalid request", details: error.errors },
+                { error: "Invalid request", details: error.issues },
                 { status: 400 }
             );
         }

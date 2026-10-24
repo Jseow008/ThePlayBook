@@ -12,7 +12,7 @@ import {
 import { getVerifiedAccountDataSession } from "@/lib/server/account-data-snapshot-auth";
 
 const ParamsSchema = z.object({
-    snapshotId: z.string().uuid(),
+    snapshotId: z.guid(),
     collection: z.enum(ACCOUNT_DATA_SNAPSHOT_COLLECTIONS),
 });
 

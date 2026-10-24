@@ -11,9 +11,9 @@ import { rateLimitFailureResponse, strictPublicRateLimit } from "@/lib/server/ra
 import type { Database } from "@/types/database";
 
 const BrowseRecommendationsRequestSchema = z.object({
-    recentSeedId: z.string().uuid().nullable().optional(),
-    librarySeedIds: z.array(z.string().uuid()).max(50).default([]),
-    excludeIds: z.array(z.string().uuid()).max(500).default([]),
+    recentSeedId: z.guid().nullable().optional(),
+    librarySeedIds: z.array(z.guid()).max(50).default([]),
+    excludeIds: z.array(z.guid()).max(500).default([]),
     targetCount: z.coerce.number().int().min(1).max(10).default(10),
 });
 

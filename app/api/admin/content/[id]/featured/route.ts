@@ -10,7 +10,7 @@ const FeaturedPayloadSchema = z.object({
     is_featured: z.boolean(),
 });
 
-const ContentIdSchema = z.string().uuid();
+const ContentIdSchema = z.guid();
 
 interface RouteParams {
     params: Promise<{ id: string }>;

@@ -12,7 +12,7 @@ const REFLECTION_MAX_LENGTH = 1_000;
 const PROMPT_MAX_LENGTH = 500;
 
 const SaveReflectionSchema = z.object({
-    content_item_id: z.string().uuid(),
+    content_item_id: z.guid(),
     prompt: z.string().trim().min(1).max(PROMPT_MAX_LENGTH),
     reflection_text: z.string().trim().min(1).max(REFLECTION_MAX_LENGTH),
 });
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
             .order("created_at", { ascending: false });
 
         if (contentItemId) {
-            const parsedContentId = z.string().uuid().safeParse(contentItemId);
+            const parsedContentId = z.guid().safeParse(contentItemId);
             if (!parsedContentId.success) {
                 return apiError("VALIDATION_ERROR", "Invalid content item.", 400, requestId);
             }

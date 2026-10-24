@@ -6,7 +6,7 @@ import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 
 const ContentHistoryParamsSchema = z.object({
-    id: z.string().uuid(),
+    id: z.guid(),
 });
 
 const ContentHistoryDeleteBodySchema = z.object({

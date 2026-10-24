@@ -15,14 +15,14 @@ interface RouteParams {
     params: Promise<{ id: string }>;
 }
 
-const HighlightIdSchema = z.string().uuid();
+const HighlightIdSchema = z.guid();
 const HighlightColorSchema = z.enum(["yellow", "blue", "green", "pink", "purple", "red"]);
 type HighlightUpdate = Database["public"]["Tables"]["user_highlights"]["Update"];
 const UpdateHighlightSchema = z
     .object({
         note_body: z.string().trim().max(4_000).nullable().optional(),
         color: HighlightColorSchema.optional(),
-        expected_user_id: z.string().uuid().optional(),
+        expected_user_id: z.guid().optional(),
         expected: z.object({ note_body: z.string().nullable(), color: z.string().nullable(), updated_at: z.string().nullable() }).optional(),
         highlighted_text: z.string().trim().min(1).max(2_000).optional(),
         anchor_start: z.number().int().min(0).optional(),

@@ -6,7 +6,7 @@ import { revalidateContentFeaturedChanged } from "@/lib/server/revalidation";
 import { z } from "zod";
 
 const ToggleFeaturedStatusSchema = z.object({
-    contentId: z.string().uuid(),
+    contentId: z.guid(),
     currentStatus: z.boolean(),
 });
 

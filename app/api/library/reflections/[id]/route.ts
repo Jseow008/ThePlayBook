@@ -9,7 +9,7 @@ import { rateLimit } from "@/lib/server/rate-limit";
 import type { Database } from "@/types/database";
 
 const REFLECTION_MAX_LENGTH = 1_000;
-const ReflectionIdSchema = z.string().uuid();
+const ReflectionIdSchema = z.guid();
 const UpdateReflectionSchema = z.object({
     reflection_text: z.string().trim().min(1).max(REFLECTION_MAX_LENGTH),
 });

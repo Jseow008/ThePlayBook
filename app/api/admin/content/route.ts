@@ -160,7 +160,7 @@ const CreateContentSchema = z.object({
         big_idea: z.string(),
         key_takeaways: z.array(z.string()),
     }).optional().nullable(),
-    series_id: z.string().uuid().optional().nullable(),
+    series_id: z.guid().optional().nullable(),
     series_order: z.number().int().positive().optional().nullable(),
     segments: z.array(z.object({
         order_index: z.number().int().nonnegative(),
@@ -170,7 +170,7 @@ const CreateContentSchema = z.object({
         end_time_sec: z.number().int().optional().nullable(),
     })).optional().nullable(),
     artifacts: z.array(z.object({
-        id: z.string().uuid().optional(),
+        id: z.guid().optional(),
         type: z.literal("checklist"),
         payload_schema: z.object({
             title: z.string(),

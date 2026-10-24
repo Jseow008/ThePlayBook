@@ -23,7 +23,7 @@ async function main() {
     };
     try {
         if (process.argv[2] === "cleanup") {
-            const saved = z.object({ userId: z.string().uuid(), contentId: z.string().uuid() }).parse(JSON.parse(readFileSync(path, "utf8")));
+            const saved = z.object({ userId: z.guid(), contentId: z.guid() }).parse(JSON.parse(readFileSync(path, "utf8")));
             await remove(saved.userId, saved.contentId);
             unlinkSync(path);
             return;

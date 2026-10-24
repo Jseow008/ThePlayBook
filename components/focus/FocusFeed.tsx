@@ -57,7 +57,7 @@ const FOCUS_FEED_WHEEL_THRESHOLD_PX = 48;
 const FOCUS_FEED_TOUCH_THRESHOLD_PX = 44;
 const FOCUS_EXCLUSION_LIMIT = 500;
 const FOCUS_PERSONALIZATION_SEED_LIMIT = 12;
-const FocusItemIdSchema = z.string().uuid();
+const FocusItemIdSchema = z.guid();
 
 type FocusExperimentEvent = "focus_visit_started" | "focus_opening_batch" | "focus_card_impression" | "focus_card_action" | "focus_feed_timing";
 let focusAnalyticsModulePromise: Promise<typeof import("@/lib/analytics")> | null = null;

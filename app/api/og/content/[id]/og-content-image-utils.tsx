@@ -24,7 +24,7 @@ export interface OgContent {
     duration_seconds: number | null;
 }
 
-export const ContentIdSchema = z.string().uuid();
+export const ContentIdSchema = z.guid();
 
 export async function getContent(id: string): Promise<OgContent | null> {
     const supabase = createPublicServerClient();
