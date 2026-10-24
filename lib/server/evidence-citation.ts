@@ -122,7 +122,9 @@ export async function resolveEvidenceCitation(options: {
         return { state: !available ? "withdrawn" : changed ? "changed" : "available", kind: current.type,
             title: available ? current.source!.title : "Saved personal evidence",
             passages: passages(reference, changed ? undefined : fields),
-            ...(available ? { sourceHref: `/read/${current.contentItemId}` } : {}) };
+            ...(available ? { sourceHref: current.type === "highlight"
+                ? `/read/${current.contentItemId}?highlightId=${current.id}`
+                : `/read/${current.contentItemId}` } : {}) };
     }
     // Verify current library membership independently of public editorial visibility.
     const { data: membership, error: membershipError } = await supabase.from("user_library").select("content_id")
