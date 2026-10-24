@@ -36,6 +36,7 @@ describe("response-scoped evidence references", () => {
         const result = await resolve(tokenFor());
         expect(result).toMatchObject({ state: "available", passages: [{ text: text.slice(7, -6), before: "before ", after: "\nafter" }] });
         expect(JSON.stringify(result)).not.toContain("<a ");
+        expect(result.sourceHref).toBe(`/read/${contentItemId}?highlightId=${id}`);
     });
     it("encrypts capture text and mints separate opaque references per response", () => {
         const one = tokenFor(); expect(tokenFor()).not.toBe(one);
@@ -67,7 +68,8 @@ describe("response-scoped evidence references", () => {
     it("labels still-owned changed context; never substitutes edited text", async () => {
         const token = tokenFor(); const current = selected().evidence;
         vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([{ ...current, fingerprint: "revision-two", ...current.type === "highlight" ? { noteBody: "replaced" } : {} }]);
-        expect(await resolve(token)).toMatchObject({ state: "changed", passages: [{ text: text.slice(7, -6), before: "", after: "" }] });
+        expect(await resolve(token)).toMatchObject({ state: "changed", passages: [{ text: text.slice(7, -6), before: "", after: "" }],
+            sourceHref: `/read/${contentItemId}?highlightId=${id}` });
     });
     it("withdrawn sources expose only personal context without a reader link", async () => {
         const token = tokenFor();
@@ -75,6 +77,18 @@ describe("response-scoped evidence references", () => {
         const result = await resolve(token);
         expect(result).toMatchObject({ state: "withdrawn", title: "Saved personal evidence" });
         expect(result.sourceHref).toBeUndefined();
+    });
+    it("keeps reflections linked to their source without inventing a highlight target", async () => {
+        const reflection: RankedPersonalEvidence = { ...selected(), evidence: {
+            type: "reflection", id, evidenceId: `reflection:${id}`, userId, contentItemId,
+            createdAt: "2026-09-26", updatedAt: "2026-09-26", fingerprint: "reflection-one",
+            sourceStatus: "available", source: selected().evidence.source,
+            prompt: "What matters?", reflectionText: text,
+        }, spans: [{ field: "reflectionText", start: 0, end: text.length, text, score: 1 }] };
+        vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([reflection.evidence]);
+        expect(await resolve(tokenFor(reflection))).toMatchObject({
+            state: "available", kind: "reflection", sourceHref: `/read/${contentItemId}`,
+        });
     });
     it("keeps database failure distinct from unavailable evidence", async () => {
         vi.mocked(loadSelectedPersonalEvidence).mockRejectedValue(new PersonalEvidenceRetrievalError("UNAVAILABLE"));
@@ -88,7 +102,7 @@ describe("response-scoped evidence references", () => {
         rows = [null]; expect(await resolve(token)).toEqual({ state: "unavailable" });
         rows = [{ content_item_id: contentItemId }, null]; expect(await resolve(token)).toEqual({ state: "withdrawn" });
         const row = { id, item_id: contentItemId, markdown_body: text, content_item: { id: contentItemId, title: "Source", status: "verified", deleted_at: null } };
-        rows = [{ content_item_id: contentItemId }, row]; expect(await resolve(token)).toMatchObject({ state: "available", passages: [{ text: source.span.text }] });
+        rows = [{ content_item_id: contentItemId }, row]; expect(await resolve(token)).toMatchObject({ state: "available", passages: [{ text: source.span.text }], sourceHref: `/read/${contentItemId}` });
         rows = [{ content_item_id: contentItemId }, { ...row, markdown_body: "edited" }];
         expect(await resolve(token)).toEqual({ state: "changed", kind: "source_segment", title: "Source" });
         rows = [{ content_item_id: contentItemId }, { ...row, content_item: { ...row.content_item, status: "draft" } }];

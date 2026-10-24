@@ -337,3 +337,94 @@ Redis bridge/container/volume removed, private status/runtime/fixture/raw logs
 removed. No owned listeners remain. Existing primary development server PID
 48914 remains running. Sanitized validation artifacts and public package probes
 retained; no temporary browser tab or viewport was created for this upgrade.
+## Exact source return implementation (2026-10-24)
+
+User approved this source-return correction separately from selection diagnostics. Branch codex/evidence-highlight-return, worktree /tmp/netflux-evidence-highlight-return, fresh main base 66b63cec25cbffecb833e32306b7f646233b4d83. Highlight/note evidence now supplies /read/<contentItemId>?highlightId=<ownedHighlightId> after the existing token/ownership/current-record checks. Reflections and editorial sources keep their existing book destination. Withdrawn/deleted/foreign evidence safeguards are unchanged, as are quotation/location validation and the existing unavailable-passage warning. No matching rules, historical content, editor/draft or database changes.
+
+Focused citation tests passed 11/11, including owned/foreign/expired/deleted references, changed personal context retaining its exact destination, withdrawn source without a link, reflections without a fabricated highlight target and editorial behavior. TypeScript passed. Full suite/lint running. This changes URL serialization only; no schema, query, DB access policy or mutation changed, so a hosted database rehearsal does not apply. No paid resource. Next: inspect final scope, publish through protected gates, then verify production exact return and known unavailable handling on the deployed candidate. Two paraphrase journeys are scheduled only after both approved changes are deployed, with a bounded one-attempt-per-case plan; no retry-to-pass or forced live failure.
+
+Local broad validation: initial concurrent full runs retained failures (source branch: 1892 passed, 1 unchanged ReaderView timeout; diagnostic branch: 1898 passed, 2 unchanged ReaderView timeouts; both had 287 conditional skips). All 80 unchanged ReaderView tests passed when run in isolation without extending deadlines. Citation-focused 11/11, TypeScript, full lint/guards and capacity 34/34 passed. Initial timeouts are not relabeled as full-run passes. Required isolated CI remains the final full-suite gate. Source change will release first; diagnostics will refresh onto secured main before its PR to avoid invalidating a running candidate through branch freshness.
+
+## Hosted development-handler boundary resolved (2026-10-25, Asia/Singapore)
+
+Decision rule agreed before checking: exclude affected development handlers from
+production and release after gates; choose mitigation only for confirmed
+user-controlled reachability; retain hold if still inconclusive. The combined
+source/build/hosted evidence below resolves the specific registration question
+without requiring the inaccessible generated source file. It supersedes the
+previous hosted-packaging uncertainty and automatic-remedy wording.
+
+Exact candidate preview: dpl_8sNYKqKbtc1QFCNcyzpHkTXDwsuB, commit
+db5fff7449e4a67ce20a35a44bd589568690d989, READY, Next.js framework. Its own build
+bld_f95q34a5d logs Vercel CLI 65.1.0, detected Next 16.4.2, next build, Applying
+modifyConfig from Vercel and optimized PRODUCTION build/output. Paginated by
+bounded timestamp ranges to avoid connector truncation, the build route inventory
+contains 103 entries and neither /_next/mcp nor /__nextjs_devtools_config.
+
+Matching producer code was obtained from official npm releases without installing
+or executing the adapter: vercel 65.1.0 pins @vercel/next 26.0.0. The adapter tarball
+SHA-512 matches npm's published dist.integrity. Its dist/adapter/node-handler.js
+sets NODE_ENV=production, uses built routes-manifest/app-path-routes-manifest,
+loads the matched built app/pages module and invokes mod.handler with
+requestMeta.minimalMode=true. It does not construct a dev server, install a hot
+reloader or register either affected handler. dist/adapter/index.js:9910-9923
+writes that handler source as ___next_launcher.cjs; index.js:10649+ identifies
+this adapter as Vercel, explaining the matched hosted modifyConfig log. Its
+alternate older server-launcher.js:33-58 also forces production outside dev1 and
+constructs the production next-server with minimalMode=true/customServer=false;
+it does not set dev=true or use the development bundler. Thus the conclusion
+does not rely on guessing between two adapter launch strategies.
+
+Deployment-matched Next 16.4.2 code confirms the other side of that boundary:
+server/next.js:213-218 selects next-dev-server only for options.dev;
+server/lib/router-server.js:156+ loads setupDevBundler only for opts.dev.
+getMcpMiddleware/devToolsConfigMiddleware registrations are confined to the
+Turbopack/webpack DEVELOPMENT hot reloaders. Compiled production route templates
+invoke routeModule.handle/prerender with request metadata; there is no dynamic
+request field that selects either development registration. No app import of
+these framework validators and no custom development-server entrypoint exists in
+the candidate. The build's default mcpServer=true does not circumvent this outer
+development-only registration gate. Presence of MCP files in a dependency trace
+is not registration. Configuration validation remains trusted startup/build
+input and is not a user-request validator.
+
+Independent corroboration: authenticated read-only Vercel connector GETs to the
+immutable candidate hostname returned app-generated 404 with x-matched-path=/404
+for /_next/mcp and /__nextjs_devtools_config. /api/health returned 200 with its own
+matched path; /about returned 200 and production prerender headers. These were
+not authentication-screen responses. Only GET is supported by this connector;
+no hosted POST/mutation or load/stress request was sent. The existing local
+production POST checks and working instrumentation positive control remain
+separate evidence. 404s and absent routes support the source registration proof;
+neither is treated as standalone proof.
+
+Browser attempt reached Vercel Authentication, not the app, and is not counted as
+a route pass. Used the authorized read-only connector instead; protection was
+not disabled and no public share link, bypass secret or access-rule change was
+created. Own test-created browser tab is to be closed. The generated file tree
+remains inaccessible, but it is not the sole acceptable proof. Version-matched
+producer/consumer code plus exact hosted production build and route inventory
+now establishes exclusion for the identified development handlers in this
+candidate's supported production runtime. This is not a universal assertion
+about modified adapters, future Next versions or development servers.
+
+Outcome: affected development-handler request paths are excluded. No Next vendor
+shim, framework upgrade, backport, prerelease or vulnerability suppression is
+needed for this established non-exposure. The parser behavior is still present;
+this is an exposure conclusion, not a claim that the bundle was patched.
+Required PR 282 validate/Security Validation/PR scope checks passed, head unchanged,
+no SQL/RLS/schema/query change. Per the user's conditional authorization, record
+the non-exposure rationale in PR 282 and resume normal protected security merge,
+then refresh/validate the two separate approved fixes and their release gates.
+Do not bypass gates or treat previous skipped jobs/tests as covered. The original
+Ask service error remains separately unknown until diagnostics capture a failure.
+
+Artifacts: /tmp/netflux-bundled-parser-assessment/hosted-boundary.json,
+matched-source-hashes.json, vercel-next-pack.json, verified official adapter
+package under vercel-next-26.0.0/. Prior local assessment/probes retained. Initial
+public Git tag URLs were unavailable; exact official npm package substituted.
+Python tarfile lacked filter= support; corrected to explicit regular-file reads
+with destination containment checks. No product or dependency file changed in
+this assessment. One agent, no new automation or paid resources.
+
+Release continuation: security PR 282 merged through protected squash as d57f74fdb48ccb0aae57e65826087751a32fd89b. This source branch is refreshed on that exact secured main. Both documentation append sections preserved during rebase; application citation change applied without a code conflict. Scope remains source URL construction and its tests; no database or matching change.
