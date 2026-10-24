@@ -2,6 +2,7 @@ import "server-only";
 import { withLunaFinalPhase } from "@/lib/server/luna-final-phase";
 import { createSelectionProviderTiming } from "@/lib/server/selection-provider-timing";
 import { measureAskNotesPhase } from "@/lib/server/ask-notes-timing";
+import { selectionFailureDiagnostics, type SelectionFailureDiagnostics } from "@/lib/server/selection-failure-diagnostics";
 import { AiSpendingError, reserveAiProviderCall } from "@/lib/server/ai-spending";
 
 import { createHash } from "node:crypto";
@@ -94,7 +95,8 @@ export type PersonalEvidenceSelectionGenerator = (request: PersonalEvidenceSelec
 }>;
 export class PersonalEvidenceSelectionError extends Error {
     constructor(public readonly code: "INVALID_INPUT" | "CANDIDATE_LIMIT" | "CONTEXT_TOO_LARGE" | "NOT_CONFIGURED"
-        | "UNAVAILABLE" | "INVALID_SELECTION" | "DEADLINE_EXCEEDED" | "CANCELLED") {
+        | "UNAVAILABLE" | "INVALID_SELECTION" | "DEADLINE_EXCEEDED" | "CANCELLED",
+        public readonly diagnostics?: SelectionFailureDiagnostics) {
         // Do not retain provider errors: SDK exceptions may contain private input or output text.
         super(`Personal evidence selection failed: ${code}`);
         this.name = "PersonalEvidenceSelectionError";
@@ -333,9 +335,17 @@ export async function selectPersonalEvidence(options: {
             stats: { candidateCount: candidates.length, candidateBytes, promptBytes: Buffer.byteLength(SYSTEM + prompt, "utf8"), selectedCount: ids.length,
                 durationMs: performance.now() - startedAt, modelCalled: true, exactQuote: options.exactQuote ?? false } };
     } catch (error) {
-        if (error instanceof AiSpendingError || error instanceof PersonalEvidenceSelectionError) throw error;
+        if (error instanceof AiSpendingError) throw error;
+        if (error instanceof PersonalEvidenceSelectionError) {
+            if (error.code === "INVALID_SELECTION" && !error.diagnostics) {
+                throw new PersonalEvidenceSelectionError(error.code, {
+                    category: "invalid_selection", duration_ms: Math.round(performance.now() - startedAt),
+                });
+            }
+            throw error;
+        }
         if (controller.signal.aborted) throw abortFailure(controller.signal);
-        throw new PersonalEvidenceSelectionError("UNAVAILABLE");
+        throw new PersonalEvidenceSelectionError("UNAVAILABLE", selectionFailureDiagnostics(error, performance.now() - startedAt));
     } finally {
         clearTimeout(timer);
         options.signal?.removeEventListener("abort", onCallerAbort);

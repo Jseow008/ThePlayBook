@@ -1,4 +1,5 @@
 import { AiSpendingError } from "@/lib/server/ai-spending";
+import { PersonalEvidenceSelectionError } from "@/lib/server/personal-evidence-selector";
 const { spendingRpc } = vi.hoisted(() => ({ spendingRpc: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ getAdminClient: () => ({ rpc: spendingRpc }) }));
 vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn(), aiNetworkIdentifier: vi.fn(() => 'a'.repeat(64)) }));
@@ -505,6 +506,22 @@ describe('Notes retrieval delivery boundary', () => {
         expect(response.status).toBe(503); expect((await response.json()).error.code).toBe('RETRIEVAL_UNAVAILABLE');
         expect(admitAiUsage).toHaveBeenCalledTimes(1);
         expect(streamText).not.toHaveBeenCalled();
+    });
+    it('logs allowlisted selection diagnostics with request correlation, never in the client response', async () => {
+        const diagnostic = { category: 'provider_api' as const, status_code: 429, retryable: true, duration_ms: 123 };
+        vi.mocked(retrievePersonalEvidence).mockRejectedValue(new PersonalEvidenceSelectionError('UNAVAILABLE', diagnostic));
+        const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            const response = await POST(request());
+            const body = await response.json();
+            expect(response.status).toBe(503);
+            expect(body.error.code).toBe('RETRIEVAL_UNAVAILABLE');
+            expect(log).toHaveBeenCalledWith({ event: 'personal_evidence_selection_failure',
+                request_id: body.error.request_id, route: '/api/chat/notes', ...diagnostic });
+            expect(JSON.stringify(body)).not.toContain('provider_api');
+            expect(JSON.stringify(body)).not.toContain('diagnostics');
+            expect(streamText).not.toHaveBeenCalled();
+        } finally { log.mockRestore(); }
     });
     it('rejects legacy ID-only payloads rather than broadening their scope', async () => {
         const response = await POST(new NextRequest('http://localhost/api/chat/notes', { method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'Ask' }], highlightIds: ['123e4567-e89b-12d3-a456-426614174000'] }) }));
