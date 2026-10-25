@@ -12,7 +12,7 @@ export const CitationResolutionSchema = z.object({
     passages: z.array(z.object({
         label: z.string(), text: z.string(), before: z.string(), after: z.string(),
     })).optional(),
-    sourceHref: z.string().regex(/^\/read\/[0-9a-f-]+$/).optional(),
+    sourceHref: z.string().regex(/^\/read\/[0-9a-f-]+(?:\?highlightId=[0-9a-f-]+)?$/).optional(),
 });
 export type CitationResolution = z.infer<typeof CitationResolutionSchema>;
 

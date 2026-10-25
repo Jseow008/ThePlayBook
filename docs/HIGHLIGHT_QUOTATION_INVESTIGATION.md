@@ -439,3 +439,74 @@ Local broad validation: 1898 tests passed with two timeouts in unchanged ReaderV
 Diagnostics release refresh (2026-10-25): security 282 merged as d57f74fd; source 281 passed required CI/security and merged as e8977f5b76ef7f863debc6c99868553a74b398b5. This independent diagnostics commit is refreshed onto that source/security base. Documentation append conflict preserved both reports; application files applied without conflict. Original diagnostics full suite later passed 1900 tests/287 skips in isolation (recorded centrally); it does not establish the historical service failure’s cause. Final integrated candidate is undergoing focused API/privacy/timing tests, types and lint before its own protected gates. No new database/provider/model/scope changes.
 
 Final refreshed diagnostics local validation: 43 API/privacy/Ask timing tests plus 9 selector phase/provider timing tests passed (52 across five files); TypeScript and full lint/guards passed with Zod 4.6.7. No manifest/lockfile drift. The six-file diff remains exactly the approved safe diagnostics helper, selector/API plumbing, tests and this checkpoint. Required full CI/security is still the final gate; no historical-cause claim. Source final CI recorded 1962 unit passes/287 skips and 211 browser passes/118 skips; skipped cases remain outside coverage.
+
+## Production journey failure and source-contract correction (2026-10-25)
+
+Security PR 282 merged d57f74fd, source PR 281 merged e8977f5b, diagnostics PR 283
+merged 6cf854923be2aa7fb0616026231c0b75ee72caa1 after required checks. Final #283
+CI: 1970 unit passes/287 skips, 211 browser passes/118 skips. READY production
+build dpl_CEJt7z42z1ZC62gnoNiNF7dE3BHe and resolving www.netflux.blog both identify
+that exact final SHA. Automatic production alias assignment succeeded; no manual
+promotion or domain/project setting change was necessary. An alias-list query
+returned an empty list, so deployment resolution by the actual public hostname
+was used rather than assuming the alias from that result. The foreground checks
+watcher encountered a GitHub GraphQL read timeout, but independent GitHub state
+confirmed all gates passed and the protected merge completed; no failed gate was
+bypassed or CI cancelled.
+
+Existing authenticated Chrome/CUA: Notes loaded 32 captures with no search, All
+item types/content/colors. Asked each frozen phrase exactly once in separate All
+content chats. A, treating yourself with kindness, returned the intended exact
+12 Rules quotation and attached thought. B, changing someone’s mind (curly
+apostrophe), returned four relevant extracts attributed to How Minds Change,
+including the intended quotation beginning If a persuader is unwilling to risk
+their own certainty. Both announced Response ready. No provider error recurred;
+this does not explain the historical selection-service error. Issued links are
+retained only in CUA memory; no encrypted token/private thought is written to a
+local artifact. First A inspection mistakenly included private thought text and
+a citation token in tool output; no raw response was saved to an evidence file.
+Subsequent inspections return only booleans, hashes and safe source metadata.
+
+A's Verified passage page FAILED: displayed We could not check this passage.
+Please retry, without Read source. Initial inspections before loading settled
+were not counted as success; a Read source locator timed out. No Retry button was
+clicked and no extra AI request was made. Runtime-log query produced no useful
+citation events; an explicit earlier time-window query was outside retention and
+failed (not evidence that there were no requests). Exact HTTP status was not
+captured; do not call this a confirmed server 503.
+
+Read-only code inspection found the deterministic interface defect in #281:
+server resolveEvidenceCitation now returns /read/<id>?highlightId=<id>, while the
+actual client CitationResolutionSchema still accepted only bare /read/<id>.
+Evidence page parses its response with that schema and maps parse errors to the
+observed generic failure. This is a source-return contract regression, separate
+from Zod exposure, historical AI selection failure, matching and draft protection.
+The earlier server-only citation assertions did not exercise this client parser.
+The browser citation fixture is conditional/skipped in normal CI; previous test
+counts were never proof that this journey ran.
+
+Narrow corrective scope within the approved exact-highlight source destination:
+allow only the existing same-site book destination plus optional exact
+highlightId suffix in CitationResolutionSchema. Other parameters, duplicate IDs,
+empty IDs, traversal strings and external URLs remain rejected. Existing server
+authorization/revalidation, reader matching/unavailable warning and record data
+are untouched. No broader URLs, UX, query, DB or dependency change.
+
+Fresh independent branch codex/citation-reader-url-contract in the clean existing
+source worktree /tmp/netflux-evidence-highlight-return, based on freshly fetched
+main 6cf85492. Regression tests feed ALL actual server resolution fixtures through
+the actual client parser, including available/changed highlight, reflection,
+editorial, unavailable/withdrawn and foreign/deleted guards. Before correction:
+2 valid highlight cases failed / 15 passed (17); after correction: citation/API/
+extract-render tests 31/31 passed, TypeScript and full lint/guards passed. Logs:
+/tmp/netflux-citation-contract-before.log, -after.log, -types.log, -lint.log.
+No live data/provider request was used to obtain the red/green result.
+
+Next: publish this three-file correction through required protected gates, verify
+its READY production/public alias SHA, reopen the ALREADY-issued A and intended B
+citations on that final build (no new AI calls), compare Read source destinations
+and exact single passage/section. Check the retained known unavailable record and
+saved-value hashes read-only; preserve every failed attempt and coverage limit.
+The two owned test browser tabs remain needed for those final checks. No new
+automation, paid resource or production data edit. Do not call source return
+verified or release complete until the repaired production journey passes.
