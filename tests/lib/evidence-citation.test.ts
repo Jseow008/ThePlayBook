@@ -6,7 +6,7 @@ import type { RankedPersonalEvidence } from "@/lib/server/personal-evidence-rank
 import { issueEvidenceCitations, resolveEvidenceCitation } from "@/lib/server/evidence-citation";
 import { loadSelectedPersonalEvidence, PersonalEvidenceRetrievalError } from "@/lib/server/personal-evidence-candidates";
 import { retrievalTextResponse } from "@/lib/server/retrieval-response";
-import { getMessageCitations } from "@/lib/evidence-citation";
+import { CitationResolutionSchema, getMessageCitations } from "@/lib/evidence-citation";
 vi.mock("@/lib/server/personal-evidence-candidates", async (original) => ({ ...await original<typeof import("@/lib/server/personal-evidence-candidates")>(), loadSelectedPersonalEvidence: vi.fn() }));
 const userId = "11111111-1111-4111-8111-111111111111";
 const id = "22222222-2222-4222-8222-222222222222";
@@ -27,7 +27,7 @@ const query = () => {
 };
 const client = { from: vi.fn(() => query()) } as unknown as Pick<SupabaseClient<Database>, "from">;
 const tokenFor = (item = selected()) => issueEvidenceCitations({ userId, personal: [item] })[0].href.split("#")[1];
-const resolve = (token: string, owner = userId) => resolveEvidenceCitation({ token, userId: owner, supabase: client, signal: new AbortController().signal });
+const resolve = async (token: string, owner = userId) => CitationResolutionSchema.parse(await resolveEvidenceCitation({ token, userId: owner, supabase: client, signal: new AbortController().signal }));
 beforeEach(() => { vi.stubEnv("ACCOUNT_DATA_CURSOR_SECRET", "citation-test-secret-only-32-characters-long"); vi.clearAllMocks(); rows = []; vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([selected().evidence]); });
 afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
 
@@ -116,5 +116,18 @@ describe("response-scoped evidence references", () => {
         expect(getMessageCitations({ parts: events })).toEqual(links);
         expect(getMessageCitations({ parts: [{ type: "text", text: "[fake](/evidence#fake)" }, { type: "data-citations", data: [{ label: "x", href: "javascript:bad" }] }] })).toEqual([]);
         expect(await retrievalTextResponse(text, "text", links).text()).toBe(text);
+    });
+});
+
+describe("citation reader destination boundary", () => {
+    it.each([
+        `https://example.com/read/${contentItemId}?highlightId=${id}`,
+        `/read/${contentItemId}?highlightId=`,
+        `/read/${contentItemId}?other=${id}`,
+        `/read/${contentItemId}?highlightId=${id}&other=value`,
+        `/read/${contentItemId}?highlightId=${id}&highlightId=${id}`,
+        `/read/${contentItemId}?highlightId=../other`,
+    ])("rejects unsupported destination %s", (sourceHref) => {
+        expect(CitationResolutionSchema.safeParse({ state: "available", sourceHref }).success).toBe(false);
     });
 });
