@@ -19,6 +19,7 @@ import { retrievePersonalEvidence, PersonalEvidenceIndexNotReady } from "@/lib/s
 import { retrievalTextResponse } from "@/lib/server/retrieval-response";
 import { contextualizeUserQuestion, FOLLOW_UP_CLARIFICATION } from "@/lib/server/retrieval-user-context";
 import { assertActiveChatSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
+import { PersonalEvidenceSelectionError } from "@/lib/server/personal-evidence-selector";
 
 export const maxDuration = 60;
 
@@ -241,6 +242,10 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             const spendingFailure = aiSpendingFailureResponse(error);
             if (spendingFailure) return spendingFailure;
             if (error instanceof PersonalEvidenceIndexNotReady) return apiError("RETRIEVAL_NOT_READY", error.message, 503, requestId);
+            if (error instanceof PersonalEvidenceSelectionError && error.diagnostics) {
+                console.error({ event: "personal_evidence_selection_failure", request_id: requestId,
+                    route: "/api/chat/notes", ...error.diagnostics });
+            }
             logApiError({ requestId, route: "/api/chat/notes", message: "Personal retrieval did not complete", error });
             return apiError("RETRIEVAL_UNAVAILABLE", "Your notes could not be searched completely. Please retry or narrow your filters.", 503, requestId);
         }
