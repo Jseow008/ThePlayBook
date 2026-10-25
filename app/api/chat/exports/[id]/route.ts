@@ -7,7 +7,7 @@ interface RouteContext {
     params: Promise<{ id: string }>;
 }
 
-const ExportIdSchema = z.string().uuid();
+const ExportIdSchema = z.guid();
 
 export async function GET(_req: NextRequest, context: RouteContext) {
     const requestId = getRequestId();

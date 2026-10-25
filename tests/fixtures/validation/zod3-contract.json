@@ -1,0 +1,207 @@
+{
+  "scope/all": {
+    "accepted": true,
+    "data": {
+      "version": 1,
+      "itemType": "all"
+    }
+  },
+  "scope/id-0": {
+    "accepted": true,
+    "data": {
+      "version": 1,
+      "itemType": "note",
+      "contentItemId": "123e4567-e89b-42d3-a456-426614174000"
+    }
+  },
+  "scope/id-1": {
+    "accepted": true,
+    "data": {
+      "version": 1,
+      "itemType": "note",
+      "contentItemId": "11111111-1111-1111-1111-111111111111"
+    }
+  },
+  "scope/id-2": {
+    "accepted": true,
+    "data": {
+      "version": 1,
+      "itemType": "note",
+      "contentItemId": "123e4567-e89b-92d3-a456-426614174000"
+    }
+  },
+  "scope/id-3": {
+    "accepted": true,
+    "data": {
+      "version": 1,
+      "itemType": "note",
+      "contentItemId": "00000000-0000-0000-0000-000000000000"
+    }
+  },
+  "scope/id-4": {
+    "accepted": true,
+    "data": {
+      "version": 1,
+      "itemType": "note",
+      "contentItemId": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+    }
+  },
+  "scope/id-5": {
+    "accepted": true,
+    "data": {
+      "version": 1,
+      "itemType": "note",
+      "contentItemId": "ABCDEFAB-CDEF-4ABC-ABCD-ABCDEFABCDEF"
+    }
+  },
+  "scope/id-6": {
+    "accepted": false,
+    "paths": [
+      "contentItemId"
+    ]
+  },
+  "scope/unknown-type": {
+    "accepted": false,
+    "paths": [
+      "itemType"
+    ]
+  },
+  "scope/unknown-property": {
+    "accepted": false,
+    "paths": [
+      ""
+    ]
+  },
+  "scope/normalize-query": {
+    "accepted": true,
+    "data": {
+      "version": 1,
+      "itemType": "all",
+      "filterQuery": "🌱 exact words"
+    }
+  },
+  "scope/query-limit": {
+    "accepted": false,
+    "paths": [
+      "filterQuery"
+    ]
+  },
+  "checklist/0": {
+    "accepted": true,
+    "data": {
+      "id": "synthetic",
+      "label": "  Original 🌱 text  ",
+      "mandatory": false
+    }
+  },
+  "checklist/1": {
+    "accepted": true,
+    "data": {
+      "id": "synthetic",
+      "label": "  Original 🌱 text  ",
+      "mandatory": false
+    }
+  },
+  "checklist/2": {
+    "accepted": true,
+    "data": {
+      "id": "synthetic",
+      "label": "  Original 🌱 text  ",
+      "mandatory": true
+    }
+  },
+  "checklist/3": {
+    "accepted": false,
+    "paths": [
+      "mandatory"
+    ]
+  },
+  "checklist/4": {
+    "accepted": true,
+    "data": {
+      "id": "synthetic",
+      "label": "  Original 🌱 text  ",
+      "mandatory": false
+    }
+  },
+  "query/0": {
+    "accepted": true,
+    "data": {
+      "limit": 20,
+      "offset": 0
+    }
+  },
+  "query/1": {
+    "accepted": true,
+    "data": {
+      "limit": 42,
+      "offset": 3
+    }
+  },
+  "query/2": {
+    "accepted": false,
+    "paths": [
+      "limit"
+    ]
+  },
+  "query/3": {
+    "accepted": true,
+    "data": {
+      "limit": 100,
+      "offset": 0
+    }
+  },
+  "query/4": {
+    "accepted": false,
+    "paths": [
+      "limit"
+    ]
+  },
+  "query/5": {
+    "accepted": false,
+    "paths": [
+      "offset"
+    ]
+  },
+  "query/6": {
+    "accepted": false,
+    "paths": [
+      "offset"
+    ]
+  },
+  "query/7": {
+    "accepted": true,
+    "data": {
+      "limit": 20,
+      "offset": "[Infinity]"
+    }
+  },
+  "counter/0": {
+    "accepted": true,
+    "data": 0
+  },
+  "counter/1": {
+    "accepted": true,
+    "data": 1
+  },
+  "counter/2": {
+    "accepted": false,
+    "paths": [
+      ""
+    ]
+  },
+  "counter/3": {
+    "accepted": false,
+    "paths": [
+      ""
+    ]
+  },
+  "counter/4": {
+    "accepted": true,
+    "data": 9007199254740991
+  },
+  "counter/5": {
+    "accepted": true,
+    "data": 9007199254740992
+  }
+}

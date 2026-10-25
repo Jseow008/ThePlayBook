@@ -10,8 +10,8 @@ import { verifyAnonymousActivityToken } from "@/lib/server/anonymous-activity-to
 const ActivityLogSchema = z.object({
     duration_seconds: z.coerce.number().int().min(1).max(60 * 60 * 4).default(60),
     activity_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    content_id: z.string().uuid().optional(),
-    visitor_id: z.string().uuid().optional(),
+    content_id: z.guid().optional(),
+    visitor_id: z.guid().optional(),
     visitor_token: z.string().min(1).max(512).optional(),
 });
 

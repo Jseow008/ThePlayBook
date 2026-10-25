@@ -67,6 +67,18 @@ describe("Content batch API", () => {
 
         expect(response.status).toBe(400);
         expect(mockFrom).not.toHaveBeenCalled();
+        expect(await response.json()).toMatchObject({ error: "Invalid request", details: [{ path: ["ids", 0] }] });
+    });
+    it.each([0, 51, 1000])("rejects %i IDs before creating a database client", async (count) => {
+        const response = await POST(createRequest({ ids: Array(count).fill("11111111-1111-1111-1111-111111111111") }));
+        expect(response.status).toBe(400);
+        expect(createPublicServerClient).not.toHaveBeenCalled();
+        expect(await response.json()).toMatchObject({ error: "Invalid request", details: [{ path: ["ids"] }] });
+    });
+    it("accepts the maximum batch and preserves generic UUID syntax", async () => {
+        const ids = Array(50).fill("11111111-1111-1111-1111-111111111111");
+        expect((await POST(createRequest({ ids }))).status).toBe(200);
+        expect(mockIn).toHaveBeenCalledWith("id", ids);
     });
 
     it("fails closed before querying when strict rate limiting is unavailable", async () => {

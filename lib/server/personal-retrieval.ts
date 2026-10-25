@@ -34,7 +34,7 @@ export function exactPersonalQuoteField(question: string) {
 }
 
 const matchSchema = z.object({
-    evidence_type: z.enum(["highlight", "reflection"]), evidence_id: z.string().uuid(), revision: z.string().uuid(),
+    evidence_type: z.enum(["highlight", "reflection"]), evidence_id: z.guid(), revision: z.guid(),
     field: z.enum(["highlightedText", "noteBody", "prompt", "reflectionText"]),
     chunk_index: z.number().int().nonnegative(), start_offset: z.number().int().nonnegative(),
     end_offset: z.number().int().positive(), similarity: z.number().finite(),

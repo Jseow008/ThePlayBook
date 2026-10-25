@@ -20,7 +20,7 @@ import {
 export const maxDuration = 300;
 
 const BulkActionSchema = z.object({
-    ids: z.array(z.string().uuid()).min(1).max(100),
+    ids: z.array(z.guid()).min(1).max(100),
     action: z.enum([
         "publish",
         "draft",

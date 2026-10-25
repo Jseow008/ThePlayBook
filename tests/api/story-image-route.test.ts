@@ -7,10 +7,11 @@ import { createStoryImageJpegResponse } from "@/lib/server/story-image-renderer"
 import { findCompletedStoryImage, markStoryImageVersionCompleted } from "@/lib/server/story-image-queue";
 import { storedStoryImageExists, storeStoryImage } from "@/lib/server/story-image-storage";
 
-vi.mock("@/app/api/og/content/[id]/og-content-image-utils", async () => {
-    const { z } = await import("zod");
+vi.mock("@/lib/supabase/public-server", () => ({ createPublicServerClient: vi.fn() }));
+
+vi.mock("@/app/api/og/content/[id]/og-content-image-utils", async (original) => {
     return {
-        ContentIdSchema: z.string().uuid(),
+        ...await original<typeof import("@/app/api/og/content/[id]/og-content-image-utils")>(),
         getContent: vi.fn(),
     };
 });

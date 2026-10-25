@@ -8,7 +8,7 @@ import { resetStaleNarrationProcessingJobs } from "@/lib/server/narration-proces
 export const runtime = "nodejs";
 
 const ResetNarrationJobsSchema = z.object({
-    jobIds: z.array(z.string().uuid()).optional(),
+    jobIds: z.array(z.guid()).optional(),
 });
 
 export async function POST(request: NextRequest) {

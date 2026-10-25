@@ -15,9 +15,9 @@ const SpanSchema = z.object({
     start: z.number().int().nonnegative(), end: z.number().int().positive(), text: z.string().min(1).max(4_000),
 }).refine((span) => span.end > span.start);
 const ReferenceSchema = z.object({
-    version: z.literal(1), responseId: z.string().uuid(), userId: z.string().uuid(),
+    version: z.literal(1), responseId: z.guid(), userId: z.guid(),
     expiresAt: z.number().int(), type: z.enum(["highlight", "reflection", "source_segment"]),
-    id: z.string().uuid(), contentItemId: z.string().uuid(), fingerprint: z.string().min(1).max(128),
+    id: z.guid(), contentItemId: z.guid(), fingerprint: z.string().min(1).max(128),
     spans: z.array(SpanSchema).min(1).max(8),
 });
 type Reference = z.infer<typeof ReferenceSchema>;
