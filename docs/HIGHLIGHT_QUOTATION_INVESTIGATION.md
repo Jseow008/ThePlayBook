@@ -510,3 +510,337 @@ saved-value hashes read-only; preserve every failed attempt and coverage limit.
 The two owned test browser tabs remain needed for those final checks. No new
 automation, paid resource or production data edit. Do not call source return
 verified or release complete until the repaired production journey passes.
+
+Correction publication checkpoint: PR https://github.com/Jseow008/ThePlayBook/pull/284, head 90c03cf3ee9c3670054001c0d9642de6c81db5e3, created and attached. GitHub scope verified three intended files; PR scope passed and normal protected squash auto-merge enabled. Required CI 40204016501 / Security Gates 40204016580 running, watch session 22657 /tmp/netflux-citation-contract-required-checks.log. No gate bypass/new automation. The interrupted turn automatically closed the two ephemeral test tabs; a later read got No tab and was abandoned. CUA still retains both opaque issued-citation handles and intended B index 3 without printing them; reopen them on the final verified production build, with no additional AI call. Historical Ask cause remains separate. Browser note-text logging mistake is documented above; retain no raw private thought/token in file artifacts.
+
+## Bounded exposure assessment and release closeout (2026-10-25)
+
+Decision completed: affected Next development-handler registration is excluded
+from the matched supported production runtime. The vendored resource behavior
+remains, but the established production boundary does not expose that input path.
+The conclusion combines official version-bound adapter/Next registration code,
+exact hosted production build logs/route inventory and authenticated hosted
+corroboration; it does not depend solely on a 404 or an inaccessible file. Final
+production still logs CLI 65.1.0 / Next 16.4.2 / Vercel modifyConfig / optimized
+production build, so the earlier matched adapter/framework evidence applies.
+No private vendor patch, framework upgrade, exception or gate bypass was used.
+
+Protected release identities:
+- #282 security: d57f74fdb48ccb0aae57e65826087751a32fd89b.
+- #281 source: e8977f5b76ef7f863debc6c99868553a74b398b5.
+- #283 diagnostics: 6cf854923be2aa7fb0616026231c0b75ee72caa1.
+- #284 source client-contract correction: f724f351cee42a22b61fbff046087d89dd4d6158.
+
+Final #284 required CI/security/PR scope passed. CI 40204016501: 1976 unit tests
+passed / 287 skipped, 211 browser tests passed / 118 skipped. Security run
+40204016580 and Catalog Search Evidence passed. Skipped workflow jobs (Search
+Baseline Evidence, Production Verification, Supabase Advisor Audit, Dependency
+Posture Audit) are not verified coverage. Existing conditional citation browser
+fixture was not made to appear tested. Regression now validates actual server
+fixtures with the actual client schema; it reproduced two failures before the
+correction and passed 31 focused tests after it, plus types/lint.
+
+Final READY production deployment dpl_78jcmzXcADmYcvJKRiVS2iMQheFe,
+netflux-ahb6y78xw-jseow008s-projects.vercel.app, exact f724f351. Initially READY
+without the public alias; www.netflux.blog still resolved the previous 6cf85492.
+Normally promoted this exact approved PRODUCTION build (no preview rebuild or
+configuration change). The public hostname then resolved the final deployment
+and SHA; reverified unchanged after all browser checks. GitHub main also remains
+f724f351. Do not confuse READY staging with serving the public alias.
+
+Existing authenticated desktop Chrome / CUA production outcomes:
+
+| Check | Observed result |
+| --- | --- |
+| A: treating yourself with kindness, explicit All content | One question submission; intended 12 Rules quotation and attached thought returned. No original selection-service error recurred. |
+| A citation/source after correction | Reused the issued token with no AI resubmission. Verified quotation exactly matches saved text; thought SHA-256 matches baseline. Read source contains d5ac5b71-78f4-435e-a9f7-d9fd346fc304. Canonical reader shows one exact mark in original section 490b1241-eefc-468c-b108-b5914af0622e, fully visible (119.94 to 202.34px), no unavailable warning. |
+| B: changing someone’s mind (curly apostrophe), fresh All content chat | One question submission; four extracts from How Minds Change including intended certainty quotation. All four offered public quotations reviewed: rapport/confidence, guided metacognition, self-persuasion and reciprocal openness to reconsider are relevant in this small sample. No unrelated match observed. |
+| B intended citation/source after correction | Reused issued citation at index 3, no AI resubmission. Verified quotation exactly matches saved text. Read source contains 4b6195d1-2c15-4b2e-8bfc-1f93744b1543. One exact mark in original section b089a99f-c313-4327-883d-d019e00245d8, fully visible (120.03 to 202.44px), no unavailable warning. |
+| Known Capital and Ideology destination | Saved passage could not be located warning present; zero marks for 852470e6-c139-4889-a8a3-662e3d61dc72 and zero stale retained-hig target marks. Saved concentration quotation and thought hashes match the retained baseline. |
+| Saved values | Both A and affected C quotation/thought SHA-256 values match /tmp/netflux-quote-investigation/release-readonly-baseline.json. No note/highlight edits, saves, deletes, reassignments, color changes or content restoration. |
+
+Retain the initial failed production attempt on 6cf85492: the client rejected
+#281's new URL suffix before Read source appeared. That failure was not an AI
+selection failure and does not explain the historical service error. The fix is
+restricted to the approved exact-highlight destination contract; no extra UX or
+matching change. Later locator waits for the reader mark and unavailable banner
+expired during initial loading; subsequent settled DOM confirmed the expected
+states without another navigation/question. Additional relevance inspection
+initially reused an evidence URL differing only by hash and saw prior mounted
+content; a fresh document mount corrected that verification method. Do not count
+the repeated initial content as an extra retrieved match or a distinct pass.
+
+Exactly two QUESTION submissions, not a measured claim of two upstream provider
+calls. No new question, forced failure or Retry action was used to get a favorable
+answer. Later operations only resolved retained citations or opened their source.
+The historical Ask selection-service root cause remains unknown because no
+natural selection failure occurred for the new safe diagnostics to capture.
+No general semantic accuracy/ranking, physical phone, mobile Safari or next-day
+recall claim follows from these two cases. Desktop Chrome only in this closeout.
+
+Sanitized evidence: /tmp/netflux-ask-release-evidence/results.json and the prior
+/tmp/netflux-bundled-parser-assessment/ artifacts; final CI log
+/tmp/netflux-citation-contract-final-ci.log. No private thoughts or opaque tokens
+are stored in those evidence files. The earlier accidental raw tool-output
+inspection is retained as a method/privacy limitation, not copied into artifacts.
+All own browser tabs closed (old two automatically on interruption; final two
+explicitly), viewport never changed; private thought buffers and opaque citation
+handles cleared from CUA memory. Primary user tabs/development server untouched.
+No new automation or paid resource, one agent, billed usage/isolated elapsed
+measurement unavailable. Foreground release checks ended; do not start ongoing
+monitoring. Existing paused follow-up remains unchanged. Status-only closeout is
+local to avoid starting another deployment or CI merely for evidence text.
+
+Reusable lesson: a successful server URL assertion does not validate its client
+response contract. When changing a server-produced destination, run that real
+response through the consumer's actual parser before release. Keep conditional
+browser-fixture skips visible; a global green count cannot substitute for that
+missing boundary. This follow-up added the direct round-trip regression rather
+than a broader validation or UI rewrite.
+
+Current worktree/branch: /tmp/netflux-evidence-highlight-return,
+codex/citation-reader-url-contract at 90c03cf3 (merged as f724f351); only this
+status-document append remains local. Central report in
+/tmp/netflux-copy-saved-note preserved all prior user edits. Bounded assessment,
+approved release and affected production verification are complete. No required
+next implementation or unresolved release decision remains within this scope.
+
+## Notes search -> Ask scope handoff investigation (2026-10-26; no implementation)
+
+User accepted the prior bounded release and requested verification of recovery
+from unsuccessful Notes search before proposing changes. Production/public alias
+was READY at f724f351cee42a22b61fbff046087d89dd4d6158, deployment
+dpl_78jcmzXcADmYcvJKRiVS2iMQheFe. Relevant local source at 90c03cf3 in
+/tmp/netflux-evidence-highlight-return has no difference from that deployed merge
+for Notes/Ask scope, session and API files. Existing report-only changes in this
+worktree and /tmp/netflux-copy-saved-note were preserved. No product code,
+manifest, saved note/highlight, commit, PR or deployment was changed.
+
+Story tested: an unsuccessful wording search -> Ask entry -> explicit scope
+choice/recovery -> response, plus changing Notes filters with a started chat,
+full-screen handoff, return, reload and responsive entry. Existing authenticated
+Chrome, CUA only. Desktop 1728x900; responsive Chrome 390x844. Responsive viewport
+was necessary because that breakpoint uses a separate direct-to-full-screen Ask
+entry. It does not establish physical-device or mobile Safari coverage.
+
+### Observed passes and UX risks
+
+| Scenario / steps | Expected versus actual | Impact / classification | Confidence |
+| --- | --- | --- | --- |
+| Search treating yourself with kindness; let zero results settle; open fresh Ask | Ask retained filterQuery equal to the search and displayed it in the scope label. Composer/starter actions remained available even though Notes showed no results. One submitted question received the honest no-evidence answer, no citation. It did not silently search all notes. | Correct filter boundary; possible empty-scope handoff UX gap. Matching saved captures is a scope label, not an explicit zero-count explanation. User confusion itself was not measured. | High for observed state and answer; usability impact is a proposal-level inference. |
+| Type a question, then Clear filters BEFORE first question submission | Fresh Ask adopted All content automatically, retained the drafted question and had no mismatch warning. | Pass. Fresh-chat filter changes work. | High. |
+| Submit under the empty search; then Clear filters AFTER that chat starts | Notes became unfiltered while Ask kept the earlier empty search scope. A warning explicitly said this chat still uses earlier filters; Use current filters was visible beside the composer. Send remained enabled after drafting a follow-up. Full Ask link serialized the old active filter. | Intentional frozen-chat behavior, supported by source. Recoverable, but the user must notice that clearing the list is separate from updating the chat. Not an observed wrong-scope payload or silent account-wide expansion. | High. |
+| Press the visible Use current filters button with a question drafted | Old transcript cleared, All content became active, warning disappeared, drafted question survived. Submitting once then retrieved the intended exact 12 Rules quotation, recognizable source and citation. | End-to-end recovery pass. Exactly the same phrase failed in the empty filter and worked after explicit scope choice. | High. |
+| With that All content answer open, narrow Notes search to persuasion | Notes showed the narrower search; established chat kept All content, with visible warning. Send was enabled with an unsent follow-up. | Opposite direction of the same UX risk: current Notes selection does not automatically narrow a started chat. No further question was sent in this state. Source sendPrompt uses activeScope, matching its displayed scope and Full Ask link. | High for UI/source; no live mismatched-scope submission in this direction. |
+| Open Full Ask from the mismatched sidebar | All content and the existing answer were retained. Current scope visibly said All content, but the sidebar mismatch warning was absent. Return link still pointed to the current Notes persuasion filter. | Clear active label, but less context about the list/chat difference. Separate UX proposal; no hidden scope rewrite observed. | High. |
+| Return to Notes, reload, close/reopen Ask on persuasion | Search and new panel scope both remained persuasion; prior All content answer was not shown under the different filter signature. | Pass for the tested case. Does not establish every transcript restoration path or live cross-account behavior. | High. |
+
+Two live QUESTION submissions total, both planned uses of the same public
+paraphrase under different scopes; no provider-call count inferred. The recovered
+answer was inspected through booleans/source metadata, never raw private thought
+or opaque citation text. No retry-to-pass, forced service error or additional
+question was used for the navigation checks. The original service error did not
+recur and remains open separately; this investigation does not diagnose it.
+
+### Confirmed defect: responsive return link uses an outdated search
+
+Reproduction (390x844 responsive Chrome):
+1. Start on Notes with committed q=persuasion.
+2. Replace the search with treating yourself with kindness and immediately press
+   the responsive Ask button before the URL/search transition settles.
+3. Ask's visible Current scope and notesScope URL correctly contain the NEW
+   treating-yourself phrase, but returnTo is /notes?q=persuasion.
+4. Its back control therefore returns to the previous filter rather than the
+   search used for this Ask entry.
+
+Observed twice in two controlled quick-change attempts. A settled control waited
+for the Notes URL and No notes found state before opening Ask; both notesScope
+and returnTo then contained the current treating-yourself phrase and agreed.
+
+The direct recovery variant also reproduced the problem once:
+- Start at the settled zero-result treating-yourself search.
+- Press Clear filters and immediately Ask.
+- Ask correctly displays All content (and restores the matching All content chat),
+  while returnTo still contains the CLEARED treating-yourself search.
+- Follow its actual back control: Notes restores that search and No notes found.
+
+Expected: Back to Notes restores the current filter values from which the user
+opened Ask, including the cleared search. Actual: it can reinstate the preceding
+URL filter and put the user back into the unsuccessful search. User impact is
+lost navigation/filter state and a recovery loop. The AI scope itself matched its
+visible label in these attempts; this is not evidence of wrong-account access or
+an undisclosed Ask scope. Classification: confirmed navigation-state defect.
+Confidence: high for this responsive Chrome sequence; physical phone/Safari and
+other filter controls remain untested.
+
+Cause in deployment-matched code:
+- app/(public)/notes/client-page.tsx:920-925 updates debouncedSearchQuery after
+  180ms; the URL then changes through an asynchronous router.replace (1003+).
+- notesChatScope (1258+) is built from live searchQuery/current filter state.
+- mobileAskHref (1267+) serializes that current scope, but builds returnTo from
+  searchParams (the delayed URL), so its two halves can describe different states.
+- toggleAskPanel (1404+) uses this URL for the responsive entry.
+
+### Recommendation after verification
+
+Fix only the demonstrated return-link race first: build the responsive return
+link from the current Notes filter values, preserving the explicit scope choice
+and existing frozen-chat semantics. Validate quick search edit -> Ask -> Back,
+quick clear of a failed search -> Ask -> Back, and the settled control. No extra
+AI request is necessary to test that URL/navigation contract. No matching change,
+semantic search engine, automatic widening, new editor behavior or broader UX
+feature is justified by this defect.
+
+Separately, the empty-scope explanation and a one-step explicit recovery action
+could improve discoverability. They remain UX proposals, not implemented fixes
+or confirmed user-confusion defects. Keep the existing distinction between a
+started chat's scope and current Notes filters unless the user explicitly chooses
+to change scope. The existing Clear filters -> Use current filters recovery is
+verified working. Full-screen scope acknowledgement is also a proposal, not a
+reason to silently reset or broaden a conversation.
+
+### Supporting checks, limitations and cleanup
+
+38 existing tests passed across tests/lib/notes-chat-scope-session.test.ts and
+tests/api/notes-chat.test.ts. They cover scope serialization/validation,
+session/account signatures and API boundaries; they do not test the browser
+URL-timing race. No new tests/code were written and no full CI/build rerun was
+needed. Relevant files are byte-identical to deployed f724f351. Scope observations
+use visible labels/serialized navigation links, matched source and two actual
+response outcomes; no browser request interception was performed. Live account
+switches, network/provider failure recovery, other filter controls, physical
+phones and mobile Safari remain unverified. The earlier 287 unit and 118 browser
+skips remain coverage limits, not newly exercised cases. No general retrieval or
+human-usability conclusion follows from this small simulated journey.
+
+Method failures retained: the first Playwright locator used AX's checkbox role
+for the Ask toggle; actual DOM role was button and the locator was corrected.
+The initial warning-visibility check inspected an offscreen duplicate; a second
+instance beside the composer was visible, so all instances were checked and the
+observation corrected. An initial responsive snapshot preceded search-result
+settlement; rapid-transition and settled-control cases are recorded separately.
+A source lookup first used a nonexistent session filename, then read the correct
+module. None of these was called a product failure or erased from the record.
+
+Sanitized evidence /tmp/netflux-notes-ask-handoff/results.json; focused test log
+/tmp/netflux-notes-handoff-focused-tests.log. No private thought, encrypted
+citation, credentials or raw answer saved. The only owned test tab was closed;
+viewport reset and verified at 1728x900. User's existing tabs and saved drafts
+were untouched. No paid resources, automation, deployment, subagent or messages
+to others. One agent; exact elapsed/billed usage unavailable.
+
+Current branch/worktree remains codex/citation-reader-url-contract at 90c03cf3
+in /tmp/netflux-evidence-highlight-return; only pre-existing and appended status
+document changes remain local. Central report in /tmp/netflux-copy-saved-note
+preserves all earlier edits. Investigation complete. Next implementation decision
+is whether to approve the narrow return-link correction; it is not authorized by
+this investigation request, so no product change has been made.
+
+## 26 October 2026 — approved Notes → Ask return race correction (in progress)
+
+User approved only capturing current Notes filters for explicit return and browser
+Back; chat scope semantics, drafted questions, and Full Ask's separate mismatch
+warning proposal remain unchanged. Fresh branch codex/notes-ask-return in
+/tmp/netflux-notes-ask-return, based on origin/main f724f351. No database/schema,
+provider, matching, layout or paid-resource changes.
+
+Two new actual BrainClientPage rapid-interaction regressions first failed on the
+original implementation (cleared/replaced query both returned older search).
+Current candidate serializes live controls for the return link, snapshots the
+preceding browser history entry before client navigation, and cancels its pending
+search debounce. Desktop Full Ask still serializes activeScope; the navigation
+callback does not reset chat messages or drafted input.
+
+Current focused result: 36 tests pass across BrainClientPage, NotesAskPanel and
+NotesAskPanel.scope-stream. Rapid source/type/color/sort/query changes included.
+Typecheck and full lint passed. Broad Vitest run: 1980 pass, 287 skipped, one
+failure from ignored npm install scripts leaving ffmpeg-static's executable
+absent. Restored only the ignored local binary from the existing dependency
+installation; affected content-narration suite then passed all 17 tests. No source
+or dependency-lock changes for this environment correction. Capacity harness and
+actual Next/browser history checks pending. Skips are not verified coverage.
+
+Disposable local Supabase fixture /tmp/netflux-return-verification is starting;
+no hosted resources. Setup-only unsuccessful attempts: global CLI absent (use
+repo CLI); inherited config referenced a missing email template (copied the
+existing fixture template after correcting a dangling symlink); one command ran
+from the fixture directory rather than repository (corrected explicit workdir).
+No failed setup was called a product failure. One agent; exact billed usage
+unknown. Next: stable local build, CUA rapid navigation checks, saved-value
+comparison/cleanup, then protected PR and scope inspection.
+
+### Candidate verification and bounded findings
+
+Stable optimized production build passed, plus sharp trace and critical CSS
+checks. Local security suite: 189/189 pass. Capacity harness: 34/34 pass.
+The focused 36-test suite includes the two regressions observed red before the
+fix, rapid query/source/type/color/sort selection, the desktop snapshot callback,
+and unchanged frozen active scope/drafted question when capturing navigation.
+The original full-suite failure was solely the missing executable; its 17-test
+suite passed after the ignored local dependency was repaired. The other 1980
+passing tests were not rerun without a relevant change. Full green CI remains a
+release gate; do not label that initial full command green. All 287 skips remain
+outside verified coverage.
+
+CUA only, synthetic local account and two synthetic saved notes, isolated actual
+Next production servers (candidate port 3067; baseline port 3068), no AI sends:
+
+- Responsive Chrome 390x844, older search -> clear input -> immediate Ask:
+  scope was All content, returnTo /notes. After Ask settled, browser Back restored
+  /notes and the empty search. Repeated with explicit Back to notes: also empty.
+- Rapid source selection + Notes type + blue + oldest + query compass -> Ask:
+  returnTo included exactly that latest selection. Browser Back restored all five
+  filter chips and query. Further rapid intermediate -> review -> Ask -> explicit
+  Back restored review and the same source/type/color/sort. Results were allowed
+  to settle before reading restored controls; transient loading was not failure.
+- Desktop 1728x900, sidebar open, older -> compass -> immediate Full Ask:
+  returnTo was /notes?q=compass&ask=1. Browser Back restored compass and the open
+  panel. Clear -> immediate Full Ask -> explicit Back restored /notes?ask=1,
+  empty search and the open panel. Ask did not get replaced by the old debounce.
+- An unsent synthetic question survived the filter change while the sidebar
+  remained mounted. The focused component regression additionally proves that
+  capturing the return snapshot does not reset the draft/messages or replace a
+  started chat's activeScope with currentScope; Full Ask still encodes activeScope.
+  No provider request was needed or made to verify this unchanged contract.
+- Separate pre-existing defect: leaving the sidebar for Full Ask and browser Back
+  loses an unsent question. Observed on candidate AND separately built unchanged
+  original application tree (90c03cf3, identical tracked tree to f724f351). Both
+  returned to the same scope/query with an empty composer. This is not caused by
+  the return fix and is NOT remedied here. Do not claim cross-page draft recovery.
+  Preserve this as a separate question-draft defect for a later scope decision.
+
+Saved-data comparison: both synthetic highlights match baseline in every selected
+field (quotation, thought, owner, source, section, color, positions and updated_at).
+No saved-note edit/Save/Delete/color change, private thought, paid resource,
+provider call, production data mutation or automation. Existing real-user drafts
+were untouched. Full Ask mismatch-warning UX remains deferred. Physical phones,
+mobile Safari and historical skips remain unverified.
+
+Method limitations/failures: the inherited viewport handle affected the earlier
+browser session rather than the newly opened tab; switched to a tab created from
+the existing browser handle, verified responsive DOM and 390x844 before the tests.
+Viewport transition readouts briefly had old width/new height; did not count those
+as responsive evidence. One attempted read of unsupported screen.width failed;
+used DOM viewport data. One desktop locator timed out on a hidden duplicate
+search box after a successful return; inspected both values/visibility and the
+visible control, confirming the cleared state rather than calling it failure.
+A status command used the fixture workdir for git diff and failed; corrected to
+repository. These do not invalidate observed settled navigation outcomes.
+
+All owned test tabs closed, override reset and default 1728x900 confirmed in a
+new temporary tab (then closed). Both servers and the local Redis bridge stopped;
+local Supabase/Redis removal in progress. Sanitized artifacts under
+/tmp/netflux-return-verification; private fixture credentials to be removed after
+resource cleanup. One agent; no delegation. Approximately 30 minutes from first
+red regression through browser comparison; precise total elapsed/billing unknown.
+Next: commit only the five intended files, protected PR, inspect GitHub scope and
+enable squash auto-merge only after PR scope passes. Do not bypass CI/security.
+
+Cleanup completed: owned local Supabase project removed with --no-backup; owned
+Redis container removed; both web servers/bridge stopped; disposable private
+status/runtime/fixture files deleted. No owned verification listeners remain.
+Candidate commit 4f00e205 (before this evidence-only amendment), five intended
+files only and no extra commits against freshly fetched main. React/Next review:
+derived URL only, no new data fetch/provider work, native history metadata retained,
+Next Link onNavigate excludes modifier/new-tab clicks, no hook-order or layout
+changes. Frozen-scope and stream-fencing regressions remain passing.

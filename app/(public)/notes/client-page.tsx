@@ -72,6 +72,29 @@ const DEFAULT_SELECTED_ITEM = "all" as const;
 const DEFAULT_SELECTED_TYPE: ItemTypeFilter = "all";
 const DEFAULT_SELECTED_COLOR: ColorFilter = "all";
 const DEFAULT_SORT: SortDirection = "newest";
+
+function notesFilterParams(currentQuery: string, filters: {
+    searchQuery: string;
+    selectedItem: string;
+    selectedType: ItemTypeFilter;
+    selectedColor: ColorFilter;
+    sortBy: SortDirection;
+}) {
+    const params = new URLSearchParams(currentQuery);
+    const values = {
+        q: filters.searchQuery.trim(),
+        item: filters.selectedItem === DEFAULT_SELECTED_ITEM ? "" : filters.selectedItem,
+        type: filters.selectedType === DEFAULT_SELECTED_TYPE ? "" : filters.selectedType,
+        color: filters.selectedColor === DEFAULT_SELECTED_COLOR ? "" : filters.selectedColor,
+        sort: filters.sortBy === DEFAULT_SORT ? "" : filters.sortBy,
+    };
+    for (const [key, value] of Object.entries(values)) {
+        if (value) params.set(key, value);
+        else params.delete(key);
+    }
+    return params;
+}
+
 const VIRTUALIZATION_MIN_ITEMS = 60;
 const VIRTUAL_ROW_ESTIMATE = 224;
 const VIRTUAL_ROW_GAP = 12;
@@ -873,6 +896,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     const shouldRestoreAskFocusRef = useRef(false);
     const scrollFrameRef = useRef<number | null>(null);
     const deleteArmTimeoutRef = useRef<number | null>(null);
+    const searchDebounceRef = useRef<number | null>(null);
     const previousSearchParamsRef = useRef<string | null>(null);
     const shouldRespectInitialAskOpenRef = useRef(initialAskOpen);
     const deleteHighlight = useDeleteHighlight();
@@ -918,9 +942,11 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
 
     useEffect(() => {
         const timeoutId = window.setTimeout(() => {
+            searchDebounceRef.current = null;
             setDebouncedSearchQuery(searchQuery);
         }, 180);
 
+        searchDebounceRef.current = timeoutId;
         return () => window.clearTimeout(timeoutId);
     }, [searchQuery]);
 
@@ -1001,38 +1027,9 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     }, [searchParams]);
 
     useEffect(() => {
-        const params = new URLSearchParams(searchParams.toString());
-        const normalizedQuery = debouncedSearchQuery.trim();
-
-        if (normalizedQuery) {
-            params.set("q", normalizedQuery);
-        } else {
-            params.delete("q");
-        }
-
-        if (selectedItem !== DEFAULT_SELECTED_ITEM) {
-            params.set("item", selectedItem);
-        } else {
-            params.delete("item");
-        }
-
-        if (selectedType !== DEFAULT_SELECTED_TYPE) {
-            params.set("type", selectedType);
-        } else {
-            params.delete("type");
-        }
-
-        if (selectedColor !== DEFAULT_SELECTED_COLOR) {
-            params.set("color", selectedColor);
-        } else {
-            params.delete("color");
-        }
-
-        if (sortBy !== DEFAULT_SORT) {
-            params.set("sort", sortBy);
-        } else {
-            params.delete("sort");
-        }
+        const params = notesFilterParams(searchParams.toString(), {
+            searchQuery: debouncedSearchQuery, selectedItem, selectedType, selectedColor, sortBy,
+        });
 
         const nextQuery = params.toString();
         const currentQuery = searchParams.toString();
@@ -1264,20 +1261,31 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     }, buildScopeSummary({ selectedItemTitle, selectedType, selectedColor, searchQuery })),
     [searchQuery, selectedColor, selectedItem, selectedItemTitle, selectedType]);
 
-    const mobileAskHref = useMemo(() => {
-        const returnParams = new URLSearchParams(searchParams.toString());
-        returnParams.delete("ask");
-        const returnQuery = returnParams.toString();
-        const returnTo = returnQuery ? `${pathname}?${returnQuery}` : pathname;
+    const liveNotesParams = notesFilterParams(searchParams.toString(), {
+        searchQuery, selectedItem, selectedType, selectedColor, sortBy,
+    });
+    if (isAskOpen) liveNotesParams.set("ask", "1");
+    else liveNotesParams.delete("ask");
+    const liveNotesQuery = liveNotesParams.toString();
+    const notesReturnTo = liveNotesQuery ? `${pathname}?${liveNotesQuery}` : pathname;
+    const mobileReturnParams = new URLSearchParams(liveNotesParams);
+    mobileReturnParams.delete("ask");
+    const mobileReturnQuery = mobileReturnParams.toString();
+    const mobileAskHref = `/ask?${new URLSearchParams({
+        scope: "notes",
+        returnTo: mobileReturnQuery ? `${pathname}?${mobileReturnQuery}` : pathname,
+        notesScope: serializeNotesChatScope(notesChatScope),
+    }).toString()}`;
 
-        const askParams = new URLSearchParams({
-            scope: "notes",
-            returnTo,
-            notesScope: serializeNotesChatScope(notesChatScope),
-        });
-
-        return `/ask?${askParams.toString()}`;
-    }, [notesChatScope, pathname, searchParams]);
+    const prepareAskNavigation = () => {
+        // Commit the same live filters for browser Back before leaving Notes.
+        // Cancel the pending debounce so it cannot replace the Ask destination.
+        if (searchDebounceRef.current !== null) {
+            window.clearTimeout(searchDebounceRef.current);
+            searchDebounceRef.current = null;
+        }
+        window.history.replaceState(window.history.state, "", `${notesReturnTo}${window.location.hash}`);
+    };
 
     const hasDraftChanges = noteDraft.dirty && noteDraft.ready;
 
@@ -1403,6 +1411,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
 
     const toggleAskPanel = () => {
         if (!isNotesAskSidebarAvailable) {
+            prepareAskNavigation();
             router.push(mobileAskHref);
             return;
         }
@@ -1933,6 +1942,8 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                             <div className="sticky top-6">
                                 <NotesAskPanel
                                     currentScope={notesChatScope}
+                                    returnTo={notesReturnTo}
+                                    onBeforeFullScreenNavigation={prepareAskNavigation}
                                     onClose={toggleAskPanel}
                                     variant="sidebar"
                                 />

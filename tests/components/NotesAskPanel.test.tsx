@@ -22,13 +22,14 @@ vi.mock("next/link", () => ({
     default: ({
         children,
         href,
+        onNavigate,
         ...props
     }: {
         children: React.ReactNode;
         href: string;
         [key: string]: unknown;
     }) => (
-        <a href={href} {...props}>{children}</a>
+        <a href={href} {...props} onClick={(event) => { event.preventDefault(); if (!event.metaKey && !event.ctrlKey) (onNavigate as (() => void) | undefined)?.(); }}>{children}</a>
     ),
 }));
 
@@ -231,6 +232,31 @@ describe("NotesAskPanel", () => {
         fireEvent.click(screen.getAllByRole("button", { name: /use current filters/i })[0]);
 
         expect(setMessagesMock).toHaveBeenCalledWith([]);
+    });
+
+    it("uses live return filters while retaining the started chat scope and drafted question", () => {
+        vi.mocked(useChat).mockReturnValue({
+            messages: [{ id: "u1", role: "user", parts: [{ type: "text", text: "Earlier question" }] }],
+            sendMessage: sendMessageMock, setMessages: setMessagesMock, status: "ready", error: undefined,
+        } as unknown as ReturnType<typeof useChat>);
+        const beforeNavigation = vi.fn();
+        const { rerender } = render(<NotesAskPanel currentScope={currentScope} onClose={vi.fn()} variant="sidebar" />);
+        fireEvent.change(screen.getByRole("textbox"), { target: { value: "Unfinished question" } });
+        const latestScope = createNotesChatScope({ version: 1, itemType: "highlight", filterQuery: "latest" });
+        rerender(<NotesAskPanel currentScope={latestScope} onClose={vi.fn()} variant="sidebar"
+            returnTo="/notes?q=latest&type=highlight&ask=1" onBeforeFullScreenNavigation={beforeNavigation} />);
+        const link = screen.getByRole("link", { name: /open ask these notes in full screen/i });
+        const href = new URL(link.getAttribute("href")!, window.location.origin);
+        expect(href.searchParams.get("returnTo")).toBe("/notes?q=latest&type=highlight&ask=1");
+        expect(href.searchParams.get("notesScope")).toBe(serializeNotesChatScope(currentScope));
+        const messageChanges = setMessagesMock.mock.calls.length;
+        fireEvent.click(link, { ctrlKey: true });
+        expect(beforeNavigation).not.toHaveBeenCalled();
+        fireEvent.click(link);
+        expect(beforeNavigation).toHaveBeenCalledOnce();
+        expect(screen.getByRole("textbox")).toHaveValue("Unfinished question");
+        expect(setMessagesMock.mock.calls.length).toBe(messageChanges);
+        expect(sendMessageMock).not.toHaveBeenCalled();
     });
 
     it("uses the desktop sidebar copy without rendering a local close button", () => {

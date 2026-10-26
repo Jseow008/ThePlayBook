@@ -85,6 +85,8 @@ export type NotesChatScope = NotesChatScopePayload;
 interface NotesAskPanelProps {
     currentScope: NotesChatScope;
     onClose: () => void;
+    returnTo?: string;
+    onBeforeFullScreenNavigation?: () => void;
     mobile?: boolean;
     variant?: "default" | "sidebar" | "page";
 }
@@ -216,6 +218,8 @@ export function NotesAskPanel(props: NotesAskPanelProps) {
 function VerifiedNotesAskPanel({
     currentScope,
     onClose,
+    returnTo,
+    onBeforeFullScreenNavigation,
     mobile = false,
     variant = "default",
     ownerKey,
@@ -311,7 +315,7 @@ function VerifiedNotesAskPanel({
     const visibleStarterPrompts = isSidebar && !showAllStarterPrompts
         ? STARTER_PROMPTS.slice(0, 2)
         : STARTER_PROMPTS;
-    const returnTarget = (() => {
+    const returnTarget = returnTo ?? (() => {
         const resolvedPathname = pathname || "/notes";
         const params = new URLSearchParams(searchParams?.toString() ?? "");
 
@@ -709,6 +713,7 @@ function VerifiedNotesAskPanel({
                             )}
                             <Link
                                 href={fullScreenHref}
+                                onNavigate={onBeforeFullScreenNavigation}
                                 className={sidebarUtilityActionClassName}
                                 aria-label="Open Ask These Notes in full screen"
                                 title="Open full screen"
@@ -750,6 +755,7 @@ function VerifiedNotesAskPanel({
                             )}
                             <Link
                                 href={fullScreenHref}
+                                onNavigate={onBeforeFullScreenNavigation}
                                 className={cn(mobile ? "inline-flex" : "hidden sm:inline-flex", headerActionClassName)}
                             >
                                 Full Ask
@@ -933,6 +939,7 @@ function VerifiedNotesAskPanel({
                     {!isEmptyState && (
                         <Link
                             href={fullScreenHref}
+                            onNavigate={onBeforeFullScreenNavigation}
                             className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground sm:hidden"
                         >
                             Open full Ask These Notes

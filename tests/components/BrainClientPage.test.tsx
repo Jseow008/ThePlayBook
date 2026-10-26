@@ -202,6 +202,7 @@ describe("BrainClientPage", () => {
         };
         reflectionsState.value = [];
         document.body.style.overflow = "";
+        window.history.replaceState(null, "", "/notes");
         fetchNextPageMock.mockResolvedValue(undefined);
         infiniteHighlightsState.value = {
             data: {
@@ -464,6 +465,58 @@ describe("BrainClientPage", () => {
         expect(routerPushMock).toHaveBeenCalledWith(
             expect.stringContaining("returnTo=%2Fnotes")
         );
+    });
+
+    it.each(["", "latest wording"])("captures the live search before the URL debounce when opening Ask: %s", (query) => {
+        searchParamsState.value = "q=older+search";
+        mediaQueryState.value.isNotesAskSidebarAvailable = false;
+        window.history.replaceState({ preserved: true }, "", "/notes?q=older+search");
+        render(<BrainClientPage initialPage={initialPage} />);
+
+        if (query) {
+            fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], { target: { value: query } });
+        } else {
+            fireEvent.click(screen.getAllByRole("button", { name: "Clear filters" })[0]);
+        }
+        fireEvent.click(screen.getAllByRole("button", { name: /ask/i })[0]);
+
+        const destination = new URL(routerPushMock.mock.calls[0][0], window.location.origin);
+        const returnTo = new URL(destination.searchParams.get("returnTo")!, window.location.origin);
+        expect(returnTo.searchParams.get("q")).toBe(query || null);
+        expect(new URL(window.location.href).searchParams.get("q")).toBe(query || null);
+        expect(window.history.state).toEqual({ preserved: true });
+    });
+
+    it("captures rapid query, source, type, color and sort changes for both return paths", () => {
+        searchParamsState.value = "q=old&type=highlight&color=red&sort=oldest&unrelated=keep";
+        mediaQueryState.value.isNotesAskSidebarAvailable = false;
+        render(<BrainClientPage initialPage={initialPage} />);
+        fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], { target: { value: "intermediate" } });
+        fireEvent.change(screen.getAllByDisplayValue("All content")[0], { target: { value: "content-1" } });
+        fireEvent.click(screen.getAllByRole("button", { name: "Notes" })[0]);
+        fireEvent.change(screen.getAllByLabelText("Filter highlights by color")[0], { target: { value: "blue" } });
+        fireEvent.change(screen.getAllByDisplayValue("Oldest first")[0], { target: { value: "newest" } });
+        fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], { target: { value: "latest" } });
+        fireEvent.click(screen.getAllByRole("button", { name: /ask/i })[0]);
+
+        const destination = new URL(routerPushMock.mock.calls[0][0], window.location.origin);
+        const returned = new URL(destination.searchParams.get("returnTo")!, window.location.origin);
+        expect(Object.fromEntries(returned.searchParams)).toEqual({
+            q: "latest", item: "content-1", type: "note", color: "blue", unrelated: "keep",
+        });
+        expect(window.location.pathname + window.location.search).toBe(returned.pathname + returned.search);
+    });
+
+    it("passes live desktop filters and a history snapshot callback without changing the chat scope", () => {
+        searchParamsState.value = "q=older&ask=1";
+        render(<BrainClientPage initialPage={initialPage} initialAskOpen />);
+        fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], { target: { value: "latest" } });
+        const panel = notesAskPanelMock.mock.calls.at(-1)![0];
+        expect(panel.returnTo).toBe("/notes?q=latest&ask=1");
+        expect(panel.currentScope.scope.filterQuery).toBe("latest");
+        panel.onBeforeFullScreenNavigation();
+        expect(window.location.pathname + window.location.search).toBe(panel.returnTo);
+        expect(routerPushMock).not.toHaveBeenCalled();
     });
 
     it("opens the desktop notes ask sidebar without routing away", async () => {
