@@ -2,7 +2,7 @@
 
 import { EvidenceCitations } from "@/components/evidence/EvidenceCitations";
 import { getMessageCitations, isExactQuotation, type CitationLink } from "@/lib/evidence-citation";
-import { useEffect, useLayoutEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatExportButton } from "@/components/chat/ChatExportButton";
-import { serializeNotesChatScope, type NotesChatScopePayload } from "@/lib/notes-chat-scope";
+import { parseNotesFilterSnapshot, serializeNotesChatScope, type NotesChatScopePayload } from "@/lib/notes-chat-scope";
 import {
     clearNotesChatSession,
 } from "@/lib/notes-chat-session";
@@ -177,9 +177,11 @@ function ScopeOverview({
 function ScopeChangedBanner({
     onSync,
     compact = false,
+    disabled = false,
 }: {
     onSync: () => void;
     compact?: boolean;
+    disabled?: boolean;
 }) {
     return (
         <div
@@ -201,6 +203,7 @@ function ScopeChangedBanner({
                 <button
                     type="button"
                     onClick={onSync}
+                    disabled={disabled}
                     className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[0.72rem] font-medium text-primary transition-colors hover:bg-primary/15"
                 >
                     <RefreshCw className="size-3" />
@@ -236,6 +239,9 @@ function VerifiedNotesAskPanel({
 }: NotesAskPanelProps & { ownerKey: string; isCurrent: (key: string) => boolean }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const rawFilterSnapshot = variant === "page" ? searchParams?.get("notesFilters") ?? null : null;
+    const notesFiltersScope = useMemo(() => parseNotesFilterSnapshot(rawFilterSnapshot), [rawFilterSnapshot]);
+    const currentNotesScope = notesFiltersScope ?? currentScope;
     const questionDraft = useNotesQuestionDraft(ownerKey, currentScope,
         parseNotesContextId(contextId ?? searchParams?.get("notesContext")), isCurrent);
     const { saveTranscript } = questionDraft;
@@ -276,10 +282,12 @@ function VerifiedNotesAskPanel({
     useLayoutEffect(() => { onContextReady?.(questionDraft.contextId); }, [onContextReady, questionDraft.contextId]);
 
     useEffect(() => {
-        if (messages.length === 0 && hasHydratedSessionRef.current) {
+        // A comparison snapshot never replaces the recovered/encoded chat scope.
+        // Even without a transcript, switching to it remains an explicit action.
+        if (messages.length === 0 && hasHydratedSessionRef.current && rawFilterSnapshot === null) {
             setActiveScope(currentScope);
         }
-    }, [currentScope, messages.length]);
+    }, [currentScope, messages.length, rawFilterSnapshot]);
 
     useEffect(() => {
         if (hasHydratedSessionRef.current) {
@@ -324,7 +332,8 @@ function VerifiedNotesAskPanel({
     const isStreaming = status === "streaming" || status === "submitted";
     const displayErrorMessage = getDisplayErrorMessage(error);
     const isEmptyState = messages.length === 0;
-    const hasScopeChanged = messages.length > 0 && activeScope.signature !== currentScope.signature;
+    const hasScopeChanged = (messages.length > 0 || Boolean(notesFiltersScope))
+        && activeScope.signature !== currentNotesScope.signature;
     const isSidebar = variant === "sidebar" && !mobile;
     const isPage = variant === "page";
     const notesLabel = activeScope.scope ? "Matching saved captures" : "Adjust Notes filters";
@@ -350,6 +359,9 @@ function VerifiedNotesAskPanel({
             notesContext: questionDraft.contextId,
             notesScope: serializeNotesChatScope(activeScope),
         });
+        // Preserve the active scope for sends/new tabs. Carry Notes filters only
+        // as a separate comparison snapshot for the existing warning/action.
+        if (hasScopeChanged) params.set("notesFilters", serializeNotesChatScope(currentNotesScope));
         return `/ask?${params.toString()}`;
     })();
     const headerActionClassName = cn(
@@ -398,12 +410,12 @@ function VerifiedNotesAskPanel({
 
     const syncToCurrentScope = (keepQuestion = true) => {
         pendingQuestionRef.current = null;
-        questionDraft.reset(currentScope, keepQuestion);
+        questionDraft.reset(currentNotesScope, keepQuestion);
         // A cleared message array does not stop SDK stream writes. Abort the old
         // request and replace its Chat instance so even queued late chunks stay
         // attached to the old scope rather than the newly selected transcript.
         void stop?.();
-        setActiveScope(currentScope);
+        setActiveScope(currentNotesScope);
         setMessages([]);
         setChatGeneration((generation) => generation + 1);
     };
@@ -486,7 +498,7 @@ function VerifiedNotesAskPanel({
                     {hasScopeChanged && (
                         <div className="border-b border-border/40 px-4 pt-4 sm:px-6">
                             <div className="mx-auto w-full max-w-4xl pb-4">
-                                <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact />
+                                <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact disabled={Boolean(notesFiltersScope && !currentNotesScope.scope)} />
                             </div>
                         </div>
                     )}
@@ -633,7 +645,7 @@ function VerifiedNotesAskPanel({
                     <div className="mx-auto w-full max-w-4xl rounded-[24px] border border-border/45 bg-card/30 px-3 pt-3 pb-2 shadow-[0_-1px_0_rgba(255,255,255,0.02)] backdrop-blur-sm">
                         {hasScopeChanged && (
                             <div className="mb-3">
-                                <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact />
+                                <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact disabled={Boolean(notesFiltersScope && !currentNotesScope.scope)} />
                             </div>
                         )}
 
@@ -802,7 +814,7 @@ function VerifiedNotesAskPanel({
                     "border-b border-border/40 px-4 py-4",
                     isSidebar && "px-5"
                 )}>
-                    <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact />
+                    <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact disabled={Boolean(notesFiltersScope && !currentNotesScope.scope)} />
                 </div>
             )}
 
@@ -979,7 +991,7 @@ function VerifiedNotesAskPanel({
             )}>
                 {hasScopeChanged && (
                     <div className="mb-3">
-                        <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact />
+                        <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact disabled={Boolean(notesFiltersScope && !currentNotesScope.scope)} />
                     </div>
                 )}
 

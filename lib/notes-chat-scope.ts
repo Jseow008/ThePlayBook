@@ -48,3 +48,17 @@ export function parseNotesChatScope(value?: string): NotesChatScopePayload | nul
         return null;
     }
 }
+
+/** Comparison metadata may describe invalid Notes filters; it never initializes a chat scope. */
+export function parseNotesFilterSnapshot(value?: string | null): NotesChatScopePayload | null {
+    if (!value || value.length > 2_000) return null;
+    const valid = parseNotesChatScope(value);
+    if (valid) return valid;
+    try {
+        const parsed = JSON.parse(value) as { scope?: unknown; summary?: unknown } | null;
+        if (parsed?.scope === null && typeof parsed.summary === 'string' && parsed.summary.length <= 300) {
+            return createNotesChatScope(null);
+        }
+    } catch { /* Ignore malformed comparison metadata without changing the active chat. */ }
+    return null;
+}

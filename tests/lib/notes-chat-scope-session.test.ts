@@ -1,5 +1,5 @@
 import { beforeEach, expect, it } from 'vitest';
-import { createNotesChatScope, parseNotesChatScope, serializeNotesChatScope } from '@/lib/notes-chat-scope';
+import { createNotesChatScope, parseNotesChatScope, parseNotesFilterSnapshot, serializeNotesChatScope } from '@/lib/notes-chat-scope';
 import { clearLegacyNotesChatSessions, clearNotesChatOwner, getNotesChatStorageKey, readNotesChatSession, writeNotesChatSession } from '@/lib/notes-chat-session';
 
 beforeEach(() => window.sessionStorage.clear());
@@ -46,4 +46,13 @@ it('bounds display labels without changing filters and normalizes search before 
     expect(scope.scope?.filterQuery).toBe('focus attention');
     expect(scope.summary.length).toBe(300);
     expect(parseNotesChatScope(serializeNotesChatScope(scope))?.signature).toBe(scope.signature);
+});
+
+it('keeps comparison-only invalid filters separate from strict chat scope parsing', () => {
+    const invalid = serializeNotesChatScope(createNotesChatScope({ version: 1, itemType: 'all', filterQuery: 'x'.repeat(161) }));
+    expect(parseNotesChatScope(invalid)).toBeNull();
+    expect(parseNotesFilterSnapshot(invalid)?.scope).toBeNull();
+    expect(parseNotesFilterSnapshot(invalid)?.invalidReason).toContain('Adjust your filters');
+    expect(parseNotesFilterSnapshot('{')).toBeNull();
+    expect(parseNotesFilterSnapshot('x'.repeat(2001))).toBeNull();
 });
