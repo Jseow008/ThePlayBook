@@ -2,7 +2,7 @@
 
 import { EvidenceCitations } from "@/components/evidence/EvidenceCitations";
 import { getMessageCitations, isExactQuotation, type CitationLink } from "@/lib/evidence-citation";
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
@@ -26,10 +26,10 @@ import { ChatExportButton } from "@/components/chat/ChatExportButton";
 import { serializeNotesChatScope, type NotesChatScopePayload } from "@/lib/notes-chat-scope";
 import {
     clearNotesChatSession,
-    readNotesChatSession,
-    writeNotesChatSession,
 } from "@/lib/notes-chat-session";
 import { useVerifiedChatSession } from "@/hooks/useVerifiedChatSession";
+import { useNotesQuestionDraft } from "@/hooks/useNotesQuestionDraft";
+import { parseNotesContextId, withNotesContext } from "@/lib/notes-chat-context";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 
 function notesRequestStatus(status: string) {
@@ -86,6 +86,8 @@ interface NotesAskPanelProps {
     currentScope: NotesChatScope;
     onClose: () => void;
     returnTo?: string;
+    contextId?: string | null;
+    onContextReady?: (id: string) => void;
     onBeforeFullScreenNavigation?: () => void;
     mobile?: boolean;
     variant?: "default" | "sidebar" | "page";
@@ -211,14 +213,21 @@ function ScopeChangedBanner({
 
 export function NotesAskPanel(props: NotesAskPanelProps) {
     const { ownerKey, isCurrent, resolved } = useVerifiedChatSession();
+    const params = useSearchParams();
+    const returned = params?.get("returnTo");
+    const returnedContext = returned?.startsWith("/notes?")
+        ? new URL(returned, "https://notes.invalid").searchParams.get("notesContext") : null;
+    const requested = parseNotesContextId(props.contextId ?? params?.get("notesContext") ?? returnedContext);
     if (!ownerKey) return <p role="status" className="p-4 text-sm text-muted-foreground">{resolved ? <Link href="/login">Sign in to start a private chat.</Link> : "Verifying your chat session…"}</p>;
-    return <VerifiedNotesAskPanel key={ownerKey} {...props} ownerKey={ownerKey} isCurrent={isCurrent} />;
+    return <VerifiedNotesAskPanel key={`${ownerKey}:${requested ?? "current"}`} {...props} contextId={requested} ownerKey={ownerKey} isCurrent={isCurrent} />;
 }
 
 function VerifiedNotesAskPanel({
     currentScope,
     onClose,
     returnTo,
+    contextId,
+    onContextReady,
     onBeforeFullScreenNavigation,
     mobile = false,
     variant = "default",
@@ -227,9 +236,14 @@ function VerifiedNotesAskPanel({
 }: NotesAskPanelProps & { ownerKey: string; isCurrent: (key: string) => boolean }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [input, setInput] = useState("");
+    const questionDraft = useNotesQuestionDraft(ownerKey, currentScope,
+        parseNotesContextId(contextId ?? searchParams?.get("notesContext")), isCurrent);
+    const { saveTranscript } = questionDraft;
+    const input = questionDraft.draft.text;
+    const setInput = questionDraft.change;
+    const pendingQuestionRef = useRef<{ chatId: string; revision: number } | null>(null);
     const [showAllStarterPrompts, setShowAllStarterPrompts] = useState(false);
-    const [activeScope, setActiveScope] = useState<NotesChatScope>(currentScope);
+    const [activeScope, setActiveScope] = useState<NotesChatScope>(questionDraft.initial.activeScope);
     const chatInstanceId = useId();
     const [chatGeneration, setChatGeneration] = useState(0);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -247,7 +261,19 @@ function VerifiedNotesAskPanel({
     } = useChat<UIMessage>({
         id: `${chatInstanceId}:${chatGeneration}`,
         transport: chatTransport,
+        onError: () => { pendingQuestionRef.current = null; },
+        onFinish: (result) => {
+            const submitted = pendingQuestionRef.current;
+            pendingQuestionRef.current = null;
+            if (submitted && !result.isAbort && !result.isDisconnect && !result.isError
+                && result.finishReason === "stop"
+                && result.message.parts.some((part) => part.type === "text" && part.text.trim())) {
+                questionDraft.complete(submitted);
+            }
+        },
     });
+
+    useLayoutEffect(() => { onContextReady?.(questionDraft.contextId); }, [onContextReady, questionDraft.contextId]);
 
     useEffect(() => {
         if (messages.length === 0 && hasHydratedSessionRef.current) {
@@ -260,7 +286,7 @@ function VerifiedNotesAskPanel({
             return;
         }
 
-        const restoredSession = readNotesChatSession(ownerKey, currentScope.signature);
+        const restoredSession = questionDraft.initial;
         if (restoredSession) {
             setActiveScope(restoredSession.activeScope);
             setMessages(restoredSession.messages);
@@ -269,7 +295,7 @@ function VerifiedNotesAskPanel({
         }
 
         hasHydratedSessionRef.current = true;
-    }, [currentScope, setMessages, ownerKey]);
+    }, [currentScope, setMessages, ownerKey, questionDraft.initial]);
 
     useEffect(() => {
         if (!(variant === "sidebar" && !mobile) || messages.length > 0) {
@@ -284,17 +310,8 @@ function VerifiedNotesAskPanel({
 
         if (!isCurrent(ownerKey)) return;
 
-        if (messages.length === 0) {
-            clearNotesChatSession(ownerKey, currentScope.signature);
-            return;
-        }
-
-        writeNotesChatSession(ownerKey, {
-            activeScope,
-            messages: completedMessages,
-            updatedAt: Date.now(),
-        });
-    }, [activeScope, currentScope.signature, completedMessages, messages.length, ownerKey, isCurrent]);
+        saveTranscript(activeScope, completedMessages);
+    }, [activeScope, completedMessages, messages.length, ownerKey, isCurrent, saveTranscript]);
 
     useEffect(() => {
         const textarea = textareaRef.current;
@@ -329,7 +346,8 @@ function VerifiedNotesAskPanel({
     const fullScreenHref = (() => {
         const params = new URLSearchParams({
             scope: "notes",
-            returnTo: returnTarget || NOTES_RETURN_TARGET,
+            returnTo: withNotesContext(returnTarget || NOTES_RETURN_TARGET, questionDraft.contextId),
+            notesContext: questionDraft.contextId,
             notesScope: serializeNotesChatScope(activeScope),
         });
         return `/ask?${params.toString()}`;
@@ -344,27 +362,28 @@ function VerifiedNotesAskPanel({
         isSidebar && "px-3 py-1.5 text-[0.72rem]"
     );
 
+    const handleFullScreenNavigation = () => {
+        onBeforeFullScreenNavigation?.();
+        const href = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        window.history.replaceState(window.history.state, "", withNotesContext(href, questionDraft.contextId));
+    };
+    const draftRecoveryMessage = !questionDraft.durable && input ? (
+        <p role="status" className="mt-2 text-xs text-muted-foreground">Reload recovery is unavailable. Keep this tab open to retain your question.</p>
+    ) : null;
+
     const sendPrompt = async (text: string) => {
         const trimmed = text.trim();
-        if (!trimmed || isStreaming || !activeScope.scope || !isCurrent(ownerKey)) {
-            return;
-        }
-
-        setInput("");
-        if (textareaRef.current) {
-            textareaRef.current.style.height = "auto";
-        }
+        if (!trimmed || isStreaming || !activeScope.scope || !isCurrent(ownerKey)) return;
+        // Promise resolution also happens for SDK errors. Only a valid finish may
+        // clear this exact submitted revision; newer edits remain recoverable.
+        pendingQuestionRef.current = text === input
+            ? { chatId: questionDraft.chatId, revision: questionDraft.draft.revision } : null;
         scrollToBottom();
-
-        await sendMessage(
-            { text: trimmed },
-            {
-                body: {
-                    scope: activeScope.scope,
-                    scopeLabel: activeScope.summary,
-                },
-            }
-        );
+        try {
+            await sendMessage({ text: trimmed }, { body: { scope: activeScope.scope, scopeLabel: activeScope.summary } });
+        } catch {
+            pendingQuestionRef.current = null;
+        }
     };
 
     const retry = async () => {
@@ -377,7 +396,9 @@ function VerifiedNotesAskPanel({
         await sendPrompt(input);
     };
 
-    const syncToCurrentScope = () => {
+    const syncToCurrentScope = (keepQuestion = true) => {
+        pendingQuestionRef.current = null;
+        questionDraft.reset(currentScope, keepQuestion);
         // A cleared message array does not stop SDK stream writes. Abort the old
         // request and replace its Chat instance so even queued late chunks stay
         // attached to the old scope rather than the newly selected transcript.
@@ -388,10 +409,10 @@ function VerifiedNotesAskPanel({
     };
 
     const startNewChat = () => {
+        if (input && !window.confirm("Start a new chat and discard your unfinished question?")) return;
         clearNotesChatSession(ownerKey, [activeScope.signature, currentScope.signature]);
-        setInput("");
         setShowAllStarterPrompts(false);
-        syncToCurrentScope();
+        syncToCurrentScope(false);
 
         if (textareaRef.current) {
             textareaRef.current.style.height = "auto";
@@ -465,7 +486,7 @@ function VerifiedNotesAskPanel({
                     {hasScopeChanged && (
                         <div className="border-b border-border/40 px-4 pt-4 sm:px-6">
                             <div className="mx-auto w-full max-w-4xl pb-4">
-                                <ScopeChangedBanner onSync={syncToCurrentScope} compact />
+                                <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact />
                             </div>
                         </div>
                     )}
@@ -612,7 +633,7 @@ function VerifiedNotesAskPanel({
                     <div className="mx-auto w-full max-w-4xl rounded-[24px] border border-border/45 bg-card/30 px-3 pt-3 pb-2 shadow-[0_-1px_0_rgba(255,255,255,0.02)] backdrop-blur-sm">
                         {hasScopeChanged && (
                             <div className="mb-3">
-                                <ScopeChangedBanner onSync={syncToCurrentScope} compact />
+                                <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact />
                             </div>
                         )}
 
@@ -648,7 +669,7 @@ function VerifiedNotesAskPanel({
                                     }
                                 }}
                                 aria-label="Ask a question about these notes"
-                                disabled={isStreaming || !activeScope.scope}
+                                disabled={!activeScope.scope}
                             />
                             <div className="mb-2 mr-2">
                                 <button
@@ -665,6 +686,7 @@ function VerifiedNotesAskPanel({
                                 </button>
                             </div>
                         </form>
+                        {draftRecoveryMessage}
                         <p className="mt-2 text-center text-[0.6rem] text-muted-foreground opacity-60">
                             { "Notes-scoped assistant · Grounded only in the notes currently in scope."}
                         </p>
@@ -713,7 +735,7 @@ function VerifiedNotesAskPanel({
                             )}
                             <Link
                                 href={fullScreenHref}
-                                onNavigate={onBeforeFullScreenNavigation}
+                                onNavigate={handleFullScreenNavigation}
                                 className={sidebarUtilityActionClassName}
                                 aria-label="Open Ask These Notes in full screen"
                                 title="Open full screen"
@@ -755,7 +777,7 @@ function VerifiedNotesAskPanel({
                             )}
                             <Link
                                 href={fullScreenHref}
-                                onNavigate={onBeforeFullScreenNavigation}
+                                onNavigate={handleFullScreenNavigation}
                                 className={cn(mobile ? "inline-flex" : "hidden sm:inline-flex", headerActionClassName)}
                             >
                                 Full Ask
@@ -780,7 +802,7 @@ function VerifiedNotesAskPanel({
                     "border-b border-border/40 px-4 py-4",
                     isSidebar && "px-5"
                 )}>
-                    <ScopeChangedBanner onSync={syncToCurrentScope} compact />
+                    <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact />
                 </div>
             )}
 
@@ -939,7 +961,7 @@ function VerifiedNotesAskPanel({
                     {!isEmptyState && (
                         <Link
                             href={fullScreenHref}
-                            onNavigate={onBeforeFullScreenNavigation}
+                            onNavigate={handleFullScreenNavigation}
                             className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground sm:hidden"
                         >
                             Open full Ask These Notes
@@ -957,7 +979,7 @@ function VerifiedNotesAskPanel({
             )}>
                 {hasScopeChanged && (
                     <div className="mb-3">
-                        <ScopeChangedBanner onSync={syncToCurrentScope} compact />
+                        <ScopeChangedBanner onSync={() => syncToCurrentScope()} compact />
                     </div>
                 )}
 
@@ -1007,7 +1029,7 @@ function VerifiedNotesAskPanel({
                             }
                         }}
                         aria-label="Ask a question about the notes in view"
-                        disabled={isStreaming || !activeScope.scope}
+                        disabled={!activeScope.scope}
                     />
                     <div className="mb-2 mr-2">
                         <button
@@ -1024,6 +1046,7 @@ function VerifiedNotesAskPanel({
                         </button>
                     </div>
                 </form>
+                {draftRecoveryMessage}
                 <p className="mt-2 flex items-center gap-1.5 text-[0.65rem] font-medium text-muted-foreground opacity-65">
                     <BookOpen className="size-3" />
                     { isSidebar

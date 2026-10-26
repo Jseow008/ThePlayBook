@@ -896,6 +896,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     const shouldRestoreAskFocusRef = useRef(false);
     const scrollFrameRef = useRef<number | null>(null);
     const deleteArmTimeoutRef = useRef<number | null>(null);
+    const [notesContextId, setNotesContextId] = useState<string | null>(searchParams.get("notesContext"));
     const searchDebounceRef = useRef<number | null>(null);
     const previousSearchParamsRef = useRef<string | null>(null);
     const shouldRespectInitialAskOpenRef = useRef(initialAskOpen);
@@ -1009,6 +1010,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
             : getValidColorFilter(searchParams.get("color"));
         const nextSortBy = getValidSortDirection(searchParams.get("sort"));
         const nextAskValue = searchParams.get("ask");
+        setNotesContextId(searchParams.get("notesContext"));
         const shouldSyncAskOpen = nextAskValue !== null || !shouldRespectInitialAskOpenRef.current;
         const nextAskOpen = nextAskValue === "1";
 
@@ -1031,6 +1033,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
             searchQuery: debouncedSearchQuery, selectedItem, selectedType, selectedColor, sortBy,
         });
 
+        if (notesContextId) params.set("notesContext", notesContextId);
         const nextQuery = params.toString();
         const currentQuery = searchParams.toString();
 
@@ -1046,6 +1049,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
         selectedItem,
         selectedType,
         sortBy,
+        notesContextId,
     ]);
 
     const uniqueItems = useMemo(() => {
@@ -1264,6 +1268,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     const liveNotesParams = notesFilterParams(searchParams.toString(), {
         searchQuery, selectedItem, selectedType, selectedColor, sortBy,
     });
+    if (notesContextId) liveNotesParams.set("notesContext", notesContextId);
     if (isAskOpen) liveNotesParams.set("ask", "1");
     else liveNotesParams.delete("ask");
     const liveNotesQuery = liveNotesParams.toString();
@@ -1273,6 +1278,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     const mobileReturnQuery = mobileReturnParams.toString();
     const mobileAskHref = `/ask?${new URLSearchParams({
         scope: "notes",
+        ...(notesContextId ? { notesContext: notesContextId } : {}),
         returnTo: mobileReturnQuery ? `${pathname}?${mobileReturnQuery}` : pathname,
         notesScope: serializeNotesChatScope(notesChatScope),
     }).toString()}`;
@@ -1418,6 +1424,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
 
         const nextAskOpen = !isAskOpen;
         const params = new URLSearchParams(searchParams.toString());
+        if (notesContextId) params.set("notesContext", notesContextId);
 
         if (nextAskOpen) {
             params.set("ask", "1");
@@ -1941,8 +1948,18 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                         <aside className="hidden lg:block lg:self-start">
                             <div className="sticky top-6">
                                 <NotesAskPanel
+                                    key={notesContextId ?? "current"}
                                     currentScope={notesChatScope}
                                     returnTo={notesReturnTo}
+                                    contextId={notesContextId}
+                                    onContextReady={(id) => {
+                                        if (id === notesContextId) return;
+                                        // Register the recovery context with the same live query,
+                                        // rather than letting its URL write restore a delayed query.
+                                        if (searchDebounceRef.current !== null) window.clearTimeout(searchDebounceRef.current);
+                                        setDebouncedSearchQuery(searchQuery);
+                                        setNotesContextId(id);
+                                    }}
                                     onBeforeFullScreenNavigation={prepareAskNavigation}
                                     onClose={toggleAskPanel}
                                     variant="sidebar"

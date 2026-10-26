@@ -247,7 +247,10 @@ describe("NotesAskPanel", () => {
             returnTo="/notes?q=latest&type=highlight&ask=1" onBeforeFullScreenNavigation={beforeNavigation} />);
         const link = screen.getByRole("link", { name: /open ask these notes in full screen/i });
         const href = new URL(link.getAttribute("href")!, window.location.origin);
-        expect(href.searchParams.get("returnTo")).toBe("/notes?q=latest&type=highlight&ask=1");
+        const returned = new URL(href.searchParams.get("returnTo")!, window.location.origin);
+        expect(returned.searchParams.get("q")).toBe("latest");
+        expect(returned.searchParams.get("type")).toBe("highlight");
+        expect(returned.searchParams.get("notesContext")).toBe(href.searchParams.get("notesContext"));
         expect(href.searchParams.get("notesScope")).toBe(serializeNotesChatScope(currentScope));
         const messageChanges = setMessagesMock.mock.calls.length;
         fireEvent.click(link, { ctrlKey: true });
@@ -268,10 +271,13 @@ describe("NotesAskPanel", () => {
             />
         );
 
-        expect(screen.getByRole("link", { name: /open ask these notes in full screen/i })).toHaveAttribute(
-            "href",
-            expectedFullScreenHref
-        );
+        const href = new URL(screen.getByRole("link", { name: /open ask these notes in full screen/i }).getAttribute("href")!, window.location.origin);
+        const expected = new URL(expectedFullScreenHref, window.location.origin);
+        expect(href.searchParams.get("notesScope")).toBe(expected.searchParams.get("notesScope"));
+        const returned = new URL(href.searchParams.get("returnTo")!, window.location.origin);
+        expect(returned.pathname).toBe("/notes");
+        expect(returned.searchParams.get("ask")).toBe("1");
+        expect(returned.searchParams.get("notesContext")).toBe(href.searchParams.get("notesContext"));
         expect(screen.queryByLabelText(/close notes ai panel/i)).not.toBeInTheDocument();
         expect(screen.getAllByText("Matching saved captures")).toHaveLength(1);
         expect(screen.getByText("Grounded only in the notes currently in scope.")).toBeInTheDocument();

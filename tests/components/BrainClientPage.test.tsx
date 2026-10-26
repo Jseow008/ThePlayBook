@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { BrainClientPage } from "@/app/(public)/notes/client-page";
 import type { HighlightsPage } from "@/hooks/useHighlights";
 import { vi } from "vitest";
@@ -517,6 +517,30 @@ describe("BrainClientPage", () => {
         panel.onBeforeFullScreenNavigation();
         expect(window.location.pathname + window.location.search).toBe(panel.returnTo);
         expect(routerPushMock).not.toHaveBeenCalled();
+    });
+
+    it("registers the draft context without restoring a delayed search and retains it when reopening", () => {
+        searchParamsState.value = "q=older&ask=1";
+        render(<BrainClientPage initialPage={initialPage} initialAskOpen />);
+        fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], { target: { value: "latest" } });
+        const panel = notesAskPanelMock.mock.calls.at(-1)![0];
+        act(() => panel.onContextReady("context-test-0123456789"));
+        expect(routerReplaceMock).toHaveBeenLastCalledWith("/notes?q=latest&ask=1&notesContext=context-test-0123456789", { scroll: false });
+        fireEvent.click(screen.getByRole("button", { name: "Close notes AI" }));
+        fireEvent.click(screen.getByRole("button", { name: "Ask these notes" }));
+        expect(notesAskPanelMock.mock.calls.at(-1)![0].contextId).toBe("context-test-0123456789");
+    });
+    it("passes the same context through responsive Ask and its explicit return link", () => {
+        searchParamsState.value = "q=older&notesContext=context-test-0123456789";
+        mediaQueryState.value.isNotesAskSidebarAvailable = false;
+        render(<BrainClientPage initialPage={initialPage} />);
+        fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], { target: { value: "" } });
+        fireEvent.click(screen.getAllByRole("button", { name: /ask/i })[0]);
+        const destination = new URL(routerPushMock.mock.calls[0][0], window.location.origin);
+        expect(destination.searchParams.get("notesContext")).toBe("context-test-0123456789");
+        const returned = new URL(destination.searchParams.get("returnTo")!, window.location.origin);
+        expect(returned.searchParams.get("notesContext")).toBe("context-test-0123456789");
+        expect(returned.searchParams.has("q")).toBe(false);
     });
 
     it("opens the desktop notes ask sidebar without routing away", async () => {
