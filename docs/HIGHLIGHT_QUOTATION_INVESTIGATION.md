@@ -844,3 +844,341 @@ files only and no extra commits against freshly fetched main. React/Next review:
 derived URL only, no new data fetch/provider work, native history metadata retained,
 Next Link onNavigate excludes modifier/new-tab clicks, no hook-order or layout
 changes. Frozen-scope and stream-fencing regressions remain passing.
+
+### Published release state
+
+PR https://github.com/Jseow008/ThePlayBook/pull/285, head
+087bf843b82add4f84ea529d3df4c8717ee6262c, is open. GitHub PR scope passed;
+GitHub file list equals the five intended files and exactly one candidate commit
+against main. Protected squash auto-merge is enabled. Required CI validate and
+Security Validation are running (runs 40327837476 / 40327837560); no gate bypass.
+Not yet merged or production-verified. No timer/follow-up created or resumed.
+This final release-state note is local evidence only, left uncommitted to avoid
+restarting the already running final checks. Next action on continuation: inspect
+#285 gate/merge state; preserve hold if any required check fails. Production checks
+have not been requested for this PR yet and are not claimed by local verification.
+
+## 26 October 2026 — unsent Notes question investigation (no implementation)
+
+User requested closure of #285 after gates/deployed rapid-clear checks and then
+prioritized investigation of question-draft loss. Product code remains unchanged
+from #285. While its gates ran, public-site investigation used deployed original
+f724f351, READY production dpl_78jcmzXcADmYcvJKRiVS2iMQheFe, verified by Vercel
+production list and www.netflux.blog alias. Existing authenticated session, owned
+test tab, only clearly synthetic unsent text after confirming empty composers.
+No provider request, chat Send/New chat, note/highlight edit, Save/Delete, account
+switch or paid resource. No private question/thought text captured.
+
+### Reproductions, actual versus expected and impact
+
+Proposed expectation for every navigation below: the same logical Notes chat
+keeps its latest exact unsent question available; ordinary navigation is not a
+discard action. Actual outcomes were empty composers without warning/recovery:
+
+| Exact tested path | Actual | User impact | Confidence |
+| --- | --- | --- | --- |
+| Type in desktop sidebar → Open full screen | Full Ask is empty | Typed work unavailable at the expanded destination | High |
+| Type in sidebar → Full Ask → browser Back | Sidebar is empty | Original draft cannot be recovered by undoing navigation | High |
+| Type in sidebar → Full Ask → explicit Back to notes | Sidebar is empty | Explicit product return loses the same draft | High |
+| Type in Full Ask → explicit Back → reopen Full Ask | Both destination and reopened composer empty | Work typed in expanded view is lost | High |
+| Type in Full Ask → browser Back → Forward | Full Ask empty | Browser history does not recover text | High |
+| Type in Full Ask → reload | Full Ask empty | Refresh destroys unfinished work in the same tab | High |
+| Type in sidebar → Close notes AI → Ask these notes | Sidebar empty | Ordinary dismissal destroys unfinished work | High |
+| Responsive Chrome 390x844: type in Full Ask → explicit Back → Ask | Full Ask empty | Same loss on responsive journey | High |
+| Control: type in mounted sidebar → change Notes search | Exact typed text retained | Filter changes alone do not trigger the loss | High |
+
+These are manifestations of one lifecycle defect, not nine independent bugs.
+Earlier candidate/original isolated builds separately showed the same page-round-
+trip loss on both sides of #285. Public investigation confirms real navigation
+paths, not a framework-only inference. No physical-device/Safari claim.
+
+Cause in unchanged source: NotesAskPanel's input initializes as empty component
+state (line 230). Sidebar close conditionally unmounts the panel, and Full Ask
+creates a separate page-variant instance. read/writeNotesChatSession restore only
+activeScope, completed messages and updatedAt; the schema/payload has no composer
+text. Zero-message sessions are cleared. Therefore message recovery does not
+provide draft recovery. Normal navigation/reload remounts input with no recovery
+source. Current scope ownership uses verified account + auth session, which a
+fix must preserve rather than bypass. Private draft text must not go in returnTo,
+notesScope, analytics, logs, or provider requests without explicit Send.
+
+### Proposed preservation contract before any implementation
+
+1. A draft belongs to the verified account/session and the Notes chat/active scope
+   being edited. Sidebar and Full Ask are views of that same logical draft.
+   Carry the exact latest text to Full Ask and back through either return path;
+   reopening and same-tab reload also restore it. Never restore an older snapshot
+   over newer typing. Separate chat/scope drafts must not overwrite each other.
+2. Keep existing scope rules: a started chat keeps its active scope; changing
+   Notes filters alone does not silently reassign the conversation or draft.
+   Explicit Use current filters remains the intentional scope action. Opening
+   Full Ask must not broaden/reset the scope to make recovery convenient.
+3. Keep draft recovery local to the tab using the existing verified-session
+   boundary; no server/cloud sync or cross-device promise in this first fix.
+   Account change/sign-out must clear/reject previous-owner drafts. Tab closure
+   persistence and cross-tab synchronization remain out of this proposed scope.
+4. Ordinary navigation, closing the panel and reload are not discard. Remove a
+   draft only after successful submission or an explicit discard/confirmed reset.
+   Recover from a failed send without resurrecting an older draft over new work.
+   Sending must remain explicit; recovering text never creates a saved note.
+5. If local recovery is unavailable, preserve text in memory and require an honest
+   discard confirmation before app navigation that would destroy it. Define/test
+   the reload-unload limitation without promising guaranteed browser prompts.
+
+Recommended next implementation scope, pending user agreement: one shared,
+owner/scope-aware same-tab question draft across existing Notes Ask views and
+ordinary return/close/reload, with no new retrieval feature or mismatch-warning
+UX work. Need tests for exact multiline text, immediate typing→navigation,
+round-trip edits in Full Ask, latest-wins restoration, scope changes, explicit
+resets, send failure, unavailable storage and account/session isolation. Live
+account switching, failed-send/provider behavior and storage denial were NOT
+exercised in this investigation; these are proposed acceptance checks, not
+claimed confirmed failures or existing passes.
+
+Sanitized cases /tmp/netflux-question-draft-investigation/results.json. First Full
+Ask wait expired before destination loaded; fresh settled DOM showed an empty
+composer and subsequent observations established the loss. No failure inferred
+from that timeout alone. One Vercel read call initially used unsupported nested
+query arguments; corrected to top-level. No application code or saved data changed.
+Release closure still pending required CI plus deployed rapid-clear checks.
+
+Scope clarification for the proposal: before the first Send, the live Notes scope
+continues following filter edits and the same typed wording follows those edits,
+as the mounted control already does. Once a conversation has started, retain its
+active scope until the existing explicit scope action. Do not choose storage keys
+that accidentally drop a pre-send draft on every filter change or merge drafts
+from unrelated started chats. The latest text typed after expanding Full Ask must
+win when returning; the sidebar's earlier copy must not overwrite it.
+
+Draft-investigation tab closed and temporary responsive override reset. No real
+user draft was encountered or overwritten. #285 Security Validation passed;
+validate was still in its E2E step at 13:19 UTC. No failure/cancellation and no
+automation created. Continue bounded release wait, then identity-pinned production
+checks; investigation itself is complete and implementation remains unapproved.
+
+### #285 gates and merge completed
+
+Required validate and Security Validation passed. Final CI: 1981 unit tests
+passed, 287 skipped; E2E 211 passed, 118 skipped (11.8 minutes). These actual skips
+remain outside coverage. Protected squash merge completed 13:26:53 UTC as
+ d4edeb946b8a6236ce1f92717a41a5659df33f1e. Fresh origin/main has the exact candidate
+tracked tree (no diff against 087bf843). Production deployment
+ dpl_8pspMhjrkFTmT7GK1JgoxCedsmvA was BUILDING for that merge; no public-site test
+was claimed on that candidate while build/alias were pending. Existing draft
+investigation evidence stays pinned to prior public f724f351; unchanged composer
+and session implementation permits retaining it, separately from #285's required
+new public navigation smoke.
+
+### #285 production closure — 26 October 2026
+
+Production dpl_8pspMhjrkFTmT7GK1JgoxCedsmvA became READY for exact merge
+ d4edeb946b8a6236ce1f92717a41a5659df33f1e. Initially the public alias still mapped
+old dpl_78jcmzXcADmYcvJKRiVS2iMQheFe; promoted the already-built approved production
+candidate through normal Vercel request_promote. Both get_alias(www.netflux.blog)
+and get_deployment(www.netflux.blog) then confirmed new deployment, READY state,
+production target and exact SHA before testing. No preview substitution/rebuild,
+configuration, domains, dependencies, database or matching changes.
+
+Bounded deployed CUA checks, existing authenticated session in an owned clean tab:
+
+| Sequence starting with settled q=persuasion | Actual result after returning | Result |
+| --- | --- | --- |
+| Desktop 1728x900, sidebar open → clear search → immediate Full Ask → browser Back | /notes?ask=1; q absent; visible search empty | PASS |
+| Desktop same sequence → explicit Back to notes | /notes?ask=1; q absent; visible search empty | PASS |
+| Responsive Chrome 390x844 → clear search → immediate Ask → browser Back | /notes; q absent; visible search empty | PASS |
+| Responsive same sequence → explicit Back to notes | /notes; q absent; visible search empty | PASS |
+
+Ask destinations settled with returnTo /notes?ask=1 (desktop) and /notes
+(responsive). No stale search returned. All four started by loading the old search
+then clearing and activating Ask in the same CUA call, without waiting for the
+180ms debounce. Sidebar draft baseline was empty; no user text overwritten.
+No Send, Save, note changes or provider calls. Product data was not modified.
+
+Method caveats: first desktop URL read happened before client navigation settled
+and still had no returnTo; waited for the visible destination before judging it.
+The first responsive destination wait expired even though its diagnostic showed
+a visible textarea; a fresh settled DOM observation confirmed /ask, visible
+composer and returnTo /notes before Browser Back. Neither transient observation
+was called a product failure or omitted from evidence. No navigation failure
+observed in the four final bounded cases.
+
+All actual final CI skips remain outside coverage: 287 unit and 118 E2E; physical
+phones/mobile Safari unverified. #285 release and requested production closure
+complete. Separate question-draft findings above are investigation only; no draft
+fix/mismatch warning/extra UX implemented. Candidate product tree remains unchanged
+and identical to merged tree. Existing report retains this local evidence without
+an evidence-only deployment. No timer created/resumed, no new resources/agents.
+Next decision: agree on the proposed same-tab, owner/chat-aware question-draft
+preservation contract before implementing that separate defect fix.
+
+Final browser cleanup: all investigation/release/blank test tabs closed. Restored
+original desktop dimensions 1728x900 and cleared the temporary viewport override.
+Only the tracked investigation report has uncommitted evidence; no product edits
+beyond merged #285. Original errors/service cause remain separate and unresolved;
+none of these no-send checks produces new diagnostic evidence about that service.
+
+## 26 October 2026 — approved Notes question draft preservation
+
+Fresh branch codex/notes-question-drafts in /tmp/netflux-notes-question-drafts,
+based on freshly fetched d4edeb94. Existing local investigation/release evidence
+copied intact. Layout, matching, providers, saved notes, chat scope rules and
+mismatch-warning UX remain unchanged. Dependencies reused from the prior clean
+installation; no package edits, paid resource or subagent.
+
+Acceptance clarified before product edits:
+- Draft text/revision is saved on each edit in same-tab session storage, owned by
+  verified account + auth session. Sidebar/Full Ask carry an opaque Notes context
+  ID so even a question before its first send has the same recovery identity.
+  Text never enters URLs, analytics or logs. No localStorage/cross-device sync.
+- Within that context New chat gets a fresh chat identity and empty draft. Ask
+  before discarding a nonempty draft; unrelated chat contexts/owners cannot load
+  its text. Existing explicit Use current filters continues its scope behavior.
+- A failed, interrupted, aborted or incomplete response retains the exact draft.
+  The SDK send promise resolving is not proof of success. Clear only on a complete
+  successful finish AND matching submitted chat ID + draft revision. Newer typing
+  remains editable during a pending request and is never cleared by its finish.
+- Sign-out/account/auth-session change clears/rejects previous-owner contexts and
+  fallback memory; reload recovery is limited to the same tab + verified owner.
+  If storage fails, keep SPA recovery in memory and warn/protect before unloading;
+  do not promise browser reload prompts are guaranteed.
+- Repeat all previously reproduced paths with exact multiline text and rapid
+  transitions; test failure/success/newer edits, New chat, context isolation and
+  owner cleanup. No real user drafts or model requests required for local checks.
+
+### Implementation checkpoint before stable browser checks
+
+Added same-tab owner/context storage with distinct chat ID + draft revision;
+question text is separate from navigation tokens and completed transcript aliases.
+New chat confirms nonempty discard and rotates chat identity. Scope actions keep
+existing explicit semantics. Success clearing uses valid complete onFinish and
+matching chat/revision; failed/incomplete requests retain text; pending composer
+permits newer typing. Existing sign-out/owner cleanup now includes contexts and
+memory fallback. Parent Notes retains context through close/open, mobile entry
+and filter URL updates without resetting a delayed query.
+
+54 focused tests passed (includes real SDK controlled streams, failure/newer text,
+context/owner/session isolation, temporary verification, fallback/unload). The
+provisional round-trip regression failed against the original component's empty
+Full Ask composer, then passes on candidate. Additional parent context/query race
+checks: 21 BrainClientPage tests pass. Broad suite before the final parent-state
+lint correction: 1992 tests passed, 287 skipped; capacity 34 passed. Affected
+parent/panel/stream tests reran after that correction, 47 passed. Two fixture tests
+initially used a nonexistent empty-chat New chat button and the wrong global
+Storage prototype; corrected to a completed-chat New chat entry and actual window
+storage prototype. No product failure was erased.
+
+First lint caught refs read during render and an object hook dependency; changed
+the parent context holder to state, aligned its initial query commit with live
+controls, and destructured the stable transcript callback. Targeted lint passes.
+First optimized build could not resolve Next through a node_modules symlink outside
+Turbopack root; installing the identical lock in this own worktree, with no package
+changes. Local fixture setup initially ran before status JSON completed and read
+empty JSON; waited for completion and setup then succeeded. Owned local Supabase
+project netflux-draft-verification, Redis bridge and two synthetic saved notes;
+no hosted resources/model requests. Browser regression still pending. No PR yet.
+
+### Final local verification — question draft candidate
+
+Final timing refinement: register the Notes recovery context in a layout effect,
+before the first user interaction, so its one-time identity registration cannot
+interrupt a just-started request. No scope/transport/provider change. Optimized
+build, sharp trace and critical CSS checks pass; final typecheck and full lint
+pass. Final focused suite: 56 passed across BrainClientPage, NotesAskPanel,
+NotesAskPanel.question-draft, scope-stream fencing and scope/session validation.
+Security suite 189 passed. Broad prior run 1992 passed/287 skipped plus 34 capacity
+harness passed; the final affected tests include two further Brain context/race
+regressions. CI must run the complete final tree; no old green CI claimed.
+
+CUA stable build using only disposable local accounts/data:
+
+| Tested path | Actual on candidate | Confidence |
+| --- | --- | --- |
+| Immediate multiline typing → Full Ask before any Send | Exact text, including leading/trailing spaces, blank line, emoji and Markdown recovered | High |
+| Sidebar → Full Ask → browser Back | Exact text recovered | High |
+| Sidebar → Full Ask edit → explicit Back | Newest exact text recovered, older sidebar text does not overwrite | High |
+| Sidebar Close → reopen | Exact text recovered | High |
+| Full Ask → explicit Back → reopen | Exact text recovered | High |
+| Full Ask → Back → Forward | Exact text recovered | High |
+| Full Ask → same-tab reload | Exact text recovered | High |
+| Responsive Chrome 390x844 → Back → Ask → edit → Back → reopen | Exact latest multiline text recovered | High |
+| Responsive same-tab reload | Exact text recovered | High |
+| Rapid search compass → clear → Full Ask with draft present | Draft exact; scope remains all; return query stays cleared | High |
+| Local submission rejected with Service temporarily unavailable | Exact draft retained, then still exact after Back | High |
+| Start new chat, then reload | Empty independent draft; old question did not resurrect | High for reset/reload; browser Cancel caveat below |
+| New separate test tab | Does not inherit previous tab's draft | High |
+| Sign out account A → sign into B in SAME tab → open A's context link | Empty composer; no A text exposed | High |
+| Type B-only multiline text → reload | Exact B text recovered | High |
+| Sign out B → sign back into A (new auth session) → same link | Empty composer, neither A-old nor B text exposed | High |
+
+All eight originally reproduced loss paths were repeated again on the final build
+AFTER the timing refinement, with immediate typing/rapid surface transitions and
+latest Full Ask edits. All passed. The prior local failed-send and account checks
+are reused: storage/owner/submission implementations are byte-identical across
+that registration-timing refinement. Success, pending newer text, failed pending
+newer text, incomplete finish, explicit reset cancellation, storage denial/unload
+and adversarial owner data copying are checked with the actual SDK/component
+controlled transport tests. These are synthetic streams, not model-quality claims.
+One local API submission failed under an intentionally unconfigured AI service;
+no paid credentials/resources or model success rehearsal. No note/highlight Save,
+Delete, color, location or historical-content operations. Both original synthetic
+saved notes still match every baseline field (including quotation, thought,
+positions, owner and updated_at). No private real user text captured or modified.
+
+Browser method caveats retained:
+- Initial auth/destination waits sometimes exceeded the bridge's effective short
+  timeout even with a visible final element. Fresh settled DOM was inspected.
+- Full Ask page has no existing New chat control; used the existing Start new
+  chat control in the sidebar instead. No new control added to that page.
+- Native confirmation click timed out, then getJsDialog reported confirm but
+  dismiss reported no dialog; subsequent composer was empty. Thus manual reset/
+  reload is verified, but browser Cancel is NOT claimed. Actual component Cancel
+  and confirm paths both pass. Do not mislabel the bridge's dialog handling as a
+  product confirmation defect or claim its cancellation was tested in Chrome.
+- The first responsive override affected the still-selected owned mail tab.
+  After two attempts, closed that tab, reapplied the override, reloaded the SAME
+  test tab and verified actual 390x844 before responsive evidence. No failed
+  selector at desktop width counted as mobile evidence.
+- Mobile Full Ask hides the user menu; returned to Notes for sign-out. A later
+  login raced sign-out's redirect and a disposable onboarding overlay; settled
+  logout, dismissed the tour, and used the visible login form. No private cookie
+  or hidden browser state inspected.
+
+Physical phones/mobile Safari remain unverified, as do 287 skipped unit tests
+and previous 118 browser skips. Cross-device sync and mismatch-warning UX remain
+outside scope. Existing scope signature/account checks and stream fences pass.
+All owned test/mail tabs closed; original desktop size restored, viewport override
+reset. No automation or subagent. Exact billed usage and total elapsed unavailable.
+Next: shut down/remove local fixture resources, retain sanitized evidence, publish
+only the nine intended files through protected PR and required gates.
+
+Cleanup completed: own local Supabase project removed with --no-backup; own Redis
+container removed; servers/bridge stopped; no verification listeners/containers
+remain. Private runtime/status/fixture data and CLI start log removed; only
+sanitized result/comparison files and build/test evidence retained. Nine intended
+files only; one candidate commit, no package lock, schema, provider or UX expansion.
+Final React/Next review: URL contains opaque context only, normal query/scope rules
+retained, metadata registration precedes input interaction, refs used outside
+render, stable persistence callback dependencies, and account-bound cleanup includes
+both durable and fallback contexts. Final CI/security pending on publication.
+
+### Final review safeguard before enabling auto-merge
+
+PR #286 initially opened at 6a111231; auto-merge was NOT enabled on that head.
+Review found the existing Library/Current Notes tab links can omit the outer
+notesContext while retaining it in returnTo. With two different contexts sharing
+filters, falling back to the newest scope alias could open the wrong draft.
+Added a regression that first reproduced that wrong-context result, then changed
+NotesAskPanel to honor the explicit local Notes return-context ID when no direct
+context ID is present. It still verifies owner/session and never reads text from
+URLs. No new tab UX, warning, provider or scope behavior.
+
+Final focused result after this correction: 57 passed; typecheck and full lint
+passed. Full optimized build with non-secret placeholder public build settings
+passed (including sharp and critical CSS), without restarting fixture resources.
+The prior browser loss-path tests all supplied the direct context ID and exercise
+an unchanged branch of the selection logic; exact-text, owner, submission and
+scope implementations remain unchanged, so that evidence is reused with this
+explicit boundary. The newly added missing-outer-ID Library-return branch is
+verified by the actual component regression, not claimed as a new browser check.
+No final CI result reused from the superseded head; final required gates must run
+on the updated candidate. No paid call, account data, or resource added.

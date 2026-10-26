@@ -1,12 +1,13 @@
 import { z } from 'zod';
+import { clearNotesChatContexts } from '@/lib/notes-chat-context';
 import type { UIMessage } from 'ai';
 import { parseNotesChatScope, serializeNotesChatScope, type NotesChatScopePayload } from '@/lib/notes-chat-scope';
 
 const PREFIX = 'netflux_notes_chat_session:v2:';
 const LEGACY_PREFIX = 'netflux_notes_chat_session:v1:';
 const MessageSchema = z.object({ id: z.string(), role: z.string(), parts: z.array(z.unknown()).optional() }).passthrough();
-const SessionSchema = z.object({ ownerKey: z.string(), activeScope: z.unknown(), messages: z.array(MessageSchema), updatedAt: z.number() });
-export interface NotesChatSessionPayload { activeScope: NotesChatScopePayload; messages: UIMessage[]; updatedAt: number }
+const SessionSchema = z.object({ ownerKey: z.string(), activeScope: z.unknown(), messages: z.array(MessageSchema), updatedAt: z.number(), contextId: z.string().optional() });
+export interface NotesChatSessionPayload { activeScope: NotesChatScopePayload; messages: UIMessage[]; updatedAt: number; contextId?: string }
 
 export function getNotesChatStorageKey(ownerKey: string, signature: string): string {
     return `${PREFIX}${encodeURIComponent(ownerKey)}:${encodeURIComponent(signature)}`;
@@ -18,6 +19,7 @@ export function clearLegacyNotesChatSessions(): void {
     } catch { /* Unavailable storage does not prevent chatting. */ }
 }
 export function clearAllNotesChatSessions(): void {
+    clearNotesChatContexts();
     if (typeof window === 'undefined') return;
     try {
         for (const key of Object.keys(window.sessionStorage)) {
@@ -26,6 +28,7 @@ export function clearAllNotesChatSessions(): void {
     } catch { /* Unavailable storage must not prevent sign-out. */ }
 }
 export function clearNotesChatOwner(ownerKey: string): void {
+    clearNotesChatContexts(ownerKey);
     if (typeof window === 'undefined') return;
     try {
         const prefix = `${PREFIX}${encodeURIComponent(ownerKey)}:`;
@@ -41,7 +44,7 @@ export function readNotesChatSession(ownerKey: string, signature: string): Notes
         if (!parsed.success || parsed.data.ownerKey !== ownerKey) return null;
         const activeScope = parseNotesChatScope(JSON.stringify(parsed.data.activeScope));
         if (!activeScope || activeScope.signature !== signature) return null;
-        return { activeScope, messages: parsed.data.messages as UIMessage[], updatedAt: parsed.data.updatedAt };
+        return { activeScope, messages: parsed.data.messages as UIMessage[], updatedAt: parsed.data.updatedAt, ...(parsed.data.contextId ? { contextId: parsed.data.contextId } : {}) };
     } catch { return null; }
 }
 export function writeNotesChatSession(ownerKey: string, payload: NotesChatSessionPayload): void {
