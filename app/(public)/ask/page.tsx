@@ -15,6 +15,7 @@ interface AskPageProps {
         returnTo?: string;
         scope?: string;
         notesScope?: string;
+        notesFilters?: string;
     }>;
 }
 
@@ -35,6 +36,10 @@ export default async function AskPage({ searchParams }: AskPageProps) {
 
         if (resolvedSearchParams?.notesScope) {
             loginTargetParams.set("notesScope", resolvedSearchParams.notesScope);
+        }
+
+        if (resolvedSearchParams?.notesFilters) {
+            loginTargetParams.set("notesFilters", resolvedSearchParams.notesFilters);
         }
 
         if (returnTo) {

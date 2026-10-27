@@ -37,6 +37,9 @@ const {
     },
 }));
 
+const scopeQuery = vi.hoisted(() => ({ value: "" }));
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(scopeQuery.value) }));
+
 vi.mock("@ai-sdk/react", () => ({
     useChat: vi.fn(),
 }));
@@ -82,6 +85,7 @@ describe("AskClientPage", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        scopeQuery.value = "";
         notesAskPanelMock.mockClear();
         Object.defineProperty(window, "matchMedia", {
             writable: true,
@@ -550,4 +554,18 @@ describe("AskClientPage", () => {
         render(<AskClientPage />);
         expect(screen.getByText("Too many requests. Please wait a moment.")).toBeInTheDocument();
     });
+
+it('preserves the Notes comparison snapshot through existing Library/Current Notes navigation without replacing active scope', () => {
+    const active = createNotesChatScope({ version: 1, itemType: 'all', filterQuery: 'alpha' });
+    const filters = createNotesChatScope({ version: 1, itemType: 'note', filterQuery: 'beta' });
+    scopeQuery.value = new URLSearchParams({ notesFilters: serializeNotesChatScope(filters) }).toString();
+    render(<AskClientPage scope="notes" initialNotesScope={active} returnTo="/notes?q=beta" />);
+    for (const name of ['Library', 'Current Notes']) {
+        const href = new URL(screen.getByRole('link', { name }).getAttribute('href')!, window.location.origin);
+        expect(href.searchParams.get('notesScope')).toBe(serializeNotesChatScope(active));
+        expect(href.searchParams.get('notesFilters')).toBe(serializeNotesChatScope(filters));
+        expect(href.searchParams.get('returnTo')).toBe('/notes?q=beta');
+    }
+});
+
 });

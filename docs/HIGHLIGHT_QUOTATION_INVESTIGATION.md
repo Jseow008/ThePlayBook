@@ -1182,3 +1182,317 @@ explicit boundary. The newly added missing-outer-ID Library-return branch is
 verified by the actual component regression, not claimed as a new browser check.
 No final CI result reused from the superseded head; final required gates must run
 on the updated candidate. No paid call, account data, or resource added.
+
+### Published candidate / continuation checkpoint
+
+PR https://github.com/Jseow008/ThePlayBook/pull/286, final head
+5cae25aecdadc7e80185edc9b81eafe6bf37db2e on codex/notes-question-drafts in
+/tmp/netflux-notes-question-drafts. GitHub PR scope passed on that exact head;
+GitHub file list matches nine intended files and exactly one candidate commit
+against freshly fetched main. Protected squash auto-merge enabled; required
+validate and Security Validation are IN_PROGRESS. No bypass, no timer/follow-up.
+Not yet merged or production-verified; no production draft edits/model requests
+made for this feature. Final state note is local/uncommitted evidence to avoid
+restarting final gates. Product tree is clean. Next on continuation: inspect #286
+required gates/head/merge state, preserve hold on failure, and conduct deployment-
+pinned checks if requested. Browser native Cancel remains a stated coverage limit,
+with component Cancel/confirm verified. Mismatch warning remains separate.
+
+## 26 October 2026 — #286 production closure and browser discard gap closed
+
+Required final-head gates passed: CI 40343999870, Security Gates 40343999861,
+PR scope 40343999902, all for 5cae25aecdadc7e80185edc9b81eafe6bf37db2e. Final CI:
+1995 unit tests passed / 287 skipped; browser 211 passed / 118 skipped (11.7m).
+Skips are not verified coverage. Protected squash merge completed 15:16:42 UTC as
+32af562c9ba189e468dbc01c6f44a94bb3db4776. Fresh origin/main is the identical
+candidate tracked tree (no diff against 5cae25ae).
+
+Exact production build dpl_8By5oQRBADoDNkNd8LFSTnkCBNom, URL
+netflux-mapxcqis4-jseow008s-projects.vercel.app, was READY for that merge. Public
+www.netflux.blog initially still mapped #285. Promoted only that already built
+production deployment through the normal Vercel request_promote operation. Both
+get_alias(www.netflux.blog) and get_deployment(www.netflux.blog) then confirmed
+new deployment ID, production target, READY state and exact merge SHA BEFORE the
+public tests. No preview substitution, rebuild, domain/config/database change.
+
+Existing authenticated Chrome session, new owned tab, composer confirmed empty
+before typing. Only synthetic text was used; no pre-existing question or private
+thought was edited. No saved-note/highlight action, Save, Delete, color/location
+change, historical restore, paid resource, new automation or model call.
+
+### Observed production checks
+
+| Case / reproduction | Expected | Actual | Confidence |
+| --- | --- | --- | --- |
+| Desktop 1728x900: multiline text with spaces/blank line/emoji/Markdown → immediate Full Ask | Same exact draft | Exact text recovered | High |
+| Edit in Full Ask → reload | Latest exact text | Exact text recovered | High |
+| Full Ask → browser Back | Latest exact text in sidebar | Exact text recovered | High |
+| Full Ask → explicit Back to notes | Latest exact text in sidebar | Exact text recovered | High |
+| Submit one synthetic 2111-character multiline question | Honest rejection, full draft retained | “Request failed. Query must be between 1 and 2000 characters”; all 2111 characters retained exactly | High |
+| Existing sidebar Start new chat → visible native Chrome Cancel | Keep exact question | Exact 2111-character draft retained | High |
+| After Cancel → Close notes AI → reopen → reload | Kept draft remains exact | Exact text after both reopening and reload | High |
+| Start new chat → visible native Chrome OK to confirm discard | New draft empty | Empty composer | High |
+| After confirmed discard → close/reopen → reload → Full Ask | Discarded text never returns | Empty at every step | High |
+| Responsive Chrome 390x844: own short multiline draft → Back → Ask | Latest exact text | Exact text recovered | High |
+| Responsive same-tab reload | Exact text retained | Exact text recovered | High |
+
+The production failure was a real server length-validation rejection, not a
+simulated browser error. Deployment-matched route normalizes the UI text parts
+and rejects >2000 characters BEFORE quota admission or provider invocation. It
+therefore verifies deployed failed-submission retention without AI-credit spend
+or sending private note content to a model. It does NOT establish that an actual
+provider outage has been exercised in production; service/incomplete/success and
+newer-pending-text behavior remain supported by the earlier local/controlled SDK
+tests. No claim of diagnosing the historical service error follows from this.
+
+### Native browser confirmation evidence
+
+Closed the earlier browser Cancel coverage gap using CUA native Chrome controls.
+Brought only the owned Notes test tab into view (initial app selection was a
+separate user tab, which was not edited). Clicking the visible Start new chat via
+native accessibility exposed the real browser window:
+“www.netflux.blog says — Start a new chat and discard your unfinished question?”
+with visible Cancel and OK buttons. Native Cancel click preserved exact draft;
+repeat confirmation with native OK cleared it. Reopening/reload verified each
+choice as recorded above. Unlike the earlier CDP dialog-bridge attempt, BOTH
+choices were actually performed and observed in-browser. No application code or
+dialog behavior was changed for the check.
+
+Other method caveats retained: one explicit Back click failed before CDP command
+dispatch, with the URL still on Ask; refreshed observation then retried the click.
+One exact-text evaluation timed out after a successful return; settled Notes DOM
+then confirmed exact text. Neither was treated as a product failure, erased or
+counted as a pass from an attempted action alone. Native app inspection first
+selected another user tab; selected the clearly labeled owned verification tab
+before interacting. No action taken on that unrelated content.
+
+### Cleanup, limits and final state
+
+After confirming discard, the responsive check used only a separate synthetic
+unsent text; explicitly cleared that own text and verified empty. Restored and
+verified 1728x900, closed the only owned verification tab, reset the viewport
+override. Existing user tabs/authentication and saved data were untouched. No
+ongoing follow-up/timer created or resumed. Evidence-only report remains local
+and uncommitted to avoid creating an unrelated production deployment.
+
+#286 is complete within the approved draft-protection scope. Native browser Cancel
+and confirmed discard are now verified on production, superseding the prior Cancel
+coverage limitation. Physical phones, mobile Safari, 287 unit skips and 118 browser
+skips remain outside verified coverage. Checks are bounded observations on this
+Chrome build, not proof of every possible interaction. Mismatch-warning UX and
+broader Ask enhancements remain separate; no further changes made or needed here.
+One agent; no delegation. Exact elapsed/billed usage unavailable. Sanitized release
+results: /tmp/netflux-draft-verification/production-results.json. Next action: none
+for this bounded release check.
+
+## 26–27 October 2026 — deferred Full Ask scope-warning review (read-only)
+
+User requested clarity verification before proposing a change; no product code,
+tests, dependencies, retrieval behavior, drafts or saved notes changed. Production
+READY/public identity verified before and after review as
+ dpl_8By5oQRBADoDNkNd8LFSTnkCBNom / 32af562c9ba189e468dbc01c6f44a94bb3db4776.
+Existing source candidate 5cae25ae is the identical deployed application tree.
+
+Coverage qualification retained: the production failed-submission check covered
+server validation rejection. Real network interruptions and failures after an
+actual model call remain UNVERIFIED. Earlier controlled stream/error tests do
+not establish those live failure cases. This scope review adds no such coverage.
+
+### Method and bounded reproduction
+
+Owned new Chrome tab in existing authenticated session; confirmed empty composer.
+Used synthetic search A = “scope review alpha” and B = “scope review beta”, both
+valid and no private saved passage displayed. Before starting a chat, changed
+A → B: the live scope followed B and no warning appeared, the expected control.
+Returned to A and sent only “Tell me more.” as the first user turn. The server
+completed its built-in clarification response (“Which topic, theme, or point…”).
+Deployment-matched contextualizeUserQuestion recognizes a context-free follow-up;
+route returns FOLLOW_UP_CLARIFICATION BEFORE quota admission/provider invocation.
+Thus a completed chat was established without a model request or AI-credit spend.
+This does not test successful evidence retrieval or model answer quality.
+
+Changed Notes search to B after that response. Used a clearly synthetic unsent
+question only to inspect whether Send remained available; never sent it. Inspected
+visible labels, warning geometry, navigation hrefs and screenshots. No hidden
+browser storage, cookies, private thoughts or provider requests inspected.
+
+### Observed results
+
+| Journey | Visible state / expected clarity | Actual | Confidence |
+| --- | --- | --- | --- |
+| Empty chat, edit A → B | Live scope should follow Notes with no false retained-scope warning | Encoded scope B; no warning | High |
+| Completed A chat, Notes filter becomes B, desktop sidebar | Explain that chat still uses A | Existing warning visible near composer; A scope label visible, Notes input B; Send enabled | High |
+| Expand same desktop chat to Full Ask | Continue explaining A differs from latest Notes B | A is accurately named under Current scope, but warning and Use current filters action disappear; B is not named in visible page | High |
+| Reload desktop Full Ask | Preserve change explanation | Still A, zero warning instances | High |
+| Explicit Back to Notes | Return to B and expose retained A explanation | Notes search B, existing warnings return | High |
+| Same context, responsive Chrome 390x844 Notes → Ask | Explain retained A versus newer B | Existing warning appears in Full Ask, both near top and composer; A visible under Current scope | High |
+| Responsive Full Ask reload | Keep explanation | Warning remains, A remains visible | High |
+| Responsive explicit Use current filters | Switch only on the explicit action | B becomes visible current scope, A/warning disappear; old test conversation clears as existing behavior specifies | High |
+
+No second retrieval question was submitted. Send remains enabled with the retained
+scope intentionally; deployment-matched sendPrompt sends activeScope. A displayed
+older scope is not by itself a retrieval defect. This review establishes a desktop
+explanation inconsistency; it does not establish that a person misunderstood it.
+Actual comprehension by human participants was not studied.
+
+### Cause and narrow recommendation
+
+Desktop Full Ask link encodes notesScope from activeScope (A). AskClientPage passes
+that as currentScope, while the returned context restores activeScope A. The
+existing warning condition compares activeScope.signature to currentScope.signature
+and therefore sees A == A. Latest Notes B survives only in returnTo. On responsive
+entry, the outer notesScope is current Notes B and context restores active A, so
+the same existing page warning correctly sees A != B. This was observed on current
+production, not inferred from the older pre-#286 finding.
+
+Smallest justified UX proposal: preserve the comparison with the latest Notes
+filter snapshot when expanding desktop Full Ask, so the EXISTING earlier-filters
+warning/action survives expansion and reload. Keep the accurately labeled active
+chat scope; Send must continue using it until the explicit existing scope action.
+Do not silently broaden/reset the chat, replace the active scope, change retrieval,
+add another search feature, revisit draft protection or redesign the responsive
+layout. Keep the active chat scope and Notes-filter snapshot distinct in any later
+implementation; changing the serialized active scope alone could change other
+entry-point behavior and is not an approved implementation here.
+
+Acceptance for a later proposed fix: completed A chat → Notes B → desktop Full Ask
+and reload still disclose the retained A scope and mismatch; return still restores
+B; existing explicit scope action switches to B; unchanged/empty chats show no false
+warning; responsive explanation continues to work. No implementation is authorized
+by this investigation-only turn.
+
+### Limits and cleanup
+
+Both responsive warning copies were visible; the newer target B is not spelled out
+in those copies. No broader responsive/layout proposal follows from this review.
+A transient library-sync rate-limit toast appeared on responsive view, without
+obscuring the top warning/scope summary. It was not investigated or altered.
+One responsive wait timed out despite a visible composer; fresh settled DOM and
+screenshot confirmed actual results before assessment. Final tab close returned
+a detach signal after the tab closed; subsequent viewport reset and owned-tab list
+(empty) confirmed cleanup. Neither was labeled a product defect.
+
+Explicitly cleared only the own unsent synthetic text after the scope action;
+closed the owned tab, restored/verified 1728x900 and reset viewport. Existing user
+tabs and saved data untouched. No automation, PR, model call, paid resource or
+subagent. No tests rerun for unchanged code; existing passes do not negate this
+observed UX gap. Physical phones/mobile Safari and earlier 287 unit/118 browser
+skips remain outside verified coverage. Exact elapsed/billed usage unavailable.
+Sanitized artifact: /tmp/netflux-full-ask-scope-review/results.json.
+Review complete. Next decision is whether to approve the narrow desktop warning
+consistency change; product code remains unchanged.
+
+## 27 October 2026 — approved desktop Full Ask warning correction (in progress)
+
+Fresh branch codex/full-ask-scope-warning in /tmp/netflux-full-ask-scope-warning,
+based on freshly fetched main 32af562c. Preserve existing active chat scope and
+same-tab draft context. Carry current Notes filters separately as comparison-only
+notesFilters metadata when a mismatched chat expands. Full Ask uses that snapshot
+for the existing warning and explicit Use current filters action; ordinary sends
+continue using activeScope. Empty/no-snapshot and responsive entry behavior stay
+unchanged. No API/provider/retrieval/draft-storage changes; network/model failure
+testing remains separate and unverified as previously qualified.
+
+Acceptance: mismatch warning survives expansion/reload; equal signatures (including
+label-only differences) have no warning; continuing submits earlier scope A;
+explicit Use current filters adopts B and clears warning; expansion, reload,
+explicit scope switch and post-switch reload keep exact drafted text. Existing
+Library/Current Notes links and sign-in redirects preserve the comparison snapshot
+without replacing the serialized active scope. Invalid comparison filters cannot
+automatically broaden the active scope; malformed metadata is ignored for the
+comparison and explicit invalid targets are not adopted by the warning action.
+
+Primary actual-SDK regression first failed on the original implementation because
+Full Ask had no Notes-filter snapshot. It now passes through sidebar A → Notes B
+→ expansion → reload → continuing Send (body A) → explicit switch → reload → Send
+(body B), retaining newest multiline draft text during the handoff/switch.
+Initial focused suite 85 passed. Additional corrupt-metadata/no-broadening and
+sign-in redirect checks pass (49 tests in the affected subset). Typecheck and lint
+passed before those last guarded cases; final rerun/build/browser checks pending.
+Broad local suite and capacity harness completed; exact totals recorded below.
+
+One agent; no dependency changes/subagents/paid resources/automation. Local fixture
+netflux-scope-warning-verification, two synthetic saved notes, localhost-only
+Supabase/Redis. Only built-in clarification responses will be used in browser
+checks: local placeholder provider strings satisfy configuration checks, but
+context-free “Tell me more.” returns before quota/provider calls. No actual model
+or new network/model failure test is needed for this scope comparison change.
+Next: stable build and bounded browser acceptance on exact final candidate, then
+protected PR/scope inspection/required gates. No product release claim yet.
+
+### Final local scope-warning verification
+
+Optimized production build, final typecheck and full lint passed. Sharp production
+traces and critical CSS checks passed. Security: 189 passed. Broad local suite:
+2004 passed / 287 skipped, capacity harness 34 passed; this broad run preceded the
+last corrupt-snapshot guard and auth-redirect test. Final affected suite includes
+those cases: 87 passed across seven files. Required CI must validate final tree.
+
+The first final focused run overlapped optimized build, security and lint, and
+had five whole-test 5000ms timeouts in existing reflection/delete, failed-request
+and scope-stream cases (no assertion failures). After those jobs finished, reran
+all seven focused files with maxWorkers=2 and unchanged time limits: 87/87 passed.
+No threshold changes or favorable-run selection. Keep the failed run artifact
+/tmp/netflux-scope-warning-final-focused.log; clean rerun is
+/tmp/netflux-scope-warning-final-focused-serial.log.
+
+Browser setup caveat: direct local production Next rejects AI endpoints because
+aiNetworkIdentifier requires trusted hosting ingress in production. The initial
+clarification attempt returned a rate-limit-unavailable 503 before session/quota/
+provider work. This is a fixture setup failure, not a scope-warning defect and
+NOT new network/model failure coverage. Supplied a loopback-only reverse ingress
+on ::1:3067 to own Next ::1:3068, with runtime VERCEL=1 and overwritten
+x-vercel-forwarded-for=198.51.100.7, matching the unchanged hosting trust contract.
+No security checks, app source, deployed configuration or remote resources were
+weakened/changed. Restarted a clean own test chat before acceptance.
+
+CUA only, own synthetic account, stable production candidate, desktop 1728x900:
+
+| Reproduction | Actual result | Confidence |
+| --- | --- | --- |
+| Completed built-in clarification in scope alpha, change Notes to beta | Sidebar warning; Full Ask link keeps notesScope alpha, separate notesFilters beta, returnTo beta | High |
+| Type exact multiline draft with spaces, blank line, emoji and Markdown → expand | Full Ask warning present, active alpha accurately labeled, exact draft retained | High |
+| Reload expanded view | Warning and alpha retained; exact draft retained | High |
+| Continue with the existing Show supporting notes action without switching | Completed model-free clarification; alpha/warning retained and unsent draft exact | High |
+| Existing Library → Current Notes navigation (390x844) | Both snapshot values preserved, alpha warning and exact draft restored | High |
+| Explicit Use current filters | Beta adopted, alpha label/warning removed; exact draft retained | High |
+| Reload after explicit switch | Beta and no warning; exact draft retained | High |
+| Return to Notes | Search beta, matching scope, no warning; exact draft retained | High |
+| Fresh chat with no messages, edit Notes to alpha | Active scope follows alpha, no warning and no new comparison parameter | High |
+
+Responsive regression on original Notes → Ask path, actual 390x844:
+completed alpha chat → Notes beta → responsive Ask. URL has NO new notesFilters
+parameter; incoming notesScope remains beta and same-tab context restores alpha.
+The same existing warning appears; reload retains it and exact draft. Explicit
+Use current filters adopts beta, removes warning, preserves exact draft. Thus
+existing responsive entry behavior remains unchanged; no layout/copy change.
+
+Three completed fixture API requests returned 200 with phases only client/auth/
+rate_limit/session. All used built-in context-free clarification, returned before
+quota/provider invocation: zero model calls or AI-credit spend. Controlled actual
+SDK tests separately assert request body alpha when continuing and beta only after
+explicit switching. No live model-retrieval or network failure claim is made.
+Real network interruptions and failures after a model invocation remain separate
+and unverified. No changes to draft storage, API transport, providers, matching,
+saved notes or historical content. All two synthetic saved notes still match every
+baseline field, including quotation, attached thought, owner, positions, updated_at.
+
+No extra browser retries or failures in final acceptance after fixture correction.
+Only own unsent synthetic text explicitly cleared. Owned mail/test tabs closed;
+1728x900 restoration verified and viewport override reset. Physical phones/mobile
+Safari unverified. Existing 287 local unit and earlier 118 browser skips remain
+outside coverage; do not imply they passed. No agents, automation or paid resources.
+Exact elapsed/billed usage unavailable. Sanitized artifact below; resource cleanup
+and protected PR remain next. Acceptance is complete on this bounded local build.
+
+Cleanup complete: owned ingress, Next server and Redis bridge stopped; owned local
+Supabase project removed with --no-backup and Redis container removed. No owned
+listeners/containers remain. Private runtime/status/fixture data and CLI startup
+log removed. Sanitized result/comparison and test/build logs retained locally.
+React/Next review: comparison parsing memoized; URL data remains comparison-only;
+active request scope unchanged until explicit action; malformed comparison cannot
+broaden a recovered scope; default responsive entry has identical no-metadata
+behavior; existing draft/session/account boundaries unchanged. Strict chat-scope
+parser still rejects invalid scopes. No package or migration changes.
+Nine intended files, independent branch from main; next publish protected PR and
+verify exact GitHub file list before squash auto-merge. No release bypass or timer.

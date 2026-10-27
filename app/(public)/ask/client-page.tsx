@@ -10,6 +10,7 @@ import { BooksIcon, NotebookIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { ChatExportButton } from "@/components/chat/ChatExportButton";
@@ -149,6 +150,7 @@ function VerifiedAskClientPage({
         transport: chatTransport,
     });
 
+    const notesFilters = useSearchParams()?.get("notesFilters") ?? null;
     const [input, setInput] = useState("");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     // Full Ask layout follows lg app chrome behavior, not generic content desktop.
@@ -227,16 +229,18 @@ function VerifiedAskClientPage({
         const params = new URLSearchParams();
         if (returnTo) params.set("returnTo", returnTo);
         if (serializedNotesScope) params.set("notesScope", serializedNotesScope);
+        if (notesFilters) params.set("notesFilters", notesFilters);
         return params.size > 0 ? `/ask?${params.toString()}` : "/ask";
-    }, [returnTo, serializedNotesScope]);
+    }, [returnTo, serializedNotesScope, notesFilters]);
 
     const mobileNotesHref = useMemo(() => {
         const params = new URLSearchParams();
         params.set("scope", "notes");
         if (returnTo) params.set("returnTo", returnTo);
         if (serializedNotesScope) params.set("notesScope", serializedNotesScope);
+        if (notesFilters) params.set("notesFilters", notesFilters);
         return `/ask?${params.toString()}`;
-    }, [returnTo, serializedNotesScope]);
+    }, [returnTo, serializedNotesScope, notesFilters]);
 
     const showMobileAskNav = !isAskFullLayout;
     const isLibraryScope = resolvedScope === "library";
