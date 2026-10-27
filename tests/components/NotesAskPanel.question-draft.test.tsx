@@ -30,9 +30,9 @@ function contextFromLink() {
     const href = screen.getByRole('link', { name: 'Open Ask These Notes in full screen' }).getAttribute('href')!;
     return new URL(href, 'https://netflux.blog').searchParams.get('notesContext')!;
 }
-async function finish(reason = 'stop') {
+async function finish(reason = 'stop', messageId = 'answer') {
     await act(async () => {
-        for (const chunk of [{ type: 'start', messageId: 'answer' }, { type: 'text-start', id: 'text' },
+        for (const chunk of [{ type: 'start', messageId }, { type: 'text-start', id: 'text' },
             { type: 'text-delta', id: 'text', delta: 'Synthetic successful response.' },
             { type: 'text-end', id: 'text' }, { type: 'finish', finishReason: reason }]) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
@@ -270,4 +270,170 @@ it('does not broaden a recovered draft scope when comparison metadata is malform
     send(); await waitFor(() => expect(streamFetch).toHaveBeenCalledOnce());
     expect(JSON.parse(String(streamFetch.mock.calls[0][1]?.body)).scope).toEqual(scope.scope);
     await finish();
+});
+
+it('reuses the failed user turn when Send retries the exact unchanged draft', async () => {
+    streamFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await screen.findByRole('button', { name: 'Try again' });
+    expect(composer()).toHaveValue(multiline);
+    send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    const bodies = streamFetch.mock.calls.map(([, options]) => JSON.parse(options!.body as string));
+    expect(bodies.map(body => body.messages.filter((message: UIMessage) => message.role === 'user').length)).toEqual([1, 1]);
+    expect(bodies[1].trigger).toBe('regenerate-message');
+    expect(bodies[1].messages[0].id).toBe(bodies[0].messages[0].id);
+    await finish();
+    await waitFor(() => expect(composer()).toHaveValue(''));
+});
+
+it('keeps newer typing when a retry of the earlier question finishes', async () => {
+    streamFetch.mockRejectedValueOnce(new TypeError('Network interrupted'));
+    render(<NotesAskPanel variant="page" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    const newer = `${multiline}\nNewer unsent question.`;
+    fireEvent.change(composer(), { target: { value: newer } });
+    await finish();
+    expect(composer()).toHaveValue(newer);
+});
+
+it('retains exact text and the same turn when retry also fails', async () => {
+    streamFetch.mockRejectedValueOnce(new TypeError('Failed to fetch')).mockRejectedValueOnce(new TypeError('Failed again'));
+    render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await screen.findByRole('button', { name: 'Try again' }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    await screen.findByRole('button', { name: 'Try again' });
+    expect(composer()).toHaveValue(multiline);
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(3));
+    const bodies = streamFetch.mock.calls.map(([, options]) => JSON.parse(options!.body as string));
+    expect(bodies.map(body => body.messages.length)).toEqual([1, 1, 1]);
+    expect(new Set(bodies.map(body => body.messages[0].id)).size).toBe(1);
+    await finish();
+    await waitFor(() => expect(composer()).toHaveValue(''));
+});
+
+it('locks rapid mixed Send/Try again clicks before status is rendered', async () => {
+    streamFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    const retryButton = await screen.findByRole('button', { name: 'Try again' });
+    const sendButton = screen.getByRole('button', { name: 'Send notes question' });
+    act(() => { fireEvent.click(sendButton); fireEvent.click(retryButton); fireEvent.click(sendButton); });
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    expect(JSON.parse(streamFetch.mock.calls[1][1]!.body as string).messages).toHaveLength(1);
+    await finish();
+    expect(streamFetch).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(composer()).toHaveValue(''));
+});
+
+it.each([`${multiline} `, `${multiline}\nA different question.`])('treats edited text as a new turn, without global text deduplication: %s', async (edited) => {
+    streamFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await screen.findByRole('button', { name: 'Try again' });
+    fireEvent.change(composer(), { target: { value: edited } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    const body = JSON.parse(streamFetch.mock.calls[1][1]!.body as string);
+    expect(body.trigger).toBe('submit-message');
+    expect(body.messages).toHaveLength(2);
+    expect(body.messages[0].id).not.toBe(body.messages[1].id);
+    await finish();
+});
+
+it('permits intentional repeated wording after successful completion', async () => {
+    render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledOnce()); await finish();
+    await waitFor(() => expect(composer()).toHaveValue(''));
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    const body = JSON.parse(streamFetch.mock.calls[1][1]!.body as string);
+    expect(body.trigger).toBe('submit-message');
+    expect(body.messages.filter((message: UIMessage) => message.role === 'user')).toHaveLength(2);
+    await finish('stop', 'answer-two');
+});
+
+it('restores failed-turn matching when the same chat reopens in Full Ask', async () => {
+    streamFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    let view = render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    const context = contextFromLink();
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await screen.findByRole('button', { name: 'Try again' });
+    await waitFor(() => expect(readNotesChatContext(identity.owner, context)?.failedTurn?.text).toBe(multiline));
+    const first = JSON.parse(streamFetch.mock.calls[0][1]!.body as string);
+    view.unmount(); query.value = `notesContext=${context}`;
+    view = render(<NotesAskPanel variant="page" currentScope={scope} onClose={vi.fn()} />);
+    expect(composer()).toHaveValue(multiline); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    const body = JSON.parse(streamFetch.mock.calls[1][1]!.body as string);
+    expect(body.trigger).toBe('regenerate-message');
+    expect(body.messages).toHaveLength(1);
+    expect(body.messages[0].id).toBe(first.messages[0].id);
+    await finish();
+    await waitFor(() => expect(composer()).toHaveValue(''));
+});
+
+it('retains the failed chat scope until the explicit scope switch creates a new chat', async () => {
+    streamFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    const other = createNotesChatScope({ version: 1, itemType: 'all', filterQuery: 'weekly' });
+    const view = render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await screen.findByRole('button', { name: 'Try again' });
+    view.rerender(<NotesAskPanel variant="sidebar" currentScope={other} onClose={vi.fn()} />);
+    send(); await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    const retained = JSON.parse(streamFetch.mock.calls[1][1]!.body as string);
+    expect(retained.scope.filterQuery).toBe('focus');
+    expect(retained.messages).toHaveLength(1);
+    await finish(); await waitFor(() => expect(composer()).toHaveValue(''));
+    fireEvent.change(composer(), { target: { value: multiline } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Use current filters' })[0]); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(3));
+    const switched = JSON.parse(streamFetch.mock.calls[2][1]!.body as string);
+    expect(switched.scope.filterQuery).toBe('weekly');
+    expect(switched.trigger).toBe('submit-message');
+    expect(switched.messages).toHaveLength(1);
+    expect(switched.messages[0].id).not.toBe(retained.messages[0].id);
+    await finish('stop', 'switched-answer');
+});
+
+it.each(['context', 'account'])('does not reuse another %s failed turn', async (boundary) => {
+    streamFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    let view = render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    const context = contextFromLink();
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await screen.findByRole('button', { name: 'Try again' });
+    const first = JSON.parse(streamFetch.mock.calls[0][1]!.body as string);
+    view.unmount();
+    if (boundary === 'account') identity.owner = 'different-account:session-2';
+    query.value = `notesContext=${boundary === 'context' ? 'unrelated-context-0123456789' : context}`;
+    view = render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    expect(composer()).toHaveValue('');
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    const body = JSON.parse(streamFetch.mock.calls[1][1]!.body as string);
+    expect(body.trigger).toBe('submit-message');
+    expect(body.messages).toHaveLength(1);
+    expect(body.messages[0].id).not.toBe(first.messages[0].id);
+    await finish();
+});
+
+it.each(['chat', 'scope', 'message', 'text', 'completed'])('ignores an invalid %s retry hint without losing the stored draft', (mismatch) => {
+    const context = newNotesChatContext(scope);
+    context.draft = { text: multiline, revision: 2 };
+    context.messages = [{ id: 'failed-user', role: 'user', parts: [{ type: 'text', text: multiline.trim() }] }];
+    context.failedTurn = { chatId: context.chatId, scopeSignature: scope.signature, messageId: 'failed-user', text: multiline };
+    if (mismatch === 'chat') context.failedTurn.chatId = 'other-chat-0123456789';
+    if (mismatch === 'scope') context.failedTurn.scopeSignature = 'unrelated-scope';
+    if (mismatch === 'message') context.failedTurn.messageId = 'different-user';
+    if (mismatch === 'text') context.failedTurn.text = 'Different exact text';
+    if (mismatch === 'completed') context.messages.push({ id: 'completed-answer', role: 'assistant', parts: [{ type: 'text', text: 'Complete.' }] });
+    writeNotesChatContext(identity.owner, context);
+    const restored = readNotesChatContext(identity.owner, context.contextId);
+    expect(restored?.draft.text).toBe(multiline);
+    expect(restored?.failedTurn).toBeUndefined();
 });

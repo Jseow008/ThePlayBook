@@ -59,6 +59,34 @@ describe("chat deadline and delivery", () => {
         expect((await pending).status).toBe(499);
     });
 
+    it("does not deduplicate a retry while cancelled upstream work ignores the signal", async () => {
+        const controller = new AbortController();
+        let completeOriginal!: () => void;
+        let originalSignal!: AbortSignal;
+        let running = 0;
+        const original = withChatDeadline(request(controller.signal), async (_req, signal) => {
+            originalSignal = signal;
+            running++;
+            await new Promise<void>(resolve => { completeOriginal = resolve; });
+            running--;
+            return Response.json({ original: true });
+        });
+        controller.abort();
+        expect((await original).status).toBe(499);
+        expect(originalSignal.aborted).toBe(true);
+        expect(running).toBe(1);
+        const retry = await withChatDeadline(request(), async () => {
+            // A separate request has no shared operation identity or lock.
+            expect(running).toBe(1);
+            return Response.json({ retry: true });
+        });
+        expect(retry.status).toBe(200);
+        await retry.text();
+        completeOriginal();
+        await Promise.resolve();
+        expect(running).toBe(0);
+    });
+
     it("reports interrupted UI streams without pretending the partial answer finished", async () => {
         vi.useFakeTimers();
         const cancel = vi.fn();

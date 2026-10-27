@@ -6,7 +6,7 @@ import type { NotesChatScopePayload } from '@/lib/notes-chat-scope';
 import { readNotesChatSession, writeNotesChatSession } from '@/lib/notes-chat-session';
 import {
     findFallbackNotesChatContext, newNotesChatContext, readNotesChatContext, writeNotesChatContext,
-    type NotesChatContext,
+    type NotesChatContext, type NotesFailedTurn,
 } from '@/lib/notes-chat-context';
 
 function resolveContext(owner: string, scope: NotesChatScopePayload, requested: string | null): NotesChatContext {
@@ -67,11 +67,11 @@ export function useNotesQuestionDraft(owner: string, scope: NotesChatScopePayloa
         persist(next);
         setDraft(next.draft);
     };
-    const saveTranscript = useCallback((activeScope: NotesChatScopePayload, messages: UIMessage[]) => {
+    const saveTranscript = useCallback((activeScope: NotesChatScopePayload, messages: UIMessage[], failedTurn?: NotesFailedTurn | null) => {
         if (!isCurrent(owner)) return;
         const current = readNotesChatContext(owner, initial.contextId) ?? latest.current;
         if (current.chatId !== chatId) return;
-        persist({ ...current, activeScope, messages, updatedAt: Date.now() });
+        persist({ ...current, activeScope, messages, failedTurn, updatedAt: Date.now() });
     }, [chatId, initial.contextId, isCurrent, owner, persist]);
     const reset = (activeScope: NotesChatScopePayload, keepQuestion: boolean) => {
         if (!isCurrent(owner)) return;
