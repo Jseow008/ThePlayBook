@@ -19,6 +19,7 @@ import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskP
 import type { LibrarySnapshot } from "@/lib/server/library-snapshot";
 import { createNotesChatScope, serializeNotesChatScope } from "@/lib/notes-chat-scope";
 import { useVerifiedChatSession } from "@/hooks/useVerifiedChatSession";
+import { ChatSessionStatus } from "@/components/ai/ChatSessionStatus";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 
 const chatTransport = new DefaultChatTransport({ api: "/api/chat" });
@@ -126,8 +127,8 @@ interface AskClientPageProps {
 }
 
 export function AskClientPage(props: AskClientPageProps) {
-    const { ownerKey, isCurrent, resolved } = useVerifiedChatSession();
-    if (!ownerKey) return <p role="status" className="p-4 text-sm text-muted-foreground">{resolved ? <Link href="/login">Sign in to start a private chat.</Link> : "Verifying your chat session…"}</p>;
+    const { ownerKey, isCurrent, resolved, verificationState = "verified", retryVerification = () => {} } = useVerifiedChatSession({ retainUnverifiedOwner: props.scope === "notes" });
+    if (!ownerKey) return <div className="p-4"><ChatSessionStatus state={verificationState === "verified" ? (resolved ? "signed-out" : "checking") : verificationState} onRetry={retryVerification} initial /></div>;
     const accountMatches = !props.initialAccountId || JSON.parse(ownerKey)[0] === props.initialAccountId;
     return <VerifiedAskClientPage key={ownerKey} {...props} initialLibrarySnapshot={accountMatches ? props.initialLibrarySnapshot : undefined} ownerKey={ownerKey} isCurrent={isCurrent} />;
 }

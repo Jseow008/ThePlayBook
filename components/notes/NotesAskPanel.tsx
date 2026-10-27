@@ -27,7 +27,8 @@ import { parseNotesFilterSnapshot, serializeNotesChatScope, type NotesChatScopeP
 import {
     clearNotesChatSession,
 } from "@/lib/notes-chat-session";
-import { useVerifiedChatSession } from "@/hooks/useVerifiedChatSession";
+import { useVerifiedChatSession, type ChatSessionVerification } from "@/hooks/useVerifiedChatSession";
+import { ChatSessionStatus } from "@/components/ai/ChatSessionStatus";
 import { useNotesQuestionDraft } from "@/hooks/useNotesQuestionDraft";
 import { parseNotesContextId, withNotesContext, type NotesFailedTurn } from "@/lib/notes-chat-context";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
@@ -222,14 +223,14 @@ function ScopeChangedBanner({
 }
 
 export function NotesAskPanel(props: NotesAskPanelProps) {
-    const { ownerKey, isCurrent, resolved } = useVerifiedChatSession();
+    const { ownerKey, isCurrent, resolved, verificationState = "verified", retryVerification = () => {} } = useVerifiedChatSession({ retainUnverifiedOwner: true });
     const params = useSearchParams();
     const returned = params?.get("returnTo");
     const returnedContext = returned?.startsWith("/notes?")
         ? new URL(returned, "https://notes.invalid").searchParams.get("notesContext") : null;
     const requested = parseNotesContextId(props.contextId ?? params?.get("notesContext") ?? returnedContext);
-    if (!ownerKey) return <p role="status" className="p-4 text-sm text-muted-foreground">{resolved ? <Link href="/login">Sign in to start a private chat.</Link> : "Verifying your chat session…"}</p>;
-    return <VerifiedNotesAskPanel key={`${ownerKey}:${requested ?? "current"}`} {...props} contextId={requested} ownerKey={ownerKey} isCurrent={isCurrent} />;
+    if (!ownerKey) return <div className="p-4"><ChatSessionStatus state={verificationState === "verified" ? (resolved ? "signed-out" : "checking") : verificationState} onRetry={retryVerification} initial /></div>;
+    return <VerifiedNotesAskPanel key={`${ownerKey}:${requested ?? "current"}`} {...props} contextId={requested} ownerKey={ownerKey} isCurrent={isCurrent} verificationState={verificationState} retryVerification={retryVerification} />;
 }
 
 function VerifiedNotesAskPanel({
@@ -243,7 +244,9 @@ function VerifiedNotesAskPanel({
     variant = "default",
     ownerKey,
     isCurrent,
-}: NotesAskPanelProps & { ownerKey: string; isCurrent: (key: string) => boolean }) {
+    verificationState,
+    retryVerification,
+}: NotesAskPanelProps & { ownerKey: string; isCurrent: (key: string) => boolean; verificationState: ChatSessionVerification; retryVerification: () => void }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const rawFilterSnapshot = variant === "page" ? searchParams?.get("notesFilters") ?? null : null;
@@ -350,6 +353,7 @@ function VerifiedNotesAskPanel({
     }, [input]);
 
     const isStreaming = status === "streaming" || status === "submitted";
+    const sessionReady = verificationState === "verified";
     const displayErrorMessage = getDisplayErrorMessage(error);
     const isEmptyState = messages.length === 0;
     const hasScopeChanged = (messages.length > 0 || Boolean(notesFiltersScope))
@@ -404,7 +408,7 @@ function VerifiedNotesAskPanel({
     ) : null;
 
     const runQuestion = async (turn: NotesFailedTurn, reuse: boolean) => {
-        if (pendingQuestionRef.current || isStreaming || !activeScope.scope || !isCurrent(ownerKey)) return;
+        if (!sessionReady || pendingQuestionRef.current || isStreaming || !activeScope.scope || !isCurrent(ownerKey)) return;
         // Promise resolution also happens for SDK errors. Only a valid finish may
         // clear this exact submitted revision; newer edits remain recoverable.
         const attempt: QuestionAttempt = { ...turn, ownerKey,
@@ -572,7 +576,7 @@ function VerifiedNotesAskPanel({
                                                             type="button"
                                                             onClick={() => void sendPrompt(prompt)}
                                                             className="rounded-full border border-border/70 bg-background/75 px-3 py-1.5 text-[0.72rem] text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5 sm:py-2 sm:text-xs"
-                                                            disabled={isStreaming || !activeScope.scope}
+                                                            disabled={!sessionReady || isStreaming || !activeScope.scope}
                                                         >
                                                             {prompt}
                                                         </button>
@@ -641,6 +645,7 @@ function VerifiedNotesAskPanel({
                                                             key={action.label}
                                                             type="button"
                                                             onClick={() => void sendPrompt(action.prompt)}
+                                                            disabled={!sessionReady || isStreaming || !activeScope.scope}
                                                             className="rounded-full border border-border/65 bg-background/80 px-3 py-1.5 text-[0.7rem] font-medium text-muted-foreground transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground sm:text-[0.72rem]"
                                                         >
                                                             {action.label}
@@ -673,7 +678,7 @@ function VerifiedNotesAskPanel({
                                             <p className="text-[0.9rem] font-medium text-destructive sm:text-sm">
                                                 {displayErrorMessage}
                                             </p>
-                                            <button type="button" onClick={() => void retry()} className="mt-2 text-sm font-medium underline underline-offset-4" disabled={isStreaming}>Try again</button>
+                                            <button type="button" onClick={() => void retry()} className="mt-2 text-sm font-medium underline underline-offset-4" disabled={!sessionReady || isStreaming}>Try again</button>
                                         </div>
                                     </div>
                                 )}
@@ -706,6 +711,7 @@ function VerifiedNotesAskPanel({
                             </div>
                         </div>
 
+                        {!sessionReady && <div className="mb-2"><ChatSessionStatus state={verificationState} onRetry={retryVerification} /></div>}
                         <form
                             onSubmit={onSubmit}
                             className="relative flex items-end gap-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50"
@@ -729,7 +735,7 @@ function VerifiedNotesAskPanel({
                             <div className="mb-2 mr-2">
                                 <button
                                     type="submit"
-                                    disabled={!input.trim() || isStreaming || !activeScope.scope}
+                                    disabled={!sessionReady || !input.trim() || isStreaming || !activeScope.scope}
                                     className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label="Send notes question"
                                 >
@@ -898,7 +904,7 @@ function VerifiedNotesAskPanel({
                                                     "rounded-full border border-border/70 bg-background/75 px-3 py-1.5 text-xs text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
                                                     isSidebar && "px-3.5 py-2 text-[0.76rem]"
                                                 )}
-                                                disabled={isStreaming || !activeScope.scope}
+                                                disabled={!sessionReady || isStreaming || !activeScope.scope}
                                             >
                                                 {prompt}
                                             </button>
@@ -976,7 +982,8 @@ function VerifiedNotesAskPanel({
                                                 key={action.label}
                                                 type="button"
                                                 onClick={() => void sendPrompt(action.prompt)}
-                                                className="rounded-full border border-border/65 bg-background/80 px-3 py-1.5 text-[0.72rem] font-medium text-muted-foreground transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground"
+                                                disabled={!sessionReady || isStreaming || !activeScope.scope}
+                                                className="rounded-full border border-border/65 bg-background/80 px-3 py-1.5 text-[0.72rem] font-medium text-muted-foreground transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                                             >
                                                 {action.label}
                                             </button>
@@ -1008,7 +1015,7 @@ function VerifiedNotesAskPanel({
                                 <p className="text-sm font-medium text-destructive">
                                     {displayErrorMessage}
                                 </p>
-                                <button type="button" onClick={() => void retry()} className="mt-2 text-sm font-medium underline underline-offset-4" disabled={isStreaming}>Try again</button>
+                                <button type="button" onClick={() => void retry()} className="mt-2 text-sm font-medium underline underline-offset-4" disabled={!sessionReady || isStreaming}>Try again</button>
                             </div>
                         </div>
                     )}
@@ -1066,6 +1073,7 @@ function VerifiedNotesAskPanel({
                     ) : null}
                 </div>
 
+                {!sessionReady && <div className="mb-2"><ChatSessionStatus state={verificationState} onRetry={retryVerification} /></div>}
                 <form
                     onSubmit={onSubmit}
                     className="relative flex items-end gap-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50"
@@ -1089,7 +1097,7 @@ function VerifiedNotesAskPanel({
                     <div className="mb-2 mr-2">
                         <button
                             type="submit"
-                            disabled={!input.trim() || isStreaming || !activeScope.scope}
+                            disabled={!sessionReady || !input.trim() || isStreaming || !activeScope.scope}
                             className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                             aria-label="Send notes question"
                         >

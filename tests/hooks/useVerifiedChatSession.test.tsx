@@ -1,3 +1,4 @@
+import { AuthRetryableFetchError } from '@supabase/supabase-js';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { useVerifiedChatSession } from '@/hooks/useVerifiedChatSession';
@@ -110,4 +111,122 @@ it('notifies transcript persistence after an ordinary refresh finishes', async (
     expect(result.current.ownerKey).toBe(owner);
     expect(result.current.isCurrent).not.toBe(before);
     expect(result.current.isCurrent(owner)).toBe(true);
+});
+
+it('distinguishes a slow recheck from failure and still accepts its eventual verified result', async () => {
+    const { result } = renderHook(() => useVerifiedChatSession());
+    await waitFor(() => expect(result.current.verificationState).toBe('verified'));
+    const owner = result.current.ownerKey!;
+    let finish!: (value: ReturnType<typeof claims>) => void;
+    auth.getClaims.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    vi.useFakeTimers();
+    try {
+        await emit('SIGNED_IN', session());
+        expect(result.current.verificationState).toBe('checking');
+        expect(result.current.ownerKey).toBe(owner); expect(result.current.isCurrent(owner)).toBe(false);
+        await act(async () => { await vi.advanceTimersByTimeAsync(9_999); });
+        expect(result.current.verificationState).toBe('checking');
+        await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+        expect(result.current.verificationState).toBe('slow');
+        expect(result.current.isCurrent(owner)).toBe(false);
+        await act(async () => { finish(claims()); });
+        expect(result.current.verificationState).toBe('verified'); expect(result.current.isCurrent(owner)).toBe(true);
+    } finally { vi.useRealTimers(); }
+});
+
+it('offers recovery when initial session lookup hangs, and fences the abandoned lookup', async () => {
+    let finish!: (value: { data: { session: ReturnType<typeof session> } }) => void;
+    auth.getSession.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    vi.useFakeTimers();
+    try {
+        const { result } = renderHook(() => useVerifiedChatSession());
+        await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
+        expect(result.current.verificationState).toBe('slow');
+        await act(async () => { result.current.retryVerification(); result.current.retryVerification(); });
+        expect(auth.getSession).toHaveBeenCalledTimes(2);
+        expect(result.current.verificationState).toBe('verified');
+        auth.getClaims.mockResolvedValue(claims('b', 'stale-session'));
+        await act(async () => { finish({ data: { session: session('b') } }); });
+        expect(result.current.ownerKey).toBe(JSON.stringify(['a', 'session-one']));
+        expect(auth.getClaims).toHaveBeenCalledOnce();
+    } finally { vi.useRealTimers(); }
+});
+
+it('retains only the unverified owner on service failure and explicitly rechecks the current session', async () => {
+    const { result } = renderHook(() => useVerifiedChatSession({ retainUnverifiedOwner: true }));
+    await waitFor(() => expect(result.current.verificationState).toBe('verified'));
+    const owner = result.current.ownerKey!;
+    const scope = createNotesChatScope({ version: 1, itemType: 'all' });
+    writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    auth.rpc.mockResolvedValueOnce({ data: null, error: { code: '503', message: 'Unavailable' } });
+    await emit('TOKEN_REFRESHED', session());
+    expect(result.current.verificationState).toBe('failed'); expect(result.current.ownerKey).toBe(owner);
+    expect(result.current.isCurrent(owner)).toBe(false); expect(readNotesChatSession(owner, scope.signature)).not.toBeNull();
+    await act(async () => { result.current.retryVerification(); });
+    expect(auth.getSession).toHaveBeenCalledTimes(2); expect(result.current.verificationState).toBe('verified');
+});
+
+it('hides and clears the old account before recovery verifies a changed account', async () => {
+    const { result } = renderHook(() => useVerifiedChatSession({ retainUnverifiedOwner: true }));
+    await waitFor(() => expect(result.current.verificationState).toBe('verified'));
+    const owner = result.current.ownerKey!;
+    const scope = createNotesChatScope({ version: 1, itemType: 'all' });
+    writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    auth.rpc.mockResolvedValueOnce({ data: null, error: { code: '503' } }); await emit('SIGNED_IN', session());
+    let finish!: (value: ReturnType<typeof claims>) => void;
+    auth.getSession.mockResolvedValueOnce({ data: { session: session('b') }, error: null });
+    auth.getClaims.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    auth.getUser.mockResolvedValueOnce({ data: { user: { id: 'b' } }, error: null });
+    await act(async () => { result.current.retryVerification(); });
+    expect(result.current.ownerKey).toBeNull(); expect(result.current.verificationState).toBe('checking');
+    expect(result.current.isCurrent(owner)).toBe(false); expect(readNotesChatSession(owner, scope.signature)).toBeNull();
+    await act(async () => { finish(claims('b', 'session-two')); });
+    expect(result.current.ownerKey).toBe(JSON.stringify(['b', 'session-two']));
+});
+
+it('ignores late old-session completion after slow-check recovery changes session identity', async () => {
+    const { result } = renderHook(() => useVerifiedChatSession());
+    await waitFor(() => expect(result.current.verificationState).toBe('verified'));
+    const previous = result.current.ownerKey!;
+    let finish!: (value: ReturnType<typeof claims>) => void;
+    auth.getClaims.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    vi.useFakeTimers();
+    try {
+        await emit('SIGNED_IN', session()); await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
+        auth.getClaims.mockResolvedValue(claims('a', 'replacement'));
+        await act(async () => { result.current.retryVerification(); });
+        expect(result.current.ownerKey).toBe(JSON.stringify(['a', 'replacement']));
+        await act(async () => { finish(claims()); });
+        expect(result.current.isCurrent(previous)).toBe(false); expect(result.current.verificationState).toBe('verified');
+        expect(result.current.ownerKey).toBe(JSON.stringify(['a', 'replacement']));
+    } finally { vi.useRealTimers(); }
+});
+
+
+it('retains the original unverified identity on retryable auth transport failure but clears it on rejection', async () => {
+    const { result } = renderHook(() => useVerifiedChatSession({ retainUnverifiedOwner: true }));
+    await waitFor(() => expect(result.current.verificationState).toBe('verified'));
+    const owner = result.current.ownerKey!;
+    const scope = createNotesChatScope({ version: 1, itemType: 'all' });
+    writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    auth.getUser.mockResolvedValueOnce({ data: { user: null }, error: new AuthRetryableFetchError('Synthetic offline', 0) });
+    await emit('TOKEN_REFRESHED', session());
+    expect(result.current.verificationState).toBe('failed'); expect(result.current.ownerKey).toBe(owner);
+    expect(result.current.isCurrent(owner)).toBe(false);
+    auth.rpc.mockResolvedValueOnce({ data: null, error: { code: '42501' } });
+    await act(async () => { result.current.retryVerification(); });
+    expect(result.current.ownerKey).toBeNull(); expect(result.current.verificationState).toBe('signed-out');
+    expect(readNotesChatSession(owner, scope.signature)).toBeNull();
+});
+
+
+it('preserves default consumers’ prior cache-clearing behavior on completed service failure', async () => {
+    const { result } = renderHook(() => useVerifiedChatSession());
+    await waitFor(() => expect(result.current.verificationState).toBe('verified'));
+    const owner = result.current.ownerKey!;
+    const scope = createNotesChatScope({ version: 1, itemType: 'all' });
+    writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    auth.rpc.mockResolvedValueOnce({ data: null, error: { code: '503' } }); await emit('SIGNED_IN', session());
+    expect(result.current.ownerKey).toBeNull(); expect(result.current.verificationState).toBe('failed');
+    expect(result.current.isCurrent(owner)).toBe(false); expect(readNotesChatSession(owner, scope.signature)).toBeNull();
 });

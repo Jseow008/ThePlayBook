@@ -1873,3 +1873,198 @@ alias for the merge SHA, then use CUA and existing authenticated session to cut
 one synthetic submission and verify unchanged Send has one visible question and
 one copy in the actual retry request. No model-call exactly-once claim; no paid
 resources or saved-note edits. Original no-op attempt stays in final limitations.
+
+
+### Bounded Send/session-readiness investigation — 27 October 2026
+
+User requested investigation only, no implementation. Worktree `/tmp/netflux-ask-retry-same-turn`, branch `codex/ask-retry-same-turn`, HEAD `3227f05f`; fetched origin/main is `f74acd33fc52ab284aa59adc8bba470754e79953`. NotesAskPanel, useVerifiedChatSession, useNotesQuestionDraft and useReliableChat have no diff against that main revision. Existing report edits preserved. No product edits, dependency changes, production requests, real account changes or model calls.
+
+Confirmed controlled-browser defect: after an already verified account receives same-session SIGNED_IN or TOKEN_REFRESHED, useVerifiedChatSession clears verified.current while leaving ownerKey mounted. NotesAskPanel's Send disabled condition does not include pending session verification; runQuestion silently returns at !isCurrent(ownerKey). Expected: visible readiness state and no apparently actionable Send until checks finish. Actual: enabled Send records both native click and form submission, starts no /api/chat/notes request, gives no new feedback, and preserves exact text. This is verification-blocked submission, not a missed click or a failed request.
+
+Method: temporary Vite fixture `/tmp/netflux-send-readiness-review` imports unchanged real NotesAskPanel, useVerifiedChatSession, useNotesQuestionDraft, useReliableChat and AI chat transport. It mocks the Supabase boundary with controlled delayed responses and auth callbacks; Next navigation/link are adapters. Local /api/chat/notes returns synthetic HTTP400; Playwright blocks all non-loopback requests. Headless desktop Chrome at1280x900, both page and sidebar variants. No claim of full Next-route/production or visual styling fidelity. Synthetic auth events model rechecks; they were not naturally emitted by a live expired/inactive session. Installed Supabase GoTrueClient source shows visibility return invoking recovery, which can emit SIGNED_IN, supporting plausibility without establishing historical attribution.
+
+Reproductions/results:
+1. Seed exact multiline synthetic draft; reload with initial verification held: both variants show Verifying your chat session, have no Send button and start no request. Release: exact stored question returns. No initial-loading no-op reproduced.
+2. After readiness, move focus to another browser tab and back; explicitly emit same-session SIGNED_IN with verification held. In both variants Send remains enabled, click+submit are captured, request count unchanged, UI unchanged, exact draft retained. Add newer text, finish checks and click again: one request, visible synthetic rejection, newer exact text retained.
+3. Take browser context offline; explicitly emit TOKEN_REFRESHED with verification held. Both variants have the same silent blocked submission. Add newer text, reconnect and finish checks: one request and honest synthetic rejection, newer exact draft retained. This tests a recheck spanning interruption, not a real provider/network failure or proof reconnect alone emits this event.
+4. Sidebar final reload after finishing its simulated verification restores exact text.
+
+Confidence high for the same-session readiness mismatch, reproduced in both component variants and both controlled recheck events. Frequency during real inactivity/reconnection and connection to original production no-op remain unknown. No conclusion about duplicate server-side processing.
+
+Artifacts: `/tmp/netflux-send-readiness-review/first-attempt.json` retains Full Ask results plus an unsuccessful final reload assertion: harness URL still had delay=1, so initial verification remained deliberately blocked and no textbox appeared. Corrected harness releases that gate; second run exercised sidebar and final reload, saved `results.json`. No failed product attempt relabeled. No browser page errors in either run. Existing focused tests: 51 passed across useVerifiedChatSession and NotesAskPanel.question-draft. Those passes do not cover or negate the browser mismatch. No new test committed.
+
+Smallest proposed correction: expose reactive pending-verification state from session hook, visibly show Checking your session and disable Send/Try again while it is pending. Keep textarea/editing and draft preservation, account/session validation and last-moment submit guard intact; do not auto-send when checks finish. Existing resolved flag alone is insufficient because it stays true during same-session rechecks. Apply to both composer variants and keyboard submission; failure should have clear sign-in/retry feedback. Verification acceptance: same-session recheck is visible and blocks action, completion reenables it, exact/newer drafts preserved, revoked/account-switched sessions remain blocked. Recommendation only, no fix implemented.
+
+One agent; two bounded browser runs (one harness correction), no full-suite or paid calls. Browser contexts closed and owned local server stopped. Fixture source and safe results retained for review, all identities/tokens synthetic. Remaining: optional live confirmation of spontaneous rechecks; implementation requires separate authorization. Phones/Safari/long inactivity/real auth outages and original no-op attribution remain unverified.
+
+### Approved session-readiness correction — 27 October 2026
+
+Independent branch codex/ask-session-readiness at /tmp/netflux-ask-session-readiness,
+fresh origin/main f74acd33. Previous worktree's local release record remains intact;
+only its relevant bounded-readiness investigation was carried into this checkpoint.
+User approved visible pending state, all submission controls blocked, editing/drafts
+preserved, no automatic sending, explicit recovery with account/session isolation.
+
+Implemented reactive checking/slow/failed/verified/signed-out states in the existing
+session hook. Each check offers recovery at10 seconds if still pending; slow means
+waiting, not an asserted failure. A returned transport/service error offers recovery
+immediately with distinct wording. Original check may still succeed while slow;
+explicit recovery supersedes it via generation identity and re-reads the current
+session. Rapid recovery clicks are gated synchronously. All three verification
+checks remain required; no timer or retry authorizes submission. Confirmed auth/
+permission rejection still clears the prior cache. Retryable transport/service
+failure retains only the original unverified owner's local draft, with submission
+blocked; different-account recovery clears old context before new checks, and a
+verified replacement session rotates owner/context. Never auto-send after recovery.
+
+Full Ask initial gate and Notes composer variants share the readiness message.
+Send/Try again, Enter/form handlers, starter and follow-up submission prompts are
+blocked while unverified. Editing remains available for an existing identity;
+scope, layout when ready, matching, API/provider work, database/schema and dependency
+versions unchanged. Shared hook consumers are included in regression tests.
+
+Before fix, both integrated component variants failed the enabled-Send regression
+(/tmp/netflux-session-readiness-red.log). First changed run73 passed; acceptance90
+passed across6 files. Full local unit run2041 passed,287 skipped plus34 capacity
+passed; full lint/ratchets and Next production build/trace/CSS passed. Added two
+further auth/error/initial recovery tests afterward:23 tests in their two files
+passed. They change tests only; a second broad unchanged run is not needed. Final
+required hosted suite must validate the final candidate. Typecheck/final targeted
+lint passed. React checklist applied: unconditional hooks, concurrent
+independent verification calls, cleanup of timers/subscriptions, no automatic send,
+owner/generation guards, accessible status and native disabled controls.
+
+Built local browser fixture /tmp/netflux-session-readiness-verification imports
+actual changed components/hook/transport, with synthetic controlled auth only.
+CUA is the sole browser-control API used in this implementation run. A first Vite
+build failed because /tmp vs /private/tmp canonical roots caused an invalid emitted
+HTML path; the server initially served404. Canonicalized fixture roots, rebuilt,
+preflight returned200 and browser loaded. Retained failed build.log and successful
+build-verified.log. This setup issue is not an application finding. Lightweight
+fixture styles are not production layout-fidelity evidence. No production data,
+real account, live provider, paid resource, database/service container or automation.
+
+CUA observations so far: held initial reload hides Send; at10 seconds slow-check
+feedback offers Check again. Explicit recovery plus completing held checks restores
+exact multiline/spaced/Unicode stored draft with0 chat requests. Full Ask recheck
+visibly disables all starters/Send; Enter sends0 requests, newer text survives.
+Finishing recheck enables Send without auto-submission. One deliberate Send gets
+an honest synthetic503. Existing Try again is disabled during another recheck;
+service failure shows distinct failure/recovery text with editing still enabled.
+Recovery configured for account B clears account A draft/transcript before any
+submission. B's deliberate request has exactly1 B question/new message ID. Releasing
+late old A check does not restore A text. Sidebar pending Enter similarly sends0;
+service failure and same-session explicit recovery preserve newer exact text and
+do not submit automatically. Request record remains2 at this checkpoint.
+
+Next: finish sidebar/account-change/mobile/sign-out browser cases, save evidence
+and cleanup, inspect final scope, commit/publish protected PR and enable normal
+squash auto-merge only after PR scope passes. Original production no-op attribution,
+physical devices/Safari, natural inactivity frequency, production auth outages and
+duplicate server-side model execution remain outside this correction's evidence.
+
+
+Final controlled browser evidence:17 recorded cases passed, including sidebar
+account change hiding old text immediately, late completion fenced, responsive
+Chrome390x844 showing distinct pending/slow feedback while editing, successful
+completion preserving exact text, and synthetic sign-out hiding the draft even
+after old held checks finish. Exactly3 deliberate chat POSTs occurred, each after
+verification; each contains one expected synthetic question, correct hash, and its
+own new message ID. No automatic or blocked-submit request was recorded. The B
+request contains only B's question. request-comparison.json and requests.jsonl
+record safe counts/IDs/hashes; browser-results.json records UI assertions. Browser
+console warnings/errors empty. Viewport reset from390x844 to original1728x992,
+all own tabs closed, own static fixture listener3081 stopped. No real account or
+saved note was edited; sign-out was a synthetic fixture event only.
+
+Artifacts: /tmp/netflux-session-readiness-verification/full-ask-checking.png,
+responsive-slow.png, browser-results.json, request-comparison.json,
+expected-request-hashes.json, requests.jsonl, build-verified.log. No private text
+or real credentials in these files. Browser fixture source retained for review;
+only loopback requests and controlled503 response, no provider/database connection.
+Full Next production build independently passed with synthetic build-only keys;
+no real backend or production mutation. Bundle and style trace checks passed.
+Source review found no auto-submit path or relaxation of last-moment/account
+validation; ready layout unchanged. Follow-up button disabled styling is cosmetic
+only and is finalized before publication. Required CI/security remain outstanding.
+
+Final candidate validation:92 focused tests passed across6 files, final typecheck
+passed, and the production build was repeated successfully after final disabled
+follow-up styling was applied. Full lint/ratchets had passed; targeted ESLint also
+passed on the changed source/tests. No second full suite was run merely to change
+a verdict; the earlier full run passed and the only later behavioral inputs were
+two added tests, both passing in the final focused run. First and final Next builds
+both passed; second was justified by a final style-only change. Full required
+hosted suite remains the final gate. No product regression failure occurred after
+implementation; the before-fix red regression and fixture-path failure stay above.
+
+Security review: recovery never grants readiness from getSession alone. Claims,
+remote user identity and live auth.sessions RPC must all agree before isCurrent
+becomes true. Same-account replacement session uses a new owner key; different
+account clears old cache before asynchronous verification; sign-out clears
+immediately. Timers, subscriptions and superseded asynchronous callbacks are
+cleaned/fenced. No user_metadata authorization, secret exposure, RLS/schema,
+permission, storage bucket or database-write change. No new paid/hosted resource
+required for this client readiness correction. Original production observation
+remains unattributed and server/provider execution semantics remain unchanged.
+
+Publication next: exactly8 intended files (Ask page, Notes panel, new status
+component, existing session hook, three related test files and this checkpoint),
+commit from f74acd33, verify GitHub scope, then normal squash auto-merge after PR
+scope passes. No timer/follow-up automation requested or created. Local post-release
+record in previous worktree remains untouched. One agent; two Vite build attempts
+(one canonical-path correction), one full unit run, focused acceptance progression,
+two successful Next builds, one CUA browser replay. Exact billed/elapsed usage
+unavailable; no application-provider usage or paid resources.
+
+#### Compatibility review correction before PR creation
+
+Source review caught that unconditional retention on completed transient failure
+would also change Library Ask/Evidence consumers' previous cache-clearing behavior.
+Added an opt-in retainUnverifiedOwner policy: NotesAskPanel opts in, and the outer
+Ask page opts in only for scope=notes. Other consumers keep prior clear-on-failure
+behavior. Full verification is still mandatory and no unverified identity permits
+submission. Added an explicit default-policy regression; updated three hook tests
+to declare the Notes retention policy. This is containment of the approved Notes
+behavior, not a new Library/Evidence feature. No PR/automerge was enabled for the
+initial pushed commit before this review correction.
+
+All93 focused tests passed. Final CUA smoke against rebuilt components passed5
+additional cases: Notes failure retention, same-owner recovery without submission,
+same-account replacement-session draft isolation, ten-second slow feedback, and
+slow recovery to account B with late old completion fenced. No additional chat
+POST: request record remains exactly3. Browser tabs closed and restarted fixture
+listener stopped. final-browser-results.json/build-final.log retain this evidence.
+
+After this real hook-policy change, repeated full validation was justified.
+Lint/typecheck passed. Second full unit run:2042 passed,2 failed,287 skipped. Both
+failures were whole-test5000ms timeouts, not an incorrect-value assertion:
+NotesAskPanel.question-draft account-boundary case (5412ms) and ReaderView stale
+heading-duplicate quotation case (5978ms). The account test mocks the session hook;
+its compatibility option is ignored by that mock. No matching/reader source changed.
+A passing targeted run does not prove timing cause; it remains unassigned pending
+full hosted gate. Browser fixture was active during this run, so cannot exclude
+host contention. Do not repeat the whole suite unchanged or increase timeouts.
+Stopped own fixture and queued one isolated diagnostic of just the two failed
+files. Preserve /tmp/netflux-session-readiness-compat-full.log and diagnostic result.
+Required CI/security must validate the final candidate before merging; no bypass.
+
+Isolated diagnostic completed: both affected files passed122/122 tests without
+source/test/timeout changes. This supports a timing observation but does not erase
+the two full-run timeouts or establish host contention. No third full local suite
+queued. Final compatibility production build running sequentially after tests,
+because hook policy changed; required hosted full suite remains mandatory. PR body
+now explicitly records final local2042 passes/2 timeouts/287 skips,93 focused passes
+and122 isolated passes. No claim of a green final full local suite.
+
+Final compatibility candidate: production build/trace/CSS passed sequentially
+following the isolated diagnostic. All5 final browser smoke checks passed against
+the rebuilt opt-in implementation and introduced0 chat requests. Shared consumer
+failure policy regression passes; Notes identity/account/session/draft protections
+remain verified in controlled tests. No active own browser tab or3081 listener.
+Record of2 full local runs retained: first2041 passed; final2042 passed/2 timed out,
+with287 skips each. Do not present first run as proof of final full suite. Final93
+focused/122 isolated passes do not replace required CI/security. Total Vite builds3
+(initial path error, correction, compatibility rebuild); Next builds3 (initial,
+style finalization, real hook-policy containment), all Next builds passed. No
+broader unchanged reruns, new agents, timers, paid resources or provider calls.

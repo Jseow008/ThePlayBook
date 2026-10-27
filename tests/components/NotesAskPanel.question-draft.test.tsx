@@ -526,7 +526,7 @@ it('accepts Send after scope cancellation even when old transport work finishes 
     await finish('stop', 'after-scope-answer');
 });
 
-it('retains the draft through an enabled Send during session re-verification and accepts Send once verified', async () => {
+it('keeps the final identity guard when verification changes before the next render', async () => {
     render(<NotesAskPanel variant="page" currentScope={scope} onClose={vi.fn()} />);
     fireEvent.change(composer(), { target: { value: multiline } });
     identity.valid = false;
