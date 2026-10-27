@@ -1796,3 +1796,80 @@ remain separate. Next: inspect seven-file commit scope, publish protected PR,
 verify GitHub file list/PR scope, then enable normal squash auto-merge gated by
 validate and Security Validation. No production promotion/monitoring authorized
 by this local fix scope.
+
+#### Publication checkpoint — 27 October 2026, 06:07 UTC
+
+Published ready PR https://github.com/Jseow008/ThePlayBook/pull/289 from commit
+848cae2244c73ec018458dfcfb65c469a4f880d1, base6176131c. One intended application
+commit and exactly the seven recorded files confirmed locally and through
+`gh pr diff 289 --name-only`. GitHub connector creation returned403 (integration
+permission), so used existing authenticated gh connection; created PR attached
+to this task. PR scope run40459139744 passed. Protected SQUASH auto-merge enabled
+and verified; PR remains OPEN. CI40459139800 and Security Gates40459139662 are
+IN_PROGRESS, no failing gate reported at checkpoint. No bypass or production
+promotion. Existing route/call/accounting behavior unchanged, so no database
+migration or paid hosted resource required. This publication checkpoint remains
+local evidence to avoid restarting otherwise unchanged final CI.
+
+Exact next action: required hosted gates complete and govern merge; if a gate
+fails, inspect its actual failure and preserve the hold rather than retrying an
+unchanged failure repeatedly. Production and device coverage remain separate.
+No follow-up timer created or resumed. Local full-suite FocusFeed failure and
+one no-op Send activation attempt remain explicitly outside passing evidence.
+
+### Follow-up: lock lifecycle and no-op Send — 27 October 2026
+
+User requested investigation before closure and a deployment-pinned public retry
+check. Temporarily disabled #289 auto-merge while verifying lifecycle; no required
+checks cancelled. Application code remains848cae22; added six maintained diagnostic
+regressions in the existing draft test file. Sixty-one tests now pass across the
+same four files (previous55 plus6), with typecheck and targeted ESLint passing.
+
+Lock audit: the ref is initialized null on mount and is not serialized. Every
+settled send/regenerate Promise clears only its own attempt in finally, including
+success, repeated failure and AbortError. Scope/new-chat reset explicitly releases
+it and replaces/aborts the SDK chat; late older work cannot clear a newer ref.
+Confirmed Send can follow success, two failures with an edited question,
+transport cancellation, and New chat after failure. In-flight scope cancellation
+followed by new Send works even when the old transport finishes later; subsequent
+Send still works. Existing tests cover mixed rapid retry locking and account/chat/
+scope ownership. These results do not prove all possible browser timing cases.
+
+One initial diagnostic assumed New chat is available during streaming and failed:
+its button is deliberately disabled, so no cancellation occurred. Corrected the
+experiment to the actual supported paths: New chat after failure, scope switch
+while streaming. No product/test threshold was weakened. Preserve this failed
+experiment in /tmp/netflux-ask-retry-lock-check.log; corrected run is
+/tmp/netflux-ask-retry-lock-check-final.log.
+
+The original post-reload no-op Send remains unexplained and retained verbatim
+above. A full reload cannot retain the in-memory lock. The other silent early
+return is existing isCurrent(ownerKey): auth re-verification temporarily sets
+verified.current=null while ownerKey/transcript remain visible. A regression
+reproduces enabled Send/no request/no draft loss during this guard and successful
+Send after verification. This establishes a possible alternative, not attribution
+of the historical browser attempt; it was not instrumented then. No auth/activation
+or product UI change included.
+
+Full-suite failure assessment: the failing test reads impressionObserver
+immediately after findAllByTestId sees the card, whereas the observer is installed
+in a passive useEffect. Presence of DOM is not an observer-ready assertion; missing
+observer alone does not establish broken impression behavior. Resolved the test's
+actual local dependency graph with its six hoisted module mocks respected:
+27 tracked test/runtime/setup/config/manifest inputs are byte-identical to base
+6176131c, and none of the changed modules executes on that test path. The naive
+unmocked graph also traversed mocked useReadingProgress dependencies; corrected
+that analysis rather than claiming it was the executed graph. Comparison script
+and hashes: /tmp/netflux-ask-retry-fixture/check-focus-dependencies.cjs and
+focus-dependency-comparison.json. The isolated diagnostic passed68 tests; CI's
+full Unit step also passed on848cae22. This supports treating the local failure
+as a separate scheduling-sensitive test observation; its exact scheduling trigger
+remains unknown. Required full CI/E2E and security on the final head still gate
+release; focused passes are not a substitute. No FocusFeed change included.
+
+Next: publish these six regressions/evidence without application changes, wait for
+final required gates, complete protected merge, identify READY production/public
+alias for the merge SHA, then use CUA and existing authenticated session to cut
+one synthetic submission and verify unchanged Send has one visible question and
+one copy in the actual retry request. No model-call exactly-once claim; no paid
+resources or saved-note edits. Original no-op attempt stays in final limitations.

@@ -437,3 +437,104 @@ it.each(['chat', 'scope', 'message', 'text', 'completed'])('ignores an invalid %
     expect(restored?.draft.text).toBe(multiline);
     expect(restored?.failedTurn).toBeUndefined();
 });
+
+it('releases the request lock after success so an edited question can be sent', async () => {
+    render(<NotesAskPanel variant="page" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledOnce()); await finish();
+    await waitFor(() => expect(composer()).toHaveValue(''));
+    const edited = `${multiline}\nA subsequent question.`;
+    fireEvent.change(composer(), { target: { value: edited } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    expect(JSON.parse(String(streamFetch.mock.calls[1][1]?.body)).messages.at(-1).parts[0].text).toBe(edited.trim());
+    await finish('stop', 'subsequent-answer');
+});
+
+it('releases the request lock after repeated failure so an edited question can be sent', async () => {
+    streamFetch.mockRejectedValueOnce(new TypeError('First failure')).mockRejectedValueOnce(new TypeError('Retry failure'));
+    render(<NotesAskPanel variant="page" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await screen.findByRole('button', { name: 'Try again' }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    await screen.findByRole('button', { name: 'Try again' });
+    const edited = `${multiline}\nEdited after two failures.`;
+    fireEvent.change(composer(), { target: { value: edited } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(3));
+    const body = JSON.parse(String(streamFetch.mock.calls[2][1]?.body));
+    expect(body.trigger).toBe('submit-message');
+    expect(body.messages.filter((message: UIMessage) => message.role === 'user')).toHaveLength(2);
+    expect(body.messages.at(-1).parts[0].text).toBe(edited.trim());
+    await finish();
+});
+
+it('releases the request lock after transport cancellation and retains the exact question', async () => {
+    streamFetch.mockRejectedValueOnce(new DOMException('Synthetic transport cancellation', 'AbortError'));
+    render(<NotesAskPanel variant="page" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Send notes question' })).toBeEnabled());
+    expect(composer()).toHaveValue(multiline);
+    send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    const bodies = streamFetch.mock.calls.map(([, options]) => JSON.parse(String(options?.body)));
+    expect(bodies.map(body => body.messages.length)).toEqual([1, 1]);
+    expect(bodies[1].messages[0].id).toBe(bodies[0].messages[0].id);
+    await finish();
+});
+
+it('accepts Send after starting a new chat from a failed question', async () => {
+    streamFetch.mockRejectedValueOnce(new TypeError('Failed old chat'));
+    render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await screen.findByRole('button', { name: 'Try again' });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    fireEvent.click(screen.getByRole('button', { name: /new chat/i }));
+    expect(composer()).toHaveValue('');
+    const edited = `${multiline}\nQuestion in the new chat.`;
+    fireEvent.change(composer(), { target: { value: edited } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    const first = JSON.parse(String(streamFetch.mock.calls[0][1]?.body));
+    const second = JSON.parse(String(streamFetch.mock.calls[1][1]?.body));
+    expect(second.messages).toHaveLength(1);
+    expect(second.messages[0].id).not.toBe(first.messages[0].id);
+    await finish();
+    await waitFor(() => expect(composer()).toHaveValue(''));
+    fireEvent.change(composer(), { target: { value: 'After new-chat success.' } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(3));
+    await finish('stop', 'after-reset-answer');
+});
+
+it('accepts Send after scope cancellation even when old transport work finishes later', async () => {
+    const view = render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledOnce());
+    const oldSignal = streamFetch.mock.calls[0][1]?.signal;
+    const oldController = controller;
+    const other = createNotesChatScope({ version: 1, itemType: 'all', filterQuery: 'changed-scope' });
+    view.rerender(<NotesAskPanel variant="sidebar" currentScope={other} onClose={vi.fn()} />);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Use current filters' })[0]);
+    expect(oldSignal?.aborted).toBe(true);
+    expect(composer()).toHaveValue(multiline);
+    send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    expect(JSON.parse(String(streamFetch.mock.calls[1][1]?.body)).scope).toEqual(other.scope);
+    await act(async () => oldController.close());
+    expect(composer()).toHaveValue(multiline);
+    await finish();
+    await waitFor(() => expect(composer()).toHaveValue(''));
+    fireEvent.change(composer(), { target: { value: 'After cancelled scope.' } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(3));
+    await finish('stop', 'after-scope-answer');
+});
+
+it('retains the draft through an enabled Send during session re-verification and accepts Send once verified', async () => {
+    render(<NotesAskPanel variant="page" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(), { target: { value: multiline } });
+    identity.valid = false;
+    expect(screen.getByRole('button', { name: 'Send notes question' })).toBeEnabled();
+    send();
+    expect(streamFetch).not.toHaveBeenCalled();
+    expect(composer()).toHaveValue(multiline);
+    identity.valid = true; send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledOnce());
+    await finish();
+});
