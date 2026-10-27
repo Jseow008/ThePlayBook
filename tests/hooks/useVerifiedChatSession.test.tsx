@@ -153,7 +153,7 @@ it('offers recovery when initial session lookup hangs, and fences the abandoned 
 });
 
 it('retains only the unverified owner on service failure and explicitly rechecks the current session', async () => {
-    const { result } = renderHook(() => useVerifiedChatSession());
+    const { result } = renderHook(() => useVerifiedChatSession({ retainUnverifiedOwner: true }));
     await waitFor(() => expect(result.current.verificationState).toBe('verified'));
     const owner = result.current.ownerKey!;
     const scope = createNotesChatScope({ version: 1, itemType: 'all' });
@@ -167,7 +167,7 @@ it('retains only the unverified owner on service failure and explicitly rechecks
 });
 
 it('hides and clears the old account before recovery verifies a changed account', async () => {
-    const { result } = renderHook(() => useVerifiedChatSession());
+    const { result } = renderHook(() => useVerifiedChatSession({ retainUnverifiedOwner: true }));
     await waitFor(() => expect(result.current.verificationState).toBe('verified'));
     const owner = result.current.ownerKey!;
     const scope = createNotesChatScope({ version: 1, itemType: 'all' });
@@ -204,7 +204,7 @@ it('ignores late old-session completion after slow-check recovery changes sessio
 
 
 it('retains the original unverified identity on retryable auth transport failure but clears it on rejection', async () => {
-    const { result } = renderHook(() => useVerifiedChatSession());
+    const { result } = renderHook(() => useVerifiedChatSession({ retainUnverifiedOwner: true }));
     await waitFor(() => expect(result.current.verificationState).toBe('verified'));
     const owner = result.current.ownerKey!;
     const scope = createNotesChatScope({ version: 1, itemType: 'all' });
@@ -217,4 +217,16 @@ it('retains the original unverified identity on retryable auth transport failure
     await act(async () => { result.current.retryVerification(); });
     expect(result.current.ownerKey).toBeNull(); expect(result.current.verificationState).toBe('signed-out');
     expect(readNotesChatSession(owner, scope.signature)).toBeNull();
+});
+
+
+it('preserves default consumers’ prior cache-clearing behavior on completed service failure', async () => {
+    const { result } = renderHook(() => useVerifiedChatSession());
+    await waitFor(() => expect(result.current.verificationState).toBe('verified'));
+    const owner = result.current.ownerKey!;
+    const scope = createNotesChatScope({ version: 1, itemType: 'all' });
+    writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    auth.rpc.mockResolvedValueOnce({ data: null, error: { code: '503' } }); await emit('SIGNED_IN', session());
+    expect(result.current.ownerKey).toBeNull(); expect(result.current.verificationState).toBe('failed');
+    expect(result.current.isCurrent(owner)).toBe(false); expect(readNotesChatSession(owner, scope.signature)).toBeNull();
 });

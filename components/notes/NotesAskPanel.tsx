@@ -223,7 +223,7 @@ function ScopeChangedBanner({
 }
 
 export function NotesAskPanel(props: NotesAskPanelProps) {
-    const { ownerKey, isCurrent, resolved, verificationState = "verified", retryVerification = () => {} } = useVerifiedChatSession();
+    const { ownerKey, isCurrent, resolved, verificationState = "verified", retryVerification = () => {} } = useVerifiedChatSession({ retainUnverifiedOwner: true });
     const params = useSearchParams();
     const returned = params?.get("returnTo");
     const returnedContext = returned?.startsWith("/notes?")

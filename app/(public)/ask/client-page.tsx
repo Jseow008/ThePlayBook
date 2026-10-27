@@ -127,7 +127,7 @@ interface AskClientPageProps {
 }
 
 export function AskClientPage(props: AskClientPageProps) {
-    const { ownerKey, isCurrent, resolved, verificationState = "verified", retryVerification = () => {} } = useVerifiedChatSession();
+    const { ownerKey, isCurrent, resolved, verificationState = "verified", retryVerification = () => {} } = useVerifiedChatSession({ retainUnverifiedOwner: props.scope === "notes" });
     if (!ownerKey) return <div className="p-4"><ChatSessionStatus state={verificationState === "verified" ? (resolved ? "signed-out" : "checking") : verificationState} onRetry={retryVerification} initial /></div>;
     const accountMatches = !props.initialAccountId || JSON.parse(ownerKey)[0] === props.initialAccountId;
     return <VerifiedAskClientPage key={ownerKey} {...props} initialLibrarySnapshot={accountMatches ? props.initialLibrarySnapshot : undefined} ownerKey={ownerKey} isCurrent={isCurrent} />;

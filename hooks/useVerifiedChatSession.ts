@@ -9,7 +9,7 @@ export const CHAT_SESSION_SLOW_MS = 10_000;
 export type ChatSessionVerification = 'checking' | 'slow' | 'failed' | 'verified' | 'signed-out';
 
 /** Browser storage and pending streams belong to a verified account + Auth session. */
-export function useVerifiedChatSession() {
+export function useVerifiedChatSession({ retainUnverifiedOwner = false }: { retainUnverifiedOwner?: boolean } = {}) {
     const [verificationVersion, setVerificationVersion] = useState(0);
     const [resolved, setResolved] = useState(false);
     const [ownerKey, setOwnerKey] = useState<string | null>(null);
@@ -41,7 +41,9 @@ export function useVerifiedChatSession() {
         };
         const fail = (ticket: number) => {
             if (!current(ticket)) return;
-            clearTimeout(timer); verified.current = null; setResolved(true); update('failed');
+            clearTimeout(timer); verified.current = null;
+            if (!retainUnverifiedOwner) clearOwner();
+            setResolved(true); update('failed');
         };
         const begin = () => {
             const ticket = ++generation;
@@ -97,7 +99,7 @@ export function useVerifiedChatSession() {
             queueMicrotask(() => { void resolve(session, ticket); });
         });
         return () => { mounted = false; generation++; clearTimeout(timer); verified.current = null; restart.current = null; subscription.unsubscribe(); };
-    }, []);
+    }, [retainUnverifiedOwner]);
     const isCurrent = useCallback((key: string) => {
         // Changing the callback after verification also persists any final stream
         // update that arrived while a same-session refresh was being checked.

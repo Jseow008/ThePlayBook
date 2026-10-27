@@ -2016,3 +2016,55 @@ record in previous worktree remains untouched. One agent; two Vite build attempt
 (one canonical-path correction), one full unit run, focused acceptance progression,
 two successful Next builds, one CUA browser replay. Exact billed/elapsed usage
 unavailable; no application-provider usage or paid resources.
+
+#### Compatibility review correction before PR creation
+
+Source review caught that unconditional retention on completed transient failure
+would also change Library Ask/Evidence consumers' previous cache-clearing behavior.
+Added an opt-in retainUnverifiedOwner policy: NotesAskPanel opts in, and the outer
+Ask page opts in only for scope=notes. Other consumers keep prior clear-on-failure
+behavior. Full verification is still mandatory and no unverified identity permits
+submission. Added an explicit default-policy regression; updated three hook tests
+to declare the Notes retention policy. This is containment of the approved Notes
+behavior, not a new Library/Evidence feature. No PR/automerge was enabled for the
+initial pushed commit before this review correction.
+
+All93 focused tests passed. Final CUA smoke against rebuilt components passed5
+additional cases: Notes failure retention, same-owner recovery without submission,
+same-account replacement-session draft isolation, ten-second slow feedback, and
+slow recovery to account B with late old completion fenced. No additional chat
+POST: request record remains exactly3. Browser tabs closed and restarted fixture
+listener stopped. final-browser-results.json/build-final.log retain this evidence.
+
+After this real hook-policy change, repeated full validation was justified.
+Lint/typecheck passed. Second full unit run:2042 passed,2 failed,287 skipped. Both
+failures were whole-test5000ms timeouts, not an incorrect-value assertion:
+NotesAskPanel.question-draft account-boundary case (5412ms) and ReaderView stale
+heading-duplicate quotation case (5978ms). The account test mocks the session hook;
+its compatibility option is ignored by that mock. No matching/reader source changed.
+A passing targeted run does not prove timing cause; it remains unassigned pending
+full hosted gate. Browser fixture was active during this run, so cannot exclude
+host contention. Do not repeat the whole suite unchanged or increase timeouts.
+Stopped own fixture and queued one isolated diagnostic of just the two failed
+files. Preserve /tmp/netflux-session-readiness-compat-full.log and diagnostic result.
+Required CI/security must validate the final candidate before merging; no bypass.
+
+Isolated diagnostic completed: both affected files passed122/122 tests without
+source/test/timeout changes. This supports a timing observation but does not erase
+the two full-run timeouts or establish host contention. No third full local suite
+queued. Final compatibility production build running sequentially after tests,
+because hook policy changed; required hosted full suite remains mandatory. PR body
+now explicitly records final local2042 passes/2 timeouts/287 skips,93 focused passes
+and122 isolated passes. No claim of a green final full local suite.
+
+Final compatibility candidate: production build/trace/CSS passed sequentially
+following the isolated diagnostic. All5 final browser smoke checks passed against
+the rebuilt opt-in implementation and introduced0 chat requests. Shared consumer
+failure policy regression passes; Notes identity/account/session/draft protections
+remain verified in controlled tests. No active own browser tab or3081 listener.
+Record of2 full local runs retained: first2041 passed; final2042 passed/2 timed out,
+with287 skips each. Do not present first run as proof of final full suite. Final93
+focused/122 isolated passes do not replace required CI/security. Total Vite builds3
+(initial path error, correction, compatibility rebuild); Next builds3 (initial,
+style finalization, real hook-policy containment), all Next builds passed. No
+broader unchanged reruns, new agents, timers, paid resources or provider calls.
