@@ -1496,3 +1496,380 @@ behavior; existing draft/session/account boundaries unchanged. Strict chat-scope
 parser still rejects invalid scopes. No package or migration changes.
 Nine intended files, independent branch from main; next publish protected PR and
 verify exact GitHub file list before squash auto-merge. No release bypass or timer.
+
+### New bounded Ask network recovery verification — 27 October 2026
+
+Scope-warning finding remains closed; recurring analytics retry stays separate.
+User prioritized network interruption during Ask submission/recovery: exact
+question retention, clear outcome and no duplicate messages on retry. Testing
+only; no product implementation authorized/started. Branch/worktree
+codex/ask-network-verification at /tmp/netflux-ask-network-verification from
+released 6176131c056e010f31a8baf9ae54e5c3de1e6573. Disposable local fixture at
+/tmp/netflux-ask-network-fixture, own Supabase project/ports 586xx and own Redis
+container; preserve unrelated existing containers. No paid/hosted resource.
+
+Plan: stable build + CUA browser through owned loopback HTTP ingress. Cut Ask
+transport before forwarding, after the real API response completes but before
+client delivery, and during delivery before stream finish. Restore transport and
+use existing retry path; compare DOM draft exactness, visible outcome and user/
+assistant message counts plus sanitized request IDs/hashes. Fixed synthetic
+contextual follow-up returns built-in clarification before quota/provider work;
+proxy guards reject all other questions and caps requests. This tests real app/
+HTTP transport with static response, not actual model calls, wireless outages or
+physical devices. Stop/report confirmed defect rather than implement a fix.
+
+Source: draft clears only valid finish; onError cancels pending revision. Try
+again uses SDK regenerate (replaces existing answer/retains current user turn),
+while composer Send appends a user turn. Both paths warrant bounded evidence.
+Runtime logs will omit tokens/raw private bodies. Only synthetic account/data.
+
+Harness attempts: first Supabase start failed because copied configuration lacked
+its referenced local email template; copied that existing fixture template, then
+startup passed. First Next stable build failed because node_modules symlink points
+outside the new worktree's Turbopack root. Replacing owned symlink with local
+copy-on-write dependency copy before rebuild; no application/package/config edit.
+Own Redis REST bridge and interruption ingress running on 57680/3067; no Next
+server yet. Secrets only mode-600 local fixture files; remove after cleanup.
+Next: stable build, start loopback server3068, UI sign-in with disposable OTP,
+then bounded transport/recovery cases and cleanup. No timers or agents.
+
+### Ask interruption findings — bounded investigation complete
+
+**Status:** testing complete; one confirmed recovery defect open. No application,
+SDK, dependency, workflow, production configuration or saved-note code changed.
+No fix implemented and no PR created. Scope-warning #287 remains closed. This
+record is the only tracked change on codex/ask-network-verification, HEAD
+6176131c056e010f31a8baf9ae54e5c3de1e6573 (released application commit).
+
+**Story and method:** a signed-in user submits a question from Notes/Full Ask;
+the HTTP connection fails; the user should retain exact typed text, understand
+that a complete response was not received, and recover without duplicating the
+question. Stable local production build, actual installed AI SDK/client/API,
+disposable Supabase account plus two synthetic saved notes, CUA Chrome only for
+browser interactions, default 1728x992 without viewport override. A loopback
+proxy cuts real HTTP delivery at controlled points; it does not mock browser
+fetch or fabricate an assistant response. Only fixed synthetic contextual
+follow-ups are allowed by the proxy. The real route returns its built-in
+clarification before quota/provider work; other questions rejected and total
+attempt cap 12. This is controlled local transport verification, not a production
+outage, actual model interruption or physical-network study.
+
+#### End-to-end evidence
+
+Baseline succeeded before interruption: real authenticated route returned built-in
+clarification, UI announced Response ready and cleared the submitted draft. Both
+synthetic saved notes loaded. Nine browser POST attempts total; seven reached the
+real route (two deliberately cut before forwarding). All seven real route logs
+are HTTP 200 with only client/auth/rate_limit/session phases; no quota/provider
+phase. Zero model calls/spend in this bounded exercise. No hosted/paid resources.
+
+| Interruption/recovery | Exact draft at failure | Failure feedback | Result after existing Try again |
+| --- | --- | --- | --- |
+| Sidebar: cut before forwarding to app | Preserved, including whitespace, blank line and emoji | Visible generic failure + Try again, announced Request failed | One user question + one answer; original user ID retained |
+| Full Ask: app completed HTTP 200 + stream finish, but zero response bytes delivered to browser | Preserved exactly | Failure feedback; no false ready state at failure | One question + one answer; same user ID; actual route executed again |
+| Full Ask: proxy wrote 227 bytes through actual text-delta event, then cut before finish marker | Preserved exactly | Failure feedback; no false ready state at failure | One question + one answer; same user ID; no duplicate answer |
+
+The delivery-prefix case did not display a partial assistant bubble before its
+error; do not claim recovery of visible partial generated text. The already-built
+response was interrupted during transport, not while a model was generating.
+Each error was followed by one manual Try again after transport restoration;
+request history stayed at one user turn. Successful retry left the exact old text
+in the composer, unlike baseline normal successful Send which cleared it. Record
+this related completion inconsistency; it must not justify clearing newer typing.
+
+#### Confirmed defect: normal Send after failure duplicates the user turn
+
+Confidence **high for the tested local production build**, supported by observed
+DOM, actual transport payload structure and matching application/SDK source.
+Production reproduction, phones and Safari not claimed.
+
+Reproduction (fresh isolated Notes context, no prior messages):
+1. Type a synthetic multiline question and press Send.
+2. Drop connection before forwarding to app. Wait for visible failure and Try
+   again. Confirm original text still exact in composer and one question bubble.
+3. Restore transport. Without changing any text, press the normal Send button
+   instead of the separate Try again button.
+
+Expected: recover the unchanged failed submission as one logical user turn.
+Actual: two identical question bubbles and one answer. The second request has two
+user messages with distinct IDs; it retains the first failed user ID and adds a
+new ID. Both attempts have identical last-user-text hashes. Triggers are
+submit-message then submit-message, while safe recovery is submit-message then
+regenerate-message with user counts 1,1. Normal Send recovery counts 1,2. The draft
+clears on that second successful Send. This is a visible duplicate question and
+duplicated API conversation history, not a duplicate saved note or proof of two
+assistant answers. The original dropped attempt never reached the app, so this
+case does not establish duplicate generation/charging. Test stopped after
+confirming this broken recovery path; no broader investigation or implementation.
+
+Impact: the preserved composer plus enabled Send and "Please try asking again"
+feedback provide an ordinary recovery path that unintentionally appends the failed
+question again. Conversation is cluttered and subsequent request history contains
+both copies. Actual semantic retrieval effects/cost were not measured.
+
+Source explanation: components/notes/NotesAskPanel.tsx:388-403: Send always calls
+sendMessage, while Try again calls regenerate. Installed ai/src/ui/chat.ts:428-456
+regenerate retains the existing user turn and replaces the corresponding answer.
+The error handler clears pendingQuestionRef; retry does not rearm submitted-revision
+tracking, explaining why successful Try again retains the old composer text.
+
+**Smallest proposed follow-up, not implemented:** treat unchanged failed composer
+submission as retry of that failed turn (including its existing account/chat/scope
+boundaries), so both recovery controls reuse it. On successful completion, clear
+only that unchanged submitted draft revision; retain newer typing. Preserve
+intentional later repetitions and edited questions as new turns. Do not add global
+text deduplication, semantic matching, scope changes or broader Ask enhancements.
+A separate question remains whether real provider executions require idempotency;
+this static-response study does not verify exactly-once generation or charging.
+
+#### Separate observations / failed preparation
+
+Two attempts to reset a recovered chat with Start new chat left its transcript
+visible (one immediate chained expansion, then a separate reset without expansion).
+No JS dialog was returned and composer was empty at inspection. Cause not isolated;
+this is an unresolved reset observation, not a confirmed network defect. After two
+attempts, stopped that reset approach and used fresh tabs/contexts whose empty
+composer/transcript were explicitly checked. No further reset work performed.
+Do not conflate it with the historical activation issue or reopen #287.
+
+Earlier harness failures remain recorded above: missing local email template and
+Turbopack refusing an outside-root dependency symlink. Corrected fixture setup;
+stable build then passed. These are not product findings. No failed network case
+was silently retried until favorable; the deliberate failure/recovery pairs are
+the experiment itself, with sanitized counts retained.
+
+#### Artifacts and cleanup
+
+Directory /tmp/netflux-ask-network-fixture:
+- browser-results.json: DOM exactness/status/message counts and cleanup evidence.
+- transport-summary.json + transport-events.jsonl: per-case attempt/forwarding
+  stages, message-ID/text hashes, user counts and request triggers; no raw bodies.
+- api-timing.json: seven real route executions, safe phase/status evidence.
+- baseline-check.json / final-note-comparison.json / comparisons.jsonl: both saved
+  synthetic notes unchanged across every baseline field (quotation, thought,
+  ownership, positions, color and updated_at).
+- composer-resend-duplicate.png: visible two question bubbles after Send recovery.
+- before-forward-failed/recovered.png, after-complete-failed.png and
+  during-delivery-failed/recovered.png: synthetic-only screen evidence.
+- build.log and ingress.cjs: stable build and bounded transport apparatus.
+
+Signed out the disposable local account through UI; login page confirmed. All own
+mail/test tabs closed; owned inventory empty. Viewport unchanged; production
+cookies/session untouched on a different origin. Stopped only own listeners
+3067/3068/57680, removed only own Supabase project/volumes using explicit project
+ID and --no-backup, removed own Redis container. Verified no matching containers
+or owned listeners remain. Private runtime/status/fixture credential JSON and
+startup/server logs removed after extracting sanitized API evidence. Existing
+unrelated containers were not touched. No schedule/automation or agents created.
+
+Remaining limits: local controlled cuts/static response only; actual model calls,
+real wireless transitions, hosted/proxy-specific outages, physical devices and
+Safari remain unverified. Existing skipped tests and recurring analytics-test
+retry are separate limits, not resolved by these checks. Exact billed/elapsed
+resource comparison unavailable. Next action is review/agree the narrow retry fix
+before any product implementation; this investigation itself is complete.
+
+### Approved failed-turn reuse implementation — 27 October 2026
+
+User approved a targeted client fix: unchanged failed Send must reuse the failed
+turn, keyed by chat/scope/exact text; preserve newer draft edits, lock rapid mixed
+Send/Try again clicks and retain text on repeated failure. No server exactly-once
+or provider-cancellation guarantee. Independent fresh-main branch
+codex/ask-retry-same-turn, /tmp/netflux-ask-retry-same-turn, base released
+6176131c056e010f31a8baf9ae54e5c3de1e6573. Related investigation text copied from
+prior verification worktree; no inherited unmerged application commits.
+
+Implementation complete locally: explicit stable user-message identity, one synchronous
+in-flight client ref shared by Send/retry, exact raw-text matching only to the
+latest failed user turn in the same chat/scope/account context, and existing
+submitted-revision completion guard. Failed-turn hint stored in existing same-tab
+owner-bound chat context so navigation/reload after failure can recover it. Hints
+with wrong chat/scope/message/text or completed turns ignored without losing draft.
+New/edited questions and intentional later repeated wording remain new turns.
+No UI/copy/layout/API/provider/dependency/schema changes. Tests only for server
+behavior; no server implementation changed.
+
+Regression before fix reproduced [1,2] user-message counts on Send retry. First
+client-focused run now passes31; added storage-fence and existing SDK/scope/deadline
+regressions give55 passed across4 files. Type/lint passed on current tree. Full unit
+suite running separately from heavy build to avoid resource-induced timeouts.
+Disposable follow-up fixture /tmp/netflux-ask-retry-fixture, own project
+netflux-ask-retry-verification/Redis and loopback ports as prior; stable browser
+sequence still pending. No paid resources/automation/agents.
+
+Server investigation: withChatDeadline combines request/deadline abort signals,
+propagates them and cancels late response delivery. Provider selection forwards
+abortSignal and maxRetries0. Cancellation/timeout returns while uncooperative
+underlying promises may still complete; new requests have no shared operation
+identity/lock. A new controlled deadline test demonstrates an independent retry
+can run while cancelled original work ignores the signal. Accounting retains
+uncertain reservations and settles independently of disconnect. Consequently this
+client change prevents duplicate turns/overlapping UI retries, not duplicate real
+model execution or charges. No live provider calls made for this claim.
+
+Local broader verification update: initial full unit run had2021 passes,287 skips
+and2 mock-contract assertions failing in NotesAskPanel.test.tsx because stable
+user IDs/parts and explicit retry messageId now replace implicit SDK-generated
+identity. Updated only those assertions, retaining content/scope/incomplete-answer
+checks. Next full run had2022 passes,287 skips and one unchanged FocusFeed test
+failure: expected its impression observer to exist immediately after card lookup,
+but it was undefined. No FocusFeed/application code or test altered. One isolated
+rerun of that file plus the updated NotesAskPanel mock-contract file is diagnostic;
+do not keep repeating full suites until favorable. Final hosted gates must still
+validate the candidate. This reliability observation is separate from prior
+analytics browser retry and from the approved retry fix.
+
+Current intended files: NotesAskPanel.tsx, useNotesQuestionDraft.ts,
+notes-chat-context.ts, two NotesAskPanel component test files, existing
+chat-deadline.test.ts (verification only), and this record. Typecheck/lint passed.
+Stable browser build awaits diagnostic test completion. Own Supabase/Redis/ingress
+follow-up fixture initialized; no external providers or paid resources. Core
+acceptance unit tests passed, but browser replay/publish/gates still outstanding.
+
+
+#### Final local candidate verification and cleanup
+
+Same application tree as the stable build; no application edits after browser
+verification. Typecheck, full lint/ratchets, Next production build, sharp build
+trace and critical CSS checks passed. Capacity harness34 passed. The isolated
+FocusFeed + updated NotesAskPanel check passed68 tests; it does not erase the
+full-run FocusFeed failure above. Focused acceptance/deadline/scope/reliable-chat
+suite passed55 tests. Local full-suite result remains2022 passed,1 failed,287
+skipped. Final hosted checks remain required; skips are outside verified coverage.
+
+CUA Chrome, local production-mode build, disposable synthetic account/data:
+- Baseline clarification: actual /api/chat/notes completed through auth, session
+  and built-in contextual-question handling. No provider/quota phase executed.
+- Drop before forwarding: exact multiline draft (leading/trailing spaces, blank
+  line and emoji) retained with one question bubble. Reload recovered identical
+  draft/turn. Retry also failed and retained exact text/one bubble. Recovery via
+  rapid Send double-click launched one retry; newer text entered while delivery
+  was held survived the earlier successful completion. One question/one completed
+  answer, same user ID throughout all3 attempts.
+- Drop after actual server completion but before browser delivery: failure retained
+  exact draft/one bubble; explicit Try again recovered with same user ID, one
+  question/one answer, and cleared only the submitted draft.
+- Drop during delivery, before stream finish: incomplete answer removed; unchanged
+  Send recovered using same question ID, one question/one answer, submitted draft
+  cleared after valid finish.
+- Responsive Chrome390x844: failure preserved exact text/one question; unchanged
+  Send recovered same ID with one question/one answer and cleared submitted draft.
+  This is a viewport check, not physical phone or mobile Safari evidence.
+- Across10 total requests (1 baseline,3 repeated failure/reload,2 post-completion,
+  2 partial-delivery,2 responsive), every request had exactly1 user message.
+  All attempts within each recovery case shared one user ID and wire-text hash.
+  No guarded request was rejected. Seven forwarded route executions returned200
+  with static clarification; three cuts happened before forwarding.
+
+Failed attempt retained: first native Send click immediately after reload
+produced no request, status change or feedback despite enabled control; waiting
+for retry state timed out. DOM/console inspection found no identified blocker.
+A later Enter submitted the intended retry; the subsequent Send double-click and
+later Send recoveries worked. Cause unverified, so this is an unresolved activation
+observation and is not counted as a passing Send attempt. No activation fix added.
+No claim that all selection/click interactions are flawless.
+
+Synthetic saved-note comparison passed: both records unchanged across quotation,
+thought hash, ownership, positions, color and updated_at. Read-only comparison is
+in /tmp/netflux-ask-retry-fixture/final-note-comparison.json. Browser evidence:
+browser-results.json; transport-summary.json/transport-events.jsonl;
+api-timing.json (safe event/phase/status only); send-retry-newer-text.png,
+explicit-retry-clears-submitted.png, send-recovery-one-turn.png and
+responsive-send-recovery.png. No real private thought/draft text in evidence.
+
+Signed out disposable account through UI and confirmed login. Closed all own tabs;
+owned browser inventory empty. Reset temporary viewport override (native resulting
+viewport1728x936). Production session on different origin untouched. Stopped own
+listeners3067/3068/57680, explicit Supabase project
+netflux-ask-retry-verification with --no-backup, and own Redis container only.
+Verified no own listeners/containers remain. Removed runtime/status/fixture
+credential JSON and private setup/start/server logs after safe timing extraction.
+Unrelated local containers untouched. No paid resources, live model calls,
+automation or subagents. Elapsed/billed usage unavailable; agent count1.
+
+Limits: client lock prevents overlapping requests from these controls in the same
+mounted chat and reuses one turn. Best-effort cancellation does not prove original
+provider work stopped; retry can overlap uncancellable original work. No server
+idempotency/accounting changes or exactly-once model/charge claim. Production,
+physical phones, Safari, actual provider-call failures and live wireless outages
+remain separate. Next: inspect seven-file commit scope, publish protected PR,
+verify GitHub file list/PR scope, then enable normal squash auto-merge gated by
+validate and Security Validation. No production promotion/monitoring authorized
+by this local fix scope.
+
+#### Publication checkpoint — 27 October 2026, 06:07 UTC
+
+Published ready PR https://github.com/Jseow008/ThePlayBook/pull/289 from commit
+848cae2244c73ec018458dfcfb65c469a4f880d1, base6176131c. One intended application
+commit and exactly the seven recorded files confirmed locally and through
+`gh pr diff 289 --name-only`. GitHub connector creation returned403 (integration
+permission), so used existing authenticated gh connection; created PR attached
+to this task. PR scope run40459139744 passed. Protected SQUASH auto-merge enabled
+and verified; PR remains OPEN. CI40459139800 and Security Gates40459139662 are
+IN_PROGRESS, no failing gate reported at checkpoint. No bypass or production
+promotion. Existing route/call/accounting behavior unchanged, so no database
+migration or paid hosted resource required. This publication checkpoint remains
+local evidence to avoid restarting otherwise unchanged final CI.
+
+Exact next action: required hosted gates complete and govern merge; if a gate
+fails, inspect its actual failure and preserve the hold rather than retrying an
+unchanged failure repeatedly. Production and device coverage remain separate.
+No follow-up timer created or resumed. Local full-suite FocusFeed failure and
+one no-op Send activation attempt remain explicitly outside passing evidence.
+
+### Follow-up: lock lifecycle and no-op Send — 27 October 2026
+
+User requested investigation before closure and a deployment-pinned public retry
+check. Temporarily disabled #289 auto-merge while verifying lifecycle; no required
+checks cancelled. Application code remains848cae22; added six maintained diagnostic
+regressions in the existing draft test file. Sixty-one tests now pass across the
+same four files (previous55 plus6), with typecheck and targeted ESLint passing.
+
+Lock audit: the ref is initialized null on mount and is not serialized. Every
+settled send/regenerate Promise clears only its own attempt in finally, including
+success, repeated failure and AbortError. Scope/new-chat reset explicitly releases
+it and replaces/aborts the SDK chat; late older work cannot clear a newer ref.
+Confirmed Send can follow success, two failures with an edited question,
+transport cancellation, and New chat after failure. In-flight scope cancellation
+followed by new Send works even when the old transport finishes later; subsequent
+Send still works. Existing tests cover mixed rapid retry locking and account/chat/
+scope ownership. These results do not prove all possible browser timing cases.
+
+One initial diagnostic assumed New chat is available during streaming and failed:
+its button is deliberately disabled, so no cancellation occurred. Corrected the
+experiment to the actual supported paths: New chat after failure, scope switch
+while streaming. No product/test threshold was weakened. Preserve this failed
+experiment in /tmp/netflux-ask-retry-lock-check.log; corrected run is
+/tmp/netflux-ask-retry-lock-check-final.log.
+
+The original post-reload no-op Send remains unexplained and retained verbatim
+above. A full reload cannot retain the in-memory lock. The other silent early
+return is existing isCurrent(ownerKey): auth re-verification temporarily sets
+verified.current=null while ownerKey/transcript remain visible. A regression
+reproduces enabled Send/no request/no draft loss during this guard and successful
+Send after verification. This establishes a possible alternative, not attribution
+of the historical browser attempt; it was not instrumented then. No auth/activation
+or product UI change included.
+
+Full-suite failure assessment: the failing test reads impressionObserver
+immediately after findAllByTestId sees the card, whereas the observer is installed
+in a passive useEffect. Presence of DOM is not an observer-ready assertion; missing
+observer alone does not establish broken impression behavior. Resolved the test's
+actual local dependency graph with its six hoisted module mocks respected:
+27 tracked test/runtime/setup/config/manifest inputs are byte-identical to base
+6176131c, and none of the changed modules executes on that test path. The naive
+unmocked graph also traversed mocked useReadingProgress dependencies; corrected
+that analysis rather than claiming it was the executed graph. Comparison script
+and hashes: /tmp/netflux-ask-retry-fixture/check-focus-dependencies.cjs and
+focus-dependency-comparison.json. The isolated diagnostic passed68 tests; CI's
+full Unit step also passed on848cae22. This supports treating the local failure
+as a separate scheduling-sensitive test observation; its exact scheduling trigger
+remains unknown. Required full CI/E2E and security on the final head still gate
+release; focused passes are not a substitute. No FocusFeed change included.
+
+Next: publish these six regressions/evidence without application changes, wait for
+final required gates, complete protected merge, identify READY production/public
+alias for the merge SHA, then use CUA and existing authenticated session to cut
+one synthetic submission and verify unchanged Send has one visible question and
+one copy in the actual retry request. No model-call exactly-once claim; no paid
+resources or saved-note edits. Original no-op attempt stays in final limitations.

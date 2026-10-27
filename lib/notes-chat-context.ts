@@ -4,18 +4,24 @@ import { parseNotesChatScope, serializeNotesChatScope, type NotesChatScopePayloa
 
 const PREFIX = 'netflux_notes_chat_context:v1:';
 const IdSchema = z.string().regex(/^[a-zA-Z0-9_-]{16,64}$/);
+const FailedTurnSchema = z.object({
+    chatId: IdSchema, scopeSignature: z.string(), messageId: z.string().min(1), text: z.string(),
+});
 const ContextSchema = z.object({
     ownerKey: z.string(), contextId: IdSchema, chatId: IdSchema,
     activeScope: z.unknown(), messages: z.array(z.object({ id: z.string(), role: z.string(), parts: z.array(z.unknown()).optional() }).passthrough()),
     draft: z.object({ text: z.string(), revision: z.number().int().nonnegative() }),
+    failedTurn: FailedTurnSchema.nullable().optional().catch(undefined),
     updatedAt: z.number(),
 });
+export type NotesFailedTurn = z.infer<typeof FailedTurnSchema>;
 export interface NotesChatContext {
     contextId: string;
     chatId: string;
     activeScope: NotesChatScopePayload;
     messages: UIMessage[];
     draft: { text: string; revision: number };
+    failedTurn?: NotesFailedTurn | null;
     updatedAt: number;
 }
 // Only a same-tab fallback when sessionStorage is unavailable. Never populated
@@ -41,7 +47,15 @@ export function readNotesChatContext(owner: string, id: string): NotesChatContex
         if (!result.success || result.data.ownerKey !== owner || result.data.contextId !== id) return null;
         const scope = parseNotesChatScope(JSON.stringify(result.data.activeScope));
         if (!scope) return null;
-        return { ...result.data, activeScope: scope, messages: result.data.messages as UIMessage[] };
+        const messages = result.data.messages as UIMessage[];
+        const last = messages.at(-1);
+        const failed = result.data.failedTurn;
+        // Retry hints cannot attach to another chat/scope or a completed turn.
+        const failedTurn = failed && failed.chatId === result.data.chatId && failed.scopeSignature === scope.signature
+            && last?.role === 'user' && last.id === failed.messageId
+            && last.parts?.flatMap(part => part?.type === 'text' && typeof part.text === 'string' ? [part.text] : []).join('') === failed.text.trim()
+            ? failed : undefined;
+        return { ...result.data, activeScope: scope, messages, failedTurn };
     } catch { return null; }
 }
 export function writeNotesChatContext(owner: string, context: NotesChatContext): boolean {

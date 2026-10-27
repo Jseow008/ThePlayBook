@@ -7,7 +7,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { useReliableChat as useChat } from "@/hooks/useReliableChat";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import { DefaultChatTransport, generateId, type UIMessage } from "ai";
 import {
     ArrowRight,
     BookOpen,
@@ -29,12 +29,19 @@ import {
 } from "@/lib/notes-chat-session";
 import { useVerifiedChatSession } from "@/hooks/useVerifiedChatSession";
 import { useNotesQuestionDraft } from "@/hooks/useNotesQuestionDraft";
-import { parseNotesContextId, withNotesContext } from "@/lib/notes-chat-context";
+import { parseNotesContextId, withNotesContext, type NotesFailedTurn } from "@/lib/notes-chat-context";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 
 function notesRequestStatus(status: string) {
     return status === "streaming" ? "Receiving your response…" : "Searching your saved notes…";
 }
+
+type QuestionAttempt = NotesFailedTurn & {
+    ownerKey: string;
+    submitted?: { chatId: string; revision: number };
+};
+
+const questionText = (message: UIMessage) => message.parts.filter(part => part.type === "text").map(part => part.text).join("");
 
 /** Elapsed client wait only: no estimated completion time or inferred provider phase. */
 function NotesRequestProgress({ status }: { status: string }) {
@@ -247,7 +254,14 @@ function VerifiedNotesAskPanel({
     const { saveTranscript } = questionDraft;
     const input = questionDraft.draft.text;
     const setInput = questionDraft.change;
-    const pendingQuestionRef = useRef<{ chatId: string; revision: number } | null>(null);
+    // This ref also locks both recovery controls before React publishes status.
+    const pendingQuestionRef = useRef<QuestionAttempt | null>(null);
+    const [failedTurn, setFailedTurn] = useState(questionDraft.initial.failedTurn);
+    const failedTurnRef = useRef(failedTurn);
+    const rememberFailedTurn = (turn: NotesFailedTurn | null) => {
+        failedTurnRef.current = turn;
+        setFailedTurn(turn);
+    };
     const [showAllStarterPrompts, setShowAllStarterPrompts] = useState(false);
     const [activeScope, setActiveScope] = useState<NotesChatScope>(questionDraft.initial.activeScope);
     const chatInstanceId = useId();
@@ -267,14 +281,20 @@ function VerifiedNotesAskPanel({
     } = useChat<UIMessage>({
         id: `${chatInstanceId}:${chatGeneration}`,
         transport: chatTransport,
-        onError: () => { pendingQuestionRef.current = null; },
         onFinish: (result) => {
-            const submitted = pendingQuestionRef.current;
-            pendingQuestionRef.current = null;
-            if (submitted && !result.isAbort && !result.isDisconnect && !result.isError
+            const attempt = pendingQuestionRef.current;
+            const question = result.messages.findLast(message => message.role === "user");
+            if (!attempt || attempt.ownerKey !== ownerKey || !isCurrent(ownerKey)
+                || attempt.chatId !== questionDraft.chatId || attempt.scopeSignature !== activeScope.signature
+                || question?.id !== attempt.messageId) return;
+            if (!result.isAbort && !result.isDisconnect && !result.isError
                 && result.finishReason === "stop"
                 && result.message.parts.some((part) => part.type === "text" && part.text.trim())) {
-                questionDraft.complete(submitted);
+                rememberFailedTurn(null);
+                if (attempt.submitted) questionDraft.complete(attempt.submitted);
+            } else {
+                const { chatId, scopeSignature, messageId, text } = attempt;
+                rememberFailedTurn({ chatId, scopeSignature, messageId, text });
             }
         },
     });
@@ -318,8 +338,8 @@ function VerifiedNotesAskPanel({
 
         if (!isCurrent(ownerKey)) return;
 
-        saveTranscript(activeScope, completedMessages);
-    }, [activeScope, completedMessages, messages.length, ownerKey, isCurrent, saveTranscript]);
+        saveTranscript(activeScope, completedMessages, failedTurn);
+    }, [activeScope, completedMessages, failedTurn, messages.length, ownerKey, isCurrent, saveTranscript]);
 
     useEffect(() => {
         const textarea = textareaRef.current;
@@ -383,24 +403,46 @@ function VerifiedNotesAskPanel({
         <p role="status" className="mt-2 text-xs text-muted-foreground">Reload recovery is unavailable. Keep this tab open to retain your question.</p>
     ) : null;
 
-    const sendPrompt = async (text: string) => {
-        const trimmed = text.trim();
-        if (!trimmed || isStreaming || !activeScope.scope || !isCurrent(ownerKey)) return;
+    const runQuestion = async (turn: NotesFailedTurn, reuse: boolean) => {
+        if (pendingQuestionRef.current || isStreaming || !activeScope.scope || !isCurrent(ownerKey)) return;
         // Promise resolution also happens for SDK errors. Only a valid finish may
         // clear this exact submitted revision; newer edits remain recoverable.
-        pendingQuestionRef.current = text === input
-            ? { chatId: questionDraft.chatId, revision: questionDraft.draft.revision } : null;
+        const attempt: QuestionAttempt = { ...turn, ownerKey,
+            submitted: turn.text === input ? { chatId: questionDraft.chatId, revision: questionDraft.draft.revision } : undefined };
+        pendingQuestionRef.current = attempt;
+        if (!reuse) rememberFailedTurn(null);
         scrollToBottom();
         try {
-            await sendMessage({ text: trimmed }, { body: { scope: activeScope.scope, scopeLabel: activeScope.summary } });
+            const body = { scope: activeScope.scope, scopeLabel: activeScope.summary };
+            if (reuse) await regenerate({ messageId: turn.messageId, body });
+            else await sendMessage({ id: turn.messageId, role: "user", parts: [{ type: "text", text: turn.text.trim() }] }, { body });
         } catch {
-            pendingQuestionRef.current = null;
+            if (pendingQuestionRef.current === attempt && isCurrent(ownerKey)) rememberFailedTurn(turn);
+        } finally {
+            if (pendingQuestionRef.current === attempt) pendingQuestionRef.current = null;
         }
     };
 
+    const failedQuestion = () => {
+        const failed = failedTurnRef.current;
+        const last = messages.at(-1);
+        return failed && failed.chatId === questionDraft.chatId && failed.scopeSignature === activeScope.signature
+            && last?.role === "user" && last.id === failed.messageId && questionText(last) === failed.text.trim() ? failed : null;
+    };
+
+    const sendPrompt = async (text: string) => {
+        if (!text.trim()) return;
+        const failed = failedQuestion();
+        await runQuestion(failed?.text === text ? failed : {
+            chatId: questionDraft.chatId, scopeSignature: activeScope.signature, messageId: generateId(), text,
+        }, failed?.text === text);
+    };
+
     const retry = async () => {
-        if (isStreaming || !activeScope.scope || !isCurrent(ownerKey)) return;
-        await regenerate({ body: { scope: activeScope.scope, scopeLabel: activeScope.summary } });
+        const last = messages.findLast(message => message.role === "user");
+        if (!last) return;
+        await runQuestion(failedQuestion() ?? { chatId: questionDraft.chatId, scopeSignature: activeScope.signature,
+            messageId: last.id, text: questionText(last) }, true);
     };
 
     const onSubmit = async (event?: FormEvent) => {
@@ -410,6 +452,7 @@ function VerifiedNotesAskPanel({
 
     const syncToCurrentScope = (keepQuestion = true) => {
         pendingQuestionRef.current = null;
+        rememberFailedTurn(null);
         questionDraft.reset(currentNotesScope, keepQuestion);
         // A cleared message array does not stop SDK stream writes. Abort the old
         // request and replace its Chat instance so even queued late chunks stay

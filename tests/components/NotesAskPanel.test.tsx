@@ -108,7 +108,7 @@ describe("NotesAskPanel", () => {
         expect(screen.queryByRole("button", { name: "Pull the strongest theme" })).not.toBeInTheDocument();
         for (const button of screen.getAllByRole("button", { name: "Export chat with QR code" })) expect(button).toBeDisabled();
         fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-        await waitFor(() => { expect(regenerate).toHaveBeenCalledWith({ body: { scope: currentScope.scope, scopeLabel: currentScope.summary } }); });
+        await waitFor(() => { expect(regenerate).toHaveBeenCalledWith({ messageId: "question", body: { scope: currentScope.scope, scopeLabel: currentScope.summary } }); });
         expect(setMessages).toHaveBeenCalledWith([expect.objectContaining({ id: "question" })]);
     });
 
@@ -158,7 +158,7 @@ describe("NotesAskPanel", () => {
 
         await waitFor(() => {
             expect(sendMessageMock).toHaveBeenCalledWith(
-                { text: "What patterns show up across these notes?" },
+                { id: expect.any(String), role: "user", parts: [{ type: "text", text: "What patterns show up across these notes?" }] },
                 {
                     body: {
                         scope: currentScope.scope,
