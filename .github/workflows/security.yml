@@ -191,7 +191,7 @@ jobs:
         run: npm run test:security
 
       - name: Record image identities and remove registry credentials
-        if: always()
+        if: always() && (steps.scope.outcome != 'success' || steps.scope.outputs.run_database != 'false')
         env:
           DOCKER_CONFIG: ${{ runner.temp }}/netflux-supabase-docker
         run: |
@@ -282,7 +282,7 @@ jobs:
           if-no-files-found: error
 
       - name: Record image identities and remove registry credentials
-        if: always()
+        if: always() && (steps.scope.outcome != 'success' || steps.scope.outputs.run_database != 'false')
         env:
           DOCKER_CONFIG: ${{ runner.temp }}/netflux-supabase-docker
         run: |

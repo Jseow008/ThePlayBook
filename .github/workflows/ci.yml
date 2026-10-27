@@ -135,7 +135,7 @@ jobs:
           retention-days: 14
 
       - name: Record image identities and remove registry credentials
-        if: always()
+        if: always() && (steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false')
         env:
           DOCKER_CONFIG: ${{ runner.temp }}/netflux-supabase-docker
         run: |
