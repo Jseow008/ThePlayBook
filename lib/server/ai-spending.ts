@@ -1,5 +1,6 @@
 import "server-only";
 
+import { notesReplayOwner, notesReplayRpc } from "./notes-replay-context";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomBytes } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
@@ -97,12 +98,18 @@ export async function reserveAiProviderCall(options: {
     const reservePrice = price.longContext ?? price;
     const reserved = Math.ceil((price.context * inputs * reservePrice.input + options.maxOutputTokens * reservePrice.output) / 1000);
     const operationId = newAiSpendOperationId();
+    const replay = notesReplayOwner();
+    const stage = options.provider === "google" ? "embedding" : "selection";
     try {
-        const { data, error } = await getAdminClient().rpc("reserve_ai_spend", {
+        if (replay && scope.feature !== "ask-notes") throw new AiSpendingError("unavailable");
+        const reservation = replay ? { data: await notesReplayRpc("reserve", { ...replay, stage, operationId,
+            provider: options.provider, model: options.model, reservedMicrousd: reserved }, signal), error: null }
+            : await getAdminClient().rpc("reserve_ai_spend", {
             p_operation_id: operationId, p_feature: scope.feature, p_provider: options.provider,
             p_model: options.model, p_reserved_microusd: reserved, p_guest_key: guestKey ?? undefined,
         }).abortSignal(signal);
-        if (error) throw new AiSpendingError("unavailable");
+        const { data, error } = reservation;
+        if (error || (replay && data && typeof data === "object" && !Array.isArray(data) && data.allowed === true && data.dispatch !== true)) throw new AiSpendingError("unavailable");
         const admission = admissionSchema.parse(data);
         if (!admission.allowed) throw new AiSpendingError(admission.reason, admission.retryAfterMs);
         if (admission.operationId !== operationId || admission.reservedMicrousd !== reserved) throw new AiSpendingError("unavailable");
@@ -125,10 +132,13 @@ export async function reserveAiProviderCall(options: {
         const cost = Math.ceil(((usage.inputTokens - cached) * actualPrice.input + cached * actualPrice.cachedInput + usage.outputTokens * actualPrice.output) / 1000);
         if (!Number.isSafeInteger(cost)) return;
         try {
-            const { data, error } = await getAdminClient().rpc("record_ai_spend", {
+            const settlement = replay ? { data: await notesReplayRpc("settle", { ...replay, stage,
+                inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, costMicrousd: cost }, AbortSignal.timeout(10_000)), error: null }
+                : await getAdminClient().rpc("record_ai_spend", {
                 p_operation_id: operationId, p_input_tokens: usage.inputTokens,
                 p_output_tokens: usage.outputTokens, p_cost_microusd: cost,
             }).abortSignal(AbortSignal.timeout(10_000));
+            const { data, error } = settlement;
             if (error || !data || typeof data !== "object" || Array.isArray(data) || data.recorded !== true) {
                 console.error("AI spending settlement incomplete; reservation retained or emergency switch activated");
             }

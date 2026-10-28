@@ -1214,6 +1214,7 @@ export type Database = {
       }
     }
     Functions: {
+      notes_replay: { Args: { p_action: string; p_input: Json }; Returns: Json }
       acquire_personal_evidence_worker: {
         Args: { p_lease_seconds?: number }
         Returns: Json

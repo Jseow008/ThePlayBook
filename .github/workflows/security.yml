@@ -84,7 +84,10 @@ jobs:
 
       - name: Validate launch environment
         if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
-        run: npm run validate:launch-env
+        run: |
+          # Validation uses a fresh process-only test ring, never production keys.
+          NOTES_REPLAY_KEYS="$(node -e 'const {randomBytes}=require("node:crypto");process.stdout.write(JSON.stringify({encryptionCurrent:"ci",fingerprintCurrent:"ci",encryption:{ci:randomBytes(32).toString("hex")},fingerprint:{ci:randomBytes(32).toString("hex")}}))')" \
+            npm run validate:launch-env
 
       - name: Validate unique migration versions
         if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
@@ -164,6 +167,7 @@ jobs:
           npm run database:capture-write-runtime
           npm run database:account-write-runtime
           npm run database:ai-spend-runtime
+          NOTES_REPLAY_TEST_DATABASE_URL="$DB107_ADMIN_DATABASE_URL" npm run database:notes-replay-runtime
           npm run database:ai-quota-runtime
           npm run database:account-data-snapshot-runtime
           npm run database:catalog-search-runtime

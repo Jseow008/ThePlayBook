@@ -108,7 +108,7 @@ describe("NotesAskPanel", () => {
         expect(screen.queryByRole("button", { name: "Pull the strongest theme" })).not.toBeInTheDocument();
         for (const button of screen.getAllByRole("button", { name: "Export chat with QR code" })) expect(button).toBeDisabled();
         fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-        await waitFor(() => { expect(regenerate).toHaveBeenCalledWith({ messageId: "question", body: { scope: currentScope.scope, scopeLabel: currentScope.summary } }); });
+        await waitFor(() => { expect(regenerate).toHaveBeenCalledWith({ messageId: "question", body: { scope: currentScope.scope, scopeLabel: currentScope.summary, replay: expect.objectContaining({ attemptId: expect.any(String), questionId: "question" }) } }); });
         expect(setMessages).toHaveBeenCalledWith([expect.objectContaining({ id: "question" })]);
     });
 
@@ -163,6 +163,7 @@ describe("NotesAskPanel", () => {
                     body: {
                         scope: currentScope.scope,
                         scopeLabel: 'search: "goggins"',
+                        replay: expect.objectContaining({ attemptId: expect.any(String), questionId: expect.any(String) }),
                     },
                 }
             );
@@ -291,7 +292,7 @@ it("allows a reflection-only question without relying on loaded highlight IDs", 
     const scope = createNotesChatScope({ version: 1, itemType: "reflection", filterQuery: "focus" });
     render(<NotesAskPanel currentScope={scope} onClose={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "What patterns show up across these notes?" }));
-    await waitFor(() => expect(send).toHaveBeenCalledWith(expect.anything(), { body: { scope: scope.scope, scopeLabel: scope.summary } }));
+    await waitFor(() => expect(send).toHaveBeenCalledWith(expect.anything(), { body: { scope: scope.scope, scopeLabel: scope.summary, replay: expect.objectContaining({ attemptId: expect.any(String), questionId: expect.any(String) }) } }));
 });
 it("stops an active transport when its verified account/session is replaced", () => {
     const stop = vi.fn();

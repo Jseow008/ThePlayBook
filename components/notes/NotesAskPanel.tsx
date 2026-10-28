@@ -1,5 +1,6 @@
 "use client";
 
+import { NotesReplayResponseGuard } from "@/lib/notes-replay-guard";
 import { EvidenceCitations } from "@/components/evidence/EvidenceCitations";
 import { getMessageCitations, isExactQuotation, type CitationLink } from "@/lib/evidence-citation";
 import { useEffect, useLayoutEffect, useMemo, useId, useRef, useState, type FormEvent } from "react";
@@ -39,6 +40,7 @@ function notesRequestStatus(status: string) {
 
 type QuestionAttempt = NotesFailedTurn & {
     ownerKey: string;
+    attemptId: string;
     submitted?: { chatId: string; revision: number };
 };
 
@@ -61,7 +63,6 @@ function NotesRequestProgress({ status }: { status: string }) {
     );
 }
 
-const chatTransport = new DefaultChatTransport({ api: "/api/chat/notes", headers: { "x-evidence-protocol": "ui" } });
 
 const FALLBACK_CHAT_ERROR = "Something went wrong. Please try asking again.";
 
@@ -259,6 +260,10 @@ function VerifiedNotesAskPanel({
     const setInput = questionDraft.change;
     // This ref also locks both recovery controls before React publishes status.
     const pendingQuestionRef = useRef<QuestionAttempt | null>(null);
+    const [requestGuard] = useState(() => new NotesReplayResponseGuard(() => isCurrent(ownerKey)));
+    useEffect(() => { requestGuard.resume(); return () => requestGuard.retire(); }, [requestGuard]);
+    const chatTransport = useMemo(() => new DefaultChatTransport({ api: '/api/chat/notes',
+        headers: { 'x-evidence-protocol':'ui' },fetch:requestGuard.fetch }), [requestGuard]);
     const [failedTurn, setFailedTurn] = useState(questionDraft.initial.failedTurn);
     const failedTurnRef = useRef(failedTurn);
     const rememberFailedTurn = (turn: NotesFailedTurn | null) => {
@@ -287,6 +292,8 @@ function VerifiedNotesAskPanel({
         onFinish: (result) => {
             const attempt = pendingQuestionRef.current;
             const question = result.messages.findLast(message => message.role === "user");
+            const returnedAttempt = result.message.parts.find(part => part.type === 'data-notes-attempt');
+            if (returnedAttempt && 'data' in returnedAttempt && returnedAttempt.data !== attempt?.attemptId) return;
             if (!attempt || attempt.ownerKey !== ownerKey || !isCurrent(ownerKey)
                 || attempt.chatId !== questionDraft.chatId || attempt.scopeSignature !== activeScope.signature
                 || question?.id !== attempt.messageId) return;
@@ -296,8 +303,8 @@ function VerifiedNotesAskPanel({
                 rememberFailedTurn(null);
                 if (attempt.submitted) questionDraft.complete(attempt.submitted);
             } else {
-                const { chatId, scopeSignature, messageId, text } = attempt;
-                rememberFailedTurn({ chatId, scopeSignature, messageId, text });
+                const { chatId, scopeSignature, messageId, text, attemptId } = attempt;
+                rememberFailedTurn({ chatId, scopeSignature, messageId, text, attemptId });
             }
         },
     });
@@ -411,17 +418,25 @@ function VerifiedNotesAskPanel({
         if (!sessionReady || pendingQuestionRef.current || isStreaming || !activeScope.scope || !isCurrent(ownerKey)) return;
         // Promise resolution also happens for SDK errors. Only a valid finish may
         // clear this exact submitted revision; newer edits remain recoverable.
-        const attempt: QuestionAttempt = { ...turn, ownerKey,
+        const attempt: QuestionAttempt = { ...turn, ownerKey, attemptId: requestGuard.newAttemptId(),
             submitted: turn.text === input ? { chatId: questionDraft.chatId, revision: questionDraft.draft.revision } : undefined };
         pendingQuestionRef.current = attempt;
-        if (!reuse) rememberFailedTurn(null);
+        requestGuard.activate(attempt.attemptId);
+        // Persist ownership identity before the one processing fetch. No reload or
+        // transport failure automatically creates a fresh attempt.
+        const pendingTurn = { ...turn, attemptId: attempt.attemptId };
+        rememberFailedTurn(pendingTurn);
+        const transcript = reuse ? completedMessages : [...completedMessages, { id:turn.messageId, role:'user' as const, parts:[{ type:'text' as const, text:turn.text.trim() }] }];
+        saveTranscript(activeScope, transcript, pendingTurn);
         scrollToBottom();
         try {
-            const body = { scope: activeScope.scope, scopeLabel: activeScope.summary };
+            const body = { scope: activeScope.scope, scopeLabel: activeScope.summary,
+                replay: { expectedOwner: ownerKey, chatId: turn.chatId, questionId: turn.messageId, attemptId: attempt.attemptId,
+                    ...(reuse && turn.attemptId ? { retryOf: requestGuard.retryParent(turn.attemptId) } : {}) } };
             if (reuse) await regenerate({ messageId: turn.messageId, body });
             else await sendMessage({ id: turn.messageId, role: "user", parts: [{ type: "text", text: turn.text.trim() }] }, { body });
         } catch {
-            if (pendingQuestionRef.current === attempt && isCurrent(ownerKey)) rememberFailedTurn(turn);
+            if (pendingQuestionRef.current === attempt && isCurrent(ownerKey)) rememberFailedTurn(pendingTurn);
         } finally {
             if (pendingQuestionRef.current === attempt) pendingQuestionRef.current = null;
         }

@@ -5,6 +5,7 @@ import { parseNotesChatScope, serializeNotesChatScope, type NotesChatScopePayloa
 const PREFIX = 'netflux_notes_chat_context:v1:';
 const IdSchema = z.string().regex(/^[a-zA-Z0-9_-]{16,64}$/);
 const FailedTurnSchema = z.object({
+    attemptId: z.string().uuid().optional(),
     chatId: IdSchema, scopeSignature: z.string(), messageId: z.string().min(1), text: z.string(),
 });
 const ContextSchema = z.object({
