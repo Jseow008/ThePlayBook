@@ -1,8 +1,18 @@
 import { z } from "zod";
 
+// A destination identifies a record; it carries no text, token or access grant.
+const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+export const ExportPassageSchema = z.object({
+    start: z.number().int().nonnegative(),
+    end: z.number().int().positive(),
+    sourceHref: z.string().regex(new RegExp(`^/read/${uuid}(?:\\?highlightId=${uuid})?$`, "i")).optional(),
+}).refine((range) => range.end > range.start);
+export type ExportPassage = z.infer<typeof ExportPassageSchema>;
+
 export const CitationLinkSchema = z.object({
     label: z.string().min(1).max(400),
     href: z.string().max(24_000).regex(/^\/evidence#[A-Za-z0-9_-]+$/),
+    exportPassage: ExportPassageSchema.optional(),
 });
 export type CitationLink = z.infer<typeof CitationLinkSchema>;
 export const CitationResolutionSchema = z.object({

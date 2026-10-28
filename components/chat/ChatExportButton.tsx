@@ -8,7 +8,8 @@ import { toast } from "sonner";
 import {
     buildChatExportMarkdown,
     getChatExportFilename,
-    type ChatExportMessage,
+    getChatExportMessages,
+    type ChatExportInputMessage,
     type ChatExportPayload,
     type EncryptedChatExportPayload,
 } from "@/lib/chat-export";
@@ -23,7 +24,7 @@ interface ChatExportButtonProps {
     assistantLabel: string;
     scopeSummary?: string;
     noteCount?: number;
-    messages: Array<{ id?: string; role: string; content: string }>;
+    messages: ChatExportInputMessage[];
     disabled?: boolean;
     className?: string;
     variant?: "pill" | "icon";
@@ -41,19 +42,6 @@ type ExportState =
     | { status: "error"; message: string }
     | { status: "expired"; payload?: ChatExportPayload };
 
-function getExportableMessages(messages: ChatExportButtonProps["messages"]): ChatExportMessage[] {
-    return messages
-        .filter((message): message is ChatExportMessage =>
-            (message.role === "user" || message.role === "assistant")
-            && message.content.trim().length > 0
-        )
-        .map((message) => ({
-            id: message.id,
-            role: message.role,
-            content: message.content,
-        }));
-}
-
 function getRemainingLabel(expiresAt: string): string {
     const remainingMs = Math.max(0, new Date(expiresAt).getTime() - Date.now());
     const minutes = Math.floor(remainingMs / 60_000);
@@ -63,7 +51,7 @@ function getRemainingLabel(expiresAt: string): string {
 }
 
 function downloadMarkdown(payload: ChatExportPayload) {
-    const markdown = buildChatExportMarkdown(payload);
+    const markdown = buildChatExportMarkdown(payload, window.location.origin);
     const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -118,7 +106,7 @@ export function ChatExportButton({
     const [copied, setCopied] = useState(false);
     const modalRef = useRef<HTMLDivElement>(null);
     const closeButtonRef = useRef<HTMLButtonElement>(null);
-    const exportableMessages = useMemo(() => getExportableMessages(messages), [messages]);
+    const exportableMessages = useMemo(() => getChatExportMessages(messages), [messages]);
     const isUnavailable = disabled || exportableMessages.length === 0;
 
     useEffect(() => {

@@ -3,7 +3,7 @@ import { withChatDeadline } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse } from "@/lib/server/ai-spending";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
-import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
+import { renderEvidenceExtractsWithRanges } from "@/lib/server/evidence-extract-response";
 import { NOTES_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
 import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
@@ -261,11 +261,12 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         }
         const quoted = evidence.items.find((item) => item.exactQuote !== null);
         if (quoted?.exactQuote !== null && quoted?.exactQuote !== undefined) {
-            return retrievalTextResponse(quoted.exactQuote, protocol, protocol === "ui" ? issueEvidenceCitations({ userId: user.id, personal: [quoted] }) : [], true);
+            return retrievalTextResponse(quoted.exactQuote, protocol, protocol === "ui" ? issueEvidenceCitations({ userId: user.id, personal: [quoted],
+                exportContent: { text: quoted.exactQuote, ranges: [{ start: 0, end: quoted.exactQuote.length }] } }) : [], true);
         }
 
         signal.throwIfAborted();
-        const text = renderEvidenceExtracts({ personal: evidence.items });
+        const rendered = renderEvidenceExtractsWithRanges({ personal: evidence.items });
         if (messages.filter((message) => message.role === "user").length === 1) {
             afterResponse(() => captureServerAnalyticsEvent({
                 event: "ai_chat_started", distinctId: user.id,
@@ -274,7 +275,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
                     note_count: evidence.candidateCount, user_state: "authenticated" },
             }));
         }
-        return retrievalTextResponse(text, protocol, protocol === "ui" ? issueEvidenceCitations({ userId: user.id, personal: evidence.items }) : []);
+        return retrievalTextResponse(rendered.text, protocol, protocol === "ui" ? issueEvidenceCitations({ userId: user.id, personal: evidence.items, exportContent: rendered }) : []);
         });
     } catch (error: unknown) {
         signal.throwIfAborted();

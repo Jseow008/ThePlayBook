@@ -2412,3 +2412,107 @@ the prior `797399c2` head; that does not verify this follow-up. Publish and insp
 the corrected head, require its gates, keep auto-merge OFF, and reuse only unaffected
 evidence above. Managed restore, real provider cancellation/billing, devices/skips,
 original no-op and historical service-error limitations remain unchanged.
+
+### Notes export passage links — implementation and targeted verification, 28 October 2026
+
+Owner approved the narrow export fix after the saved-ideas review: attach each
+source destination to its corresponding passage in Markdown/shared exports, use
+durable destinations where available, retain ordinary account access checks, and
+never present a24-hour verification reference as permanent. Repeated the same
+three-passage journey; no broader retrieval, device or provider investigation.
+
+Branch `codex/notes-export-sources` in
+`/Users/j/.codex/workspaces/netflux-notes-export-sources`, from freshly fetched
+`origin/main` at `bec778c9`. Managed-worktree creation was unavailable because this
+chat's registered workspace is the project mirror; used a separate ordinary Git
+worktree without changing the primary checkout or its Supabase link. The previous
+read-only review and #291 production evidence remain preserved in the earlier
+worktree and its local evidence folders. No inherited open-PR commits.
+
+Implementation:
+
+- The authorized Notes response carries a stable reader destination and exact
+  UTF-16 response range per selected record. Ranges are recorded while composing
+  existing evidence blocks; no quotation matching/guessing or retrieval change.
+  Identical quotations/headings still receive distinct highlight destinations.
+- The export serializer retains these bounded destination/range fields and drops
+  the separately issued `/evidence#...` verification token. Markdown and the shared
+  viewer use the same formatter to attach each link immediately after its passage
+  (and attached thought, when present). Downloads make the destination absolute;
+  shared links remain same-origin. Reader URLs carry IDs, not access grants.
+- Invalid/external/overlapping destinations fail closed with an honest unavailable
+  notice. Unavailable sources retain quotation/thought text without an invented
+  link. Existing exports remain readable. Older answers without destination
+  metadata retain their text and show a refresh notice; their expiring links are
+  not promoted into permanent references.
+- Shared exports remain explicit copies of the chosen material. A notice explains
+  that their source links do not grant access to another person's private notes.
+  Existing reader ownership, unlocatable/deleted-source handling, export expiry
+  and encryption remain unchanged. No new API route, migration, RLS policy,
+  provider change, production key/configuration or accounting-policy change.
+
+Validation:
+
+-71 focused passes across export serialization/real encryption, reference
+  authorization, literal extract rendering and Notes/export API tests. Added10
+  export regressions covering3 repeated quotations with embedded fences/Unicode,
+  exact link placement, round-trip encryption, legacy metadata, unavailable and
+  unsupported destinations/ranges. Full local suite2070 passes/307 skips;34
+  capacity-harness checks passed. Lint passed. An initial test fixture incorrectly
+  used `withdrawn` instead of the personal-evidence type's `unavailable`; corrected
+  that test input, reran all10 affected regressions, typecheck and build, all passed.
+  Initial type/build failures are retained; no application behavior was changed
+  to satisfy that fixture. React/client-boundary review found no added effects,
+  automatic submission, provider imports, styling/layout or account-global cache.
+- Disposable local Supabase project `netflux-export-sources-20261028`,5832x ports,
+  fully separate from other existing local projects and production. Two ordinary
+  non-admin users; three controlled copies of the same How Minds Change passages
+  used in the read-only review, with one clearly synthetic private attached thought.
+  Ordinary Auth/RLS clients loaded all3 for A and zero for B. All3 ordinary citation
+  resolutions matched A's destination and returned unavailable for B.
+- CUA browser used the actual candidate development UI and real local Auth,
+  encrypted-export creation API, snapshot/reader/highlight APIs and ordinary RLS.
+  Only Ask selection was controlled using the actual current renderer/issuer/UI
+  response helpers, to avoid live AI. No embedding/model calls or paid resources.
+- Downloaded Markdown:3 correct durable URLs, each after its own quotation, all
+  quotation and synthetic-thought blocks exact; zero verification tokens. Shared
+  export:3 same destinations with exact quote/thought blocks and privacy notice.
+  Followed all3 shared links as owner: each opened one exact permanent highlight
+  in the original fixture source. Changed to B, opened the SAME3 exported links:
+  each showed inaccessible/deleted notice, zero private marks and no A private
+  thought. Public source content remained accessible, as intended. The shared
+  copy itself remains readable to its recipient; it grants no destination access.
+
+Verification setup qualifications (retained, not counted as product passes):
+
+- First local page/reader navigation exceeded the browser controller deadline
+  while Next compiled routes; settled owner checks subsequently passed. Initial
+  library observation preceded completion. Deduplicated fixture Set-Cookie
+  headers and added its development websocket forwarding; no product auth change.
+- First shared export returned410 during development route compilation before
+  its displayed30-minute lifetime elapsed. The process-local development fallback
+  did not retain this fixture across routes/compilation. Retained that failed
+  attempt separately. Captured the REAL create API response and unchanged
+  ciphertext in a loopback-only temporary fixture store, then successfully
+  repeated shared viewing. This verifies formatting/link behavior, not production
+  Upstash persistence. No production storage setting or application store changed.
+
+Safe evidence in `/Users/j/.codex/verification/netflux-export-sources-20261028`:
+`markdown-verification.json`, `shared-export-verification.json`,
+`browser-verification.json`, `runtime-account-isolation.json`, unit/build/type
+logs and screenshots. No real personal thought text used. Account tokens, local
+credentials, the temporary answer/verification tokens and export decryption keys
+are excluded from retained evidence. Cleanup is complete: revoked/deleted both
+synthetic accounts and verified zero users/sessions/highlights/content/allowance
+rows; stopped only owned local servers and this isolated Supabase project;
+verified zero owned containers/volumes and closed3148/3149/58321/58322 ports.
+Removed private files, isolated project, temporary .env.local and exact test
+download; restored clipboard and closed/reset the three owned browser tabs.
+`cleanup-final.json` records the checks. No unrelated container or credential
+was changed.
+
+Coverage limits:307 local unit skips; production verification/CI gates are not
+claimed by local browser evidence. Physical phones/Safari, broad retrieval quality
+and live providers were intentionally outside this change. Required GitHub CI and
+security checks must still pass normally before protected merge. No gate bypass,
+production-data edit, timer or ongoing monitoring. One agent; no subagents.
