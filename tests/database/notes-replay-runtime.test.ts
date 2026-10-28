@@ -95,6 +95,20 @@ database('persisted Notes replay ownership and unchanged accounting', () => {
         expect((await counts()).total).toBe(before.total-80);
         expect((await rpc('claim',next)).cache.opaque).toBe('retry');
     });
+    it('recovers explicitly when an intermediate retry never reached the server',async()=>{
+        const first=base(),owner={...first,ownerNonce:(await rpc('claim',first)).ownerNonce};
+        await admit(owner);await reserve(owner);
+        const missing=newNotesReplayAttemptId(),before=await counts();
+        const later={...first,attemptId:newNotesReplayAttemptId(),retryOf:missing};
+        const recovery=await rpc('claim',later);
+        expect(recovery).toEqual({state:'retry_parent_changed',retryOf:first.attemptId});
+        expect(await counts()).toEqual(before);
+        const explicit={...first,attemptId:newNotesReplayAttemptId(),retryOf:recovery.retryOf};
+        expect((await rpc('claim',explicit)).state).toBe('owner');
+        // The delayed intermediate request cannot displace the explicit recovery.
+        expect((await rpc('claim',{...first,attemptId:missing,retryOf:first.attemptId})).state).toBe('conflict');
+        expect(await counts()).toEqual(before);
+    });
     it('repeated failure retains allowance/reserve and nonce/expiry never transfer ownership',async()=>{
         const input=base(), owner={...input,ownerNonce:(await rpc('claim',input)).ownerNonce};
         await admit(owner); await reserve(owner); const before=await counts();

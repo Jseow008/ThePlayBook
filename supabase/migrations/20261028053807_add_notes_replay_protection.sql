@@ -89,8 +89,15 @@ BEGIN
   IF active IS NOT NULL THEN
    SELECT * INTO old FROM private.notes_replay_attempts WHERE user_id=u AND session_id=s AND attempt_id=active FOR UPDATE;
    IF FOUND THEN
-    IF parent IS DISTINCT FROM active OR old.fingerprint IS DISTINCT FROM (p_input->'fingerprints'->>old.key_id) THEN
-     RETURN jsonb_build_object('state','conflict'); END IF;
+    IF old.fingerprint IS DISTINCT FROM (p_input->'fingerprints'->>old.key_id) THEN RETURN jsonb_build_object('state','conflict'); END IF;
+    IF parent IS DISTINCT FROM active THEN
+     -- An intervening client attempt may never have reached this database.
+     -- Return an authenticated hint only; do not admit work or auto-retry it.
+     IF parent IS NOT NULL AND NOT EXISTS(SELECT 1 FROM private.notes_replay_attempts WHERE user_id=u AND session_id=s AND attempt_id=parent) THEN
+      RETURN jsonb_build_object('state','retry_parent_changed','retryOf',active);
+     END IF;
+     RETURN jsonb_build_object('state','conflict');
+    END IF;
     UPDATE private.notes_replay_attempts SET state='uncertain' WHERE user_id=u AND session_id=s AND attempt_id=active AND state IN ('claimed','running');
    END IF;
   END IF;

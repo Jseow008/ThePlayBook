@@ -2329,3 +2329,86 @@ Added a fresh process-only synthetic ring to that validation step; no production
 permanent CI credential is used. This configuration correction stays within replay
 setup. It does not waive the required gate or production hold. Recheck final PR head
 and record actual required-check outcomes before release.
+
+### Missing intermediate retry correction and replacement hosted verification
+
+Final review reproduced an uncovered recovery gap before closure: A was admitted;
+B was intentionally dispatched but never reached the server; C named B as parent.
+The original strict-parent check returned a generic conflict forever on subsequent
+unchanged retries. A new persisted regression failed with actual `conflict` before
+the correction. This supersedes the earlier claim that integration coverage was
+complete; the duplicate-processing protections themselves had passed.
+
+The narrow correction returns an authenticated `retry_parent_changed` hint only
+when the question/scope fingerprint still matches and the supplied parent has no
+record in that account/session. It does not claim ownership, consume allowance or
+reserve spending. The client retains that opaque parent only in its per-chat guard;
+a later EXPLICIT Send creates a new attempt using it. No automatic resubmission.
+Delayed known ancestors remain conflicts and cannot displace the newer owner.
+If the hint is lost on reload, another explicit Send can obtain it again without
+spending; a subsequent explicit retry processes. Draft/account/scope rules remain.
+
+User separately approved a replacement $10/month quoted project in Jseow008, again
+with no prorated total. Created `dgwxojcyuifdvmcpibik`, named
+`netflux-replay-recovery-verification-20261028`, and verified it against the CLI
+project list. The connector rejected its advertised confirmation-ID argument;
+retrying without that unsupported argument created the one approved project.
+Configured only that disposable database credential with the documented management
+API; never touched production credentials. Its managed PostgreSQL17.11 versus
+production17.6 is a platform-version difference; per-object schema comparison still
+has zero unexplained differences and the same70 intended additions.
+
+Final corrected-source evidence:
+
+- All10 persisted database groups passed locally. All48 client/guard checks passed.
+  The question-draft component suite now uses the real response guard/transport,
+  with only the fetch boundary controlled; its former mock replaced that guard.
+- Full local suite:2,060passed/307skipped, plus34 capacity passes. Lint/typecheck
+  passed. A new test initially had an overly narrow inferred replay type, caught
+  by build; added its optional parent declaration, then build/typecheck passed.
+  No product behavior was changed to satisfy that test typing failure.
+- Replacement hosted full migration push/reset/clean-dry-run passed;10 runtime
+  plus9 real-route groups passed (19), with native probe skipped in that automatic
+  command. The new real-route case proves the hint changes no actual allowance or
+  ledger, explicit recovery adds one pair/admission, and late B is rejected with
+  no extra accounting. Previous native reset proof remains valid: the changed
+  branch requires a missing retry parent and is not exercised by same-attempt
+  transport copies. No new provider or model calls were made.
+- Repeated all security/ACL/DB-002/type checks and schema comparison on the
+  replacement project. Advisors retain the same3 known WARN types; service-only
+  RLS/no-policy and fresh unused-index INFO remain explained. A managed Auth
+  absolute-connection-allocation INFO is a fresh-project configuration notice,
+  not a replay schema regression. No advisor configuration was changed.
+- Corrected production build `NA3D4rqxiTVqQwYlXhSPW` passed Sharp/CSS checks.
+  Repeated7 smoke scenarios: native Chrome login and callback to AuthCodeError;
+  CUA in-app browse, expanded actual synthetic paragraph, anonymous admin denial,
+  disposable admin dashboard; shallow/detailed health200 with all readiness ready.
+  Detailed request used the required `x-health-check-secret` and checked that
+  privileged fields existed. An earlier supplemental health call used the wrong
+  header and established only shallow status; it is not detailed-health evidence.
+- Chrome's address/title changed while its old page accessibility content stayed
+  stale during later navigation. Switched to a fresh in-app CUA tab successfully.
+  After the admin dashboard was observed, that tab's controls became unavailable
+  before screenshot/logout; no screenshot/logout pass is claimed. Whole-project
+  deletion removed the disposable accounts/sessions. Native local smoke tab was
+  closed and the user's production tab restored without editing it. CUA state was
+  reset to remove in-memory test credentials. Existing reset screenshot remains.
+
+Both approved temporary projects are now deleted, with their absence verified in
+the connected project list (only production remains). Replacement cleanup stopped
+owned3091/3092/3093 processes, removed labeled containers
+`76440cb80ae29041f8c464f2c3d906921381e38275244075edc65113b9e3b7a0`
+and the owned replacement Redis, and removed replacement credentials/fixtures,
+isolated links, generated private files and build output. No owned port remains;
+see `replacement-local-cleanup.json` and `replacement-project-cleanup.log` in the
+private verification directory. No third paid project was created or authorized.
+
+The earlier production dry-run hash is superseded. Repeated read-only production
+dry-run again proposes ONLY `20261028053807_add_notes_replay_protection.sql`, now
+SHA-256 `13841206378134292ecbeaa007b6b6885799d98b724bebfc13b1a0c856a96b13`.
+No production push or environment/deployment change occurred. Exact migration/key
+approval and post-push gates remain outstanding. Required CI/security passed for
+the prior `797399c2` head; that does not verify this follow-up. Publish and inspect
+the corrected head, require its gates, keep auto-merge OFF, and reuse only unaffected
+evidence above. Managed restore, real provider cancellation/billing, devices/skips,
+original no-op and historical service-error limitations remain unchanged.

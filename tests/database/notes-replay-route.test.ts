@@ -27,7 +27,7 @@ hosted('actual Notes route with hosted Auth/RLS/ledger and controlled providers'
     let sessionId: string;
     let selectorDelay=0,onSelection:(()=>void)|undefined;
     const vector=[1,...Array(767).fill(0)];
-    function request(replay={chatId:randomUUID(),questionId:randomUUID(),attemptId:newNotesReplayAttemptId()},scope={version:1,itemType:'all'}) {
+    function request(replay:{chatId:string;questionId:string;attemptId:string;retryOf?:string}={chatId:randomUUID(),questionId:randomUUID(),attemptId:newNotesReplayAttemptId()},scope={version:1,itemType:'all'}) {
         return {replay:{...replay,expectedOwner:JSON.stringify([fixture.userId,sessionId])},scope,messages:[{id:replay.questionId,role:'user',parts:[{type:'text',text:'Which saved passage discusses preserving a question?'}]}]};
     }
     const post=(body:ReturnType<typeof request>,signal?:AbortSignal)=>POST(new NextRequest('http://127.0.0.1:3089/api/chat/notes',{method:'POST',headers:{'content-type':'application/json','x-evidence-protocol':'ui'},body:JSON.stringify(body),signal}));
@@ -112,6 +112,22 @@ hosted('actual Notes route with hosted Auth/RLS/ledger and controlled providers'
         const old=await post(body);expect(old.status).toBe(409);expect(await old.text()).not.toContain(fixture.quote);
         const same=await post(retried);expect(same.status).toBe(200);expect(await same.text()).toBe(answer);
         expect(await accounting()).toEqual({usage:before.usage+2,stageCount:before.stageCount+4,ledgerCount:before.ledgerCount+4,total:before.total+686});
+    },30000);
+    it('missing intermediate retries offer an authenticated hint without automatic processing',async()=>{
+        const body=request(),initial=await post(body);expect(initial.status).toBe(200);await initial.text();
+        const before=await accounting(),missing=newNotesReplayAttemptId();
+        const lostParent={...body,replay:{...body.replay,attemptId:newNotesReplayAttemptId(),retryOf:missing}};
+        const recovery=await post(lostParent);expect(recovery.status).toBe(409);
+        const hint=(await recovery.json()).error;
+        expect(hint.code).toBe('ASK_ATTEMPT_RETRY_PARENT_CHANGED');expect(hint.retryOf).toBe(body.replay.attemptId);
+        expect(await accounting()).toEqual(before);
+        const explicit={...body,replay:{...body.replay,attemptId:newNotesReplayAttemptId(),retryOf:hint.retryOf}};
+        const answer=await post(explicit);expect(answer.status).toBe(200);expect(await answer.text()).toContain(fixture.quote);
+        const after=await accounting();
+        expect(after).toEqual({usage:before.usage+1,stageCount:before.stageCount+2,ledgerCount:before.ledgerCount+2,total:before.total+343});
+        const delayed=await post({...body,replay:{...body.replay,attemptId:missing,retryOf:body.replay.attemptId}});
+        expect(delayed.status).toBe(409);expect((await delayed.json()).error.code).toBe('ASK_ATTEMPT_CONFLICT');
+        expect(await accounting()).toEqual(after);
     },30000);
     it('blocks evidence deletion while a cached read is pending',async()=>{
         const body=request(),answer=await post(body);expect(answer.status).toBe(200);await answer.text();

@@ -10,6 +10,7 @@ import { notesReplayRpc, NotesReplayUnavailable, withNotesReplayOwner } from './
 export const NotesReplayIdentitySchema = z.object({ expectedOwner: z.string().min(1).max(200), chatId: z.string().min(1).max(128), questionId: z.string().min(1).max(128),
     attemptId: z.string().uuid(), retryOf: z.string().uuid().optional() }).strict();
 const resultSchema = z.object({ state: z.string().optional(), ownerNonce: z.string().uuid().optional(),
+    retryOf: z.string().uuid().optional(),
     cache: EncryptedReplaySchema.nullish(), valid: z.boolean().optional(), published: z.boolean().optional(),
     code: z.string().optional(), status: z.number().optional(), serverTime: z.number().int().optional() });
 const manifestEntry = z.object({ type: z.enum(['highlight','reflection']), id: z.guid(), fingerprint: z.string().regex(/^[a-f0-9]{64}$/) });
@@ -17,8 +18,8 @@ const wireSchema = z.object({ body: z.string(), contentType: z.string().max(128)
 type Client = Awaited<ReturnType<typeof createClient>>;
 const waiting = 'Your previous attempt is still processing. You can wait, or try again. Trying again starts a new attempt and may cause additional AI processing.';
 const uncertain = 'We couldn’t confirm whether your previous attempt finished. It may still be processing. Trying again starts a new attempt and may cause additional AI processing.';
-function failure(code: string, message: string, status = 409, serverTime?: number) {
-    return Response.json({ error: { code, message, ...(serverTime === undefined ? {} : { serverTime }) } }, { status, headers: { 'Cache-Control': 'no-store', ...(code === 'ASK_ATTEMPT_IN_PROGRESS' ? { 'Retry-After': '2' } : {}) } });
+function failure(code: string, message: string, status = 409, serverTime?: number, retryOf?: string) {
+    return Response.json({ error: { code, message, ...(serverTime === undefined ? {} : { serverTime }), ...(retryOf ? { retryOf } : {}) } }, { status, headers: { 'Cache-Control': 'no-store', ...(code === 'ASK_ATTEMPT_IN_PROGRESS' ? { 'Retry-After': '2' } : {}) } });
 }
 const unavailable = () => failure('ASK_ATTEMPT_RESULT_UNAVAILABLE','This result cannot be safely reused. Your question is preserved. Try again to start a new attempt.',410);
 async function freshEvidence(client: Client, userId: string, scope: PersonalEvidenceScope,
@@ -64,6 +65,8 @@ export async function withNotesReplayRequest(options: {
         }
         if (result.state === 'running') return failure('ASK_ATTEMPT_IN_PROGRESS',waiting);
         if (result.state === 'uncertain') return failure('ASK_ATTEMPT_OUTCOME_UNCERTAIN',uncertain);
+        if (result.state === 'retry_parent_changed' && result.retryOf) return failure('ASK_ATTEMPT_RETRY_PARENT_CHANGED',
+            'Your last retry did not become the current attempt. Your question is preserved. Try again to start a new attempt; this may cause additional AI processing.',409,undefined,result.retryOf);
         if (result.state === 'conflict') return failure('ASK_ATTEMPT_CONFLICT','This attempt belongs to a different question or scope. Your draft is preserved.');
         if (result.state === 'superseded') return failure('ASK_ATTEMPT_SUPERSEDED','A newer attempt is active. This result will not replace it.');
         if (result.state === 'expired') return failure('ASK_ATTEMPT_EXPIRED','This attempt is too old or its clock is out of range. Your question is preserved. Try again explicitly to use the verified server time.',410,result.serverTime);

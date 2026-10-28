@@ -32,3 +32,14 @@ it('offers server-clock recovery only for a later explicit attempt, without anot
     expect(Math.abs(parseInt(fresh.replaceAll('-','').slice(0,12),16)-serverTime)).toBeLessThan(100);
     expect(send).toHaveBeenCalledTimes(1);
 });
+it('uses a verified missing-parent hint only for the next explicit retry of that attempt',async()=>{
+    const parent='12345678-1234-7123-8123-123456789abc';
+    const send=vi.fn<typeof fetch>().mockResolvedValue(Response.json({error:{code:'ASK_ATTEMPT_RETRY_PARENT_CHANGED',retryOf:parent}},{status:409}));
+    const guard=new NotesReplayResponseGuard(()=>true,send);guard.activate('missing-child');
+    await guard.fetch('/',{body:JSON.stringify({replay:{attemptId:'missing-child'}})});
+    expect(send).toHaveBeenCalledOnce();
+    guard.activate('new-explicit-attempt');
+    expect(guard.retryParent('missing-child')).toBe(parent);
+    expect(guard.retryParent('different-question')).toBe('different-question');
+    expect(send).toHaveBeenCalledOnce();
+});

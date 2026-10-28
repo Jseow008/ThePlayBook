@@ -14,12 +14,6 @@ vi.mock('@/hooks/useVerifiedChatSession', () => ({
 vi.mock('next/navigation', () => ({ usePathname: () => '/notes', useSearchParams: () => new URLSearchParams(query.value) }));
 vi.mock('next/link', () => ({ default: ({ onNavigate, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { onNavigate?: () => void }) =>
     <a {...props} onClick={(event) => { event.preventDefault(); onNavigate?.(); }}>{children}</a> }));
-vi.mock('ai', async (original) => {
-    const actual = await original<typeof import('ai')>();
-    return { ...actual, DefaultChatTransport: class extends actual.DefaultChatTransport<UIMessage> {
-        constructor(options: ConstructorParameters<typeof actual.DefaultChatTransport<UIMessage>>[0]) { super({ ...options, fetch: streamFetch }); }
-    } };
-});
 const scope = createNotesChatScope({ version: 1, itemType: 'all', filterQuery: 'focus' });
 const multiline = '  Synthetic exact question 🌱\nSecond line\n\n  Keep spaces and **Markdown**.  ';
 let controller: ReadableStreamDefaultController<Uint8Array>;
@@ -47,8 +41,9 @@ beforeEach(() => {
     identity.owner = 'draft-account-a:session-1'; identity.valid = true; query.value = 'ask=1';
     window.history.replaceState(null, '', '/notes?ask=1');
     streamFetch.mockReset();
-    streamFetch.mockImplementation(async () => new Response(new ReadableStream<Uint8Array>({ start(value) { controller = value; } }),
-        { headers: { 'content-type': 'text/event-stream', 'x-vercel-ai-ui-message-stream': 'v1' } }));
+    vi.stubGlobal('fetch',streamFetch);
+    streamFetch.mockImplementation(async (_url,init) => new Response(new ReadableStream<Uint8Array>({ start(value) { controller = value; } }),
+        { headers: { 'content-type': 'text/event-stream', 'x-vercel-ai-ui-message-stream': 'v1', 'x-notes-attempt-id':JSON.parse(String(init?.body)).replay.attemptId } }));
 });
 
 it('carries exact provisional text into Full Ask, restores the latest edited text on return, and reopens/reloads', () => {
@@ -562,4 +557,21 @@ it('persists attempt identity before fetch and gives an intentional retry a dist
     expect(second.messages.filter((message:UIMessage)=>message.role==='user')).toHaveLength(1);
     await waitFor(()=>expect(screen.getByRole('button',{name:'Try again'})).toBeVisible());
     expect(composer()).toHaveValue(multiline);
+});
+
+it('recovers a missing intermediate attempt only after another explicit Send',async()=>{
+    const active='12345678-1234-7123-8123-123456789abc';
+    streamFetch.mockRejectedValueOnce(new TypeError('Request never reached server'))
+        .mockResolvedValueOnce(Response.json({error:{code:'ASK_ATTEMPT_RETRY_PARENT_CHANGED',retryOf:active,message:'Synthetic explicit recovery'}},{status:409}));
+    render(<NotesAskPanel variant="page" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(),{target:{value:multiline}});send();
+    await waitFor(()=>expect(screen.getByRole('button',{name:'Try again'})).toBeVisible());
+    send();await waitFor(()=>expect(screen.getByRole('button',{name:'Try again'})).toBeVisible());
+    expect(streamFetch).toHaveBeenCalledTimes(2);expect(composer()).toHaveValue(multiline);
+    send();await waitFor(()=>expect(streamFetch).toHaveBeenCalledTimes(3));
+    const request=JSON.parse(String(streamFetch.mock.calls[2][1]?.body));
+    expect(request.replay.retryOf).toBe(active);
+    expect(request.messages.filter((message:UIMessage)=>message.role==='user')).toHaveLength(1);
+    expect(request.messages[0].parts[0].text).toBe(multiline.trim());
+    await finish();
 });

@@ -432,7 +432,7 @@ function VerifiedNotesAskPanel({
         try {
             const body = { scope: activeScope.scope, scopeLabel: activeScope.summary,
                 replay: { expectedOwner: ownerKey, chatId: turn.chatId, questionId: turn.messageId, attemptId: attempt.attemptId,
-                    ...(reuse && turn.attemptId ? { retryOf: turn.attemptId } : {}) } };
+                    ...(reuse && turn.attemptId ? { retryOf: requestGuard.retryParent(turn.attemptId) } : {}) } };
             if (reuse) await regenerate({ messageId: turn.messageId, body });
             else await sendMessage({ id: turn.messageId, role: "user", parts: [{ type: "text", text: turn.text.trim() }] }, { body });
         } catch {
