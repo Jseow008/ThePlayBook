@@ -2321,3 +2321,11 @@ Production release hold, concrete review:
 - Required PR CI/security must still pass. Do not enable auto-merge while database
   prerequisites remain outstanding. No production migration, environment change,
   model call, deployment, new timer or additional paid resource was performed.
+
+PR #291 opened at implementation commit `997fa163`; scope passed. Initial Security
+Validation stopped before SQL/security tests because its synthetic launch environment
+lacked the newly required `NOTES_REPLAY_KEYS` (job 122690035689, run 40650764396).
+Added a fresh process-only synthetic ring to that validation step; no production or
+permanent CI credential is used. This configuration correction stays within replay
+setup. It does not waive the required gate or production hold. Recheck final PR head
+and record actual required-check outcomes before release.
