@@ -2516,3 +2516,111 @@ claimed by local browser evidence. Physical phones/Safari, broad retrieval quali
 and live providers were intentionally outside this change. Required GitHub CI and
 security checks must still pass normally before protected merge. No gate bypass,
 production-data edit, timer or ongoing monitoring. One agent; no subagents.
+
+
+### Presentation-only Browse -> reader -> Back — 28 October2026
+
+Owner narrowed this to observed presentation issues, with existing fetching,
+caching and navigation preserved. Fresh branch `codex/reader-loading-presentation`
+in `/Users/j/.codex/workspaces/netflux-reader-loading-presentation`, from fetched
+main aa8e4d4f. No changes imported from the separate, unreleased reader-entry
+performance experiment. One agent; no subagents, speed benchmark, new account or
+paid resource. Primary checkout and synced project sources untouched.
+
+Read-only production review in existing signed-in Chrome: desktop Browse showed
+resolved reading activity and2 Continue-reading links; Back returned with
+activity still resolved, same link count and no public-shelf skeleton. At390x844,
+Browse -> The Singapore Story captured the actual `ReaderLoadingState` (no generic
+shelf placeholder), aria-busy=true, with a fixed quarter-filled bar. Ready reader
+used the user's saved sepia theme and real section progress; the loading state
+was dark. Back again retained resolved reading activity and2 links without a
+shelf skeleton. No claim of generic-placeholder failure or lost cached content.
+No runtime request-failure simulation on production. Existing public error UI
+is visually distinct and offers Try again; it is not being changed. No note
+Save/edit/completion control used. Ordinary viewing may record reading activity.
+
+Evidence `/Users/j/.codex/verification/netflux-loading-presentation-20261028`: safe
+`production-review.json`, current reader/entry screenshots. Initial desktop probe
+used an invalid escaped CSS class selector after navigation; corrected probe saw
+the settled reader, so desktop entry placeholder was not captured in that attempt.
+The narrow entry capture is usable evidence. Production owned tab1382576687 closed
+and viewport override reset. No deployment change.
+
+Only proposed useful differences: neutral decorative progress track with no
+invented fill; reader loader uses already-cached current-account theme when
+available. New read-only hook consumes existing AuthUser context, reads only its
+scoped local cache, never initializes settings/auth synchronization or writes
+storage, and makes no request. Undefined account/missing/invalid storage uses
+default dark; do not promise a stored preference before account/cache is known.
+The static placeholder/Preview output remains server-rendered; only the reader's
+appearance wrapper is client-side. Existing layout, spacing, shell, fonts, section
+placeholders, text, motion, error state, fetching and cache policy unchanged.
+
+Initial targeted tests6 passed; affected loader/header tests10 passed; existing
+reader-settings tests15 passed. Scoped lint and initial types passed. Additional
+full suite/lint/final build currently running; do not claim final success yet.
+Local visual environment is a unique signed-out hostname
+`loading-presentation-20261028.localhost:3152`, public content credentials only.
+Selected Sepia using the existing reader settings UI for this disposable guest
+context; production preferences/cookies not changed.
+
+Visual setup qualifications: webpack development server stalled at first reader
+compilation (low CPU, no completion); navigation exceeded controller deadline,
+leaving owned about:blank tab1382576689. Stopped only owned dev server, built the
+normal production candidate successfully, recovered that same owned tab and
+opened the reader. Temporary comparison gallery used a private underscore folder,
+so it was not a route and returned404. Removed it entirely; do not claim gallery
+visual verification. Instead inspect actual loading state with a server-process-
+only8s latency wrapper for the existing full-content query, then return wrapper
+to normal for bounded desktop/narrow navigation checks. No product delay or
+fetching change; this is presentation verification, not a speed measurement.
+
+Final production build after fixture removal, full tests and full lint running.
+Next: start only3152 with that temporary wrapper, review actual sepia/neutral
+loader visually, verify normal Browse -> reader -> Back desktop and390px, then
+remove env/control files/owned tab/server and publish only the presentation diff
+through normal protected gates if verification passes. Old performance experiment
+remains unpublished/unreleased. No timer or ongoing monitoring.
+
+
+Presentation verification complete (continuation): final production build, full
+lint/types and unit suite passed:2074 unit passes/307 skips, plus34 capacity-harness
+checks. Skipped tests remain outside coverage. No benchmark or speed claim.
+
+Visual review of the actual candidate waiting state, with8s held only in the
+owned server process: both1728px and390px captures show aria-busy=true, cached
+reader-sepia, neutral track with zero children and no numeric progress values.
+Ready reader also uses reader-sepia. Geometry, placeholder layout and existing
+pulse behavior unchanged; no new messages. Initial narrow soft-navigation probe
+preceded fallback, and the next probe found ready content after intent prefetch;
+retained as a missed transient capture. Direct canonical navigation with the same
+server-only hold then captured the actual waiting state. This does not establish
+absence of an initial default-theme frame while account/cache is unresolved.
+The cache-only correction avoids forcing a new fetch and deliberately defaults
+to dark if account/theme is unknown. Visual evidence in candidate-waiting-*.png.
+
+Set latency control OFF before normal navigation checks. Desktop1728px: Browse
+had20 catalog headings; opening Brutal Realities produced actual readable content
+in sepia, no remaining loader; Back's immediate probe showed the same20 headings
+and zero browse/public/reader skeletons. Narrow390x844: the visible hero action
+opened its recorded Can't Hurt Me destination with readable sepia content; Back
+again showed20 headings and zero loading fallbacks at the probe. This is bounded
+navigation evidence, not a claim that every intermediate frame was captured.
+The earlier production signed-in review separately covered retained personal
+sections; isolated candidate browser is a guest and no account/notes were created.
+No production failure was injected; existing failure UI/source is unchanged.
+
+Saved safe production/candidate JSON, screenshots, build/lint/types/test logs and
+verification-summary.json in the evidence directory. Closed both owned browser
+tabs, reset390px override, stopped only owned3152 processes, verified port closed.
+Removed copied public-only env, temporary gallery and server latency controls.
+No private thought text/credentials in evidence, no new account/paid resources.
+Earlier streaming experiment remains in its separate branch, unpublished.
+
+Ready scope: ContentDetailLoadingStates + tiny client appearance wrapper +
+read-only cached-theme hook + focused regressions + this checkpoint. Preview
+markup, route/data loaders, fetches, auth provider/sync, caches, navigation, audio,
+highlights, errors, personal shelves, typography/spacing and motion are unchanged.
+Next: inspect single-commit/file scope, publish presentation PR through required
+PR-scope/CI/security gates normally. No direct main push or gate bypass. Browser
+checks are local; no production deployment or phone/Safari verification claimed.
