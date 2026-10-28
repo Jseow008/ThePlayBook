@@ -16,11 +16,20 @@ function quote(text: string): string {
 }
 
 /** Input is the final authorized, freshness-checked selection, after existing composition limits. */
-export function renderEvidenceExtracts(options: {
+type ExtractOptions = {
     personal: readonly RankedPersonalEvidence[];
     sources?: readonly LibrarySourceEvidence[];
     evidenceIds?: readonly string[];
-}): string {
+};
+
+export function renderEvidenceExtracts(options: ExtractOptions): string {
+    return renderEvidenceExtractsWithRanges(options).text;
+}
+
+/** Record exact response offsets while composing, rather than matching repeated quotations later. */
+export function renderEvidenceExtractsWithRanges(options: ExtractOptions): {
+    text: string; ranges: Array<{ start: number; end: number }>;
+} {
     const sources = options.sources ?? [];
     const ids = options.evidenceIds ?? options.personal.map((item) => item.evidence.evidenceId);
     if (ids.length > 8 || new Set(ids).size !== ids.length) throw new Error("Invalid extract selection");
@@ -50,5 +59,13 @@ export function renderEvidenceExtracts(options: {
         return `### ${literal(source!.title)}\n\n**Editorial passage${span.start !== 0 || span.end !== source!.text.length ? " (excerpt)" : ""}**\n\n${quote(span.text)}`;
     });
     if (!blocks.length) throw new Error("No evidence to render");
-    return `Saved evidence matching your question. These are extracts, not a generated explanation.\n\n${blocks.join("\n\n---\n\n")}\n\nExcerpt labels indicate partial text. Open the saved record or source for full context. To change the results, refine your question or adjust the available filters.`;
+    let text = "Saved evidence matching your question. These are extracts, not a generated explanation.\n\n";
+    const ranges = blocks.map((block, index) => {
+        if (index) text += "\n\n---\n\n";
+        const start = text.length;
+        text += block;
+        return { start, end: text.length };
+    });
+    text += "\n\nExcerpt labels indicate partial text. Open the saved record or source for full context. To change the results, refine your question or adjust the available filters.";
+    return { text, ranges };
 }

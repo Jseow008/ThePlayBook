@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import type { CitationLink, CitationResolution } from "@/lib/evidence-citation";
+import { ExportPassageSchema } from "@/lib/evidence-citation";
 import type { RankedPersonalEvidence } from "@/lib/server/personal-evidence-ranking";
 import type { LibrarySourceEvidence } from "@/lib/server/library-evidence";
 import { loadSelectedPersonalEvidence, PersonalEvidenceRetrievalError } from "@/lib/server/personal-evidence-candidates";
@@ -54,12 +55,14 @@ function open(token: string, userId: string): Reference | null {
 export function issueEvidenceCitations(options: {
     userId: string; personal: readonly RankedPersonalEvidence[]; sources?: readonly LibrarySourceEvidence[];
     evidenceIds?: readonly string[]; exactQuote?: boolean;
+    exportContent?: { text: string; ranges: readonly { start: number; end: number }[] };
 }): CitationLink[] {
     const sources = options.sources ?? [];
     const ids = options.evidenceIds ?? options.personal.map((item) => item.evidence.evidenceId);
     if (ids.length > 8 || new Set(ids).size !== ids.length) throw new Error("Invalid citation selection");
+    if (options.exportContent && options.exportContent.ranges.length !== ids.length) throw new Error("Invalid export selection");
     const responseId = randomUUID();
-    return ids.map((id) => {
+    return ids.map((id, index) => {
         const personals = options.personal.filter((item) => item.evidence.evidenceId === id);
         const editorials = sources.filter((item) => item.evidenceId === id);
         if (personals.length + editorials.length !== 1) throw new Error("Citation outside selected evidence");
@@ -82,7 +85,15 @@ export function issueEvidenceCitations(options: {
         const token = seal({ version: 1, responseId, userId: options.userId, expiresAt: Date.now() + 86_400_000,
             type: record?.type ?? "source_segment", id: record?.id ?? source.id,
             contentItemId: record?.contentItemId ?? source.contentItemId, fingerprint: record?.fingerprint ?? source.fingerprint, spans });
-        return { label: `${record ? record.type === "reflection" ? "Reflection" : "Highlight / note" : "Editorial passage"}: ${title}`.slice(0, 400), href: `/evidence#${token}` };
+        const range = options.exportContent?.ranges[index];
+        const sourceHref = record
+            ? record.sourceStatus === "available" ? `/read/${record.contentItemId}${record.type === "highlight" ? `?highlightId=${record.id}` : ""}` : undefined
+            : `/read/${source.contentItemId}`;
+        if (range && (range.end > options.exportContent!.text.length || (index > 0 && range.start < options.exportContent!.ranges[index - 1].end))) {
+            throw new Error("Invalid export range");
+        }
+        return { label: `${record ? record.type === "reflection" ? "Reflection" : "Highlight / note" : "Editorial passage"}: ${title}`.slice(0, 400), href: `/evidence#${token}`,
+            ...(range ? { exportPassage: ExportPassageSchema.parse({ ...range, sourceHref }) } : {}) };
     });
 }
 

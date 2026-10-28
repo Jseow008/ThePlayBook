@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { AlertTriangle, Download, Loader2, LockKeyhole } from "lucide-react";
 import {
     buildChatExportMarkdown,
+    buildChatExportMessageMarkdown,
     getChatExportFilename,
     type ChatExportPayload,
     type EncryptedChatExportPayload,
@@ -28,7 +29,7 @@ function getKeyFromHash(): string | null {
 }
 
 function downloadMarkdown(payload: ChatExportPayload) {
-    const markdown = buildChatExportMarkdown(payload);
+    const markdown = buildChatExportMarkdown(payload, window.location.origin);
     const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -192,7 +193,7 @@ export function ChatExportClientPage({ exportId }: ChatExportClientPageProps) {
                                     </p>
                                     <div className="prose prose-sm max-w-none leading-7 text-foreground/94 [&_p]:my-0 [&_p+p]:mt-4">
                                         {message.role === "assistant" ? (
-                                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                                            <ReactMarkdown>{buildChatExportMessageMarkdown(message)}</ReactMarkdown>
                                         ) : (
                                             <p>{message.content}</p>
                                         )}

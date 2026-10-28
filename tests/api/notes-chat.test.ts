@@ -164,7 +164,9 @@ describe("Notes chat API", () => {
         const events = (await response.text()).split("\n").filter((line) => line.startsWith("data: {")).map((line) => JSON.parse(line.slice(6)));
         expect(events.find((event) => event.type === "text-delta").delta).toBe(item.exactQuote);
         expect(events.find((event) => event.type === "data-exact-quotation").data).toBe(true);
-        expect(events.find((event) => event.type === "data-citations").data).toEqual([{ label: expect.any(String), href: expect.stringMatching(/^\/evidence#/) }]);
+        expect(events.find((event) => event.type === "data-citations").data).toEqual([{ label: expect.any(String), href: expect.stringMatching(/^\/evidence#/),
+            exportPassage: { start: 0, end: item.exactQuote.length,
+                sourceHref: `/read/${item.evidence.contentItemId}?highlightId=${item.evidence.id}` } }]);
     });
 
     it("requires authentication", async () => {
