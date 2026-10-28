@@ -1,3 +1,4 @@
+import { ReaderLoadingAppearance } from "./ReaderLoadingAppearance";
 import {
     READER_COVER_FRAME_CLASS,
     READER_COVER_WRAPPER_CLASS,
@@ -106,13 +107,7 @@ export function PreviewLoadingState() {
 
 export function ReaderLoadingState() {
     return (
-        <div
-            data-testid="reader-loading-state"
-            role="status"
-            aria-label="Loading reader"
-            aria-busy="true"
-            className="min-h-screen bg-background font-sans text-foreground"
-        >
+        <ReaderLoadingAppearance>
             <span className="sr-only">Loading reader</span>
             <div
                 aria-hidden="true"
@@ -125,9 +120,7 @@ export function ReaderLoadingState() {
                         <div className="h-3 w-28 rounded-full bg-secondary/40" />
                         <div className="h-3 w-32 rounded-full bg-secondary/40" />
                     </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
-                        <div className="h-full w-1/4 rounded-full bg-primary/35" />
-                    </div>
+                    <div data-testid="reader-loading-progress-placeholder" className="h-1.5 overflow-hidden rounded-full bg-secondary" />
                 </div>
 
                 <div
@@ -154,6 +147,6 @@ export function ReaderLoadingState() {
                     ))}
                 </div>
             </div>
-        </div>
+        </ReaderLoadingAppearance>
     );
 }
