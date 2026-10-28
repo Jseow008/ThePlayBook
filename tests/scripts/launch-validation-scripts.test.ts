@@ -113,6 +113,7 @@ describe("launch validation scripts", () => {
             "ADMIN_ALLOWED_IPS=203.0.113.42,2001:db8::1",
             "ANONYMOUS_ACTIVITY_SECRET=test-anonymous-activity-secret",
             "CATALOG_SEARCH_CURSOR_SECRET=test-catalog-search-cursor-secret",
+            'NOTES_REPLAY_KEYS={"encryptionCurrent":"test","fingerprintCurrent":"test","encryption":{"test":"' + '11'.repeat(32) + '"},"fingerprint":{"test":"' + '22'.repeat(32) + '"}}',
         ].join("\n"));
 
         const result = await runNodeScript(

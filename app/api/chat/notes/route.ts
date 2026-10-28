@@ -21,9 +21,12 @@ import { contextualizeUserQuestion, FOLLOW_UP_CLARIFICATION } from "@/lib/server
 import { assertActiveChatSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
 import { PersonalEvidenceSelectionError } from "@/lib/server/personal-evidence-selector";
 
+import { withNotesReplayRequest } from "@/lib/server/notes-replay";
+
 export const maxDuration = 60;
 
 const ChatMessageSchema = z.object({
+    id: z.string().min(1).max(128).optional(),
     role: z.enum(["user", "assistant"]),
     content: z.string().trim().max(2_000).optional(),
     parts: z.array(z.unknown()).optional(),
@@ -33,6 +36,7 @@ const NotesChatRequestSchema = z.object({
     messages: z.array(ChatMessageSchema).min(1).max(20),
     scope: PersonalEvidenceScopeSchema,
     scopeLabel: z.string().trim().max(300).optional(),
+    replay: z.unknown().optional(),
 });
 
 const MAX_TOTAL_MESSAGE_CHARS = 12_000;
@@ -203,6 +207,8 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         }
         if (lastMessage.content.length > 2_000) return apiError("VALIDATION_ERROR", "Query must be between 1 and 2000 characters", 400, requestId);
         const questionContext = contextualizeUserQuestion(messages);
+        return await withNotesReplayRequest({ client: supabase, userId: user.id, replay: parsed.data.replay, submittedQuestionId: parsed.data.messages.at(-1)?.id,
+            request: { messages, scope, protocol }, scope, signal }, async (rememberEvidence) => {
         if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, protocol);
 
         const quota = await measureAskNotesPhase("quota", () => admitAiUsage(user.id, "ask-notes", signal));
@@ -249,6 +255,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             logApiError({ requestId, route: "/api/chat/notes", message: "Personal retrieval did not complete", error });
             return apiError("RETRIEVAL_UNAVAILABLE", "Your notes could not be searched completely. Please retry or narrow your filters.", 503, requestId);
         }
+        rememberEvidence(evidence.items.map(item => item.evidence));
         if (evidence.items.length === 0) {
             return retrievalTextResponse(NOTES_NO_EVIDENCE, protocol);
         }
@@ -268,6 +275,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             }));
         }
         return retrievalTextResponse(text, protocol, protocol === "ui" ? issueEvidenceCitations({ userId: user.id, personal: evidence.items }) : []);
+        });
     } catch (error: unknown) {
         signal.throwIfAborted();
         const spendingFailure = aiSpendingFailureResponse(error);

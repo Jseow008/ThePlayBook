@@ -538,3 +538,28 @@ it('keeps the final identity guard when verification changes before the next ren
     await waitFor(() => expect(streamFetch).toHaveBeenCalledOnce());
     await finish();
 });
+
+it('persists attempt identity before fetch and gives an intentional retry a distinct child ID after reload',async()=>{
+    streamFetch.mockImplementation(async (_url,init)=>{
+        const request=JSON.parse(String(init?.body));
+        const stored=readNotesChatContext(identity.owner,contextFromLink());
+        expect(stored?.failedTurn?.attemptId).toBe(request.replay.attemptId);
+        return new Response('Synthetic rejection',{status:503});
+    });
+    const view=render(<NotesAskPanel variant="sidebar" currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.change(composer(),{target:{value:multiline}});send();
+    await waitFor(()=>expect(screen.getByRole('button',{name:'Try again'})).toBeVisible());
+    const first=JSON.parse(String(streamFetch.mock.calls[0][1]?.body));
+    expect(first.replay.attemptId).toMatch(/^[a-f0-9]{8}-[a-f0-9]{4}-7/);
+    const context=contextFromLink();view.unmount();
+    render(<NotesAskPanel variant="sidebar" contextId={context} currentScope={scope} onClose={vi.fn()} />);
+    expect(composer()).toHaveValue(multiline);send();
+    await waitFor(()=>expect(streamFetch).toHaveBeenCalledTimes(2));
+    const second=JSON.parse(String(streamFetch.mock.calls[1][1]?.body));
+    expect(second.replay.attemptId).not.toBe(first.replay.attemptId);
+    expect(second.replay.retryOf).toBe(first.replay.attemptId);
+    expect(second.replay.questionId).toBe(first.replay.questionId);
+    expect(second.messages.filter((message:UIMessage)=>message.role==='user')).toHaveLength(1);
+    await waitFor(()=>expect(screen.getByRole('button',{name:'Try again'})).toBeVisible());
+    expect(composer()).toHaveValue(multiline);
+});

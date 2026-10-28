@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import { notesReplayOwner, notesReplayRpc } from "./notes-replay-context";
 import { getAdminClient } from "@/lib/supabase/admin";
 
 type QuotaWindow = "day" | "week" | "month";
@@ -78,6 +79,13 @@ export async function admitAiUsage(
 ): Promise<AiUsageQuotaResult> {
     signal.throwIfAborted();
     const limits = getAiUsageQuotaLimits();
+    const owner = notesReplayOwner();
+    if (owner) {
+        if (owner.userId !== userId || feature !== "ask-notes") throw new Error("Replay quota identity mismatch");
+        const data = await notesReplayRpc("admit", { ...owner, dayLimit: limits.day, weekLimit: limits.week, monthLimit: limits.month }, signal);
+        signal.throwIfAborted();
+        return admissionSchema.parse(data);
+    }
     const { data, error } = await getAdminClient().rpc("admit_ai_usage", {
         p_user_id: userId, p_feature: feature,
         p_day_limit: limits.day, p_week_limit: limits.week, p_month_limit: limits.month,

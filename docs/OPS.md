@@ -263,6 +263,52 @@ Production go/no-go:
 
 Cleanup is mandatory even after a failed gate: delete the disposable hosted project, confirm it no longer appears in the project list, stop isolated application processes, and securely remove temporary passwords, API keys, generated types, fixtures, and workdirs. Do not stop or modify unrelated developer servers.
 
+### Notes replay protection rollout and retention
+
+Ask Notes requires `20261028053807_add_notes_replay_protection.sql` and the
+server-only `NOTES_REPLAY_KEYS` ring before deploying its replay-aware application.
+Apply only the reviewed production dry-run list after explicit authorization under
+§2.2. Provision independent random 32-byte encryption and fingerprint keys using
+the format in `.env.example`; never put them in a `NEXT_PUBLIC_` variable, logs,
+diagnostic records or Git. Keep the same ring across application instances.
+Validate the environment, perform the database post-push checks, then promote the
+approved application. Missing keys or schema fail closed rather than sending
+unprotected processing requests. Old open Ask clients must refresh before sending.
+
+Rotate by adding new key IDs while retaining old entries, then change the current
+IDs. Keep previous encryption keys until at least 20 minutes after the last old-key
+writer stops (15-minute cache TTL plus cleanup grace). Keep previous fingerprint
+keys for at least 35 days after the last old-key writer stops. Do not remove an old
+fingerprint key while retained identities still reference it. A missing key or
+tampered envelope makes the result unavailable; recovery is an explicit new attempt,
+not automatic resubmission. The ring supports at most 64 entries per key purpose.
+
+Complete response envelopes are encrypted with AES-256-GCM and account/session/
+chat/question/attempt-bound authenticated data. The encrypted envelope includes its
+evidence manifest. Plaintext input and evidence are not diagnostic fields. Live
+response reuse expires after 15 minutes, is limited to 256 KiB plaintext, and has
+8 MiB/account and 64 MiB aggregate ciphertext caps. Eviction preserves identity
+tombstones. Compact IDs, keyed fingerprints, status and accounting bindings expire
+after 35 days; unknown old UUIDv7 IDs cannot regain ownership after pruning.
+Accounting ledger retention, prices, quotas and missing-usage policy are unchanged.
+
+`prune-notes-replay` runs every five minutes in bounded batches of 100. Check
+`cron.job_run_details`, expired-cache backlog and old-identity backlog during rollout
+and routine operations; no new automatic alert is claimed. Logical expiry is enforced
+even if physical cleanup is delayed. Database backups can retain encrypted material
+beyond live TTL; the verified project had seven daily backups and no PITR, so this is
+not a promise of immediate backup erasure. Follow existing backup/key-retention policy.
+
+After a database restore, block and drain Ask, require fresh authentication sessions,
+and keep the hold for seven minutes beyond the last pre-restore admission before
+reopening. This exceeds the accepted five-minute ID age plus one-minute future-clock
+window; a lost recent identity must not be recreated as fresh work. A controlled
+expired-cache restoration test does not establish a full managed disaster recovery
+or accounting restore. Do not roll back replay metadata independently while allowing
+Ask traffic. Intentional retries have distinct attempt IDs and can overlap an
+interrupted original; replay protection does not promise provider cancellation or
+exactly one billable call across intentional retries.
+
 ### 2.3 Story Share Image Operations
 
 Publishing or editing verified content creates a versioned story-image job. The request finishes normally while `after()` wakes one worker attempt. The worker stores an immutable JPEG under `media/story-images/<content-id>/<render-version>.jpg`; the public story route redirects to that object and retains dynamic rendering as a write-through fallback.

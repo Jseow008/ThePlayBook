@@ -1,3 +1,6 @@
+// Existing route behavior tests isolate replay; the persisted route/HTTP suite
+// below exercises the real replay wrapper and unchanged accounting functions.
+vi.mock('@/lib/server/notes-replay', () => ({ withNotesReplayRequest: (_options: unknown, run: (remember: () => void) => Promise<Response>) => run(() => {}) }));
 import { AiSpendingError } from "@/lib/server/ai-spending";
 import { PersonalEvidenceSelectionError } from "@/lib/server/personal-evidence-selector";
 const { spendingRpc } = vi.hoisted(() => ({ spendingRpc: vi.fn() }));

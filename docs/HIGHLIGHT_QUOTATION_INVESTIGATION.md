@@ -2068,3 +2068,256 @@ focused/122 isolated passes do not replace required CI/security. Total Vite buil
 (initial path error, correction, compatibility rebuild); Next builds3 (initial,
 style finalization, real hook-policy containment), all Next builds passed. No
 broader unchanged reruns, new agents, timers, paid resources or provider calls.
+
+
+# Netflux Ask replay-protection implementation checkpoint
+
+## 28 October 2026 — approved implementation
+
+Worktree: `/Users/j/.codex/workspaces/netflux-ask-replay`; branch
+`codex/ask-replay-protection`; freshly fetched base `45e639d5` (#290).
+The app-managed worktree tool rejected the repository outside this chat's workspace
+folders; a normal isolated Git worktree was created instead. The old `/tmp/netflux-*`
+worktrees, checkpoint and prototype artifacts no longer exist. This record recovers
+the approved contract from this conversation; historical results below are reported
+prior evidence, not newly inspected artifacts or current implementation passes.
+
+User authorized implementation, integration/hosted checks and disposable cleanup.
+Supabase quoted $10/month in Jseow008; user approved that quoted cost this turn;
+prorated total was not supplied. At this initial checkpoint no project existed yet. Production project
+is `xmuqsgfxuaaophxnwure`; never use it for fixtures/reset. Production database push
+still requires the reviewed exact migration list and explicit authorization in OPS.
+
+## Contract
+
+- Logical question ID differs from UUIDv7 attempt ID. Persist before processing
+  fetch; transport copies reuse it, intentional retries allocate a new ID/parent.
+  Scope by verified account/live session/chat/question. Reject content/context reuse.
+- Atomic claim before allowance/spending; one owner nonce. Atomically bind allowance
+  and each embedding/selection reservation to that owner. Keep accounting functions,
+  prices, quotas, refunds and missing-usage policy unchanged.
+- Bounded running observation (at most2s), no ownership takeover. Existing50s request
+  deadline;120s uncertain-owner deadline. Explicit retry may overlap original work.
+  Late workers may settle their own operations but cannot publish over a newer attempt.
+- Cached complete wire envelope:15minutes,256KiB; private AES-256-GCM with versioned
+  server-only encryption/HMAC keys. Recheck live auth, ordinary RLS evidence/source
+  fingerprints, submitted scope and active attempt before replay/publication. No raw
+  question/notes/answers in diagnostics.8MiB/account and64MiB global response cache.
+-35day compact identity/binding retention; unknown UUIDv7 must be within database
+  now minus5min/plus1min, atomically. Pruning must never make an old ID own work again.
+  Cleanup every5min in bounded100-row batches. TTL enforced even if cleanup fails.
+  Key rotation, actual hosted backup retention/restore and purge remain release checks.
+- Uncertain outcome explicitly says original may still run and retry may start more
+  AI processing; no automatic Send, no claim of provider cancellation/exactly-once bill.
+
+## Historical supporting evidence and correction
+
+Earlier controlled reset:1 JS processing fetch,2 server receipts,2 controlled
+embedding/selection pairs and2 allowance admissions. Actual charges/frequency unknown.
+Earlier disposable PostgreSQL17.6 prototype:32 copies yielded1owner/1allowance/2stage
+operations; explicit retry and late accounting/publication fencing tested. Initial
+prototype failed after12 groups because disabled-spend mapping returned429 instead
+of503; corrected mapping, nullable nonce comparisons and completion guards;7 targeted
+final groups passed. Final prototype SHA256 was
+`1d74c3de84b8c5950be09693ed6d8ba1347780651f9aac6a558a9b4ef69033ff`.
+Earlier sequential retention model passed10checks. Those lost temporary artifacts
+are NOT current application integration/hosted evidence. #290 remains closed;
+historical no-op/service error, skipped tests, phones/Safari remain separate.
+
+## Current status
+
+Implementation and bounded disposable verification are complete; see the final
+record below. Production is unchanged. Publish the reviewed branch and keep its
+release held for required CI/security and exact production migration/key approval.
+
+### Implementation progress, 28 October (Singapore)
+
+Candidate created with approved quoted cost: `sjgqmkoarahwdiwvgudb`,
+`netflux-replay-verification-20261028`, Jseow008/ap-south-1; production ref differs.
+Private verification directory is `/Users/j/.codex/verification/netflux-replay-20261028`
+(mode700); passwords/keys there are mode600. Own local tmpfs container is
+`netflux-replay-implementation-20261028`, ID
+`31ed9519fe29f41c426341f77c0bcdac587c17dd8d52abb94e9e5af1b5e7f80b`, loopback58982.
+Other pre-existing Docker stacks were not modified. Cleanup remains mandatory.
+
+The committed historical checkpoint WAS recovered from main and preserved. Missing
+files are the uncommitted temporary replay proposal/prototype, not all prior history.
+An initial doc reconstruction accidentally replaced that history; diff inspection
+caught it and the committed prefix was restored before publishing.
+
+Preparation corrections retained: primary checkout's node_modules did not match
+secured main (Zod3 versus locked4); initial typecheck failed broadly. Installed this
+worktree's unchanged locked dependencies; typecheck then passed. Initial database
+suite used Node environment with browser-global setup and failed before any test;
+corrected environment and7 persisted database tests passed. Initial component run
+had3 assertions expecting the former body without replay IDs; updated those contract
+assertions, and60 component/response-fence tests passed. React lint rejected passing
+ref-reading callbacks into a render-time transport constructor twice; replaced that
+with a per-chat response-guard object used only by event/transport callbacks.
+
+Hosted initial full schema push passed. First reset command incorrectly supplied
+an unsupported --password flag; it made no schema change. After checking CLI help,
+used the password environment setting; guarded full hosted reset and clean dry-run
+passed. Fixture preparation was inadvertently launched twice:4 synthetic accounts
+and2 content items existed. Removed2 extra synthetic accounts and1 extra content
+item; intended2 accounts/1 source/1 highlight remain for testing. No production data.
+
+First actual hosted route run:2 tests passed,1 failed,1 native-browser probe skipped.
+The duplicate response was503 when the bounded observer expired; first owner200,
+no duplicate provider pair. Corrected the observer deadline path to return explicit
+409 in-progress, keeping the <=2second observer budget. A duplicate is not required
+to wait until a4second hosted owner completes. The rerun requires eventual complete
+cache replay, unchanged real accounting, intentional retry and late publication fence.
+Earlier database-prototype429/503 correction remains historical evidence above.
+
+### Final-candidate integration progress
+
+Hosted replay schema was reset/replayed again after SQL refinements and synthetic
+fixtures recreated.9 runtime groups and6 real-route groups passed (15 total),
+including32 concurrent claims, memoized accounting, intentional retry/late settlement,
+expiry/pruning, actual cache-byte eviction, transactional rollback/lock contention,
+ordinary-RLS deletion while a replay read waited, revocation during replay validation,
+key rotation/removal/tamper and changed scope/account. One of32 direct cross-region
+claim transactions reached the designed500ms lock timeout in the passing stress run;
+remaining31 returned1owner/30nonowners. All8 repeats of admission and each reservation
+succeeded/non-dispatched as appropriate; exactly1allowance and2spend operations.
+The first hosted32-copy test failed on this expected timeout because Promise.all
+aborted observation; corrected the harness to await ALL outcomes, permit ONLY55P03
+bounded failures, and prove unchanged accounting. Timeout thresholds were not raised.
+Actual HTTP/PostgREST2-receipt route and native-browser checks are separate evidence.
+
+Native Chrome/CUA: initial1JSfetch/2receipts/1embedding/1selection/1allowance passed
+accounting but showed503 known-failure text after interruption. Corrected the wrapper
+to check abort before recording a returned route error as a known failure. Repeated
+same native sequence:1JSfetch/2receipts (different ports), exactly1admission and2stage
+operations; configured ledger3087→3430(+343), no actual provider calls. Browser showed
+409 ASK_ATTEMPT_OUTCOME_UNCERTAIN with the explicit additional-processing warning.
+Artifacts native-reset-initial-evidence.json and native-reset-evidence.json retained.
+
+A final account-switch review adds the verified sender's expected owner tuple to
+replay input. Server COMPARES it to fresh verified credentials before claim; it never
+uses body identity as authority. This prevents a request prepared under one account
+being processed after cookies switch. Client response guard checks ownership before
+AND after fetch. Current112 focused tests passed before/alongside these final checks;
+actor-specific hosted rerun and native final-candidate proof are being completed.
+The runtime9-group test is wired into required Security Validation using its existing
+disposable DB URL; no registry/production-infrastructure change or new credential.
+
+Hosted ACL/admin/analytics/RLS/embedding/storage/new-object checks and DB-002 passed.
+Production/candidate per-object schema comparison:0 unexplained differences,70
+reviewed new replay objects. Generated types differ only in notes_replay and platform
+PostgREST14.1/14.18; no existing application schema drift. Advisors: same3 existing
+warning types in production/candidate; new private RLS/no-browser-policy information
+is intentional (service only), plus fresh unused-index information. No new warning.
+
+Backup metadata read through the EXISTING Supabase CLI profile credential, in memory
+only (never printed/persisted): production7 completed daily backups, PITR false;
+latest2026-10-27T23:49:58Z; candidate1 completed backup, PITR false. Organization Pro.
+No backup setting changed. A full managed restore is not claimed: a controlled
+restored-expired-cache test verifies the application's fail-closed boundary. Restore
+operations must block/drain Ask and require fresh sessions; allow7minutes beyond
+old admissions before reopening so lost recent IDs cannot be recreated within the
+freshness window. Broader disaster/accounting recovery remains the existing OPS item.
+
+Production-build smoke: CUA sign-in page, missing-code callback recovery, browse,
+public synthetic read/actual paragraph, anonymous admin denial and authenticated
+synthetic admin dashboard all observed; shallow/detailed health both200/ok through
+API (7 required scenarios, no skipped scenario). Own HTTP ingress3093 supplies local
+IP/host headers; own Redis58983 and REST adapter3092 exercise the real limiter. Sentry
+is a local sink, not external monitoring proof. No live AI/provider key is used.
+Initial raw HTTP callback navigation hit forced-HTTPS local transport failure; first
+retry retained a stale error page. A fresh CUA in-app tab through the HTTP fixture
+reached /login?error=AuthCodeError. No app/production TLS/security setting changed.
+Native Mac locked midway; in-app CUA completed the routine smoke. User later unlocked
+it for the final Chrome proof. Physical phones/mobile Safari remain unverified.
+
+First full suite:2056passed/298skipped/1failed; missing ffmpeg binary because install
+scripts were initially skipped. Rebuilt EXISTING ffmpeg-static package; its17 tests
+passed. Full lint, typecheck and production npm audit passed; audit0 vulnerabilities.
+Final broad suite/build after the final actor fence remain pending. No product
+migration/deployment/merge yet. All current disposable resources still need cleanup.
+
+### Final implementation verification and cleanup, 28 October 2026
+
+The preceding progress entries are chronological; this section supersedes their
+pending status. Candidate schema/application checks completed, disposable resources
+deleted, production unchanged. The PR must remain unmerged until required hosted
+CI/security pass and the production prerequisites below are approved and completed.
+
+| Evidence | Observed result |
+| --- | --- |
+| Final broad local suite | 2,058 Vitest passes; 305 skipped, outside coverage. Capacity harness 34/34 separately passed. |
+| Final lint / typecheck / production dependency audit | Passed; zero reported production vulnerabilities. 115 unique migration versions validated. |
+| Production build | Passed, including Sharp trace and critical CSS checks; build ID `oPCSjEZJLY-bLcAAkGVb7`. |
+| Hosted persisted database groups | 9/9 passed: atomic owner/admission/stages, changed input/roles, explicit retry and late settlement, failure/expiry/nonce, unchanged disabled-spend policy, prune/tombstone, byte caps, rollback/lock contention, session revocation. |
+| Hosted actual application route groups | 8/8 passed across the final combined run plus the corrected concurrent-owner assertion recheck. Real hosted Auth/RLS/retrieval/accounting; controlled provider boundaries only. Native test excluded from that automatic run and performed separately below. |
+| Native Chrome reset, final account-bound implementation | 1 JS dispatch, 2 receipts (ports 55149/55157), 1 allowance admission, 1 embedding and 1 selection. Original 499/cancelled; duplicate 409/uncertain, with explicit additional-processing warning. No automatic retry. |
+| Native persisted accounting | Usage 23→24; stage/ledger rows 46→48; configured ledger amount 7,889→8,232 (+343 micro-USD). These are synthetic controlled-provider accounting amounts, not real provider charges. |
+| Hosted release gate | ACLs/admin/analytics/RLS/embedding/storage/new-object and DB-002 passed. Repeated final schema comparison: zero unexplained differences, 70 reviewed replay additions. Types and advisors reviewed as above. |
+| Final hosted state | Candidate dry-run clean; RPC `lock_timeout=500ms`, `statement_timeout=10s`; active prune schedule every five minutes. Two synthetic users remained immediately before whole-project deletion. |
+| Application smoke | Seven required scenarios observed using CUA plus health API, rather than a Playwright browser run. Final rebuilt login page rechecked in native Chrome; shallow/detailed health both 200/ok. Unaffected earlier smoke inputs/paths reused. |
+
+Supplementary failed attempts remain part of the evidence:
+
+- The first final broad run had 2,057 passes/305 skips/one launch-env fixture
+  failure: the newly required replay ring was absent from that synthetic fixture.
+  Added a synthetic ring; final broad run above passed. No production key was used.
+- One actor-bound native attempt showed the expected 409 in Chrome but timed out
+  after nine minutes before its Finish control could be reached while the active
+  Chrome window changed. It is not a pass. Re-selected the correct window, reloaded
+  a fresh synthetic fixture, repeated the same bounded sequence and explicitly
+  finished it; final probe passed. The harness now preserves evidence even on timeout.
+- The final combined hosted run had 16 passes/one failure/one native skip because
+  its assertion assumed the first array element won a concurrent authentication
+  race. It actually returned 409 while the other returned 200, with one processing
+  pair. Corrected the assertion to find the successful owner regardless of arrival
+  order; that affected test passed. Reused the other 16 unchanged passes.
+- A hosted multi-query group exceeded the default five-second test deadline
+  (about six seconds over the cross-region connection). Its explicit test budget
+  is now 30 seconds; production timeouts were not relaxed by that test correction.
+  Preserve the earlier failure and targeted pass alongside the complete runtime pass.
+- The replay RPC's accounting actions retain the pre-existing ten-second HTTP
+  accounting budget and use a ten-second SQL statement ceiling; replay row locks
+  still fail after 500ms. Observer work uses a 1.5-second polling budget and at most
+  two-second individual non-accounting RPCs. Existing spending settlement remains
+  independent of browser cancellation. No tariff/refund/admission policy changed.
+- Final IAB tab reconnection failed (`browser.user` unavailable). Native CUA Chrome
+  succeeded for the final rebuilt login check; only the newly created local test
+  tab and owned reset-probe tab were closed. No production browser data changed.
+
+Sanitized artifacts remain in
+`/Users/j/.codex/verification/netflux-replay-20261028`, including final/failed logs,
+`native-reset-evidence.json`, `native-reset-initial-evidence.json`,
+`native-reset-final.png`, `hosted-concurrency.json`, `route-integration-accounting.json`,
+`schema-comparison.json`, `final-schema-runtime.json`, and `cleanup-final.json`.
+No raw private question/note/provider text was retained; all text fixtures were
+synthetic. Native proof uses the actual route with a test HTTP adapter and verified
+synthetic Auth client, not deployed Vercel request handling. Provider cancellation,
+real billing, production frequency, managed backup restore, physical phones/mobile
+Safari and all skipped tests remain unverified. Earlier no-op/service errors remain
+separate; #290 stays closed.
+
+Cleanup completed: deleted `sjgqmkoarahwdiwvgudb`; connected project list confirms
+it absent and production still active. All hosted synthetic accounts/data belonged
+to that project and were removed with it. Stopped only owned 3091/3092/3093 processes;
+3089 probe already stopped. Removed only the two labeled owned PostgreSQL/Redis
+containers and their data. Verified no listener on 3089/3091/3092/3093/58982/58983.
+Removed credential/env/fixture JSON, generated private types, schema/backup metadata,
+isolated candidate/production-review directories and candidate `.next` output.
+Candidate-specific CLI keychain entry was already absent; profile/production
+credentials were untouched. Prorated paid-project cost remains unspecified by Supabase.
+
+Production release hold, concrete review:
+
+- Read-only production dry-run against `xmuqsgfxuaaophxnwure` proposed ONLY
+  `20261028053807_add_notes_replay_protection.sql`; no push occurred.
+- Migration SHA-256:
+  `3e17a6da40770be5faa041eede4b48bef0891301ac5217c4ace3e8432641d338`.
+- Production backup metadata showed seven completed daily backups, newest
+  `2026-10-27T23:49:58Z`; refresh backup evidence if release is delayed.
+- Obtain explicit approval for this exact migration and production server-only
+  `NOTES_REPLAY_KEYS` provisioning before any production mutation. Follow OPS §2.2
+  post-push parity/security/advisors/smoke before application promotion/merge.
+- Required PR CI/security must still pass. Do not enable auto-merge while database
+  prerequisites remain outstanding. No production migration, environment change,
+  model call, deployment, new timer or additional paid resource was performed.
