@@ -2624,3 +2624,87 @@ highlights, errors, personal shelves, typography/spacing and motion are unchange
 Next: inspect single-commit/file scope, publish presentation PR through required
 PR-scope/CI/security gates normally. No direct main push or gate bypass. Browser
 checks are local; no production deployment or phone/Safari verification claimed.
+
+## Preview first-loading boundary correction — 29 October 2026
+
+User retained the dedicated /preview page and rejected the popup concept. Scope:
+trace the catalog-shaped first waiting frame, then correct only Preview loading
+shape/theme if confirmed. No fetching, prefetch, navigation/chrome, animation,
+historical content or other UI changes. Earlier speed experiment remains unreleased.
+
+Isolated worktree /Users/j/.codex/workspaces/netflux-preview-loading-boundary,
+branch codex/preview-loading-boundary, based on freshly fetched main
+ab68393b9a6e26e827bd8b4391d5ef8146387fcc. Used ordinary isolated worktree because
+this chat's project-mirror attachment previously prevented managed registration.
+Single agent; no delegation, paid resources, new accounts or model calls.
+
+Confirmed production trace at390x844 in existing Chrome session: after clicking
+Home Depot from Browse, pathname was /preview/6e957c23-f094-460b-83e0-ba8cd3b42511,
+with18 route-loading-shelf-skeleton-card markers, zero preview-loading-state and
+zero content-preview roots. Those18 markers are unique to app/(public)/loading.tsx.
+The shared ancestor boundary supplies the first catalog frame, before the nested
+Preview boundary/content arrives. Installed framework loading-boundary source and
+docs confirm available ancestor fallback can cover unavailable child route data.
+The exact prefetch/request timing was not measured: hover-prefetch remains a
+hypothesis and is not changed by this correction. Production trace JSON/screenshot
+are saved in the evidence directory below.
+
+Implementation: PublicLoadingFallback is a small client selector using current
+pathname. At the shared boundary, /preview/* selects a server-rendered
+PreviewLoadingState slot; other destinations retain the exact existing catalog
+fallback. PreviewLoadingAppearance reuses the existing read-only
+useCachedReaderTheme hook for both shared and dedicated Preview boundaries.
+Resolved current-account/guest cache only; unresolved identity, missing or invalid
+storage uses dark without reading another account. No settings sync, auth request,
+storage write or new fetch. Ready Preview and reader components are unchanged.
+Existing Preview skeleton geometry, pulse/reduced-motion and navigation are kept.
+
+Validation:16 focused tests passed. Full lint/type-safety/revalidation/route-shell/
+dependency-isolation passed; normal production build/typecheck/Sharp traces and
+critical CSS passed. Initial full unit run overlapped build/lint and failed7 tests
+in4 untouched files (6 timeouts,1 enabled-state assertion after a timeout). Retained
+that failed log; unchanged rerun without build/lint passed2082 tests,307 skipped,
+plus34 capacity checks. No timeout limits or product behavior changed to obtain a
+pass. Skips are outside verified coverage. React checklist: tiny client boundaries,
+static skeleton children stay server-rendered, no async work/effect loops or new
+subscriptions beyond existing scoped cache hook; loading status/aria-busy retained.
+
+Browser verification used normal production candidate on3155 plus an external,
+test-only loopback proxy on3156 holding Preview RSC requests3500ms to expose the
+waiting frame. This is not a speed benchmark or an application fetching change.
+Disposable signed-out hostname preview-boundary-20261029.localhost; public content
+configuration only. Selected Sepia through the existing reader UI for this guest
+origin, without touching production preferences. Matched Home Depot Browse ->
+Preview -> Read -> Back journey on desktop1728px and narrow390x844, fresh tab per
+width. Captured Preview waiting root/hook, reader-sepia, background rgb(245,241,235),
+zero catalog loading markers at both widths. Ready Preview had identical theme/
+background and correct title; canonical reader opened same title in sepia; Back
+restored same20 catalog headings without page loading fallback at return probes.
+Narrow first loading probe retained scroll166 then ready reset0; no claim of
+zero movement or changed scroll/navigation behavior. Account isolation tested with
+mocked current accounts in component tests; browser is a guest, not an account-
+switching or production sign-in rehearsal.
+
+Setup qualifications retained: Sepia control exposed as checkbox in AX but role
+locator did not match; native AX click succeeded. Guest onboarding overlaid the
+first desktop click, so that attempt stayed on Browse and did not verify entry;
+inspected and dismissed Skip tour, then completed actual journey. Narrow controller
+deadline expired waiting for ready content during artificial delay; resumed same
+visit, confirmed ready Preview. Immediate Read probe saw waiting UI rather than
+h1; used the same history's Forward to confirm actual reader title, without a new
+Browse-entry run. No repeated benchmark. Local server logged one rate-limited
+endpoint failure because Upstash was not configured in this public-only local
+environment; public Preview/reader data loaded, but no full private API/settings-
+sync coverage is claimed. No product or infrastructure fix added for that warning.
+
+Evidence directory:
+/Users/j/.codex/verification/netflux-preview-loading-boundary-20261029
+contains production-boundary-trace.json, production-first-fallback.png, matched
+candidate-desktop/narrow JSON and waiting screenshots, narrow reader confirmation,
+build/lint and both full-suite logs plus proxy/server logs. No private thought text
+or credentials. Physical phones/Safari, every intermediate frame and live request
+prefetch attribution remain unverified. No production deployment claimed.
+
+Next: stop only owned3155/3156 servers, remove copied env, verify exact commit/file
+scope, publish PR, wait for PR-scope then enable normal protected squash auto-merge.
+Do not bypass required CI/security gates; no deployment monitoring was requested.

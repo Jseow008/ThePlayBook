@@ -1,36 +1,41 @@
 import { ROUTE_LOADING_SHELF_SKELETON_CARD_CLASS } from "@/components/ui/content-card-standards";
+import { PreviewLoadingState } from "@/components/ui/ContentDetailLoadingStates";
+import { PublicLoadingFallback } from "@/components/ui/PublicLoadingFallback";
 
 /**
  * Public Route Loading Skeleton
  *
  * Shown during route transitions in the public (public) layout.
- * Mimics the homepage layout: hero block + 3 content lanes.
+ * Keeps Preview destinations preview-shaped while their nested boundary loads.
+ * Other destinations retain the homepage layout: hero block + 3 content lanes.
  */
 export default function Loading() {
     return (
-        <div className="pb-20 lg:pb-0 animate-pulse">
-            {/* Hero Skeleton */}
-            <div className="relative w-full aspect-[16/9] sm:h-[55vh] bg-secondary/50 rounded-b-xl" />
+        <PublicLoadingFallback preview={<PreviewLoadingState />}>
+            <div className="pb-20 lg:pb-0 animate-pulse">
+                {/* Hero Skeleton */}
+                <div className="relative w-full aspect-[16/9] sm:h-[55vh] bg-secondary/50 rounded-b-xl" />
 
-            {/* Content Lanes */}
-            <div className="px-5 sm:px-8 py-10 space-y-12">
-                {[1, 2, 3].map((lane) => (
-                    <div key={lane} className="space-y-4">
-                        {/* Lane Title */}
-                        <div className="h-5 w-40 bg-secondary/60 rounded-full" />
-                        {/* Cards Row */}
-                        <div className="flex gap-3 overflow-hidden">
-                            {[1, 2, 3, 4, 5, 6].map((card) => (
-                                <div
-                                    key={card}
-                                    data-testid="route-loading-shelf-skeleton-card"
-                                    className={`${ROUTE_LOADING_SHELF_SKELETON_CARD_CLASS} bg-secondary/50 rounded-md`}
-                                />
-                            ))}
+                {/* Content Lanes */}
+                <div className="px-5 sm:px-8 py-10 space-y-12">
+                    {[1, 2, 3].map((lane) => (
+                        <div key={lane} className="space-y-4">
+                            {/* Lane Title */}
+                            <div className="h-5 w-40 bg-secondary/60 rounded-full" />
+                            {/* Cards Row */}
+                            <div className="flex gap-3 overflow-hidden">
+                                {[1, 2, 3, 4, 5, 6].map((card) => (
+                                    <div
+                                        key={card}
+                                        data-testid="route-loading-shelf-skeleton-card"
+                                        className={`${ROUTE_LOADING_SHELF_SKELETON_CARD_CLASS} bg-secondary/50 rounded-md`}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
-        </div>
+        </PublicLoadingFallback>
     );
 }

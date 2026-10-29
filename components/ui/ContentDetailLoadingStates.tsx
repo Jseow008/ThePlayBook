@@ -1,4 +1,5 @@
 import { ReaderLoadingAppearance } from "./ReaderLoadingAppearance";
+import { PreviewLoadingAppearance } from "./PreviewLoadingAppearance";
 import {
     READER_COVER_FRAME_CLASS,
     READER_COVER_WRAPPER_CLASS,
@@ -66,13 +67,7 @@ function TakeawayRowsSkeleton() {
 
 export function PreviewLoadingState() {
     return (
-        <div
-            data-testid="preview-loading-state"
-            role="status"
-            aria-label="Loading preview"
-            aria-busy="true"
-            className="min-h-screen bg-background pb-[calc(5.75rem+var(--safe-area-bottom))] text-foreground sm:pb-10 lg:pb-8"
-        >
+        <PreviewLoadingAppearance>
             <span className="sr-only">Loading preview</span>
             <div
                 aria-hidden="true"
@@ -101,7 +96,7 @@ export function PreviewLoadingState() {
                     </div>
                 </div>
             </div>
-        </div>
+        </PreviewLoadingAppearance>
     );
 }
 
