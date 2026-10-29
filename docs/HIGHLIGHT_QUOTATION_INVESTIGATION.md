@@ -2624,3 +2624,65 @@ highlights, errors, personal shelves, typography/spacing and motion are unchange
 Next: inspect single-commit/file scope, publish presentation PR through required
 PR-scope/CI/security gates normally. No direct main push or gate bypass. Browser
 checks are local; no production deployment or phone/Safari verification claimed.
+
+## CI-only Supabase image recovery — 30 October 2026
+
+User explicitly approved a separate CI-only recovery after #294's required gates
+failed at Supabase image downloads. #294 head d120618b9df07d3a6f0431aa9f48ce4d66020334
+remains held; its loading correction, production release and single saved-Sepia
+Browse -> Preview check are still the overall objective. No broader UI work.
+
+Isolated branch codex/ci-supabase-pull-recovery, worktree
+/Users/j/.codex/workspaces/netflux-ci-supabase-pull-recovery, fresh base
+ab68393b9a6e26e827bd8b4391d5ef8146387fcc. Existing #294 worktree/checkpoint is
+preserved at /Users/j/.codex/workspaces/netflux-preview-loading-boundary. Single
+agent, no paid resources/new accounts or production configuration/data changes.
+
+Original evidence: CI40903622878, Security/Catalog40903623068 failed with GHCR
+toomanyrequests during image downloads. Targeted isolated Security retry also
+failed at that same stage, so no further unchanged fresh-job retries. Original
+logs in /Users/j/.codex/verification/netflux-preview-loading-boundary-20261029.
+The current helper's classifier recognizes normalized full CI/Security failure
+records, not only a hand-written fixture (both true, retry-after max2ms).
+
+Change: scripts/start-supabase-ci.mjs calls installed lockfile-pinned CLI with only
+start, preserving environment/DOCKER_CONFIG/registry selection. Only terminal image
+pull failures accompanied exclusively by explicit429/toomanyrequests failures are
+retryable. Other/mixed errors, launch errors and signals fail without retry.
+At most3 total attempts on the same runner;60/120s minimum backoff plus bounded
+0–10s jitter. Longer parsed retry-after hints honored; hints above5min leave setup
+failed instead of retrying early. Diagnostic classification buffer capped256KiB;
+CLI output continues streaming as before. Completed image/layer downloads remain
+available in that runner's existing Docker cache; no prune or registry fallback.
+
+All4 startup calls in ci.yml/security.yml use the helper. Removed the former
+outer transient-start retry so it cannot multiply the3-attempt cap; existing
+database-reset upstream-error recovery stays unchanged. Image versions, temporary
+read-only registry token/permissions, credential cleanup, health checks, migrations,
+schema/security/browser checks and scope classification are unchanged. Non-registry
+start failures fail immediately as approved. Nightly workflow remains out of scope.
+
+Local verification:68 focused checks passed (recovery success/cap, ambiguous/mixed
+failures, cancellation, retry hints/jitter, workflow wiring and actual process
+entrypoint with a fake installed CLI). Lint and ratchet/policy/dependency checks
+passed. Full suite passed2093 unit tests with307 skips, plus34 capacity checks.
+Initial full suite had one stale static security guard expecting the previous
+literal startup command; updated that guard to the new helper and reran unchanged
+application tests. Retained initial failing log and final result. No production
+build rerun locally because only workflow/script/tests/docs changed; full required
+hosted build/security/browser checks are the fresh-runner trial.
+
+Evidence directory:
+/Users/j/.codex/verification/netflux-ci-supabase-pull-recovery-20261030.
+No Docker stack started locally; helper process fixtures are temporary and cleaned.
+Supabase2.109.1 start interface verified from installed package/help and official
+CLI docs. Changelog markdown fetch returned unsupported content type; official
+CLI reference used as fallback, no CLI/dependency/config upgrade.
+Reference: https://supabase.com/docs/reference/cli/global-flags#supabase-start.
+
+Next: publish this CI-only PR, verify scope and run it on fresh hosted runners with
+all required gates. Do not claim recovery proven until real image downloads/start
+and unchanged gates pass. Merge through normal protected flow, then refresh #294
+onto secured main, let its required gates finish and confirm exact production
+deployment/public alias before the one saved-Sepia Browse -> Preview check.
+Retain original local/hosted failures,307 skipped tests and phone/Safari limitations.
