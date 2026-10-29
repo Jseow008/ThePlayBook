@@ -2686,3 +2686,39 @@ and unchanged gates pass. Merge through normal protected flow, then refresh #294
 onto secured main, let its required gates finish and confirm exact production
 deployment/public alias before the one saved-Sepia Browse -> Preview check.
 Retain original local/hosted failures,307 skipped tests and phone/Safari limitations.
+
+Published CI-only PR https://github.com/Jseow008/ThePlayBook/pull/295 at
+efef6200a836ed871aa8d34e5c1a7aa257ab1035. Verified exactly six intended files and
+one commit locally/GitHub. PR attached to this chat; used existing gh login after
+the connector's previously confirmed403 creation limitation. PR scope40908825874
+passed; protected squash auto-merge enabled2026-10-29T16:10:11Z. Fresh hosted trial
+CI40908825507 and Security/Catalog40908825943 running. Not proven or merged yet.
+Current run watchers: exec sessions86383 (CI) and46011 (Security). This operator
+note stays local to avoid a status-only push restarting CI. No new user decision
+needed; persist through the approved CI recovery and #294 production check.
+
+First fresh hosted trial completed without cancellation and failed image setup
+in all three jobs after the bounded3 attempts. Retained ci-hosted-trial.log,
+security-hosted-trial.log and catalog-hosted-trial.log. Catalog's final remaining
+failures were only postgres/storage-api, demonstrating cached-download progress,
+but the CLI still attempted remaining pulls concurrently. No success or release
+claimed; #294/#295 required gates stayed held.
+
+Refined within the authorized CI-only budget: after initial CLI throttling, parse
+only exact GHCR Supabase references reported by the pinned CLI's terminal failures,
+restricted to the known service repositories. On attempts2/3, prepare those missing
+references with serial Docker pulls using the same temporary DOCKER_CONFIG. Each
+reference is pulled at most once per remaining attempt; completed references are
+not re-pulled. Stop that phase on another429 and carry unattempted/failed references
+into the next existing backoff, honoring its retry hint. Non-transient errors and
+signals stop immediately. Once prepared, run unchanged CLI start with health checks.
+No additional retry loop, image version, registry, credential or startup flags.
+
+Controlled tests now also establish max concurrent pulls1, retention of successful
+references, failure after the existing budget, rejection of unknown registries/
+service names and immediate non-transient Docker failures. A local test edit
+initially put expected pull names in the wrong order; corrected the expectation to
+match the intended serial flow. Final74 focused and2099 full unit tests passed,
+307 skipped, plus34 capacity checks. ESLint passed for changed helper/tests. A
+second fresh hosted trial is required; do not repeat the exhausted first approach
+or increase the attempt cap. First trial evidence remains recorded.

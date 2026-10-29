@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "nod
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { isRegistryThrottling, retryAfterMs, startSupabase } from "../../scripts/start-supabase-ci.mjs";
+import { isRegistryThrottling, retryAfterMs, startSupabase, throttledImages } from "../../scripts/start-supabase-ci.mjs";
 
 const throttled = "failed to display json stream: toomanyrequests: retry-after: 49.173µs, allowed: 44000/minute\nStopping containers...\nfailed to pull docker image from all registries: ghcr.io/supabase/postgres:17.6.1.143: error pulling image configuration: download failed after attempts=1: toomanyrequests: retry-after: 866.83µs, allowed: 44000/minute\nTry rerunning the command with --debug to troubleshoot the error.";
 const failed = output => ({ code: 1, signal: null, output });
@@ -12,7 +12,7 @@ const success = { code: 0, signal: null, output: "Supabase started." };
 function harness(results) {
   const run = vi.fn();
   for (const result of results) run.mockResolvedValueOnce(result);
-  return { run, wait: vi.fn().mockResolvedValue(undefined), random: () => 0, log: vi.fn() };
+  return { run, pull: vi.fn().mockResolvedValue(success), wait: vi.fn().mockResolvedValue(undefined), random: () => 0, log: vi.fn() };
 }
 
 describe("Supabase CI image-download recovery", () => {
@@ -20,6 +20,54 @@ describe("Supabase CI image-download recovery", () => {
     expect(isRegistryThrottling(throttled)).toBe(true);
     expect(isRegistryThrottling(`\x1b[31m${throttled}\x1b[0m`)).toBe(true);
     expect(isRegistryThrottling(`${throttled}\nfailed to pull docker image: ghcr.io/supabase/kong: toomanyrequests`)).toBe(true);
+  });
+
+  it("extracts only exact approved-registry references selected by the CLI", () => {
+    expect(throttledImages(throttled)).toEqual(["ghcr.io/supabase/postgres:17.6.1.143"]);
+    expect(throttledImages(throttled.replaceAll("ghcr.io/supabase/postgres", "other.invalid/supabase/postgres"))).toBeNull();
+    expect(throttledImages(throttled.replaceAll("supabase/postgres", "supabase/unknown-image"))).toBeNull();
+  });
+
+  it("serializes remaining downloads and carries only failed images into the last attempt", async () => {
+    const twoImages = `${throttled}\nfailed to pull docker image: ghcr.io/supabase/kong:2.8.1: toomanyrequests: retry-after: 1ms`;
+    const h = harness([failed(twoImages), success]);
+    let active = 0;
+    let maxActive = 0;
+    let pulls = 0;
+    h.pull.mockImplementation(async () => {
+      active += 1;
+      maxActive = Math.max(maxActive, active);
+      await Promise.resolve();
+      active -= 1;
+      pulls += 1;
+      return pulls === 2 ? failed("Error response from daemon: toomanyrequests: retry-after: 1ms") : success;
+    });
+    expect(await startSupabase(h)).toBe(0);
+    expect(maxActive).toBe(1);
+    expect(h.pull.mock.calls).toEqual([
+      ["ghcr.io/supabase/postgres:17.6.1.143"],
+      ["ghcr.io/supabase/kong:2.8.1"],
+      ["ghcr.io/supabase/kong:2.8.1"],
+    ]);
+    expect(h.run).toHaveBeenCalledTimes(2);
+    expect(h.wait.mock.calls).toEqual([[60_000], [120_000]]);
+  });
+
+  it("does not run startup again when serialized downloads exhaust their budget", async () => {
+    const h = harness([failed(throttled)]);
+    h.pull.mockResolvedValue(failed("Error response from daemon: toomanyrequests: retry-after: 1ms"));
+    expect(await startSupabase(h)).toBe(1);
+    expect(h.run).toHaveBeenCalledTimes(1);
+    expect(h.pull).toHaveBeenCalledTimes(2);
+    expect(h.wait).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["Error response from daemon: unauthorized", "Error response from daemon: manifest unknown", "failed to register layer: no space left on device"])("does not retry non-transient Docker errors: %s", async output => {
+    const h = harness([failed(throttled)]);
+    h.pull.mockResolvedValue(failed(output));
+    expect(await startSupabase(h)).toBe(1);
+    expect(h.run).toHaveBeenCalledTimes(1);
+    expect(h.pull).toHaveBeenCalledTimes(1);
   });
 
   it.each([

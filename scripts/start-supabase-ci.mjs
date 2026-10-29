@@ -8,19 +8,40 @@ const MAX_ATTEMPTS = 3;
 const BACKOFF_MS = [60_000, 120_000];
 const MAX_PAUSE_MS = 300_000;
 const OUTPUT_LIMIT = 256 * 1024;
+const IMAGE_NAMES = new Set(["postgres", "gotrue", "postgrest", "realtime", "storage-api", "edge-runtime", "studio", "postgres-meta", "logflare", "supavisor", "kong", "mailpit", "imgproxy", "vector"]);
+
+function diagnosticLines(output) {
+  return stripVTControlCharacters(output).split(/[\r\n]+/).map(line => line.trim());
+}
+
+function isThrottleLine(line) {
+  return /\btoomanyrequests\b|\b429\b/i.test(line)
+    && !/unauthorized|authentication required|access denied|manifest unknown|no space left|certificate|\b403\b/i.test(line);
+}
 
 export function isRegistryThrottling(output) {
   // Fail closed: an earlier 429 must not turn a later migration/auth/disk error
   // into a retry. Require the CLI's terminal image-pull failure, and reject any
   // other reported failures in this attempt.
-  const lines = stripVTControlCharacters(output).split(/[\r\n]+/).map(line => line.trim());
+  const lines = diagnosticLines(output);
   const failures = lines.filter(line => /^(?:failed\b|error\b|fatal\b)/i.test(line));
   const imagePull = /^failed to pull docker image(?: from all registries)?\b/i;
   return failures.some(line => imagePull.test(line)) && failures.every(line =>
     /^failed to (?:pull docker image|display json stream)\b/i.test(line)
-    && /\btoomanyrequests\b|\b429\b/i.test(line)
-    && !/unauthorized|authentication required|access denied|manifest unknown|no space left|certificate|\b403\b/i.test(line)
+    && isThrottleLine(line)
   );
+}
+
+export function throttledImages(output) {
+  if (!isRegistryThrottling(output)) return null;
+  const failures = diagnosticLines(output).filter(line => /^failed to pull docker image(?: from all registries)?\b/i.test(line));
+  const images = [];
+  for (const line of failures) {
+    const match = line.match(/^failed to pull docker image(?: from all registries)?:\s+(ghcr\.io\/supabase\/([a-z0-9-]+):[A-Za-z0-9_.-]+)(?=:\s|\s|$)/i);
+    if (!match || !IMAGE_NAMES.has(match[2])) return null;
+    images.push(match[1]);
+  }
+  return [...new Set(images)];
 }
 
 export function retryAfterMs(output) {
@@ -36,12 +57,9 @@ export function retryAfterMs(output) {
   return maximum;
 }
 
-function runCli() {
+function runCommand(command, args) {
   return new Promise((done, reject) => {
-    // Use the installed, lockfile-pinned CLI. Never install or choose a new CLI
-    // version while trying to recover an image download.
-    const cli = resolve("node_modules", ".bin", process.platform === "win32" ? "supabase.cmd" : "supabase");
-    const child = spawn(cli, ["start"], { stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"] });
     let output = "";
     const forward = stream => chunk => {
       stream.write(chunk);
@@ -62,14 +80,58 @@ function runCli() {
   });
 }
 
-export async function startSupabase({ run = runCli, wait = sleep, random = Math.random, log = console.log } = {}) {
+function runCli() {
+  // Use the installed, lockfile-pinned CLI. Never install or choose a new CLI
+  // version while trying to recover an image download.
+  const cli = resolve("node_modules", ".bin", process.platform === "win32" ? "supabase.cmd" : "supabase");
+  return runCommand(cli, ["start"]);
+}
+
+function isDockerThrottling(output) {
+  const errors = diagnosticLines(output).filter(line => /^(?:failed\b|error\b|fatal\b|toomanyrequests\b)/i.test(line));
+  return errors.length > 0 && errors.every(isThrottleLine);
+}
+
+export async function startSupabase({ run = runCli, pull = image => runCommand("docker", ["pull", image]), wait = sleep, random = Math.random, log = console.log } = {}) {
+  let pendingImages = [];
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     log(`Starting Supabase (attempt ${attempt}/${MAX_ATTEMPTS}).`);
-    const result = await run();
+    let result;
+    let failure;
+    if (pendingImages.length > 0) {
+      const remaining = [];
+      let hint = 0;
+      // The first hosted trial retained downloaded images but still exhausted
+      // retries because the CLI pulled missing images concurrently. Serialize
+      // only the exact failed references, without adding another retry loop.
+      for (const [index, image] of pendingImages.entries()) {
+        log(`Preparing remaining image ${image}.`);
+        const download = await pull(image);
+        if (download.signal) return download.code || 1;
+        if (download.code === 0) continue;
+        if (!isDockerThrottling(download.output)) return download.code || 1;
+        // A registry-wide throttle applies to subsequent downloads too. Leave
+        // the unattempted references for the next bounded backoff phase.
+        remaining.push(...pendingImages.slice(index));
+        hint = Math.max(hint, retryAfterMs(download.output));
+        break;
+      }
+      if (remaining.length > 0) {
+        result = { code: 1 };
+        failure = { images: remaining, hint };
+      }
+    }
+    if (!result) result = await run();
     if (result.signal) return result.code || 1;
     if (result.code === 0) return 0;
-    if (attempt === MAX_ATTEMPTS || !isRegistryThrottling(result.output)) return result.code || 1;
-    const retryAfter = retryAfterMs(result.output);
+    if (attempt === MAX_ATTEMPTS) return result.code || 1;
+    if (!failure) {
+      const images = throttledImages(result.output);
+      if (!images) return result.code || 1;
+      failure = { images, hint: retryAfterMs(result.output) };
+    }
+    pendingImages = failure.images;
+    const retryAfter = failure.hint;
     if (retryAfter > MAX_PAUSE_MS) {
       log("Registry requests a pause beyond this job's retry budget; leaving setup failed.");
       return result.code || 1;
