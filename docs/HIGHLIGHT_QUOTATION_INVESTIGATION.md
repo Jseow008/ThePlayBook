@@ -2722,3 +2722,34 @@ match the intended serial flow. Final74 focused and2099 full unit tests passed,
 307 skipped, plus34 capacity checks. ESLint passed for changed helper/tests. A
 second fresh hosted trial is required; do not repeat the exhausted first approach
 or increase the attempt cap. First trial evidence remains recorded.
+
+Second candidate3fece03b99a948838f9292259f3581f0683170a8 pushed to the same separate
+PR#295 after all first-trial jobs completed (none canceled). PR description updated
+around final serial recovery and retained failed trial. New PR scope40911006443
+passed. Fresh Security/Catalog40911006298 and CI40911006288 are running; normal
+protected auto-merge remains enabled. Current watch exec sessions84344 (Security)
+and25351 (CI). Next: inspect real download/recovery outcomes and required gates;
+after success merge CI PR normally, refresh #294 and finish original release.
+
+Second hosted Security/Catalog jobs failed closed after initial download failure,
+before serial recovery: parser incorrectly treated intermediate unqualified
+"failed to pull docker image: Error response..." lines as terminal references.
+Saved serialized-hosted-failed.log. Corrected reference extraction to only the
+locked CLI's final "from all registries" summaries, while the separate failure
+classifier still checks every error for mixed/non-transient failures. Added the
+actual intermediate format to the fixture. Full retained Catalog/Security logs
+now parse exact6/5 failed GHCR Supabase references; no unknown host/repo accepted.
+This was a helper defect, not evidence against serial download recovery. Do not
+hide failed hosted trial. Local74 focused checks pass; full suite rerunning in
+exec37334 before publishing parser correction. Current remote head still3fece03b;
+CI40911006288 still running (watch25351) and must finish, not be canceled by push.
+After it completes, commit/push corrected helper/tests/checkpoint and run fresh
+trial before claiming success. Product PR#294 remains unchanged/unmerged.
+
+Parser correction verification completed:74 focused checks,2099 unit tests with307
+skips and34 capacity checks pass; targeted ESLint passes. Second-trial CI
+40911006288 also completed failure before recovery, with the same unnamed
+intermediate-message parser defect; log retained as serialized-ci-failed.log.
+All second-trial jobs finished without cancellation. Publish corrected parser
+and actual-log regression fixture for the first valid serial-download hosted
+trial. Required gates and #294 release remain held until it succeeds.

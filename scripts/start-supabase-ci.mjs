@@ -34,7 +34,11 @@ export function isRegistryThrottling(output) {
 
 export function throttledImages(output) {
   if (!isRegistryThrottling(output)) return null;
-  const failures = diagnosticLines(output).filter(line => /^failed to pull docker image(?: from all registries)?\b/i.test(line));
+  // The locked CLI also prints intermediate "failed to pull docker image"
+  // messages without a reference. Only its final per-image summaries identify
+  // the authoritative references to prepare; all error lines were checked above.
+  const failures = diagnosticLines(output).filter(line => /^failed to pull docker image from all registries:\s/i.test(line));
+  if (failures.length === 0) return null;
   const images = [];
   for (const line of failures) {
     const match = line.match(/^failed to pull docker image(?: from all registries)?:\s+(ghcr\.io\/supabase\/([a-z0-9-]+):[A-Za-z0-9_.-]+)(?=:\s|\s|$)/i);

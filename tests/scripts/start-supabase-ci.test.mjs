@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { isRegistryThrottling, retryAfterMs, startSupabase, throttledImages } from "../../scripts/start-supabase-ci.mjs";
 
-const throttled = "failed to display json stream: toomanyrequests: retry-after: 49.173µs, allowed: 44000/minute\nStopping containers...\nfailed to pull docker image from all registries: ghcr.io/supabase/postgres:17.6.1.143: error pulling image configuration: download failed after attempts=1: toomanyrequests: retry-after: 866.83µs, allowed: 44000/minute\nTry rerunning the command with --debug to troubleshoot the error.";
+const throttled = "failed to display json stream: toomanyrequests: retry-after: 49.173µs, allowed: 44000/minute\nfailed to pull docker image: Error response from daemon: toomanyrequests: retry-after: 371.694µs, allowed: 44000/minute\nStopping containers...\nfailed to pull docker image from all registries: ghcr.io/supabase/postgres:17.6.1.143: error pulling image configuration: download failed after attempts=1: toomanyrequests: retry-after: 866.83µs, allowed: 44000/minute\nTry rerunning the command with --debug to troubleshoot the error.";
 const failed = output => ({ code: 1, signal: null, output });
 const success = { code: 0, signal: null, output: "Supabase started." };
 
@@ -26,10 +26,11 @@ describe("Supabase CI image-download recovery", () => {
     expect(throttledImages(throttled)).toEqual(["ghcr.io/supabase/postgres:17.6.1.143"]);
     expect(throttledImages(throttled.replaceAll("ghcr.io/supabase/postgres", "other.invalid/supabase/postgres"))).toBeNull();
     expect(throttledImages(throttled.replaceAll("supabase/postgres", "supabase/unknown-image"))).toBeNull();
+    expect(throttledImages("failed to pull docker image: Error response from daemon: toomanyrequests")).toBeNull();
   });
 
   it("serializes remaining downloads and carries only failed images into the last attempt", async () => {
-    const twoImages = `${throttled}\nfailed to pull docker image: ghcr.io/supabase/kong:2.8.1: toomanyrequests: retry-after: 1ms`;
+    const twoImages = `${throttled}\nfailed to pull docker image from all registries: ghcr.io/supabase/kong:2.8.1: toomanyrequests: retry-after: 1ms`;
     const h = harness([failed(twoImages), success]);
     let active = 0;
     let maxActive = 0;
