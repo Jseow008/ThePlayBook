@@ -3277,3 +3277,80 @@ The next compile succeeded but typechecking found stale `.next/dev` types for
 the removed fixture route. Clearing only this worktree's generated dev cache
 resolved that failure; the clean final build passes. No package, lockfile, build
 script or application configuration was changed to obtain the pass.
+
+
+## 30 October 2026 — Browse desktop gradient (authorized implementation)
+
+User approved reduced title-gradient coverage on desktop only; narrow screens,
+font, four/five title-line limits, card sizes and Read/Preview actions stay as
+shipped. Baseline #296 merged as `6925e92b9fc129aaf2cd573c0c30d5f20a7d24d9`;
+its production deployment and public alias identity were confirmed in the earlier
+status check. Fresh isolated worktree
+`/Users/j/.codex/workspaces/netflux-browse-desktop-gradient`, branch
+`codex/browse-desktop-gradient`, based on that freshly fetched main commit.
+
+Story: Browse latest/configured/recommendation lanes opt into a decorative desktop
+upper fade. This is presentation only; the existing data and navigation paths are
+unchanged. Search/Library and other shared-card consumers keep their default.
+The effect starts at the existing md / 768 px breakpoint. Below it the original
+background remains, the decorative layer is hidden, and geometry is unchanged.
+
+The actual-component bright-cover stress check refined the mockup: resizing the
+whole gradient to 80% also weakened the shading behind a long title, especially
+without a hover description. A first masked trim protected text but produced a
+visible transition on the bright cover. The final more conservative upper fade
+removes the first 0.5rem of the wash and blends over the remaining headroom, fully
+opaque by 3.625rem. It preserves the original gradient coordinates and all existing
+92% / 62% / transparent stops beneath visible copy. This headroom follows the
+existing 5rem top padding minus the extra 1.375rem fourth title line. There is no
+new runtime measurement, effect, observer, event handler, fetching, prefetch,
+opacity change behind text, animation, dependency or data change.
+
+Bounded verification used actual Next components and a main-branch copy in a
+local temporary route, with a public portrait cover and clearly illustrative
+bright-cover synthetic examples, including a long title without a description.
+No account or saved data, paid resource or provider call was used. Inert local
+public client settings were used. The fixture/assets and its generated dev cache
+were removed, test server/tab closed, and viewport reset before final checks.
+
+Observed results:
+- At 1728 px: all baseline/candidate pairs remain 240 x 360, with identical font,
+  four-line title geometry, metadata y=308, gradient footprint and colour stops,
+  and destination links. Only the upper decorative mask differs. It becomes
+  opaque before visible titles and descriptions, preserving their shading.
+- Keyboard Tab focuses the actual bright-card Read action and reveals the
+  existing controls. A native pointer movement also confirms real hover with
+  focus absent; description and Read/Preview controls are visible, destinations
+  unchanged, and the browser remains on the fixture (no navigation or write).
+- At 390 x 844: all three pairs are 176 x 264 with five title lines, metadata
+  y=221, identical backdrop/heading/font/link geometry and background values.
+  The new decorative layer is hidden. No horizontal overflow was observed.
+- At 767 px the new layer stays hidden; at 768 px it is visible and its fade
+  remains above visible text. No browser console errors were captured.
+
+Evidence: `/Users/j/.codex/visualizations/2026/10/21/01a15e86-edbe-79c1-8d88-6877902e13bf/desktop-gradient-implementation/`
+contains resting/focused/hover desktop screenshots, a narrow screenshot and
+`geometry.json`. Publication identity is recorded alongside these artifacts.
+Retained setup failures: initial local navigation timed out while compilation
+completed (server subsequently returned 200); an inspection helper could not use
+a global parseFloat in the read-only browser scope and was corrected without
+changing the app. The two discarded gradient approaches above are not counted
+as final passes. A fixture-only LCP loading warning was retained in the dev log.
+
+React review: no new hooks, state, listeners, accessible controls or focus order;
+decoration is aria-hidden, existing memoization and interaction rules retained.
+52 existing focused component tests passed on the initial candidate; final full
+suite, lint/type/build results follow. No CSS-literal tests were added for this
+visual change. Physical phones, Safari, contrast certification and production
+browser verification remain outside coverage; skipped tests are not verified.
+
+Final candidate validation: full repository lint/ratchets, `npm run typecheck`
+and `npm run build` pass, including Sharp trace and critical-CSS checks. Full
+`npm test` passes 260 suites / 2,107 tests, with 12 suites / 307 tests skipped;
+the separate capacity harness passes all 34 tests. Build used inert localhost
+public settings and logs expected catalog connection refusals, so it is not
+backend validation. The existing Node localstorage warning remains. No dependency,
+package lock, configuration, CI gate or test was changed to obtain the pass.
+One agent; no new hosted resources or application AI usage. Three visual
+approaches were inspected, two discarded; no benchmark or production journey
+was run for this bounded presentation change.
