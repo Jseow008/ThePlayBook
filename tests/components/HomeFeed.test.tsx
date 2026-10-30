@@ -12,9 +12,10 @@ vi.mock("@/components/ui/BrowseReadingPanel", () => ({
 }));
 
 vi.mock("@/components/ui/RecommendationsRow", () => ({
-    RecommendationsRow: ({ showUserCompletionBadge }: { showUserCompletionBadge?: boolean }) => (
+    RecommendationsRow: ({ showUserCompletionBadge, showMoreTitleLines }: { showUserCompletionBadge?: boolean; showMoreTitleLines?: boolean }) => (
         <div
             data-testid="recommendations-row"
+            data-more-title-lines={String(showMoreTitleLines)}
             data-user-completion-badge={String(showUserCompletionBadge)}
         />
     ),
@@ -31,18 +32,21 @@ vi.mock("@/components/ui/ContentLane", () => ({
         viewAllHref,
         showCardDesktopQuickActions,
         showCardUserCompletionBadge,
+        showMoreCardTitleLines,
     }: {
         title: React.ReactNode;
         enableCardUserState?: boolean;
         viewAllHref?: string;
         showCardDesktopQuickActions?: boolean;
         showCardUserCompletionBadge?: boolean;
+        showMoreCardTitleLines?: boolean;
     }) => (
         <div
             data-testid="content-lane"
             data-enable-card-user-state={String(enableCardUserState)}
             data-view-all-href={viewAllHref ?? ""}
             data-desktop-quick-actions={String(showCardDesktopQuickActions)}
+            data-more-title-lines={String(showMoreCardTitleLines)}
             data-user-completion-badge={String(showCardUserCompletionBadge)}
         >
             {title}
@@ -118,8 +122,10 @@ describe("HomeFeed", () => {
         for (const lane of screen.getAllByTestId("content-lane")) {
             expect(lane).toHaveAttribute("data-enable-card-user-state", "undefined");
             expect(lane).toHaveAttribute("data-desktop-quick-actions", "true");
+            expect(lane).toHaveAttribute("data-more-title-lines", "true");
             expect(lane).toHaveAttribute("data-user-completion-badge", "true");
         }
+        expect(screen.getByTestId("recommendations-row")).toHaveAttribute("data-more-title-lines", "true");
         expect(screen.getByTestId("recommendations-row")).toHaveAttribute(
             "data-user-completion-badge",
             "true",

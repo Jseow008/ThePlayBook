@@ -3204,3 +3204,76 @@ Merged origin/main into #294; only conflict was append-only investigation notes.
 Preserved both reports and distinct uncommitted historical notes. Preview product
 files remain byte-identical to reviewed d120618b; refreshed required gates and
 production deployment/Sepia check remain pending.
+
+
+## 30 October 2026 — Browse card title limits (authorized implementation)
+
+User approved four title lines on desktop and five on narrow screens, retaining
+current backdrop, font, card size and Read/Preview actions. Fresh isolated
+worktree `/Users/j/.codex/workspaces/netflux-card-title-lines`, branch
+`codex/card-title-lines`, base `04be9943cddb84701dd35337fb35f572ce097f3d`.
+
+Implementation is opt-in from HomeFeed through latest, configured and personalized
+recommendation lanes. Search/Library and other shared-card consumers retain the
+three-line default. The existing md breakpoint (768 px) controls four vs five.
+The gradient originally sizes to its text: changing the clamp alone would extend
+its coverage. An invisible, aria-hidden three-line sizing copy retains that exact
+footprint; the visible heading and existing hook grow upward together. No runtime
+measurement, observer, new animation, card sizing, font, gradient-stop, action,
+fetch, prefetch, caching, route or data changes. Only one heading is exposed to
+assistive technology. React review: no new hooks/effects, event or focus behavior;
+existing card memoization and semantic link names retained.
+
+Bounded browser verification used the real current component and a byte-for-byte
+main-branch baseline in a temporary Next route, with local copies of two public
+covers and an explicitly illustrative bright cover. User state disabled; isolated
+local hostname and inert local public client configuration; no accounts, saved
+records, production writes, provider calls or paid resources. The fixture and
+assets were removed and its server/tab closed; viewport override reset.
+
+Results (Chrome, real font/CSS):
+- Desktop 1728 px: 240 x 360 cards, candidate clamp 4, original clamp 3.
+  Long title grows from 66 to 88 px. Playfair Display 16 px / 22 px retained.
+- Narrow 390 x 844: 176 x 264 cards, candidate clamp 5, original clamp 3.
+  Long title grows from 51.2109 to 85.3516 px. Playfair Display 14.72 px /
+  17.0752 px retained. Short and bright-case title heights unchanged.
+- In all three pairs at each width: backdrop height and gradient identical,
+  metadata/action anchor identical (desktop y=308, narrow y=221 relative to card),
+  images loaded, no page overflow at the tested width.
+- At 768 px: all candidates switch to four lines and 240 x 360; all paired
+  backdrop heights still match.
+- Keyboard Tab activates the long candidate's existing Read action; Read/Preview
+  appear in the same area with unchanged destinations. Its hook ends above the
+  enlarged title (8 px gap), without overlap. Narrow desktop-only actions remain
+  hidden. No synthetic destination was opened or progress recorded.
+
+Evidence outside the shipping tree:
+`/Users/j/.codex/visualizations/2026/10/21/01a15e86-edbe-79c1-8d88-6877902e13bf/card-title-implementation/`
+contains desktop, focused desktop and narrow screenshots plus `geometry.json`.
+
+Retained setup failures: initial browser navigation timed out during first local
+compilation; the first fixture render then returned 500 because its temporary
+images were outside the existing allowed `/images/**` path. Moving only the fixture
+assets under that path corrected it; no image/security configuration changed.
+Neither attempt is counted as a product pass.
+
+Local checks: five focused component suites pass (52 tests); changed-file ESLint
+and full repository lint/ratchets pass. Final complete test/build/type results and
+PR identity follow below. Physical phones, Safari and production are not verified
+by this local Chrome comparison; skipped tests are outside coverage.
+
+Final local validation: `npm test` passes 260 suites / 2,107 tests, with
+12 suites / 307 tests skipped; the separate capacity harness passes all 34 tests.
+`npm run typecheck`, `npm run lint`, and `npm run build` pass, including Sharp
+production trace and initial critical-CSS checks. The build used inert localhost
+public client configuration rather than credentials; expected catalog fetch
+failures therefore remain in its log and do not constitute backend validation.
+The existing Node localstorage warning also remains. No backend change is involved.
+
+Retained build setup failures: the first Turbopack build rejected the shared
+node_modules symlink outside its worktree root; replacing that local symlink with
+an independent copy of the identical installed dependencies fixed resolution.
+The next compile succeeded but typechecking found stale `.next/dev` types for
+the removed fixture route. Clearing only this worktree's generated dev cache
+resolved that failure; the clean final build passes. No package, lockfile, build
+script or application configuration was changed to obtain the pass.

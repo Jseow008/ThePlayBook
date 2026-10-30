@@ -395,6 +395,21 @@ describe("ContentCard", () => {
         expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("leading-[1.18]");
     });
 
+    it("keeps the expanded title accessible once and leaves other card layouts unchanged", () => {
+        const { rerender } = render(<ContentCard item={item} showMoreTitleLines />);
+
+        expect(screen.getAllByRole("heading", { name: item.title })).toHaveLength(1);
+        expect(screen.getByRole("heading", { name: item.title })).toHaveClass("line-clamp-5", "md:line-clamp-4");
+        expect(screen.getByRole("link", { name: `Preview ${item.title}` })).toHaveAttribute(
+            "href", `/preview/${item.id}`,
+        );
+
+        rerender(<ContentCard item={item} />);
+
+        expect(screen.getAllByRole("heading", { name: item.title })).toHaveLength(1);
+        expect(screen.getByRole("heading", { name: item.title })).toHaveClass("line-clamp-3");
+    });
+
     it("renders a desktop hover hook without changing the primary link", () => {
         render(
             <ContentCard
@@ -417,7 +432,7 @@ describe("ContentCard", () => {
     });
 
     it("renders opt-in desktop read and preview actions without changing the card destination", () => {
-        render(<ContentCard item={item} showDesktopQuickActions />);
+        render(<ContentCard item={item} showDesktopQuickActions showMoreTitleLines />);
 
         expect(screen.getByRole("link", { name: "Preview Deep Work" })).toHaveAttribute(
             "href",

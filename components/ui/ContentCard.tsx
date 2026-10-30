@@ -43,6 +43,8 @@ interface ContentCardProps {
     enableUserState?: boolean;
     navigationMode?: "preview" | "resume";
     titleDensity?: "default" | "app-compact";
+    /** Browse titles: four lines on desktop, five below the existing md breakpoint. */
+    showMoreTitleLines?: boolean;
     priority?: boolean;
     imageSizes?: string;
     showDesktopQuickActions?: boolean;
@@ -172,6 +174,7 @@ function BaseContentCard({
     onToggleBookmark,
     href = `/preview/${item.id}`,
     titleDensity = "default",
+    showMoreTitleLines = false,
     priority = false,
     imageSizes = CONTENT_CARD_IMAGE_SIZES,
     showDesktopQuickActions = false,
@@ -227,6 +230,24 @@ function BaseContentCard({
             document.removeEventListener("keydown", closeOnEscape);
         };
     }, [isRemoveMenuOpen]);
+
+    const titleTypography = cn(
+        "w-full font-serif font-medium text-white/95 transition-colors group-hover:text-white md:text-base md:leading-snug",
+        isAppCompact ? "text-[0.92rem] leading-[1.16]" : "text-[0.95rem] leading-[1.18]",
+    );
+    const hookDescription = contentHook ? (
+        <p
+            aria-hidden="true"
+            className="content-card-motion-hook hidden w-full translate-y-1 text-[10px] font-medium leading-snug text-white/76 opacity-0 drop-shadow-md transition-[opacity,transform] duration-300 md:mb-1 md:line-clamp-2 md:block md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100 lg:text-[11px] motion-reduce:transition-none"
+        >
+            {contentHook}
+        </p>
+    ) : null;
+    const titleHeading = (
+        <h3 className={cn(titleTypography, showMoreTitleLines ? "line-clamp-5 md:line-clamp-4" : "line-clamp-3")}>
+            {item.title}
+        </h3>
+    );
 
     return (
         <div onMouseEnter={() => setPrefetchOnIntent(true)} onFocus={() => setPrefetchOnIntent(true)} className={cn(
@@ -343,25 +364,24 @@ function BaseContentCard({
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/92 via-black/62 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20">
                 <div className="flex h-full flex-col justify-end gap-1">
-                    {contentHook ? (
-                        <p
-                            aria-hidden="true"
-                            className="content-card-motion-hook hidden w-full translate-y-1 text-[10px] font-medium leading-snug text-white/76 opacity-0 drop-shadow-md transition-[opacity,transform] duration-300 md:mb-1 md:line-clamp-2 md:block md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100 lg:text-[11px] motion-reduce:transition-none"
-                        >
-                            {contentHook}
-                        </p>
-                    ) : null}
-
-                    <h3
-                        className={cn(
-                            "w-full line-clamp-3 font-serif font-medium text-white/95 transition-colors group-hover:text-white md:text-base md:leading-snug",
-                            isAppCompact
-                                ? "text-[0.92rem] leading-[1.16]"
-                                : "text-[0.95rem] leading-[1.18]"
-                        )}
-                    >
-                        {item.title}
-                    </h3>
+                    {showMoreTitleLines ? (
+                        <div className="relative">
+                            {/* Keep the original three-line backdrop footprint as the visible title grows upward. */}
+                            <div aria-hidden="true" className="invisible flex select-none flex-col gap-1">
+                                {hookDescription}
+                                <span className={cn(titleTypography, "line-clamp-3")}>{item.title}</span>
+                            </div>
+                            <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1">
+                                {hookDescription}
+                                {titleHeading}
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {hookDescription}
+                            {titleHeading}
+                        </>
+                    )}
 
                     <div
                         className={cn(
