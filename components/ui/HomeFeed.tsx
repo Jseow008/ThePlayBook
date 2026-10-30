@@ -58,6 +58,7 @@ export function HomeFeed({
                             items={items.slice(0, BROWSE_LANE_ITEM_LIMIT)}
                             viewAllHref={hasMoreBrowseItems(items) ? "/search" : undefined}
                             cardTitleDensity="app-compact"
+                            showMoreCardTitleLines
                             showCardDesktopQuickActions
                             showCardUserCompletionBadge
                         />
@@ -76,6 +77,7 @@ export function HomeFeed({
                                         ? getBrowseSectionViewAllHref(section)
                                         : undefined}
                                     cardTitleDensity="app-compact"
+                                    showMoreCardTitleLines
                                     showCardDesktopQuickActions
                                     showCardUserCompletionBadge
                                 />
@@ -85,6 +87,7 @@ export function HomeFeed({
                         {/* Personalized Recommendations */}
                         <RecommendationsRow
                             cardTitleDensity="app-compact"
+                            showMoreTitleLines
                             showDesktopQuickActions
                             showUserCompletionBadge
                         />

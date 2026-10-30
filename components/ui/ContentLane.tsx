@@ -14,6 +14,7 @@ interface ContentLaneProps {
     viewAllHref?: string;
     cardNavigationMode?: "preview" | "resume";
     cardTitleDensity?: "default" | "app-compact";
+    showMoreCardTitleLines?: boolean;
     enableCardUserState?: boolean;
     showCardDesktopQuickActions?: boolean;
     showCardUserCompletionBadge?: boolean;
@@ -27,6 +28,7 @@ export function ContentLane({
     viewAllHref,
     cardNavigationMode = "preview",
     cardTitleDensity = "default",
+    showMoreCardTitleLines = false,
     enableCardUserState = true,
     showCardDesktopQuickActions = false,
     showCardUserCompletionBadge = false,
@@ -193,6 +195,7 @@ export function ContentLane({
                                         enableUserState={enableCardUserState}
                                         navigationMode={cardNavigationMode}
                                         titleDensity={cardTitleDensity}
+                                        showMoreTitleLines={showMoreCardTitleLines}
                                         showDesktopQuickActions={showCardDesktopQuickActions}
                                         showUserCompletionBadge={showCardUserCompletionBadge}
                                     />

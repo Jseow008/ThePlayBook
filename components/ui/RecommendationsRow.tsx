@@ -9,10 +9,12 @@ const BROWSE_LIBRARY_SEED_LIMIT = 20;
 
 export function RecommendationsRow({
     cardTitleDensity = "default",
+    showMoreTitleLines = false,
     showDesktopQuickActions = false,
     showUserCompletionBadge = false,
 }: {
     cardTitleDensity?: "default" | "app-compact";
+    showMoreTitleLines?: boolean;
     showDesktopQuickActions?: boolean;
     showUserCompletionBadge?: boolean;
 }) {
@@ -72,6 +74,7 @@ export function RecommendationsRow({
                     title="Based on your recent reading"
                     items={recentItems}
                     cardTitleDensity={cardTitleDensity}
+                    showMoreCardTitleLines={showMoreTitleLines}
                     showCardDesktopQuickActions={showDesktopQuickActions}
                     showCardUserCompletionBadge={showUserCompletionBadge}
                 />
@@ -83,6 +86,7 @@ export function RecommendationsRow({
                     title="Based on your library"
                     items={libraryItems}
                     cardTitleDensity={cardTitleDensity}
+                    showMoreCardTitleLines={showMoreTitleLines}
                     showCardDesktopQuickActions={showDesktopQuickActions}
                     showCardUserCompletionBadge={showUserCompletionBadge}
                 />
