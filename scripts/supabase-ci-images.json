@@ -1,0 +1,71 @@
+{
+  "cliVersion": "2.109.1",
+  "platform": "linux/amd64",
+  "images": [
+    {
+      "source": "docker.io/supabase/edge-runtime:v1.74.2",
+      "digest": "sha256:2df6853c27aeab7063e4b6078b0ac9747c039d8c008b770cd4e6a62b29c285bb",
+      "target": "ghcr.io/supabase/edge-runtime:v1.74.2"
+    },
+    {
+      "source": "docker.io/supabase/gotrue:v2.192.0",
+      "digest": "sha256:288d880ebc80a1cb5ad52dc7d12328f76e9c90127003306864a270118bba00a8",
+      "target": "ghcr.io/supabase/gotrue:v2.192.0"
+    },
+    {
+      "source": "docker.io/darthsim/imgproxy:v3.8.0",
+      "digest": "sha256:e1a8f4b99dd65b374b5705550505ace929b9dac98694614bbab3510f9e5107dd",
+      "target": "ghcr.io/supabase/imgproxy:v3.8.0"
+    },
+    {
+      "source": "docker.io/library/kong:2.8.1",
+      "digest": "sha256:e21b0b793879ab96720ed4188f9441260273f4bf775bcbff8d435e019ffb759a",
+      "target": "ghcr.io/supabase/kong:2.8.1"
+    },
+    {
+      "source": "docker.io/supabase/logflare:1.46.0",
+      "digest": "sha256:80753dd12a470a2eedb01b217c4b0cfca3280c1f2f20ddfecd75caced48b9195",
+      "target": "ghcr.io/supabase/logflare:1.46.0"
+    },
+    {
+      "source": "docker.io/axllent/mailpit:v1.30.2",
+      "digest": "sha256:f0b0ed33c8cf53aac0dd004abbe245c83420a7ae44914e25178f7791dec5723a",
+      "target": "ghcr.io/supabase/mailpit:v1.30.2"
+    },
+    {
+      "source": "docker.io/supabase/postgres-meta:v0.96.6",
+      "digest": "sha256:b9edad6fff2d4fb991ecd57837dbe3f21d2efa0f0ccb186f6ccf0e2d57192fed",
+      "target": "ghcr.io/supabase/postgres-meta:v0.96.6"
+    },
+    {
+      "source": "docker.io/supabase/postgres:17.6.1.143",
+      "digest": "sha256:b021e96054128399f84f24e39d29c21ee7c7169515e5d9e4e99ff15d5043d1d8",
+      "target": "ghcr.io/supabase/postgres:17.6.1.143"
+    },
+    {
+      "source": "docker.io/postgrest/postgrest:v14.14",
+      "digest": "sha256:a677dc2b2c8cd5a86952fef538c2e98aa096c80bbf634b83ac4d8bea71dde7fd",
+      "target": "ghcr.io/supabase/postgrest:v14.14"
+    },
+    {
+      "source": "docker.io/supabase/realtime:v2.112.6",
+      "digest": "sha256:5f5377bf9d1f0e6b59fe6a0cb57e9ff65f9960eed5b43e93862969f81c44acae",
+      "target": "ghcr.io/supabase/realtime:v2.112.6"
+    },
+    {
+      "source": "docker.io/supabase/storage-api:v1.62.5",
+      "digest": "sha256:28f8a3cc5dd81b1b13098ca12460883ecb911d017a371b4b5efcb3ec432c1f1e",
+      "target": "ghcr.io/supabase/storage-api:v1.62.5"
+    },
+    {
+      "source": "docker.io/supabase/studio:2026.07.06-sha-66cf431",
+      "digest": "sha256:b96f0718b432162a3fbae630c75d8e0a3b920d37d7c8c18a50e2813c288e8b5b",
+      "target": "ghcr.io/supabase/studio:2026.07.06-sha-66cf431"
+    },
+    {
+      "source": "docker.io/timberio/vector:0.53.0-alpine",
+      "digest": "sha256:7a74872eb7791f65357b200813bcf613c8dedcac561b4f1a68f9d290f6e6a40c",
+      "target": "ghcr.io/supabase/vector:0.53.0-alpine"
+    }
+  ]
+}

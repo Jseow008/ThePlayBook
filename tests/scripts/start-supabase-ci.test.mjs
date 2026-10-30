@@ -1,178 +1,125 @@
 import { describe, expect, it, vi } from "vitest";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { isRegistryThrottling, retryAfterMs, startSupabase, throttledImages } from "../../scripts/start-supabase-ci.mjs";
+import { readFileSync } from "node:fs";
+import { runCommand, startSupabase, validatePlan } from "../../scripts/start-supabase-ci.mjs";
 
-const throttled = "failed to display json stream: toomanyrequests: retry-after: 49.173µs, allowed: 44000/minute\nfailed to pull docker image: Error response from daemon: toomanyrequests: retry-after: 371.694µs, allowed: 44000/minute\nStopping containers...\nfailed to pull docker image from all registries: ghcr.io/supabase/postgres:17.6.1.143: error pulling image configuration: download failed after attempts=1: toomanyrequests: retry-after: 866.83µs, allowed: 44000/minute\nTry rerunning the command with --debug to troubleshoot the error.";
-const failed = output => ({ code: 1, signal: null, output });
-const success = { code: 0, signal: null, output: "Supabase started." };
-
-function harness(results) {
-  const run = vi.fn();
-  for (const result of results) run.mockResolvedValueOnce(result);
-  return { run, pull: vi.fn().mockResolvedValue(success), wait: vi.fn().mockResolvedValue(undefined), random: () => 0, log: vi.fn() };
+const plan = JSON.parse(readFileSync("scripts/supabase-ci-images.json", "utf8"));
+const success = output => ({ code: 0, signal: null, output });
+const imageId = `sha256:${"a".repeat(64)}`;
+function harness() {
+  const run = vi.fn(async (command, args) => {
+    if (args[0] === "--version") return success(plan.cliVersion);
+    if (args[0] === "image") {
+      const reference = args[2];
+      const digest = reference.split("@")[1];
+      return success(JSON.stringify([{ Id: imageId, Os: "linux", Architecture: "amd64", RepoDigests: digest ? [reference] : [] }]));
+    }
+    return success("");
+  });
+  return { run, candidate: structuredClone(plan), registry: "ghcr.io", cli: "/locked/supabase", log: vi.fn() };
 }
 
-describe("Supabase CI image-download recovery", () => {
-  it("recognizes the recorded CLI registry failure, including terminal image errors", () => {
-    expect(isRegistryThrottling(throttled)).toBe(true);
-    expect(isRegistryThrottling(`\x1b[31m${throttled}\x1b[0m`)).toBe(true);
-    expect(isRegistryThrottling(`${throttled}\nfailed to pull docker image: ghcr.io/supabase/kong: toomanyrequests`)).toBe(true);
+describe("verified original-publisher CI image preload", () => {
+  it("keeps the manifest tied to the lockfile CLI and approved 13-image evidence", () => {
+    const lock = JSON.parse(readFileSync("package-lock.json", "utf8"));
+    expect(plan.cliVersion).toBe(lock.packages["node_modules/supabase"].version);
+    expect(() => validatePlan(plan, plan.cliVersion, "ghcr.io")).not.toThrow();
+    expect(plan.images.find(image => image.source.includes("/kong:"))?.source).toBe("docker.io/library/kong:2.8.1");
+    expect(plan.images.find(image => image.source.includes("/imgproxy:"))?.source).toBe("docker.io/darthsim/imgproxy:v3.8.0");
   });
 
-  it("extracts only exact approved-registry references selected by the CLI", () => {
-    expect(throttledImages(throttled)).toEqual(["ghcr.io/supabase/postgres:17.6.1.143"]);
-    expect(throttledImages(throttled.replaceAll("ghcr.io/supabase/postgres", "other.invalid/supabase/postgres"))).toBeNull();
-    expect(throttledImages(throttled.replaceAll("supabase/postgres", "supabase/unknown-image"))).toBeNull();
-    expect(throttledImages("failed to pull docker image: Error response from daemon: toomanyrequests")).toBeNull();
-  });
-
-  it("serializes remaining downloads and carries only failed images into the last attempt", async () => {
-    const twoImages = `${throttled}\nfailed to pull docker image from all registries: ghcr.io/supabase/kong:2.8.1: toomanyrequests: retry-after: 1ms`;
-    const h = harness([failed(twoImages), success]);
-    let active = 0;
-    let maxActive = 0;
-    let pulls = 0;
-    h.pull.mockImplementation(async () => {
-      active += 1;
-      maxActive = Math.max(maxActive, active);
-      await Promise.resolve();
-      active -= 1;
-      pulls += 1;
-      return pulls === 2 ? failed("Error response from daemon: toomanyrequests: retry-after: 1ms") : success;
-    });
+  it("downloads immutable digests serially and verifies aliases before normal startup", async () => {
+    const h = harness();
     expect(await startSupabase(h)).toBe(0);
-    expect(maxActive).toBe(1);
-    expect(h.pull.mock.calls).toEqual([
-      ["ghcr.io/supabase/postgres:17.6.1.143"],
-      ["ghcr.io/supabase/kong:2.8.1"],
-      ["ghcr.io/supabase/kong:2.8.1"],
-    ]);
-    expect(h.run).toHaveBeenCalledTimes(2);
-    expect(h.wait.mock.calls).toEqual([[60_000], [120_000]]);
-  });
-
-  it("does not run startup again when serialized downloads exhaust their budget", async () => {
-    const h = harness([failed(throttled)]);
-    h.pull.mockResolvedValue(failed("Error response from daemon: toomanyrequests: retry-after: 1ms"));
-    expect(await startSupabase(h)).toBe(1);
-    expect(h.run).toHaveBeenCalledTimes(1);
-    expect(h.pull).toHaveBeenCalledTimes(2);
-    expect(h.wait).toHaveBeenCalledTimes(2);
-  });
-
-  it.each(["Error response from daemon: unauthorized", "Error response from daemon: manifest unknown", "failed to register layer: no space left on device"])("does not retry non-transient Docker errors: %s", async output => {
-    const h = harness([failed(throttled)]);
-    h.pull.mockResolvedValue(failed(output));
-    expect(await startSupabase(h)).toBe(1);
-    expect(h.run).toHaveBeenCalledTimes(1);
-    expect(h.pull).toHaveBeenCalledTimes(1);
-  });
-
-  it.each([
-    "toomanyrequests: retry-after: 1ms",
-    "Error: database migration failed",
-    "failed to pull docker image: unauthorized: authentication required",
-    `${throttled}\nfailed to pull docker image: manifest unknown`,
-    `${throttled}\nError: database migration failed`,
-    `${throttled}\nError executing schema.sql`,
-    `${throttled}\nfailed to write file: no space left on device`,
-    "failed to pull docker image: 429 then access denied",
-  ])("fails closed for unclear or mixed failures: %s", output => {
-    expect(isRegistryThrottling(output)).toBe(false);
-  });
-
-  it("does not rerun successful startup, even if an earlier download warning occurred", async () => {
-    const h = harness([{ ...success, output: throttled }]);
-    expect(await startSupabase(h)).toBe(0);
-    expect(h.run).toHaveBeenCalledTimes(1);
-    expect(h.wait).not.toHaveBeenCalled();
-  });
-
-  it("recovers on the same runner with increasing pauses and no extra startup after success", async () => {
-    const h = harness([failed(throttled), failed(throttled), success]);
-    expect(await startSupabase(h)).toBe(0);
-    expect(h.run).toHaveBeenCalledTimes(3);
-    expect(h.wait.mock.calls).toEqual([[60_000], [120_000]]);
-  });
-
-  it("keeps failure after three attempts", async () => {
-    const h = harness([failed(throttled), failed(throttled), failed(throttled)]);
-    expect(await startSupabase(h)).toBe(1);
-    expect(h.run).toHaveBeenCalledTimes(3);
-    expect(h.wait).toHaveBeenCalledTimes(2);
-  });
-
-  it("stops immediately for a non-retryable failure or cancellation", async () => {
-    for (const result of [failed(`${throttled}\nError: migration failed`), { ...failed(throttled), signal: "SIGTERM" }]) {
-      const h = harness([result]);
-      expect(await startSupabase(h)).toBe(1);
-      expect(h.run).toHaveBeenCalledTimes(1);
-      expect(h.wait).not.toHaveBeenCalled();
+    const calls = h.run.mock.calls;
+    expect(calls[0].slice(0, 2)).toEqual(["/locked/supabase", ["--version"]]);
+    expect(calls.at(-1)).toEqual(["/locked/supabase", ["start"]]);
+    expect(calls).toHaveLength(2 + 13 * 4);
+    for (const [i, image] of plan.images.entries()) {
+      const exact = `${image.source.slice(0, image.source.lastIndexOf(":"))}@${image.digest}`;
+      expect(calls[1 + i * 4]).toEqual(["docker", ["pull", "--platform", "linux/amd64", exact]]);
+      expect(calls[2 + i * 4][1]).toEqual(["image", "inspect", exact]);
+      expect(calls[3 + i * 4]).toEqual(["docker", ["tag", exact, image.target]]);
+      expect(calls[4 + i * 4][1]).toEqual(["image", "inspect", image.target]);
     }
   });
 
-  it("does not retry a launch error", async () => {
-    const h = harness([]);
-    h.run.mockRejectedValueOnce(new Error("CLI missing"));
-    await expect(startSupabase(h)).rejects.toThrow("CLI missing");
+  it.each([
+    ["throttle", { code: 1, output: "toomanyrequests" }],
+    ["denial", { code: 1, output: "unauthorized" }],
+    ["disk", { code: 1, output: "no space left" }],
+    ["cancellation", { code: 0, signal: "SIGTERM", output: "" }],
+    ["timeout", { code: 0, timedOut: true, output: "" }],
+  ])("stops on first %s without another download or startup", async (_, result) => {
+    const h = harness();
+    const original = h.run.getMockImplementation();
+    h.run.mockImplementation((cmd, args, opts) => args[0] === "pull" ? result : original(cmd, args, opts));
+    await expect(startSupabase(h)).rejects.toThrow("Image download failed");
+    expect(h.run).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["architecture", "digest", "image ID", "invalid JSON", "alias"])("rejects %s mismatch before startup", async kind => {
+    const h = harness();
+    const original = h.run.getMockImplementation();
+    h.run.mockImplementation(async (cmd, args, opts) => {
+      const result = await original(cmd, args, opts);
+      if (args[0] !== "image") return result;
+      const isAlias = !args[2].includes("@");
+      if (kind === "invalid JSON") return success("not json");
+      const data = JSON.parse(result.output);
+      if (kind === "architecture") data[0].Architecture = "arm64";
+      if (kind === "digest") data[0].RepoDigests = [];
+      if (kind === "image ID") data[0].Id = "invalid";
+      if (kind === "alias" && isAlias) data[0].Id = `sha256:${"b".repeat(64)}`;
+      return success(JSON.stringify(data));
+    });
+    await expect(startSupabase(h)).rejects.toThrow();
+    expect(h.run.mock.calls.filter(call => call[1][0] === "pull")).toHaveLength(1);
+    expect(h.run.mock.calls.some(call => call[1][0] === "start")).toBe(false);
+  });
+
+  it.each(["publisher", "target", "duplicate", "missing", "digest", "CLI", "platform", "registry"])("rejects an invalid %s plan before downloading", async kind => {
+    const h = harness();
+    if (kind === "publisher") h.candidate.images[0].source = h.candidate.images[0].source.replace("supabase", "untrusted");
+    if (kind === "target") h.candidate.images[0].target += "-changed";
+    if (kind === "duplicate") h.candidate.images[1] = h.candidate.images[0];
+    if (kind === "missing") h.candidate.images.pop();
+    if (kind === "digest") h.candidate.images[0].digest = "latest";
+    if (kind === "CLI") h.candidate.cliVersion = "0.0.0";
+    if (kind === "platform") h.candidate.platform = "linux/arm64";
+    if (kind === "registry") h.registry = "other.invalid";
+    await expect(startSupabase(h)).rejects.toThrow();
     expect(h.run).toHaveBeenCalledTimes(1);
-    expect(h.wait).not.toHaveBeenCalled();
   });
 
-  it("respects a longer registry pause but refuses one outside the bounded budget", async () => {
-    const h = harness([failed(throttled.replaceAll("866.83µs", "90s")), success]);
-    expect(await startSupabase(h)).toBe(0);
-    expect(h.wait).toHaveBeenCalledWith(90_000);
-    const tooLong = harness([failed(throttled.replaceAll("866.83µs", "10m"))]);
-    expect(await startSupabase(tooLong)).toBe(1);
-    expect(tooLong.wait).not.toHaveBeenCalled();
+  it("retains startup failure without another attempt", async () => {
+    const h = harness();
+    const original = h.run.getMockImplementation();
+    h.run.mockImplementation((cmd, args, opts) => args[0] === "start" ? { code: 2, output: "migration failure" } : original(cmd, args, opts));
+    await expect(startSupabase(h)).rejects.toThrow("Supabase startup failed");
+    expect(h.run.mock.calls.filter(call => call[1][0] === "start")).toHaveLength(1);
   });
 
-  it("reads compound and second-based retry hints, retaining a conservative minimum pause", () => {
-    expect(retryAfterMs(throttled)).toBe(1);
-    expect(retryAfterMs("retry-after: 1m30s, allowed: 44000/minute")).toBe(90_000);
-    expect(retryAfterMs("retry-after: 125\n")).toBe(125_000);
-    expect(retryAfterMs("retry-after: 1H\n")).toBe(3_600_000);
+  it("stops on a missing executable", async () => {
+    const h = harness();
+    h.run.mockRejectedValueOnce(new Error("ENOENT"));
+    await expect(startSupabase(h)).rejects.toThrow("ENOENT");
+    expect(h.run).toHaveBeenCalledTimes(1);
   });
 
-  it("adds bounded jitter to avoid synchronizing concurrent jobs", async () => {
-    const h = harness([failed(throttled), success]);
-    h.random = () => 0.999;
-    expect(await startSupabase(h)).toBe(0);
-    expect(h.wait).toHaveBeenCalledWith(69_990);
+  it("bounds a real stalled subprocess and retains failure", async () => {
+    const result = await runCommand(process.execPath, ["-e", "setInterval(()=>{},1000)"], { quiet: true, timeoutMs: 100 });
+    expect(result.code).not.toBe(0);
+    expect(result.timedOut).toBe(true);
   });
 
-  it("uses recovery for each CI/Security startup without changing registry authentication or health checks", () => {
+  it("keeps registry authentication, security gates and normal health checks", () => {
     for (const path of [".github/workflows/ci.yml", ".github/workflows/security.yml"]) {
       const source = readFileSync(path, "utf8");
-      expect(source).not.toContain("npx supabase start");
       expect(source).toContain("node scripts/start-supabase-ci.mjs");
       expect(source).toContain("packages: read");
       expect(source).toContain("SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io");
       expect(source).not.toContain("--ignore-health-check");
-      expect(source).not.toContain("run_with_transient_retry node scripts/start-supabase-ci.mjs");
       expect(source).toContain("Record image identities and remove registry credentials");
-    }
-  });
-
-  it("runs the installed CLI with only start and preserves the existing Docker credential location", () => {
-    const directory = mkdtempSync(join(tmpdir(), "netflux-start-ci-"));
-    try {
-      mkdirSync(join(directory, "node_modules/.bin"), { recursive: true });
-      writeFileSync(join(directory, "node_modules/.bin/supabase"), '#!/usr/bin/env node\nconsole.log(JSON.stringify({args:process.argv.slice(2),registry:process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY,dockerConfig:process.env.DOCKER_CONFIG}));\n', { mode: 0o755 });
-      const output = execFileSync(process.execPath, [resolve("scripts/start-supabase-ci.mjs")], {
-        cwd: directory,
-        encoding: "utf8",
-        env: { PATH: process.env.PATH, SUPABASE_INTERNAL_IMAGE_REGISTRY: "ghcr.io", DOCKER_CONFIG: "temporary-credentials" },
-      });
-      expect(output).toContain('"args":["start"]');
-      expect(output).toContain('"registry":"ghcr.io"');
-      expect(output).toContain('"dockerConfig":"temporary-credentials"');
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
     }
   });
 });

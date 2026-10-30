@@ -1,150 +1,104 @@
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
-import { stripVTControlCharacters } from "node:util";
 
-const MAX_ATTEMPTS = 3;
-const BACKOFF_MS = [60_000, 120_000];
-const MAX_PAUSE_MS = 300_000;
-const OUTPUT_LIMIT = 256 * 1024;
-const IMAGE_NAMES = new Set(["postgres", "gotrue", "postgrest", "realtime", "storage-api", "edge-runtime", "studio", "postgres-meta", "logflare", "supavisor", "kong", "mailpit", "imgproxy", "vector"]);
+const plan = JSON.parse(readFileSync(resolve("scripts/supabase-ci-images.json"), "utf8"));
+const PUBLISHERS = {
+  "edge-runtime": "supabase", gotrue: "supabase", imgproxy: "darthsim", kong: "library",
+  logflare: "supabase", mailpit: "axllent", "postgres-meta": "supabase", postgres: "supabase",
+  postgrest: "postgrest", realtime: "supabase", "storage-api": "supabase", studio: "supabase", vector: "timberio",
+};
 
-function diagnosticLines(output) {
-  return stripVTControlCharacters(output).split(/[\r\n]+/).map(line => line.trim());
-}
-
-function isThrottleLine(line) {
-  return /\btoomanyrequests\b|\b429\b/i.test(line)
-    && !/unauthorized|authentication required|access denied|manifest unknown|no space left|certificate|\b403\b/i.test(line);
-}
-
-export function isRegistryThrottling(output) {
-  // Fail closed: an earlier 429 must not turn a later migration/auth/disk error
-  // into a retry. Require the CLI's terminal image-pull failure, and reject any
-  // other reported failures in this attempt.
-  const lines = diagnosticLines(output);
-  const failures = lines.filter(line => /^(?:failed\b|error\b|fatal\b)/i.test(line));
-  const imagePull = /^failed to pull docker image(?: from all registries)?\b/i;
-  return failures.some(line => imagePull.test(line)) && failures.every(line =>
-    /^failed to (?:pull docker image|display json stream)\b/i.test(line)
-    && isThrottleLine(line)
-  );
-}
-
-export function throttledImages(output) {
-  if (!isRegistryThrottling(output)) return null;
-  // The locked CLI also prints intermediate "failed to pull docker image"
-  // messages without a reference. Only its final per-image summaries identify
-  // the authoritative references to prepare; all error lines were checked above.
-  const failures = diagnosticLines(output).filter(line => /^failed to pull docker image from all registries:\s/i.test(line));
-  if (failures.length === 0) return null;
-  const images = [];
-  for (const line of failures) {
-    const match = line.match(/^failed to pull docker image(?: from all registries)?:\s+(ghcr\.io\/supabase\/([a-z0-9-]+):[A-Za-z0-9_.-]+)(?=:\s|\s|$)/i);
-    if (!match || !IMAGE_NAMES.has(match[2])) return null;
-    images.push(match[1]);
+export function validatePlan(candidate, cliVersion, registry) {
+  if (registry !== "ghcr.io") throw new Error("CI image preload requires the existing GHCR target configuration.");
+  if (candidate.cliVersion !== cliVersion || candidate.platform !== "linux/amd64") {
+    throw new Error("CLI version or platform changed: review the pinned image plan before running CI.");
   }
-  return [...new Set(images)];
-}
-
-export function retryAfterMs(output) {
-  let maximum = 0;
-  const units = { ns: 0.000001, us: 0.001, "µs": 0.001, "μs": 0.001, ms: 1, s: 1000, m: 60_000, h: 3_600_000 };
-  for (const match of output.matchAll(/retry-after:\s*((?:\d+(?:\.\d+)?(?:ns|µs|μs|us|ms|s|m|h))+|\d+(?:\.\d+)?)(?=[,\s]|$)/gi)) {
-    const value = match[1].toLowerCase();
-    let duration = 0;
-    if (/^\d+(?:\.\d+)?$/.test(value)) duration = Number(value) * 1000;
-    else for (const part of value.matchAll(/(\d+(?:\.\d+)?)(ns|µs|μs|us|ms|s|m|h)/g)) duration += Number(part[1]) * units[part[2]];
-    maximum = Math.max(maximum, Math.ceil(duration));
+  if (!Array.isArray(candidate.images) || candidate.images.length !== Object.keys(PUBLISHERS).length) {
+    throw new Error("Incomplete CI image plan.");
   }
-  return maximum;
+  const seen = new Set();
+  for (const image of candidate.images) {
+    const match = image.source?.match(/^docker\.io\/([a-z0-9-]+)\/([a-z0-9-]+):([A-Za-z0-9_.-]+)$/);
+    if (!match || !Object.hasOwn(PUBLISHERS, match[2]) || PUBLISHERS[match[2]] !== match[1]
+      || seen.has(match[2]) || image.target !== `ghcr.io/supabase/${match[2]}:${match[3]}`
+      || !/^sha256:[0-9a-f]{64}$/.test(image.digest)) throw new Error("Invalid publisher, digest or target in CI image plan.");
+    seen.add(match[2]);
+  }
 }
 
-function runCommand(command, args) {
+// Fixed argument arrays, inherited isolated Docker credentials, bounded child
+// lifetime, and no outer retries. A cancellation must never start another pull.
+export function runCommand(command, args, { quiet = false, timeoutMs = 300_000 } = {}) {
   return new Promise((done, reject) => {
     const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"] });
     let output = "";
+    let interrupted = false;
+    let timedOut = false;
+    let killTimer;
     const forward = stream => chunk => {
-      stream.write(chunk);
-      output = (output + chunk.toString()).slice(-OUTPUT_LIMIT);
+      if (!quiet) stream.write(chunk);
+      output = (output + chunk.toString()).slice(-256 * 1024);
     };
     child.stdout.on("data", forward(process.stdout));
     child.stderr.on("data", forward(process.stderr));
-    const interrupt = () => child.kill("SIGINT");
-    const terminate = () => child.kill("SIGTERM");
-    const cleanup = () => {
-      process.off("SIGINT", interrupt);
-      process.off("SIGTERM", terminate);
+    const stop = () => {
+      interrupted = true;
+      child.kill("SIGTERM");
+      killTimer ??= setTimeout(() => child.kill("SIGKILL"), 5_000);
     };
-    process.once("SIGINT", interrupt);
-    process.once("SIGTERM", terminate);
+    const timer = setTimeout(() => { timedOut = true; stop(); }, timeoutMs);
+    const cleanup = () => {
+      clearTimeout(timer);
+      clearTimeout(killTimer);
+      process.off("SIGINT", stop);
+      process.off("SIGTERM", stop);
+    };
+    process.once("SIGINT", stop);
+    process.once("SIGTERM", stop);
     child.once("error", error => { cleanup(); reject(error); });
-    child.once("close", (code, signal) => { cleanup(); done({ code: code ?? 1, signal, output }); });
+    child.once("close", (code, signal) => {
+      cleanup();
+      done({ code: interrupted ? 1 : (code ?? 1), signal, timedOut, output });
+    });
   });
 }
 
-function runCli() {
-  // Use the installed, lockfile-pinned CLI. Never install or choose a new CLI
-  // version while trying to recover an image download.
-  const cli = resolve("node_modules", ".bin", process.platform === "win32" ? "supabase.cmd" : "supabase");
-  return runCommand(cli, ["start"]);
+function requireSuccess(result, action) {
+  if (result.code !== 0 || result.signal || result.timedOut) throw new Error(`${action} failed; stopping CI setup.`);
 }
 
-function isDockerThrottling(output) {
-  const errors = diagnosticLines(output).filter(line => /^(?:failed\b|error\b|fatal\b|toomanyrequests\b)/i.test(line));
-  return errors.length > 0 && errors.every(isThrottleLine);
-}
-
-export async function startSupabase({ run = runCli, pull = image => runCommand("docker", ["pull", image]), wait = sleep, random = Math.random, log = console.log } = {}) {
-  let pendingImages = [];
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
-    log(`Starting Supabase (attempt ${attempt}/${MAX_ATTEMPTS}).`);
-    let result;
-    let failure;
-    if (pendingImages.length > 0) {
-      const remaining = [];
-      let hint = 0;
-      // The first hosted trial retained downloaded images but still exhausted
-      // retries because the CLI pulled missing images concurrently. Serialize
-      // only the exact failed references, without adding another retry loop.
-      for (const [index, image] of pendingImages.entries()) {
-        log(`Preparing remaining image ${image}.`);
-        const download = await pull(image);
-        if (download.signal) return download.code || 1;
-        if (download.code === 0) continue;
-        if (!isDockerThrottling(download.output)) return download.code || 1;
-        // A registry-wide throttle applies to subsequent downloads too. Leave
-        // the unattempted references for the next bounded backoff phase.
-        remaining.push(...pendingImages.slice(index));
-        hint = Math.max(hint, retryAfterMs(download.output));
-        break;
-      }
-      if (remaining.length > 0) {
-        result = { code: 1 };
-        failure = { images: remaining, hint };
-      }
-    }
-    if (!result) result = await run();
-    if (result.signal) return result.code || 1;
-    if (result.code === 0) return 0;
-    if (attempt === MAX_ATTEMPTS) return result.code || 1;
-    if (!failure) {
-      const images = throttledImages(result.output);
-      if (!images) return result.code || 1;
-      failure = { images, hint: retryAfterMs(result.output) };
-    }
-    pendingImages = failure.images;
-    const retryAfter = failure.hint;
-    if (retryAfter > MAX_PAUSE_MS) {
-      log("Registry requests a pause beyond this job's retry budget; leaving setup failed.");
-      return result.code || 1;
-    }
-    const delay = Math.min(MAX_PAUSE_MS, Math.max(BACKOFF_MS[attempt - 1], retryAfter) + Math.floor(random() * 10_000));
-    log(`Registry throttled image downloads; retrying in ${Math.ceil(delay / 1000)}s on this runner, keeping downloaded images.`);
-    await wait(delay);
+export async function startSupabase({
+  candidate = plan,
+  registry = process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY,
+  cli = resolve("node_modules/.bin/supabase"),
+  run = runCommand,
+  log = console.log,
+} = {}) {
+  const version = await run(cli, ["--version"], { quiet: true });
+  requireSuccess(version, "CLI version check");
+  validatePlan(candidate, version.output.trim(), registry);
+  for (const image of candidate.images) {
+    const exact = `${image.source.slice(0, image.source.lastIndexOf(":"))}@${image.digest}`;
+    log(`Preparing verified CI image ${image.source}.`);
+    requireSuccess(await run("docker", ["pull", "--platform", candidate.platform, exact]), "Image download");
+    const result = await run("docker", ["image", "inspect", exact], { quiet: true });
+    requireSuccess(result, "Image inspection");
+    const inspected = JSON.parse(result.output)[0];
+    if (inspected?.Os !== "linux" || inspected.Architecture !== "amd64"
+      || !inspected.RepoDigests?.some(value => value.split("@")[1] === image.digest)
+      || !/^sha256:[0-9a-f]{64}$/.test(inspected.Id)) throw new Error("Downloaded image identity mismatch.");
+    requireSuccess(await run("docker", ["tag", exact, image.target]), "Local image alias");
+    const alias = await run("docker", ["image", "inspect", image.target], { quiet: true });
+    requireSuccess(alias, "Local image alias inspection");
+    if (JSON.parse(alias.output)[0]?.Id !== inspected.Id) throw new Error("Local image alias identity mismatch.");
+    log(`Verified ${image.target} at ${image.digest}.`);
   }
-  return 1;
+  log("All 13 pinned images verified; starting Supabase with normal health checks.");
+  const result = await run(cli, ["start"]);
+  requireSuccess(result, "Supabase startup");
+  return 0;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
