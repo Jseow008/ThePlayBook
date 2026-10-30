@@ -129,7 +129,7 @@ jobs:
             "$@"
           }
 
-          run_with_transient_retry npx supabase start
+          node scripts/start-supabase-ci.mjs
           run_with_transient_retry npx supabase db reset
 
           npx supabase status -o env \
@@ -261,7 +261,7 @@ jobs:
       - name: Prepare disposable Supabase
         if: steps.scope.outcome != 'success' || steps.scope.outputs.run_database != 'false'
         run: |
-          npx supabase start
+          node scripts/start-supabase-ci.mjs
           npx supabase db reset
           npx supabase status -o env \
             --override-name db.url=DB107_ADMIN_DATABASE_URL \
@@ -340,7 +340,7 @@ jobs:
 
       - name: Start disposable Supabase
         run: |
-          npx supabase start
+          node scripts/start-supabase-ci.mjs
           npx supabase status -o env \
             --override-name db.url=DB107_ADMIN_DATABASE_URL \
             --override-name api.url=DB107_SUPABASE_URL \
