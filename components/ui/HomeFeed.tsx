@@ -59,6 +59,7 @@ export function HomeFeed({
                             viewAllHref={hasMoreBrowseItems(items) ? "/search" : undefined}
                             cardTitleDensity="app-compact"
                             showMoreCardTitleLines
+                            reduceCardDesktopGradient
                             showCardDesktopQuickActions
                             showCardUserCompletionBadge
                         />
@@ -78,6 +79,7 @@ export function HomeFeed({
                                         : undefined}
                                     cardTitleDensity="app-compact"
                                     showMoreCardTitleLines
+                                    reduceCardDesktopGradient
                                     showCardDesktopQuickActions
                                     showCardUserCompletionBadge
                                 />
@@ -88,6 +90,7 @@ export function HomeFeed({
                         <RecommendationsRow
                             cardTitleDensity="app-compact"
                             showMoreTitleLines
+                            reduceDesktopGradient
                             showDesktopQuickActions
                             showUserCompletionBadge
                         />

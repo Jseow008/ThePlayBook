@@ -45,6 +45,8 @@ interface ContentCardProps {
     titleDensity?: "default" | "app-compact";
     /** Browse titles: four lines on desktop, five below the existing md breakpoint. */
     showMoreTitleLines?: boolean;
+    /** Shortens only the desktop title backdrop; leaves narrow screens unchanged. */
+    reduceDesktopGradient?: boolean;
     priority?: boolean;
     imageSizes?: string;
     showDesktopQuickActions?: boolean;
@@ -175,6 +177,7 @@ function BaseContentCard({
     href = `/preview/${item.id}`,
     titleDensity = "default",
     showMoreTitleLines = false,
+    reduceDesktopGradient = false,
     priority = false,
     imageSizes = CONTENT_CARD_IMAGE_SIZES,
     showDesktopQuickActions = false,
@@ -362,8 +365,19 @@ function BaseContentCard({
 
             <div className="content-card-motion-overlay pointer-events-none absolute inset-0 rounded-md bg-black/40 opacity-0 transition-opacity duration-300 max-md:group-active:opacity-25 md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none" />
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/92 via-black/62 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20">
-                <div className="flex h-full flex-col justify-end gap-1">
+            <div className={cn(
+                "pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/92 via-black/62 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20",
+                reduceDesktopGradient && "md:bg-none",
+            )}>
+                {reduceDesktopGradient ? (
+                    // Keep the fade above the visible copy: 5rem padding minus
+                    // the extra 1.375rem title line leaves 3.625rem of headroom.
+                    <div
+                        aria-hidden="true"
+                        className="absolute inset-0 hidden bg-gradient-to-t from-black/92 via-black/62 to-transparent md:block md:[mask-image:linear-gradient(to_bottom,transparent_0.5rem,black_3.625rem)]"
+                    />
+                ) : null}
+                <div className={cn("flex h-full flex-col justify-end gap-1", reduceDesktopGradient && "relative")}>
                     {showMoreTitleLines ? (
                         <div className="relative">
                             {/* Keep the original three-line backdrop footprint as the visible title grows upward. */}
