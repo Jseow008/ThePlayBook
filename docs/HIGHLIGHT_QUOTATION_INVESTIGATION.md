@@ -2625,6 +2625,90 @@ Next: inspect single-commit/file scope, publish presentation PR through required
 PR-scope/CI/security gates normally. No direct main push or gate bypass. Browser
 checks are local; no production deployment or phone/Safari verification claimed.
 
+## Preview first-loading boundary correction — 29 October 2026
+
+User retained the dedicated /preview page and rejected the popup concept. Scope:
+trace the catalog-shaped first waiting frame, then correct only Preview loading
+shape/theme if confirmed. No fetching, prefetch, navigation/chrome, animation,
+historical content or other UI changes. Earlier speed experiment remains unreleased.
+
+Isolated worktree /Users/j/.codex/workspaces/netflux-preview-loading-boundary,
+branch codex/preview-loading-boundary, based on freshly fetched main
+ab68393b9a6e26e827bd8b4391d5ef8146387fcc. Used ordinary isolated worktree because
+this chat's project-mirror attachment previously prevented managed registration.
+Single agent; no delegation, paid resources, new accounts or model calls.
+
+Confirmed production trace at390x844 in existing Chrome session: after clicking
+Home Depot from Browse, pathname was /preview/6e957c23-f094-460b-83e0-ba8cd3b42511,
+with18 route-loading-shelf-skeleton-card markers, zero preview-loading-state and
+zero content-preview roots. Those18 markers are unique to app/(public)/loading.tsx.
+The shared ancestor boundary supplies the first catalog frame, before the nested
+Preview boundary/content arrives. Installed framework loading-boundary source and
+docs confirm available ancestor fallback can cover unavailable child route data.
+The exact prefetch/request timing was not measured: hover-prefetch remains a
+hypothesis and is not changed by this correction. Production trace JSON/screenshot
+are saved in the evidence directory below.
+
+Implementation: PublicLoadingFallback is a small client selector using current
+pathname. At the shared boundary, /preview/* selects a server-rendered
+PreviewLoadingState slot; other destinations retain the exact existing catalog
+fallback. PreviewLoadingAppearance reuses the existing read-only
+useCachedReaderTheme hook for both shared and dedicated Preview boundaries.
+Resolved current-account/guest cache only; unresolved identity, missing or invalid
+storage uses dark without reading another account. No settings sync, auth request,
+storage write or new fetch. Ready Preview and reader components are unchanged.
+Existing Preview skeleton geometry, pulse/reduced-motion and navigation are kept.
+
+Validation:16 focused tests passed. Full lint/type-safety/revalidation/route-shell/
+dependency-isolation passed; normal production build/typecheck/Sharp traces and
+critical CSS passed. Initial full unit run overlapped build/lint and failed7 tests
+in4 untouched files (6 timeouts,1 enabled-state assertion after a timeout). Retained
+that failed log; unchanged rerun without build/lint passed2082 tests,307 skipped,
+plus34 capacity checks. No timeout limits or product behavior changed to obtain a
+pass. Skips are outside verified coverage. React checklist: tiny client boundaries,
+static skeleton children stay server-rendered, no async work/effect loops or new
+subscriptions beyond existing scoped cache hook; loading status/aria-busy retained.
+
+Browser verification used normal production candidate on3155 plus an external,
+test-only loopback proxy on3156 holding Preview RSC requests3500ms to expose the
+waiting frame. This is not a speed benchmark or an application fetching change.
+Disposable signed-out hostname preview-boundary-20261029.localhost; public content
+configuration only. Selected Sepia through the existing reader UI for this guest
+origin, without touching production preferences. Matched Home Depot Browse ->
+Preview -> Read -> Back journey on desktop1728px and narrow390x844, fresh tab per
+width. Captured Preview waiting root/hook, reader-sepia, background rgb(245,241,235),
+zero catalog loading markers at both widths. Ready Preview had identical theme/
+background and correct title; canonical reader opened same title in sepia; Back
+restored same20 catalog headings without page loading fallback at return probes.
+Narrow first loading probe retained scroll166 then ready reset0; no claim of
+zero movement or changed scroll/navigation behavior. Account isolation tested with
+mocked current accounts in component tests; browser is a guest, not an account-
+switching or production sign-in rehearsal.
+
+Setup qualifications retained: Sepia control exposed as checkbox in AX but role
+locator did not match; native AX click succeeded. Guest onboarding overlaid the
+first desktop click, so that attempt stayed on Browse and did not verify entry;
+inspected and dismissed Skip tour, then completed actual journey. Narrow controller
+deadline expired waiting for ready content during artificial delay; resumed same
+visit, confirmed ready Preview. Immediate Read probe saw waiting UI rather than
+h1; used the same history's Forward to confirm actual reader title, without a new
+Browse-entry run. No repeated benchmark. Local server logged one rate-limited
+endpoint failure because Upstash was not configured in this public-only local
+environment; public Preview/reader data loaded, but no full private API/settings-
+sync coverage is claimed. No product or infrastructure fix added for that warning.
+
+Evidence directory:
+/Users/j/.codex/verification/netflux-preview-loading-boundary-20261029
+contains production-boundary-trace.json, production-first-fallback.png, matched
+candidate-desktop/narrow JSON and waiting screenshots, narrow reader confirmation,
+build/lint and both full-suite logs plus proxy/server logs. No private thought text
+or credentials. Physical phones/Safari, every intermediate frame and live request
+prefetch attribution remain unverified. No production deployment claimed.
+
+Next: stop only owned3155/3156 servers, remove copied env, verify exact commit/file
+scope, publish PR, wait for PR-scope then enable normal protected squash auto-merge.
+Do not bypass required CI/security gates; no deployment monitoring was requested.
+
 ## CI-only Supabase image recovery — 30 October 2026
 
 User explicitly approved a separate CI-only recovery after #294's required gates
@@ -3041,3 +3125,82 @@ product/hosted failures. Required full hosted validation remains pending.
 Next: push reviewed #295 candidate, pass scope and required checks, merge via
 protected squash, refresh #294 against main, pass all gates and verify deployment
 and saved-Sepia Browse->Preview journey. No gate bypass authorized or planned.
+
+
+Retained pre-refresh working notes (historical):
+
+Handoff: committed d120618b9df07d3a6f0431aa9f48ce4d66020334 and published
+https://github.com/Jseow008/ThePlayBook/pull/294. Verified one intended commit and
+seven-file scope locally and on GitHub. Connector create-PR returned403; existing
+gh login created it successfully and PR is attached to this chat. PR scope passed
+(40903622888), protected squash auto-merge confirmed enabled2026-10-29T15:39:09Z.
+Required validate (40903622878) and Security Validation (40903623068) are running;
+PR OPEN, not yet merged/live. No gates bypassed or status-only push planned.
+
+Cleanup confirmed: owned3155/3156 servers stopped, ports no longer listening,
+copied public-only .env.local removed, owned production/local tabs closed and
+viewport reset. Isolated guest theme/onboarding preferences contain no private
+notes; no production preference/account/data edits. Local boundary screenshot
+shows narrow waiting frame at retained scroll166; keep that qualification rather
+than claiming scroll timing was fixed. Scope remains waiting shape/theme only.
+This final operator note stays local to avoid restarting CI. Next action is normal
+gated auto-merge; investigate concrete required-check failures if reported. No
+recurring automation or further benchmark is scheduled.
+
+Release continuation: user authorized waiting for required gates and, after exact
+production deployment, one Browse -> Preview check with existing saved Sepia,
+then closure. On resumption all initial gates had finished: PR scope passed,
+validate40903622878 and Security Validation/Catalog Search Evidence40903623068
+failed during disposable Supabase image downloads with GHCR toomanyrequests.
+Catalog artifact upload subsequently failed because database setup never produced
+evidence. Workflow already uses temporary read-only package token authentication.
+Initial run failed before downstream browser/security checks; no product regression
+inferred. Saved ci-failed.log/security-failed.log with original failures.
+
+Using gh-fix-ci for read-only diagnosis. No code/workflow change. Started one
+targeted Security Validation rerun first (job123552301428 ->123559226005), plan to
+stagger remaining failed jobs after image setup finishes to avoid repeating the
+simultaneous pull burst. Keep protected release held; if the same job fails again,
+inspect and propose a separate concrete CI remedy instead of an unchanged third
+retry. Product head remains d120618b9df07d3a6f0431aa9f48ce4d66020334. Production
+verification not started and finding not closed.
+
+Release hold after targeted retry: isolated Security job123559226005 failed again
+at Setup local Supabase after authentication passed, with identical GHCR
+toomanyrequests on multiple image tags (retry-after values were microseconds).
+Saved security-retry-failed.log. No third unchanged retry, no further CI/catalog
+reruns after this repeated external download failure. No product/workflow change.
+CI/security checks still failed; #294 unmerged and production Sepia check pending.
+
+Bounded diagnosis: the current helper runs npx supabase start once; successful
+downloads on that runner are lost when the whole job is rerun on a fresh runner.
+Proposed separate CI-only remedy: retry only recognized registry throttling during
+Supabase image setup on the same runner with increasing bounded backoff, retaining
+downloaded image/layer cache. Fail immediately for other setup errors and preserve
+all unchanged downstream checks, exact image versions and temporary read-only
+package credentials/always-cleanup. Cap attempts (suggest3). Verify helper success,
+429 recovery, non-retryable failure and exhausted-retry behavior with controlled
+tests, then prove actual image download/start and required checks on fresh hosted
+runners. This is a proposal, not a demonstrated remedy. No implementation until
+explicit approval under gh-fix-ci and because workflow changes exceed the agreed
+presentation scope. npx supabase --help/services --help/services -o json confirmed
+locked CLI interface/version metadata without creating resources.
+
+Checked primary GitHub status endpoint, reported All Systems Operational at its
+2026-10-29T15:04:55.814Z update; this does not contradict the observed registry429s
+or establish a global outage. Generic REST retry guidance is not GHCR-specific
+proof. Sources: https://www.githubstatus.com/api/v2/status.json and
+https://docs.github.com/en/enterprise-cloud@latest/rest/using-the-rest-api/rate-limits-for-the-rest-api.
+Next: present the bounded CI recovery plan for approval; keep release held and
+the finding open. Original failures,307 unit skips and device limits retained.
+
+
+30 October #294 refresh: #295 merged as7dc4d6bd after required CI/security,
+PR scope and Catalog Search Evidence passed on419df904. CI41030727244 passed
+2098 unit tests (307 skipped) and211 browser tests (118 skipped,1 flaky pass
+on existing retry). Security41030727089 passed; all three jobs verified13 images
+and completed setup. No workflow gate, timeout, test or image version weakened.
+Merged origin/main into #294; only conflict was append-only investigation notes.
+Preserved both reports and distinct uncommitted historical notes. Preview product
+files remain byte-identical to reviewed d120618b; refreshed required gates and
+production deployment/Sepia check remain pending.

@@ -37,6 +37,14 @@ describe("ContentDetailLoadingStates", () => {
         expect(screen.queryByTestId("route-loading-shelf-skeleton-card")).not.toBeInTheDocument();
     });
 
+    it("uses the account's cached theme in the dedicated Preview boundary too", () => {
+        auth.user = { id: "a" };
+        vi.mocked(localStorage.getItem).mockReturnValue(JSON.stringify({ state: { readerTheme: "sepia" } }));
+        render(<PreviewLoadingState />);
+        expect(screen.getByRole("status", { name: "Loading preview" })).toHaveClass("reader-sepia");
+        expect(localStorage.getItem).toHaveBeenCalledWith(readerSettingsKey(getStorageScope("a")));
+    });
+
     it("keeps unknown reading progress neutral", () => {
         render(<ReaderLoadingState />);
         expect(screen.getByTestId("reader-loading-progress-placeholder")).toBeEmptyDOMElement();
