@@ -59,7 +59,7 @@ describe("security gate CI configuration", () => {
 
     it("runs PR SQL drift checks against local Supabase, not production", () => {
         expect(workflow).toContain("SUPABASE_LOCAL: \"1\"");
-        expect(workflow).toContain("npx supabase start");
+        expect(workflow).toContain("node scripts/start-supabase-ci.mjs");
         expect(workflow).toContain("npx supabase db reset");
         expect(workflow).toContain("npm run security:function-acls");
         expect(workflow).toContain("npm run security:admin-rpc-acls");

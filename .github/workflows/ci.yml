@@ -80,7 +80,7 @@ jobs:
 
       - name: Setup local Supabase
         if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
-        run: npx supabase start
+        run: node scripts/start-supabase-ci.mjs
 
       - name: Export local Supabase environment
         if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'

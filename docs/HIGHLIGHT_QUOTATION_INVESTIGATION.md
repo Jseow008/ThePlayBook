@@ -2624,3 +2624,420 @@ highlights, errors, personal shelves, typography/spacing and motion are unchange
 Next: inspect single-commit/file scope, publish presentation PR through required
 PR-scope/CI/security gates normally. No direct main push or gate bypass. Browser
 checks are local; no production deployment or phone/Safari verification claimed.
+
+## CI-only Supabase image recovery — 30 October 2026
+
+User explicitly approved a separate CI-only recovery after #294's required gates
+failed at Supabase image downloads. #294 head d120618b9df07d3a6f0431aa9f48ce4d66020334
+remains held; its loading correction, production release and single saved-Sepia
+Browse -> Preview check are still the overall objective. No broader UI work.
+
+Isolated branch codex/ci-supabase-pull-recovery, worktree
+/Users/j/.codex/workspaces/netflux-ci-supabase-pull-recovery, fresh base
+ab68393b9a6e26e827bd8b4391d5ef8146387fcc. Existing #294 worktree/checkpoint is
+preserved at /Users/j/.codex/workspaces/netflux-preview-loading-boundary. Single
+agent, no paid resources/new accounts or production configuration/data changes.
+
+Original evidence: CI40903622878, Security/Catalog40903623068 failed with GHCR
+toomanyrequests during image downloads. Targeted isolated Security retry also
+failed at that same stage, so no further unchanged fresh-job retries. Original
+logs in /Users/j/.codex/verification/netflux-preview-loading-boundary-20261029.
+The current helper's classifier recognizes normalized full CI/Security failure
+records, not only a hand-written fixture (both true, retry-after max2ms).
+
+Change: scripts/start-supabase-ci.mjs calls installed lockfile-pinned CLI with only
+start, preserving environment/DOCKER_CONFIG/registry selection. Only terminal image
+pull failures accompanied exclusively by explicit429/toomanyrequests failures are
+retryable. Other/mixed errors, launch errors and signals fail without retry.
+At most3 total attempts on the same runner;60/120s minimum backoff plus bounded
+0–10s jitter. Longer parsed retry-after hints honored; hints above5min leave setup
+failed instead of retrying early. Diagnostic classification buffer capped256KiB;
+CLI output continues streaming as before. Completed image/layer downloads remain
+available in that runner's existing Docker cache; no prune or registry fallback.
+
+All4 startup calls in ci.yml/security.yml use the helper. Removed the former
+outer transient-start retry so it cannot multiply the3-attempt cap; existing
+database-reset upstream-error recovery stays unchanged. Image versions, temporary
+read-only registry token/permissions, credential cleanup, health checks, migrations,
+schema/security/browser checks and scope classification are unchanged. Non-registry
+start failures fail immediately as approved. Nightly workflow remains out of scope.
+
+Local verification:68 focused checks passed (recovery success/cap, ambiguous/mixed
+failures, cancellation, retry hints/jitter, workflow wiring and actual process
+entrypoint with a fake installed CLI). Lint and ratchet/policy/dependency checks
+passed. Full suite passed2093 unit tests with307 skips, plus34 capacity checks.
+Initial full suite had one stale static security guard expecting the previous
+literal startup command; updated that guard to the new helper and reran unchanged
+application tests. Retained initial failing log and final result. No production
+build rerun locally because only workflow/script/tests/docs changed; full required
+hosted build/security/browser checks are the fresh-runner trial.
+
+Evidence directory:
+/Users/j/.codex/verification/netflux-ci-supabase-pull-recovery-20261030.
+No Docker stack started locally; helper process fixtures are temporary and cleaned.
+Supabase2.109.1 start interface verified from installed package/help and official
+CLI docs. Changelog markdown fetch returned unsupported content type; official
+CLI reference used as fallback, no CLI/dependency/config upgrade.
+Reference: https://supabase.com/docs/reference/cli/global-flags#supabase-start.
+
+Next: publish this CI-only PR, verify scope and run it on fresh hosted runners with
+all required gates. Do not claim recovery proven until real image downloads/start
+and unchanged gates pass. Merge through normal protected flow, then refresh #294
+onto secured main, let its required gates finish and confirm exact production
+deployment/public alias before the one saved-Sepia Browse -> Preview check.
+Retain original local/hosted failures,307 skipped tests and phone/Safari limitations.
+
+Published CI-only PR https://github.com/Jseow008/ThePlayBook/pull/295 at
+efef6200a836ed871aa8d34e5c1a7aa257ab1035. Verified exactly six intended files and
+one commit locally/GitHub. PR attached to this chat; used existing gh login after
+the connector's previously confirmed403 creation limitation. PR scope40908825874
+passed; protected squash auto-merge enabled2026-10-29T16:10:11Z. Fresh hosted trial
+CI40908825507 and Security/Catalog40908825943 running. Not proven or merged yet.
+Current run watchers: exec sessions86383 (CI) and46011 (Security). This operator
+note stays local to avoid a status-only push restarting CI. No new user decision
+needed; persist through the approved CI recovery and #294 production check.
+
+First fresh hosted trial completed without cancellation and failed image setup
+in all three jobs after the bounded3 attempts. Retained ci-hosted-trial.log,
+security-hosted-trial.log and catalog-hosted-trial.log. Catalog's final remaining
+failures were only postgres/storage-api, demonstrating cached-download progress,
+but the CLI still attempted remaining pulls concurrently. No success or release
+claimed; #294/#295 required gates stayed held.
+
+Refined within the authorized CI-only budget: after initial CLI throttling, parse
+only exact GHCR Supabase references reported by the pinned CLI's terminal failures,
+restricted to the known service repositories. On attempts2/3, prepare those missing
+references with serial Docker pulls using the same temporary DOCKER_CONFIG. Each
+reference is pulled at most once per remaining attempt; completed references are
+not re-pulled. Stop that phase on another429 and carry unattempted/failed references
+into the next existing backoff, honoring its retry hint. Non-transient errors and
+signals stop immediately. Once prepared, run unchanged CLI start with health checks.
+No additional retry loop, image version, registry, credential or startup flags.
+
+Controlled tests now also establish max concurrent pulls1, retention of successful
+references, failure after the existing budget, rejection of unknown registries/
+service names and immediate non-transient Docker failures. A local test edit
+initially put expected pull names in the wrong order; corrected the expectation to
+match the intended serial flow. Final74 focused and2099 full unit tests passed,
+307 skipped, plus34 capacity checks. ESLint passed for changed helper/tests. A
+second fresh hosted trial is required; do not repeat the exhausted first approach
+or increase the attempt cap. First trial evidence remains recorded.
+
+Second candidate3fece03b99a948838f9292259f3581f0683170a8 pushed to the same separate
+PR#295 after all first-trial jobs completed (none canceled). PR description updated
+around final serial recovery and retained failed trial. New PR scope40911006443
+passed. Fresh Security/Catalog40911006298 and CI40911006288 are running; normal
+protected auto-merge remains enabled. Current watch exec sessions84344 (Security)
+and25351 (CI). Next: inspect real download/recovery outcomes and required gates;
+after success merge CI PR normally, refresh #294 and finish original release.
+
+Second hosted Security/Catalog jobs failed closed after initial download failure,
+before serial recovery: parser incorrectly treated intermediate unqualified
+"failed to pull docker image: Error response..." lines as terminal references.
+Saved serialized-hosted-failed.log. Corrected reference extraction to only the
+locked CLI's final "from all registries" summaries, while the separate failure
+classifier still checks every error for mixed/non-transient failures. Added the
+actual intermediate format to the fixture. Full retained Catalog/Security logs
+now parse exact6/5 failed GHCR Supabase references; no unknown host/repo accepted.
+This was a helper defect, not evidence against serial download recovery. Do not
+hide failed hosted trial. Local74 focused checks pass; full suite rerunning in
+exec37334 before publishing parser correction. Current remote head still3fece03b;
+CI40911006288 still running (watch25351) and must finish, not be canceled by push.
+After it completes, commit/push corrected helper/tests/checkpoint and run fresh
+trial before claiming success. Product PR#294 remains unchanged/unmerged.
+
+Parser correction verification completed:74 focused checks,2099 unit tests with307
+skips and34 capacity checks pass; targeted ESLint passes. Second-trial CI
+40911006288 also completed failure before recovery, with the same unnamed
+intermediate-message parser defect; log retained as serialized-ci-failed.log.
+All second-trial jobs finished without cancellation. Publish corrected parser
+and actual-log regression fixture for the first valid serial-download hosted
+trial. Required gates and #294 release remain held until it succeeds.
+
+Corrected serial hosted trial31132ee4ed61e0a5fd070adffb39756522a7b302 completed:
+CI40912634671 and Security/Catalog40912634603 failed at image setup, PR scope
+40912634584 passed. No jobs canceled, unchanged retry or cap increase. Recovery
+actually ran: Security downloaded vector at attempt2, then edge-runtime throttled
+at attempts2/3; Catalog postgres and CI storage-api likewise exhausted the budget.
+This confirms the retry/serialization mechanism works but is insufficient for
+this observed GHCR throttle. No migration/reset/browser validation reached and
+no application regression inferred. All original failures retained in
+corrected-serial-hosted-failed.log / corrected-serial-ci-failed.log. #295 and#294
+remain OPEN/BLOCKED, with protected auto-merge still configured; no production
+change or public-site check performed. Local74 focused/2099 unit+34 capacity pass;
+307 unit skips remain outside coverage.
+
+Read-only next-option assessment: deployment-matched Supabase2.109.1 source
+legacy-docker-registry.ts confirms its official default public.ecr.aws/supabase
+mirror and that an explicit GHCR override disables fallback. Anonymous metadata
+probe got429 for GHCR postgres but200 for the exact same version at official ECR.
+All13 actual service tags from this trial expose Linux/amd64 manifests at ECR;
+one completed vector GHCR pull's digest equals ECR's index digest. Full cross-
+registry equivalence is not established while remaining GHCR requests throttle,
+and local manifest reads do not prove fresh hosted downloads/start. Metadata-only
+probe initially included4 trailing sentence periods from helper log lines and got
+404 for those malformed names; retained raw17-entry output, derived validated
+13-entry list without new network attempts. Those4 are harness errors, not missing
+service tags. No image layers pulled locally, credentials changed or resources
+created. Files official-postgres-mirror-metadata.json, official-ecr-mirror-metadata.json
+and official-ecr-mirror-validated-metadata.json are private metadata artifacts.
+
+Next proposed step requires a separate registry-policy decision: verify official
+mirror provenance/content identity for exact pinned images, then replace the
+GHCR-only selection with a bounded official-mirror recovery and fresh hosted
+trial, keeping versions/health checks/gates/temporary credentials unchanged.
+Do not implement or rerun current failed candidate until that scope is approved.
+No permanent credentials, public mirror of our own, production config changes or
+new paid resources proposed. No automation or browser tab/viewport cleanup needed;
+none opened/changed during this continuation. #294 final refresh/release/single
+saved-Sepia Browse->Preview check remain pending behind required gates.
+Source: https://github.com/supabase/cli/blob/v2.109.1/apps/cli/src/legacy/shared/legacy-docker-registry.ts.
+
+30 October continuation: user authorized bounded testing of the official
+alternative before changing registry policy. Created ephemeral verification
+branch codex/official-mirror-probe at b71484c9 from freshly fetched mainab68393b;
+all application/configuration files match main. Only a temporary manual-only
+security.yml fixture and13-image manifest plan differ. No PR created or merge
+planned for that fixture, and no required check on either release PR replaced.
+Normal main/#294/#295 workflows remain unchanged. Standard fresh hosted runner
+41002732809 will pull13 exact official ECR Linux/amd64 digests once each (5min
+per-image/20min job limits), verify identity, start unchanged CLI with normal
+health checks and reset only its disposable local database, then stop --no-backup.
+No registry credentials, cloud project, production secrets or paid AI configured.
+Pinned action commit refs resolved from official actions repositories. Probe YAML
+parses and embedded Python compiles; no success inferred from those checks.
+Managed worktree creation rejected sourceRoot outside chat workspace, so ordinary
+isolated git worktree /Users/j/.codex/workspaces/netflux-official-mirror-probe used.
+Next: await bounded probe; retain any failure. Download/start success would support
+a separate proposed registry change, not close required release gates. Afterward
+delete only remote ephemeral probe branch and preserve commit/log evidence locally.
+
+Bounded official-mirror probe COMPLETE with failure, not a candidate switch:
+https://github.com/Jseow008/ThePlayBook/actions/runs/41002732809
+job123890632766, fixtureb71484c98efd2710322e0b786a9d226f0083a36d. Fresh Ubuntu
+runner installed the locked CLI2.109.1 successfully, then the first exact ECR
+Linux/amd64 edge-runtime image pull failed immediately with
+"toomanyrequests: Data limit exceeded".0/13 image downloads verified; remaining12
+were deliberately not attempted. Normal start/health/reset steps were skipped,
+not passed. No unchanged rerun or additional registry selected. No auth added.
+Metadata availability does not establish download availability. This confirms
+the existing anonymous ECR path also remains blocked in this tested environment;
+it does not establish per-account/global frequency or authenticated ECR behavior.
+
+Cleanup step succeeded with stop --no-backup; docker ps reported no containers.
+No database/cloud accounts/projects/paid AI resources were created. Ephemeral
+remote branch deleted and local clean probe worktree removed after preserving
+full masked logs, result JSON, exact13-image plan and patch at
+/Users/j/.codex/verification/netflux-official-mirror-probe-20261030 (mode600).
+Local branch/commit retained for recoverable evidence. No PR was opened, no
+release workflow changed and neither #294 nor #295 was merged/deployed.
+
+Other qualifications: npm ci reported9 total dependency advisories (5 moderate,
+4 high), without distinguishing production dependencies; this probe did not run
+a production dependency audit or alter dependencies. Existing release security
+gates still must pass on any final candidate. Pinned v4 actions emitted Node20
+deprecation warning while hosted runner forced their action runtime to Node24;
+application CLI ran on locked-major Node22. No startup conclusion drawn from
+those unrelated warnings.
+
+Next recommendation: assess authenticated access to an official registry using
+short-lived credentials, or an approved trusted image cache, before another
+workflow change. Neither is configured/approved here. Keep release held; do not
+weaken gates, increase retry budget, swap image versions or claim official ECR
+is a demonstrated recovery. The requested bounded alternative-download check
+is complete; #294 production Sepia check remains blocked behind release gates.
+
+30 October short-lived authenticated registry assessment COMPLETE; no live
+authenticated test performed. User confirmed there is no existing AWS account.
+Repo workflows contain no AWS/OIDC setup, repository variable/secret NAME listings
+contain no AWS role/credential configuration, and this Mac has no AWS CLI, AWS
+environment variables, ~/.aws/config or ~/.aws/credentials. No secret values or
+Docker credential-store contents accessed. Docker config has a credential store
+but no configured registry hostname entries; this does not establish absence of
+a Docker account. Plugin discovery found an AWS analytics integration, not an
+IAM/ECR-management capability; nothing installed or connected. No AWS account,
+role, provider, credential, subscription or other resource created.
+
+Recommended technical candidate: official ECR Public with GitHub OIDC -> temporary
+AWS role -> ECR login in us-east-1. Request a15min AWS session for the bounded
+probe. ECR's documented registry-token validity is12h; do NOT claim the shorter
+STS session makes that bearer token15min, nor that deleting local Docker config
+revokes a copied token. Use isolated mode700 runner-temp DOCKER_CONFIG, stdin
+login with no token logging, no secret-bearing artifacts, and always remove
+credentials/local stack; account trust must be explicitly restricted to the
+approved repository and dedicated probe ref. Two read/auth actions needed are
+ecr-public:GetAuthorizationToken and sts:GetServiceBearerToken, Resource *
+because these token operations have no per-repository resource type. No push,
+repository creation, IAM mutation, private ECR, S3 or production access granted.
+The public-pull token itself is not an exact13-image allowlist; constrain the
+probe script to the existing verified digest plan. Static permissions draft and
+trust template (with unfilled AWS account ID) saved privately, NOT applied or
+IAM-validated. Do not broadly trust repo:* or pull_request subjects. Future use
+on PR jobs needs a separately reviewed trust/protected-environment strategy.
+
+GitHub metadata: repo created2026-02-03, repo OIDC customization use_default:true.
+Expected legacy exact-ref subject is in the draft; verify actual non-secret
+claims before applying trust, without ever printing the raw JWT. The trust
+restricts ref, not arbitrary workflow filename. The draft does not grant any
+new permission in GitHub or AWS.
+
+Transfer assessment: read only the13 exact Linux manifests, SHA256-verified against
+the previous plan. Total unique compressed layers2,031,249,045 bytes (~2.03GB,
+1.89GiB), plus69,235 config bytes. No layers downloaded. This is an estimate for
+one set, excluding protocol overhead/retransfers/startup extras. AWS advertises
+5TB/month free authenticated public transfer versus500GB anonymous, with anonymous
+allowance limited by source IP; overage can be billed to the downloading account.
+No guaranteed zero-cost claim or account usage check is possible without an
+account. No servers, hosted databases or private registry storage are needed for
+this proposed pull-only test. Explicit account/billing and IAM approval remains
+necessary before setup; account acceptance/verification must be completed by owner.
+
+Alternative assessment: Docker Hub also offers GitHub OIDC short-lived tokens,
+but official docs require an eligible organization (Team/Business or sponsored
+open source; blog additionally lists DHI). No eligible existing organization is
+known. Do not buy a plan or assume a personal free Docker login supports OIDC.
+Existing GHCR already uses short-lived job authentication successfully; a new
+credential lifetime there is not a demonstrated remedy for its download429s.
+
+In answer to user's IP hypothesis: GHCR429 does not disclose which quota key
+triggered, so neither an IP-specific block nor a personal abuse flag is proven.
+ECR Data limit exceeded is consistent with its anonymous source-IP allowance,
+but actual usage/exhaustion attribution is not available. Affected downloads ran
+on fresh GitHub-hosted Ubuntu runners (latest probe Azure centralus), not the Mac;
+changing the Mac's network/IP would not directly change those runner addresses.
+Do not describe this as GitHub having flagged the user's personal IP.
+
+Release hold explicitly enforced: disabled auto-merge on BOTH #294 and#295 and
+verified OPEN with autoMergeRequest:null at original heads d120618b and31132ee4.
+User requires keeping both held until authenticated verification succeeds; no
+required gate bypassed or CI rerun started. Next decision is whether to establish
+an AWS account and approve the narrowly scoped trust/role for a single bounded
+authenticated probe. Then verify all13 pulls/start/reset/cleanup before proposing
+a registry switch, and run unchanged required release gates on any candidate.
+Assessment is complete; authenticated download behavior remains unverified.
+Sources checked30 October2026:
+https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws
+https://docs.aws.amazon.com/AmazonECR/latest/public/public-registry-auth.html
+https://docs.aws.amazon.com/AmazonECRPublic/latest/APIReference/API_GetAuthorizationToken.html
+https://docs.aws.amazon.com/service-authorization/latest/reference/list_ecr-public.html
+https://docs.aws.amazon.com/service-authorization/latest/reference/list_sts.html
+https://github.com/aws-actions/configure-aws-credentials
+https://aws.amazon.com/ecr/pricing/
+https://docs.docker.com/security/authentication/oidc-connections/
+https://www.docker.com/blog/docker-oidc-connections-for-github-actions-available-for-docker-orgs/.
+
+
+30 October — no-AWS alternative review (read-only product/workflow investigation).
+Existing branch codex/ci-supabase-pull-recovery remains at31132ee4; #294 remains
+atd120618b. Neither PR changed or released. Existing uncommitted report retained.
+Rechecked failed ECR probe41002732809: first edge-runtime download failed with
+Data limit exceeded. No new hosted run, registry credential, account or paid
+resource created. Used one agent; no repeated failed pull experiments.
+
+New evidence: queried Docker Hub manifest metadata for all13 original publisher
+references in the locked CLI2.109.1 Dockerfile. All13 expose linux/amd64 manifests
+whose SHA256 digests exactly equal the previously reviewed ECR image plan.
+Safe result artifact: /tmp/netflux-dockerhub-manifest-review-20261030.json.
+Anonymous registry bearer tokens remained in memory and were not printed/saved.
+No image layers downloaded and no startup/reset success inferred. Original
+publisher names include library/kong, darthsim/imgproxy, axllent/mailpit,
+postgrest/postgrest and timberio/vector; using supabase/<name> for every Docker
+Hub image is incorrect. Earlier fallback denial does not rule out these sources.
+
+The pinned Go resolver checks local images before pulling. Small proposed probe:
+pull all13 exact reviewed digests from their original Docker Hub publishers on
+one fresh runner, verify platform/config identity, locally tag them with the
+existing GHCR references, and run unchanged Supabase start/health/reset plus
+cleanup. Stop on first failure; no expanded retries. This tests a CI-only
+preload without replacing application dependencies, CLI versions, permissions,
+GHCR credentials or required checks. Workflow implementation remains unapproved.
+A direct docker.io override exists, but this review does not prove every command
+preserves original publisher namespaces; preloading reviewed images under the
+existing expected names avoids relying on that assumption.
+
+Docker Hub anonymous pulls are limited (100/6h per IPv4 or IPv6 /64); Personal
+authenticated200/6h, and separate abuse limits may affect shared runner IPs.
+Therefore no claim of hosted recovery or guaranteed account-free reliability.
+A trusted cache may reduce future repeat transfers but cannot bootstrap missing
+images by itself. Existing Mac postgres image is arm64, so blindly uploading
+local Docker images is not a valid amd64 CI workaround. No self-hosted runner,
+unofficial mirror, blanket CI skip, quota bypass or AWS account recommended.
+
+Next: approve only a bounded original-publisher Docker Hub hosted probe before
+changing #295. If it succeeds, propose the minimal CI preload change, pass all
+required #295 gates, then refresh #294 and pass its gates plus the already agreed
+production journey. If it fails, retain the error and reassess rather than
+repeating downloads. Neither release is unblocked by metadata evidence alone.
+Sources:
+https://github.com/supabase/cli/blob/v2.109.1/apps/cli-go/pkg/config/templates/Dockerfile
+https://github.com/supabase/cli/blob/v2.109.1/apps/cli-go/internal/utils/docker.go
+https://docs.docker.com/docker-hub/usage/pulls/
+https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching
+
+
+30 October — authorized Docker Hub hosted probe dispatched. Ephemeral branch
+codex/dockerhub-bounded-probe, worktree
+/Users/j/.codex/workspaces/netflux-dockerhub-bounded-probe, commit7cbeaf65,
+fresh origin/mainab68393b. Only manual-only security.yml fixture and exact13-image
+manifest differ on that branch; no PR opened and it will not be merged. Release
+workflow files on main/#294/#295 and required checks remain unchanged. Probe
+https://github.com/Jseow008/ThePlayBook/actions/runs/41005261080 uses original
+publisher Docker Hub digests, linux/amd64, verifies repository digest/platform
+and equal image IDs after local GHCR alias tagging. One pull per image, stop
+on first failure, 5-minute per-image/start/reset bounds and20-minute job bound.
+No new accounts, auth credentials, production secrets or live AI configured.
+Ruby YAML parsing and embedded Python compilation passed. Python PyYAML and
+Node yaml were unavailable locally; those were validation-tool discovery errors,
+not hosted test failures. No package installation required to validate fixture.
+Next: await this single run, retain result/logs, clean disposable branch/worktree,
+and report. No rerun or release implementation authorized by this bounded test.
+
+
+Docker Hub bounded hosted probe COMPLETE: SUCCESS, single run41005261080,
+job123898614338, commit7cbeaf6513a5242bf432f036f4e01d77442104a2.
+All13 exact original-publisher Linux/amd64 images downloaded and passed digest,
+platform and locally retagged image-ID checks. Download step108s; normal locked
+CLI startup/health checks40s; disposable database reset31s; cleanup22s. Total
+job3m59s. No retry run, alternate registry fallback or paid account needed.
+No pull throttling observed in this one run; long-term reliability not proven.
+
+Full logs/result/fixture patch/image plan retained mode600 under
+/Users/j/.codex/verification/netflux-dockerhub-probe-20261030. Normal startup
+and reset succeeded without changing migrations, versions, checks or health
+requirements. Cleanup stop --no-backup passed and asserted no remaining Docker
+containers. Remote probe branch deleted and clean local probe worktree removed;
+local branch/commit retained as evidence. No new cloud account, secret, production
+data change or release. Pinned v4 actions emitted runtime deprecation notices;
+existing inbucket config deprecation warnings retained, not modified.
+
+Verified #294 OPEN atd120618b and#295 OPEN at31132ee4 with autoMergeRequest:null.
+Required CI/security on those release candidates have NOT been replaced or
+satisfied by this manual probe. Next proposed implementation, separately from
+this completed bounded authorization: add minimal exact-digest Docker Hub
+preloading in #295 (preserve original publisher mapping and validate identity,
+fail on mismatch), run all required gates, then refresh #294 and pass its gates
+before release and the agreed Browse->Preview production check. No further
+unchanged registry investigations needed on the strength of this bounded result.
+
+
+30 October — authorized #295 implementation and sequential #294 release.
+Replaced unsuccessful throttle/backoff logic with the hosted-proven13-image
+original-publisher Docker Hub preload, pinned by immutable linux/amd64 digests
+in scripts/supabase-ci-images.json and tied to installed CLI2.109.1. Verifies
+source publisher/target mapping, platform/digest/image identity, then calls
+unchanged CLI start with normal health checks. One pull per image, no outer
+retry; bounded child commands, cancellation/timeout stop subsequent processing.
+Existing GHCR auth/cleanup, workflow permissions/conditions, reset behavior and
+all downstream tests/security checks unchanged. No product/dependency/schema
+changes; no production database release gate applies to this CI-only change.
+
+73 focused preload, security-workflow and classifier tests passed; targeted
+ESLint, diff whitespace and route-shell checks passed. Initial test import used
+new URL under Vite/jsdom and failed file-scheme handling; trying node environment
+conflicted with existing window-based setup. Replaced manifest lookup with the
+repository-root path already required by CLI startup; retained existing test
+environment. Three failed test invocations retained in turn history; none were
+product/hosted failures. Required full hosted validation remains pending.
+Next: push reviewed #295 candidate, pass scope and required checks, merge via
+protected squash, refresh #294 against main, pass all gates and verify deployment
+and saved-Sepia Browse->Preview journey. No gate bypass authorized or planned.
