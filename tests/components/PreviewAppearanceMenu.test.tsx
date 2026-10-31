@@ -11,12 +11,14 @@ const settings = vi.hoisted(() => ({
 vi.mock("@/hooks/useMediaQuery", () => ({ useMediaQuery: () => false }));
 vi.mock("@/hooks/useReaderSettings", async () => {
     const { create } = await import("zustand");
-    const store = create<{ readerTheme: string }>((set) => ({
+    const store = create<{ readerTheme: string; fontSize: string; fontFamily: string; lineHeight: string }>((set) => ({
         readerTheme: "sepia", fontSize: "medium", fontFamily: "serif", lineHeight: "default",
         setReaderTheme: (readerTheme: string) => set({ readerTheme }),
-        setFontSize: vi.fn(), setFontFamily: vi.fn(), setLineHeight: vi.fn(),
+        setFontSize: (fontSize: string) => set({ fontSize }),
+        setFontFamily: (fontFamily: string) => set({ fontFamily }),
+        setLineHeight: (lineHeight: string) => set({ lineHeight }),
     }));
-    settings.setTheme.mockImplementation((readerTheme) => store.setState({ readerTheme }));
+    settings.setTheme.mockImplementation((readerTheme) => store.setState({ readerTheme, fontSize: "medium", fontFamily: "serif", lineHeight: "default" }));
     settings.getTheme.mockImplementation(() => store.getState().readerTheme);
     return { useReaderSettings: store };
 });
@@ -26,15 +28,16 @@ describe("Preview Appearance", () => {
         settings.setTheme("sepia");
     });
 
-    it("exposes only Theme, with the shared-setting description", () => {
+    it("exposes the shared Aa controls, with the shared-setting description", async () => {
         render(<PreviewAppearanceMenu />);
         fireEvent.click(screen.getByRole("button", { name: "Appearance" }));
-        const dialog = screen.getByRole("dialog", { name: "Appearance" });
+        const dialog = await screen.findByRole("dialog", { name: "Appearance" });
         expect(dialog).toHaveAccessibleDescription("Applies to Preview and the reader.");
         const theme = within(dialog).getByRole("group", { name: "Theme" });
         expect(within(theme).getAllByRole("button")).toHaveLength(3);
         expect(within(theme).getByRole("button", { name: "Sepia" })).toHaveAttribute("aria-pressed", "true");
-        expect(within(dialog).queryByRole("group", { name: /font|size|spacing/i })).not.toBeInTheDocument();
+        for (const name of ["Font", "Size", "Spacing"]) expect(within(dialog).getByRole("group", { name })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Appearance" })).toHaveTextContent("Aa");
         expect(within(dialog).queryByRole("button", { name: /fullscreen/i })).not.toBeInTheDocument();
     });
 
@@ -58,7 +61,7 @@ describe("Preview Appearance", () => {
         fireEvent.click(trigger);
         await waitFor(() => expect(screen.getByRole("button", { name: "Close Appearance" })).toHaveFocus());
         if (method === "Escape") fireEvent.keyDown(document, { key: "Escape" });
-        else if (method === "outside") fireEvent.pointerDown(document.body);
+        else if (method === "outside") fireEvent.mouseDown(document.body);
         else fireEvent.click(screen.getByRole("button", { name: "Close Appearance" }));
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         await waitFor(() => expect(trigger).toHaveFocus());
@@ -72,5 +75,25 @@ describe("Preview Appearance", () => {
         expect(screen.getByRole("button", { name: "Light" })).toHaveAttribute("aria-pressed", "true");
         fireEvent.keyDown(document, { key: "Escape" });
         expect(settings.getTheme()).toBe("light");
+    });
+
+    it("shares font, size boundaries and spacing with the reader", async () => {
+        render(<><PreviewAppearanceMenu /><ReaderSettingsMenu /></>);
+        fireEvent.click(screen.getByRole("button", { name: "Appearance" }));
+        await screen.findByRole("dialog", { name: "Appearance" });
+        fireEvent.click(screen.getByRole("button", { name: "Sans" }));
+        fireEvent.click(screen.getByRole("button", { name: "Decrease font size" }));
+        expect(screen.getByRole("button", { name: "Decrease font size" })).toBeDisabled();
+        fireEvent.click(screen.getByRole("button", { name: "Increase font size" }));
+        fireEvent.click(screen.getByRole("button", { name: "Increase font size" }));
+        expect(screen.getByRole("button", { name: "Increase font size" })).toBeDisabled();
+        fireEvent.click(screen.getByRole("button", { name: "Relaxed line spacing" }));
+        fireEvent.click(screen.getByRole("button", { name: "Close Appearance" }));
+        fireEvent.click(screen.getByRole("button", { name: "Display Settings" }));
+        await screen.findByRole("dialog", { name: "Reader Settings" });
+        expect(screen.getByRole("button", { name: "Sans" })).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getByRole("button", { name: "Relaxed line spacing" })).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getByRole("group", { name: "Size" })).toHaveTextContent("large");
+        expect(screen.getByRole("button", { name: "Fullscreen" })).toBeInTheDocument();
     });
 });

@@ -122,9 +122,10 @@ Reader-specific themes currently supported:
 
 These are scoped theme overrides and should be documented separately from the browse shell.
 
-Preview also exposes the shared Light, Sepia and Dark theme through an Appearance
-control. Its description makes the shared Preview/reader setting explicit. Font,
-size, spacing and fullscreen remain reader controls.
+Preview reuses the reader’s Aa Appearance control for theme, font, size and
+spacing. Its description and takeaways use the shared reading preferences; title,
+metadata and actions keep their UI typography. The bottom description makes the
+shared Preview/reader setting explicit. Fullscreen remains exclusive to Read.
 
 ### 4.3 Reader Controls
 

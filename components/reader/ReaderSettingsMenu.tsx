@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useId } from "react";
+import { useState, useRef, useEffect, useId, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { Minus, Plus, Sun, Moon, BookOpen, Maximize, Minimize, Rows4, Rows3, Rows2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,9 @@ const themeOptions: { value: ReaderTheme; label: string; icon: typeof Sun; previ
     { value: "dark", label: "Dark", icon: Moon, preview: "bg-[hsl(240,10%,3.9%)] border-zinc-600" },
 ];
 
-export function ReaderSettingsMenu() {
+export function ReaderSettingsMenu({ surface = "reader" }: { surface?: "reader" | "preview" }) {
+    const isPreview = surface === "preview";
+    const [position, setPosition] = useState({ top: 16, left: 16 });
     const [isOpen, setIsOpen] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -37,20 +39,43 @@ export function ReaderSettingsMenu() {
         setMounted(true);
     }, []);
 
+    // Keep the larger Preview popover inside the viewport, even below a long hero.
+    useLayoutEffect(() => {
+        if (!isOpen || !mounted || !isPreview || isCompactReaderControls) return;
+        const place = () => {
+            const trigger = triggerButtonRef.current?.getBoundingClientRect();
+            const panel = panelRef.current?.getBoundingClientRect();
+            if (!trigger || !panel) return;
+            setPosition({
+                top: Math.max(16, Math.min(trigger.bottom + 8, window.innerHeight - panel.height - 16)),
+                left: Math.max(16, Math.min(trigger.right - panel.width, window.innerWidth - panel.width - 16)),
+            });
+        };
+        place();
+        window.addEventListener("resize", place);
+        window.addEventListener("scroll", place, true);
+        return () => {
+            window.removeEventListener("resize", place);
+            window.removeEventListener("scroll", place, true);
+        };
+    }, [isOpen, mounted, isPreview, isCompactReaderControls]);
+
     // Track Fullscreen status
     useEffect(() => {
+        if (isPreview) return;
         const handleFullscreenChange = () => {
             setIsFullscreen(!!document.fullscreenElement);
         };
         document.addEventListener("fullscreenchange", handleFullscreenChange);
         return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    }, []);
+    }, [isPreview]);
 
     useOverlayInteractions({
         enabled: isOpen && mounted,
         containerRef: panelRef,
         initialFocusRef: closeButtonRef,
         restoreFocusRef: triggerButtonRef,
+        preventInitialFocusScroll: true,
         onEscape: () => setIsOpen(false),
         scrollLock: isCompactReaderControls,
     });
@@ -236,7 +261,7 @@ export function ReaderSettingsMenu() {
             </div>
 
             {/* Fullscreen Toggle */}
-            <div className="hidden sm:block pt-2 mt-2 border-t border-border/50">
+            {!isPreview && <div className="hidden sm:block pt-2 mt-2 border-t border-border/50">
                 <button
                     onClick={toggleFullscreen}
                     className="w-full flex items-center justify-between p-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
@@ -244,7 +269,21 @@ export function ReaderSettingsMenu() {
                     <span>{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
                     {isFullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
                 </button>
-            </div>
+            </div>}
+            {isPreview && (
+                <p id={`${settingsId}-description`} className="border-t border-border/50 pt-3 text-xs leading-relaxed text-muted-foreground">
+                    Applies to Preview and the reader.
+                </p>
+            )}
+        </div>
+    );
+
+    const previewHeader = (
+        <div className="mb-4 flex items-center justify-between">
+            <h2 id={sheetTitleId} className="text-sm font-semibold">Appearance</h2>
+            <button ref={closeButtonRef} type="button" onClick={() => setIsOpen(false)} aria-label="Close Appearance" className="focus-ring inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground">
+                <X className="size-4" aria-hidden="true" />
+            </button>
         </div>
     );
 
@@ -258,7 +297,9 @@ export function ReaderSettingsMenu() {
                     "inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-secondary p-0 text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground sm:h-10 sm:w-10",
                     isOpen && "bg-secondary/80 text-foreground ring-2 ring-ring"
                 )}
-                aria-label="Display Settings"
+                aria-label={isPreview ? "Appearance" : "Display Settings"}
+                aria-controls={`${settingsId}-panel`}
+                aria-haspopup="dialog"
                 aria-expanded={isOpen}
             >
                 <span className="font-serif italic font-bold text-[1.1rem] leading-none mb-0.5 mt-0.5">Aa</span>
@@ -277,25 +318,28 @@ export function ReaderSettingsMenu() {
                         />
                         <div
                             ref={panelRef}
+                            id={`${settingsId}-panel`}
                             role="dialog"
                             aria-modal="true"
                             aria-labelledby={sheetTitleId}
+                            aria-describedby={isPreview ? `${settingsId}-description` : undefined}
                             tabIndex={-1}
                             className={cn(
-                                "reader-settings-motion-sheet fixed inset-x-0 bottom-0 w-full rounded-t-2xl border-t border-border bg-card p-4 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300 motion-reduce:animate-none motion-reduce:transition-none",
+                                `reader-${readerTheme} font-sans`,
+                                "max-h-[90dvh] overflow-y-auto reader-settings-motion-sheet fixed inset-x-0 bottom-0 w-full rounded-t-2xl border-t border-border bg-card p-4 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300 motion-reduce:animate-none motion-reduce:transition-none",
                                 OVERLAY_LAYER_CLASS.sheetRaised
                             )}
                         >
                             <div className="-mt-1 mb-4 flex items-center justify-between border-b border-border/50 pb-3">
                                 <h2 id={sheetTitleId} className="text-base font-semibold text-foreground">
-                                    Reader settings
+                                    {isPreview ? "Appearance" : "Reader settings"}
                                 </h2>
                                 <button
                                     ref={closeButtonRef}
                                     type="button"
                                     onClick={() => setIsOpen(false)}
                                     className="focus-ring -mr-2 inline-flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                                    aria-label="Close reader settings"
+                                    aria-label={isPreview ? "Close Appearance" : "Close reader settings"}
                                 >
                                     <X className="size-5" aria-hidden="true" />
                                 </button>
@@ -304,9 +348,25 @@ export function ReaderSettingsMenu() {
                         </div>
                     </>,
                     document.body
+                ) : isPreview ? createPortal(
+                    <div
+                        ref={panelRef}
+                        id={`${settingsId}-panel`}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby={sheetTitleId}
+                        aria-describedby={`${settingsId}-description`}
+                        style={position}
+                        className={cn(`reader-${readerTheme} font-sans`, "fixed max-h-[calc(100dvh-2rem)] w-64 overflow-y-auto rounded-xl border border-border bg-card p-4 text-foreground shadow-2xl", OVERLAY_LAYER_CLASS.drawer)}
+                    >
+                        {previewHeader}
+                        {menuContent}
+                    </div>,
+                    document.body
                 ) : (
                     <div
                         ref={panelRef}
+                        id={`${settingsId}-panel`}
                         role="dialog"
                         aria-modal="true"
                         aria-label="Reader Settings"
