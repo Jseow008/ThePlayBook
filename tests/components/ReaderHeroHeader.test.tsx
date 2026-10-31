@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ReaderHeroHeader } from '@/components/reader/ReaderHeroHeader';
-import { READER_COVER_IMAGE_SIZES } from '@/components/ui/content-card-standards';
+import { COMPACT_READER_COVER_IMAGE_SIZES } from '@/components/ui/content-card-standards';
 
 vi.mock('@/components/reader/AudioPlayer', () => ({
     AudioPlayer: () => <div data-testid="mock-audio-player" />,
@@ -64,7 +64,7 @@ describe('ReaderHeroHeader', () => {
         expect(screen.getByText('2 of 4 sections completed')).toBeInTheDocument();
     });
 
-    it('uses the shared reader cover image sizes hint', () => {
+    it('uses the compact reader cover image sizes hint', () => {
         render(
             <ReaderHeroHeader
                 title="Test Title"
@@ -78,7 +78,7 @@ describe('ReaderHeroHeader', () => {
             />
         );
 
-        expect(screen.getByTestId('mock-cover-image')).toHaveAttribute('sizes', READER_COVER_IMAGE_SIZES);
+        expect(screen.getByTestId('mock-cover-image')).toHaveAttribute('sizes', COMPACT_READER_COVER_IMAGE_SIZES);
     });
 
     it('provides a destination for Listen links when audio is available', () => {

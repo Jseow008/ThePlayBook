@@ -4,6 +4,9 @@ import {
     PREVIEW_COVER_FRAME_CLASS,
     READER_COVER_FRAME_CLASS,
     READER_COVER_WRAPPER_CLASS,
+    COMPACT_READER_HERO_CLASS,
+    COMPACT_READER_COVER_WRAPPER_CLASS,
+    COMPACT_READER_COVER_FRAME_CLASS,
 } from "@/components/ui/content-card-standards";
 
 const TAKEAWAY_LINE_WIDTHS = ["w-11/12", "w-4/5", "w-2/3"] as const;
@@ -68,6 +71,32 @@ function TakeawayRowsSkeleton() {
     );
 }
 
+function ReaderHeroSkeleton() {
+    return (
+        <div className={`mb-6 ${COMPACT_READER_HERO_CLASS}`}>
+            <div className={COMPACT_READER_COVER_WRAPPER_CLASS}>
+                <div
+                    data-testid="content-detail-loading-cover"
+                    className={`${COMPACT_READER_COVER_FRAME_CLASS} rounded-xl border border-border bg-secondary/45 shadow-2xl shadow-black/20`}
+                />
+            </div>
+            <div className="min-w-0 space-y-3">
+                <div className="h-8 w-full rounded-full bg-secondary/55 sm:h-9" />
+                <div className="h-5 w-3/5 rounded-full bg-secondary/40" />
+            </div>
+            <div className="col-span-2 flex flex-wrap items-center justify-between gap-3 sm:col-span-1 sm:col-start-2 sm:justify-start">
+                <div className="flex gap-2">
+                    <div className="h-7 w-16 rounded-lg border border-border/60 bg-secondary/45" />
+                    <div className="h-7 w-20 rounded-lg border border-border/60 bg-secondary/45" />
+                </div>
+                <div className="flex gap-2.5">
+                    {[0, 1, 2].map((key) => <div key={key} className="size-11 rounded-full border border-border/50 bg-secondary/35 sm:size-10" />)}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function PreviewLoadingState() {
     return (
         <PreviewLoadingAppearance>
@@ -111,7 +140,7 @@ export function ReaderLoadingState() {
                 aria-hidden="true"
                 className="mx-auto max-w-3xl px-5 pb-8 pt-8 motion-safe:animate-pulse sm:px-6 sm:pt-12 lg:pb-24"
             >
-                <ContentHeroSkeleton showPrimaryAction={false} coverRadiusClass="rounded-xl" />
+                <ReaderHeroSkeleton />
 
                 <div className="mb-8">
                     <div className="mb-2 flex justify-between">

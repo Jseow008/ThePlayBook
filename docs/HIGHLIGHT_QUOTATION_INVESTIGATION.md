@@ -3550,3 +3550,181 @@ Single implementer, no subagents, one matched baseline/candidate layout sequence
 application-provider cost none, Codex usage unavailable. About 12 minutes local
 implementation/validation; no extended benchmark. Child release identity is
 stored in compact-cover-implementation/release.json outside the product tree.
+
+
+## Reader hierarchy visual review — 31 October 2026
+
+User requested review and a proposed visual only, using a short and long summary
+on desktop and narrow screens. No product implementation, release or settings
+change is authorized by this review. Isolated review worktree
+`/Users/j/.codex/workspaces/netflux-reader-visual-review`, branch
+`codex/reader-visual-review`, based on freshly fetched `17ecff76` (#299 merged).
+Source ReaderHeroHeader/ReaderView/SegmentAccordion inspected on that main.
+
+Observed the public production UI in the existing authenticated Chrome session,
+with its saved sepia/serif settings. Samples: Brutal Realities of Building Iconic
+Businesses (UI estimate 6 min, no audio player) and The Business Playbook of the
+Early Walt Disney Company (11 min, audio player and series navigation). These
+are contrasting samples, not a controlled content-length comparison: audio,
+series and progress/sync state also differ. Viewports 1440x900 and 390x844.
+First screen and one native page scroll captured for each. First short section
+opened to inspect prose; no completion toggles, save/share actions, settings,
+note edits or audio playback. Ordinary navigation can update reading telemetry
+or its local progress copy; no claim is made that visiting a reader is write-free.
+
+Findings:
+- Short desktop already gives the Big Idea a good first-screen position: panel
+  starts y=468. Desktop cover renders about 222x334 and full header 388 px.
+- The longer desktop sample's header is 535 px with the 115 px audio player.
+  Its progress notice and series navigation also precede the Big Idea, which
+  starts y=818. Do not attribute this whole difference to content length/cover.
+- Narrow stacks a roughly 138x208 cover above title, author, badges and controls.
+  Short header 479 px, Big Idea y=689; long header 626 px, Big Idea y=1095 with
+  its notice and series. At 844 px tall, short shows only the opening prose and
+  long requires scrolling before reaching the Big Idea. One page scroll reaches
+  it in both. This is observed hierarchy, not a loading/performance defect.
+- Existing reading settings are 18 px serif / 30.96 px line height. No horizontal
+  overflow in either sample/viewport. Expanded section prose is 636 px wide
+  desktop and 266 px narrow, versus Big Idea 654/300; source uses a 3.25rem
+  hanging indent. Narrow prose is consequently more wrapped, but this review
+  does not justify changing type settings or section layout yet.
+- Existing numbered accordion headings and explicit Mark complete and continue
+  / Continue actions are understandable. Completion/navigation behavior was not
+  exercised; no new next-section control is proposed.
+
+Separate observation/limits: the session displayed Pending sync, then Last known
+progress and a library-request-limit notice. They add real vertical space, must
+remain visible, and are not classified as a visual defect. Their cause, frequency
+and actual sync recovery were not investigated here. The initial longer narrow
+capture was at restored scrollY=744.5 and rejected as first-screen evidence;
+settled scrollY=0 capture and corresponding one-page scroll replaced it. Initial
+long desktop capture also caught a theme/appearance transition; transient muted
+colours are not treated as a contrast defect. Phones/Safari, other themes/font
+settings and loading speed remain unverified. No tests were run for this visual
+review; earlier release counts do not establish this proposal's behavior.
+
+Proposed visual: a smaller cover beside title/author on narrow screens and a
+smaller desktop cover. Keep existing title sizes (24/36 px), 18 px prose and
+line-height, metadata/settings/save/share controls, full audio player, progress,
+sync notice, series navigation, Big Idea, section order and Notes access. Narrow
+controls form a wrapping row below the compact identity block; desktop controls
+stay under the author. Strongest priority is narrow-screen entry; short desktop
+already works. Long audio/series/notice examples can still require scrolling;
+no claim that every Big Idea fits in the first viewport or loads sooner.
+
+Visual/source evidence directory:
+`/Users/j/.codex/visualizations/2026/10/21/01a15e86-edbe-79c1-8d88-6877902e13bf/reader-hierarchy-review/`
+contains screenshots, observations.json and local proposal captures. Interactive
+comparison is `../netflux-reader-hierarchy.html`: Current and Compact header,
+short/long and desktop/narrow options, using observed public cover assets and
+sample text. It is an illustrative reconstruction, not deployed product code.
+All actions remain local to the proposal. No paid resources/model calls or
+production settings/data edits were performed. Product tree remains unchanged;
+only this review checkpoint is edited. Next step is a user design decision,
+then bounded feasibility/verification if implementation is explicitly approved.
+
+Comparison QA: all eight screen/sample/design combinations render loaded cover
+assets, retain three visible settings/save/share controls, keep 36/24 px titles
+and 18 px prose, and show no horizontal overflow. At host width 320 px the narrow
+comparison also fits, with its three controls 44x44. No console errors captured.
+Current reconstruction's Big Idea coordinates are close to observation (468 vs
+468 desktop short; 825 vs 818 desktop long; 701 vs 689 narrow short; 1094 vs 1095
+narrow long). Differences are illustrative reconstruction spacing, not measured
+product changes. Proposed coordinates (307/664 desktop and 465/858 narrow) are
+mock geometry only, not a production performance/layout guarantee. The longer
+narrow proposal still begins the Big Idea after the 844 px viewport. No truncation,
+collapsed notices or hidden series links were used to improve the comparison.
+One comparison-inspection selector targeted a nonvisible variant picker option;
+visible Previous/Next arrows were used instead. Final browser viewport restored,
+owned tabs closed and local comparison server stopped. Only this checkpoint is
+modified in the review worktree; no product code, tests or release changed.
+
+
+### Compact reader header implementation — 31 October 2026
+
+Explicit user authorization supersedes the review-only hold above: implement
+the compact reader header on desktop and narrow screens, preserving typography,
+controls, audio, progress notices and series navigation. Branch
+`codex/reader-compact-header` in the same isolated review worktree, based on
+freshly fetched main `17ecff76b96c3248bf67d414cff6d14f57a23149`. This is a new
+independent release; previous review evidence is supporting context only.
+
+ReaderHeroHeader now uses a two-column CSS grid: 64x96 cover below sm, 112x168
+from sm. Narrow title/author sit beside the cover and the single metadata/control
+row wraps below; desktop controls sit below author. Missing cover uses a normal
+single-column grid, avoiding a blank cover slot. Shared compact-reader sizing
+constants also drive a dedicated reader hero loading placeholder; Preview's
+existing loading/cover sizing stays unchanged. Image sizes hints match the new
+widths. Existing 24/30/36 px title scale, author/body fonts, weights and line
+height are retained. No duplicated controls, new state/effects, fetching,
+navigation, audio or account logic. ReaderView, settings, save/share handlers,
+AudioPlayer and ReaderSyncStatus are unedited. Header props/effects and the
+entire audio/progress subtree were compared byte-for-byte with main and match.
+
+Initial focused verification: all 121 tests pass across ReaderHeroHeader,
+ReaderView, AudioPlayer, ContentDetailLoadingStates and ContentPreview. Only the
+existing image-sizes contract expectation changes to the new sizing constant;
+no CSS-literal/mirrored tests added. Account-theme/loading semantics retain their
+existing coverage. No dependency/configuration or CI gate changed.
+
+Browser check uses an actual candidate-header copy (body identical to product,
+only imports redirected), main baseline, the actual AudioPlayer/settings/share
+components and actual LibrarySaveButton with a synthetic local saved-state
+adapter. Local public cover assets and one-minute silent WAV; inert localhost
+client settings, no production content/account/provider requests or paid
+resources. Header is surrounded by illustrative unchanged notice/series/Big
+Idea markup. Layout checks do not validate real account save/sync persistence.
+Loading comparison uses the exact loading-body source with a synthetic sepia
+appearance adapter; actual account theme behavior remains covered by existing
+unit tests. Temporary routes/assets/dev cache removed, owned server/tab closed,
+and viewport restored before final checks.
+
+Observed implementation pairs:
+- 1440x900: short header 226.8 px vs 388 on main; audio/long 373.8 vs 535.
+  Both move the Big Idea about 161 px earlier in the same fixture. Cover frame
+  112x168 (inner image 110x166). Title 36 px / prose 18 px and fonts/line-height
+  agree, as do control names/order, audio height 115 px, progress, notice and
+  series links/text. No horizontal overflow. These are layout comparisons,
+  not timing or speed claims.
+- 390x844: short header 226.8 px vs 479.2; long 373.8 vs 626.2. Cover frame
+  64x96 (inner image 62x94). Title 24 px / prose 18 px unchanged; same controls
+  and 115 px audio region. Long Big Idea still starts after the first viewport
+  with its notice/series retained. No collapse/truncation of those elements.
+- 320 px: long title/control groups wrap without overflow; settings/save/share
+  remain 44x44. 640 px uses 112x168 cover, original 30 px title and 40x40 controls.
+  At 320/640/1440, matching loading cover geometry and no-cover content fit with
+  no overflow or false progress. There is no empty cover column when absent.
+- Settings opens; Escape closes and restores focus. Tab order Settings -> Save
+  -> Share remains. Share opens/closes; no send, copy or export was performed.
+  Synthetic local Save changes to Remove. Actual local audio Play/Pause states
+  observed against the WAV. These do not claim live backend sharing/saving or
+  real audiobook/device validation.
+
+Retained fixture failures: the first optional settings initializer incorrectly
+assumed useReaderSettings exposed setState, causing the temporary page error;
+that initializer was removed. Loading then exposed a missing fixture-only auth
+provider; after inspecting the dependency, an explicit synthetic appearance
+adapter isolates the layout check without invoking auth. Those attempts are
+not counted as passes and no product behavior was changed to make them pass.
+The actual Share menu starts image preparation for the synthetic content ID;
+without a backing local content database, that preparation is not validated.
+
+Evidence directory:
+`/Users/j/.codex/visualizations/2026/10/21/01a15e86-edbe-79c1-8d88-6877902e13bf/compact-reader-implementation/`
+contains actual-component screenshots, pairs.json, boundary-cases.json and
+interaction-checks.json. Review mock screenshots remain illustrative and are
+not used as implementation evidence. Phones, Safari, production browsing,
+real-account persistence and skipped tests remain outside coverage. One agent,
+no live application AI calls or benchmark. Final lint/full-test/type/build
+results and PR release identity follow.
+
+Final local validation: full lint and all ratchets pass; full npm test passes
+260 suites / 2,107 tests, with 12 suites / 307 tests skipped, plus 34/34 capacity
+harness tests. Typecheck and production build pass, including Sharp traces and
+critical-CSS checks. Build uses inert localhost client settings and emits expected
+catalog connection refusals plus the existing Node localstorage warning; it is
+not backend connectivity validation. Final scope: ReaderHeroHeader, shared
+compact-reader sizing, matching reader loading shape, existing image-sizes test,
+design guide and this checkpoint. External release.json will hold final PR/head
+identity and gated auto-merge status without an evidence-only CI-triggering commit.
+Required CI/security still gate release; no production/device verification claimed.
