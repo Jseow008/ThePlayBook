@@ -3728,3 +3728,160 @@ compact-reader sizing, matching reader loading shape, existing image-sizes test,
 design guide and this checkpoint. External release.json will hold final PR/head
 identity and gated auto-merge status without an evidence-only CI-triggering commit.
 Required CI/security still gate release; no production/device verification claimed.
+
+### Preview Appearance — shared theme only, 1 November 2026
+
+Authorized: implement approved Appearance popover on desktop and narrow Preview,
+with the reader's Light/Sepia/Dark Theme row and bottom description "Applies to
+Preview and the reader." Font/size/spacing/fullscreen remain in Read. Worktree
+/Users/j/.codex/workspaces/netflux-preview-appearance-theme, branch
+codex/preview-appearance-theme, freshly fetched origin/main 7ef037a0 (#300).
+Ordinary isolated worktree used because the managed service previously rejected
+this chat's external repository root. Parent #299 is merged; this is independent.
+
+The new PreviewAppearanceMenu consumes the existing useReaderSettings theme and
+setter. It has no separate persistence, account cache, API, database or auth
+logic. Only the settings selection calls the setter; dismissal never writes.
+Preview keeps its existing theme class; Read's menu code is unchanged. The Theme
+row matches its swatches, labels and selected ring. Trigger is below hero details,
+above the hook, and aligned right, consistent with the approved visual. Existing
+reading/share/save/audio availability, typography, content, destinations and
+fetching remain. Shared overlay hook handles Escape, focus containment, initial
+close focus and return focus; pointerdown outside dismisses the popover.
+
+First focused run: 29 tests pass across PreviewAppearance, ContentPreview and
+ReaderSettingsMenu. Tests exercise same-store Preview/Read selections, reset
+reflection without rewriting prior state, theme-only scope and shared-setting
+description, Escape/outside/Close dismissal and focus return. Mocked store tests
+do not establish cloud/account persistence. First build caught test-only typing
+errors (Testing Library exact option, and exposing mock store controls through
+the production hook type); corrected the test harness, not production behavior.
+
+Browser attempts retained: initial Next dev navigation timed out during compile;
+subsequent page showed SSR content but activations only focused the trigger.
+Chrome native selection/focus timed out and Raise returned noWindowsAvailable.
+The in-app browser exhibited the same dev-page symptom; server logs reported
+Next dev-origin resource denials for 127.0.0.1. Trying localhost still did not
+open the picker. No browser pass claimed for those attempts. A production-built
+local fixture is the next bounded check. It renders real ContentPreview,
+PublicLayoutShell, providers (guest initialUser null), and ReaderSettingsMenu
+with observed public text/cover. No save/share actions or audio are invoked.
+
+Production-built local fixture: pass. Next build exposed one further mock-store
+inference error, corrected with an explicit test state type. Build/Sharp trace/
+critical CSS then passed. First IAB reloads hit a connection-refused error during
+server transition; fresh tab after confirmed Ready succeeded. With hydrated
+production output, the actual menu opens and all three choices update Preview.
+This does not prove the exact root cause of every earlier development no-op.
+
+Actual Read settings component sees Preview-selected Sepia; selecting Light
+there and returning reflects reader-light in Preview. Reload retains guest Sepia.
+Escape closes at unchanged scrollY 228 and restores trigger focus; desktop Dark
+and Close retain reader-dark and trigger focus; outside dismissal closes. No
+horizontal overflow. Menu frame at 390x844: x50, width320, bottom517.3 in the
+observed scrolled state. At 320x844: x20, width280, bottom678.3, entirely visible.
+Desktop check 1440x900 passes. Controls/descriptions are actual components and
+public text, not replacement Save/Share stubs. Auth was explicitly guest with
+inert localhost backend; this does not verify signed-in/cloud persistence.
+
+One fixture-only mistake retained: clicking the extra below-page reader-check
+button was intercepted by the fixed Read rail and opened the real reader path,
+which correctly could not fetch against the inert backend. Returned and used
+keyboard Enter on the fixture control to verify the actual ReaderSettingsMenu.
+No production/account changes or paid calls. Screenshots/compact checks stored
+in thread preview-appearance-implementation; screenshots show local guest UI,
+not production. Closing tabs/restoring both viewport overrides was attempted as
+a batch; CUA timed out/reset during cleanup, so do not infer all closes completed.
+Own server was stopped and temporary route/image/dev cache removed explicitly.
+Product source is unchanged by browser fixture corrections.
+
+React review: bounded conditional event listener with cleanup, no effects writing
+theme, stable selectors, native labeled buttons and pressed states, dialog name
+and bottom description, existing overlay keyboard/focus handling. Reader menu,
+persistence and account isolation code remain byte-identical to base. No database,
+auth, API, migrations, dependency or configuration changes. Final clean lint,
+tests, typecheck/build and publication identities follow in the external release
+record. Skipped tests, phone/Safari and signed-in production use remain outside
+verified coverage. Single implementing agent, no subagents; provider usage zero,
+Codex token/cost attribution unavailable. Browser/harness diagnosis dominated
+elapsed time; no broader benchmark or product scope added.
+
+Clean validation: full lint/ratchets pass, 261 suites / 2,113 unit tests pass,
+12 suites / 307 tests skipped; capacity harness 34/34 pass. Initial clean
+typecheck found .next/types still referenced the removed fixture route. The
+production build is rerun to regenerate route types, then typecheck; no tests or
+product code changed in response. Second attempt to reset Chrome viewport after
+CUA reset also timed out, so browser cleanup remains partially unconfirmed;
+these task-owned tabs are ephemeral. No user-owned tabs were closed or mutated.
+
+Final clean production build passes including Sharp tracing/critical CSS; the
+subsequent typecheck passes after route regeneration. All required local checks
+are now green. Inert backend build warnings do not verify live data access.
+Release PR/head and hosted gate state are stored in the thread's
+preview-appearance-implementation/release.json. No deployment monitoring requested.
+
+### Approved expansion: shared Aa controls on Preview — 1 November 2026
+
+User explicitly expanded the scope to the same Aa Theme/Font/Size/Spacing
+preferences as Read, applied to Preview description and takeaways, keeping UI
+text unchanged and fullscreen Read-only. #301 was still open; protected
+auto-merge was disabled before editing so the superseded theme-only scope would
+not merge during the refinement. Same branch/worktree; PR title/body rewritten
+for the final result. Earlier theme-only evidence above remains historical.
+
+PreviewAppearanceMenu now delegates to ReaderSettingsMenu surface="preview".
+This reuses the actual controls, setters, size limits, spacing choices and Aa
+trigger rather than maintaining another menu implementation. Preview heading is
+Appearance with shared-setting description at the bottom and no fullscreen.
+Read's default surface keeps its controls/fullscreen. Compact screens use the
+same sheet, with viewport-height scrolling; its portal explicitly carries the
+current theme. Preview desktop uses a measured/clamped portal to keep the larger
+popover within the viewport, updating only while open on scroll/resize. Shared
+Escape/focus handling remains; no new persistence, API, account or database code.
+
+Only description/takeaway prose receives reader-font/size/spacing classes.
+Title, author/metadata, numbered badges, Read/Save/Share and disclosure controls
+retain UI typography. Hook truncation observer rechecks when text preferences
+change. Default prose now follows the existing saved reader preference rather
+than a separate Preview default. Fonts/settings schema, account/session scope,
+storage and server saving are unchanged.
+
+30 focused tests pass across Preview Appearance, ContentPreview and Read's menu.
+They cover the full Preview groups and Aa trigger, fullscreen excluded/present
+by surface, shared state, size limits, dismissal/focus return and reset reflection.
+No CSS-literal tests added. Actual browser proof used a production-built local
+guest page with real components/providers and previously observed public copy;
+no development-page no-op attempts were needed for this refinement.
+
+At 1440x900, baseline prose is Georgia/18px/30.96px. Preview Sans/Large/Relaxed
+makes description and takeaway Inter/20px/37.6px. Title stays36px and Read button
+16px; no horizontal overflow and scroll remains0. Guest reload preserves those
+computed styles. The actual Read menu sees all four chosen values; returning
+Read's Serif/Medium/Compact yields Georgia/18px/27px on Preview. Fullscreen is
+present only in Read. Preview desktop popover x856,y431,right1112,bottom884 in a
+1440x900 viewport. Close restores focus with scroll0; outside dismissal passes.
+
+At390x844, Preview opens the actual shared compact sheet x0,width390,y347.5,
+bottom844 with all controls and bottom description visible. Escape closes and
+returns focus. At320x568 the sheet fits x0,width320,y71.5,bottom568 with no clipped
+controls; its max-height allows scrolling at shorter heights. These are responsive
+browser checks, not physical phones or Safari. Shared state was checked with
+ReaderSettingsMenu, not a database-backed ReaderView navigation. Guest persistence
+is verified; signed-in/cloud persistence remains untested and its code unchanged.
+Evidence: thread preview-aa-implementation/{checks.json,desktop.png,narrow.png}.
+
+Temporary route/image removed, own production server and IAB tab closed, viewport
+reset confirmed. No live accounts, production writes, saved-note edits, audio,
+provider/model calls, paid resources or dependencies. Single implementer; no
+subagents or new benchmark. Final clean checks run after removing fixture, with
+production build before typecheck to regenerate route types and avoid the earlier
+stale-fixture validator issue. Release identity recorded externally as before.
+
+Final expanded candidate checks: full lint/ratchets, 261 unit suites / 2,114 tests,
+34 capacity harness checks, clean production build (Sharp/critical CSS) and
+subsequent typecheck all pass. 12 suites / 307 tests skipped, outside coverage.
+Inert localhost backend build warnings do not establish connectivity. No failed
+candidate tests or additional benchmark loops in this expansion; the 30 focused
+and one bounded production-built browser sequence above were followed by one
+clean full suite/build. Ready updated #301 requires fresh hosted CI/security for
+its new head; earlier theme-only checks are not reused as gate results.

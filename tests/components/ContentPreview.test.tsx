@@ -21,9 +21,10 @@ vi.mock('@/hooks/useReadingProgress', () => ({
 }));
 
 vi.mock('@/hooks/useReaderSettings', () => ({
-    useReaderSettings: (selector: (state: { readerTheme: string }) => unknown) => selector({
-        readerTheme: mockReaderTheme(),
-    }),
+    useReaderSettings: (selector?: (state: Record<string, unknown>) => unknown) => {
+        const state = { readerTheme: mockReaderTheme(), fontFamily: 'serif', fontSize: 'medium', lineHeight: 'default' };
+        return selector ? selector(state) : state;
+    },
 }));
 
 vi.mock('next/link', () => ({
