@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BrowseReadingPanel } from "@/components/ui/BrowseReadingPanel";
 
@@ -87,6 +87,10 @@ describe("BrowseReadingPanel", () => {
         );
         expect(screen.getByRole("progressbar", { name: /reading progress for deep work/i }))
             .toHaveAttribute("aria-valuenow", "60");
+        const resumeSection = screen.getByRole("region", { name: "Continue reading" });
+        const activitySection = screen.getByRole("region", { name: "Your reading" });
+        expect(within(resumeSection).getByRole("heading", { name: "Continue reading" })).toBeInTheDocument();
+        expect(resumeSection.compareDocumentPosition(activitySection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
     it("does not load personal data for guests, but shows the cards on mobile for signed-in readers", () => {
