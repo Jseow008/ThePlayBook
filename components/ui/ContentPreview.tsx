@@ -17,8 +17,8 @@ import { ResilientImage } from "@/components/ui/ResilientImage";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import {
-    READER_COVER_FRAME_CLASS,
-    READER_COVER_IMAGE_SIZES,
+    PREVIEW_COVER_FRAME_CLASS,
+    PREVIEW_COVER_IMAGE_SIZES,
     READER_COVER_WRAPPER_CLASS,
 } from "@/components/ui/content-card-standards";
 
@@ -124,7 +124,7 @@ export function ContentPreview({
             className={`reader-${readerTheme} min-h-screen bg-background text-foreground pb-[calc(5.75rem+var(--safe-area-bottom))] transition-colors duration-300 sm:pb-10 lg:pb-8`}
         >
             {/* Container */}
-            <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-3 sm:py-12">
+            <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-4 pb-3 sm:py-12">
 
 
                 {/* ── Hero: Cover + Info ── */}
@@ -132,14 +132,14 @@ export function ContentPreview({
                     {/* Cover Image */}
                     {item.cover_image_url && (
                         <div className={READER_COVER_WRAPPER_CLASS}>
-                            <div className={`${READER_COVER_FRAME_CLASS} max-w-[220px] mx-auto sm:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/20 border border-border relative group`}>
+                            <div className={`${PREVIEW_COVER_FRAME_CLASS} max-w-[220px] mx-auto sm:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/20 border border-border relative group`}>
                                 <ResilientImage
                                     src={item.cover_image_url}
                                     alt={item.title}
                                     fill
                                     surface="content-preview"
                                     className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                    sizes={READER_COVER_IMAGE_SIZES}
+                                    sizes={PREVIEW_COVER_IMAGE_SIZES}
                                     priority
                                     fallback={
                                         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary via-card to-background">

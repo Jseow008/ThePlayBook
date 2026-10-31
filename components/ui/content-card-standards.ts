@@ -21,3 +21,8 @@ export const READER_COVER_WRAPPER_CLASS = "flex-shrink-0 w-full sm:w-48 md:w-56"
 export const READER_COVER_FRAME_CLASS = "aspect-[2/3] w-[140px] sm:w-full";
 export const READER_COVER_IMAGE_SIZES =
     "(max-width: 639px) 140px, (max-width: 767px) 192px, 224px";
+
+// Preview is more compact below sm; reader cover sizing stays independent.
+export const PREVIEW_COVER_FRAME_CLASS = "aspect-[2/3] w-[96px] sm:w-full";
+export const PREVIEW_COVER_IMAGE_SIZES =
+    "(max-width: 639px) 96px, (max-width: 767px) 192px, 224px";
