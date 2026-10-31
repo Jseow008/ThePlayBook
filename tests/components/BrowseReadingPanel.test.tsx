@@ -75,18 +75,20 @@ describe("BrowseReadingPanel", () => {
         });
     });
 
-    it("links to profile and resumes the latest unfinished read with its real progress", () => {
+    it("resumes the latest unfinished read without the activity summary", () => {
         render(<BrowseReadingPanel />);
 
-        expect(screen.getByRole("link", { name: /view progress/i })).toHaveAttribute("href", "/profile");
-        expect(screen.getByText("2")).toBeInTheDocument();
-        expect(screen.getByText("reading days this week")).toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /view progress/i })).not.toBeInTheDocument();
+        expect(screen.queryByText("reading days this week")).not.toBeInTheDocument();
         expect(screen.queryByText(/reads completed this month/i)).not.toBeInTheDocument();
         expect(screen.getAllByRole("link", { name: /continue reading/i })[0]).toHaveAttribute(
             "href", `/read/${resumeId}/deep-work`,
         );
         expect(screen.getByRole("progressbar", { name: /reading progress for deep work/i }))
             .toHaveAttribute("aria-valuenow", "60");
+        expect(screen.getByRole("region", { name: "Continue reading" })).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Continue reading" })).toBeInTheDocument();
+        expect(screen.queryByRole("region", { name: "Your reading" })).not.toBeInTheDocument();
     });
 
     it("does not load personal data for guests, but shows the cards on mobile for signed-in readers", () => {
@@ -111,7 +113,7 @@ describe("BrowseReadingPanel", () => {
         });
         render(<BrowseReadingPanel />);
         expect(screen.getByTestId("browse-reading-panel")).toBeInTheDocument();
-        expect(screen.getByRole("heading", { name: "Your reading" })).toBeInTheDocument();
+        expect(screen.queryByRole("heading", { name: "Your reading" })).not.toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Continue reading" })).toBeInTheDocument();
         expect(screen.getAllByRole("link", { name: /continue reading/i })[0]).toHaveAttribute(
             "href", `/read/${resumeId}/deep-work`,
@@ -445,7 +447,7 @@ describe("BrowseReadingPanel", () => {
         expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "80");
     });
 
-    it("keeps the weekly count visible when an unfinished read is discovered later", () => {
+    it("replaces activity with resume loading when an unfinished read is discovered later", () => {
         mockUseReadingProgress.mockReturnValue({
             completedIds: [], inProgressIds: [], isLoaded: false, user: { id: "reader-1" },
             hydrationStatus: "hydrating", retryHydration: mockRetryHydration, getProgress: vi.fn(),
@@ -463,7 +465,8 @@ describe("BrowseReadingPanel", () => {
         mockUseBatchContentItems.mockReturnValue({ data: [], isPending: true, isError: false, refetch: mockRefetchResume });
         rerender(<BrowseReadingPanel />);
         expect(screen.getByTestId("browse-reading-panel")).toBe(panel);
-        expect(screen.getByText("2")).toBeInTheDocument();
+        expect(screen.queryByText("2")).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /view progress/i })).not.toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Continue reading" })).toBeInTheDocument();
     });
 
@@ -482,7 +485,12 @@ describe("BrowseReadingPanel", () => {
         expect(screen.queryByRole("heading", { name: "Continue reading" })).not.toBeInTheDocument();
     });
 
-    it("uses singular wording for one reading day", () => {
+    it("uses singular wording for one reading day without an unfinished read", () => {
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [], isLoaded: true, hydrationStatus: "ready",
+            user: { id: "reader-1" }, getProgress: vi.fn(),
+        });
+        mockUseBatchContentItems.mockReturnValue({ data: [], isPending: false });
         mockUseQuery.mockReturnValue({
             data: [{ activity_date: "2026-10-05", duration_seconds: 60 }],
             isPending: false,
