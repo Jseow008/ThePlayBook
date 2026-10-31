@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { ContentPreview } from '@/components/ui/ContentPreview';
-import { READER_COVER_IMAGE_SIZES } from '@/components/ui/content-card-standards';
+import { PREVIEW_COVER_IMAGE_SIZES } from '@/components/ui/content-card-standards';
 import { vi } from 'vitest';
 import type { ContentItem } from '@/types/database';
 import { FOCUS_MEASUREMENT_VERSION, consumeConfirmedFocusRead, markFocusPreviewIntent } from '@/lib/focus-read-attribution';
@@ -214,10 +214,10 @@ describe('ContentPreview', () => {
         expect(screen.getByTestId('content-preview')).toHaveClass('reader-sepia');
     });
 
-    it('uses the shared reader cover image sizes hint', () => {
+    it('uses the Preview-specific cover image sizes hint', () => {
         render(<ContentPreview {...defaultProps} />);
 
-        expect(screen.getByAltText('Test Title')).toHaveAttribute('sizes', READER_COVER_IMAGE_SIZES);
+        expect(screen.getByAltText('Test Title')).toHaveAttribute('sizes', PREVIEW_COVER_IMAGE_SIZES);
     });
 
     it('can initially show all takeaways when opened from Focus', () => {

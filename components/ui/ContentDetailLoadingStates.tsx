@@ -1,6 +1,7 @@
 import { ReaderLoadingAppearance } from "./ReaderLoadingAppearance";
 import { PreviewLoadingAppearance } from "./PreviewLoadingAppearance";
 import {
+    PREVIEW_COVER_FRAME_CLASS,
     READER_COVER_FRAME_CLASS,
     READER_COVER_WRAPPER_CLASS,
 } from "@/components/ui/content-card-standards";
@@ -11,8 +12,10 @@ const SEGMENT_LINE_WIDTHS = ["w-2/3", "w-3/4", "w-1/2", "w-4/5"] as const;
 function ContentHeroSkeleton({
     showPrimaryAction,
     coverRadiusClass = "rounded-2xl",
+    compactPreview = false,
 }: {
     showPrimaryAction: boolean;
+    compactPreview?: boolean;
     coverRadiusClass?: "rounded-xl" | "rounded-2xl";
 }) {
     return (
@@ -20,7 +23,7 @@ function ContentHeroSkeleton({
             <div className={READER_COVER_WRAPPER_CLASS}>
                 <div
                     data-testid="content-detail-loading-cover"
-                    className={`${READER_COVER_FRAME_CLASS} ${coverRadiusClass} mx-auto border border-border bg-secondary/45 shadow-2xl shadow-black/20 sm:mx-0`}
+                    className={`${compactPreview ? PREVIEW_COVER_FRAME_CLASS : READER_COVER_FRAME_CLASS} ${coverRadiusClass} mx-auto border border-border bg-secondary/45 shadow-2xl shadow-black/20 sm:mx-0`}
                 />
             </div>
 
@@ -71,9 +74,9 @@ export function PreviewLoadingState() {
             <span className="sr-only">Loading preview</span>
             <div
                 aria-hidden="true"
-                className="mx-auto max-w-3xl px-5 pb-3 pt-8 motion-safe:animate-pulse sm:px-6 sm:py-12"
+                className="mx-auto max-w-3xl px-5 pb-3 pt-4 motion-safe:animate-pulse sm:px-6 sm:py-12"
             >
-                <ContentHeroSkeleton showPrimaryAction />
+                <ContentHeroSkeleton showPrimaryAction compactPreview />
 
                 <div
                     data-testid="preview-loading-hook"

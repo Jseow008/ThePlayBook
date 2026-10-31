@@ -3492,3 +3492,61 @@ logic again compared byte-for-byte with main and is unchanged. No dependencies,
 configuration or gates changed. #298 remains the release vehicle, with scope
 recheck and required CI/security rerun on the updated head; external release
 record stores final identity. No additional production/device verification.
+
+### Compact narrow Preview cover stacked on #298 — 31 October 2026
+
+Authorized scope: implement the approved compact-cover example on top of #298
+without altering its resume-only refinement. Branch codex/preview-compact-cover,
+worktree /Users/j/.codex/workspaces/netflux-preview-compact-cover, parent #298
+head c27a407f0ab47c6022bff491faaa4c30ec4c0cae. The managed-worktree service rejected
+this chat's external repository root; ordinary isolated git worktree used.
+#298's branch, auto-merge and running CI were not mutated.
+
+Preview alone uses a 96 px 2:3 cover below sm and 16 px top padding (previously
+140 px / 32 px). At sm and above original 192/224 px cover and spacing remain.
+Image sizes hints and Preview loading cover match; shared reader constants and
+Reader loading layout remain unchanged. No typography, text, theme, actions,
+fetching, prefetch, caching, progress, routing or account changes. React review:
+static Tailwind/constants only, no new effects, listeners or state. Design guide
+records the independent Preview sizing. Existing image-hint test updated; no
+CSS-literal tests added.
+
+Focused tests: 26/26 pass (ContentPreview and ContentDetailLoadingStates).
+Bounded actual-component Chrome check at 390x844 used byte-identical component
+bodies with only account/settings/save/share hooks replaced by synthetic stubs;
+local cover from the already observed public artwork. Candidate description top
+430.78125 vs baseline 512.78125: 82 px earlier. Cover frame 96x144 (inner image
+94x142 after border); baseline inner image 138x208. Reading href unchanged, one
+visible Read action, no horizontal overflow. At 1440x900, both candidates have
+identical title top 78.8984375, hook top 428 and image 222x334 at top 49.
+Preview loading frame 96x144 at y16; Reader loading remains 140x210 at y32.
+This is layout evidence, not a speed claim or live backend/account verification.
+
+Retained setup failures: initial navigation timed out and the synthetic cover
+path was rejected by Next image localPatterns; corrected only the temporary
+fixture path to /images. One stale REPL binding failed before reacquisition.
+Loading fixture initially lacked AuthUserProvider; temporary copy substituted
+only the appearance wrappers with sepia divs to isolate actual skeleton markup.
+Final successful evidence stored in the thread's compact-cover-implementation
+folder (geometry.json, narrow.jpg, desktop.jpg). Temporary route/assets/dev cache
+removed, own server/tab closed, viewport reset. A shell rm cleanup was rejected;
+known disposable fixture cleanup completed via Python. No production data,
+accounts, paid resources, provider calls or dependencies changed. Physical phones,
+Safari, skipped tests and production verification remain outside coverage.
+
+Release packaging: intentionally stacked child PR targets codex/browse-continue-first
+and carries stacked-pr label with parent #298 named. Do not auto-merge a child
+into the parent's feature branch. After #298 merges, rebase child-only commit(s)
+onto fresh origin/main, retarget main, inspect scope and let required CI/security
+validate the refreshed head before normal protected auto-merge. This avoids
+changing #298 or releasing the parent through a different PR. Final local
+validation and publication identity follow in the external release record.
+
+Final local checks pass: full lint/ratchets, 260 unit suites / 2,107 tests,
+34 capacity checks, typecheck, production build including Sharp trace and
+critical CSS. 12 suites / 307 tests skipped. Build used inert localhost settings;
+expected backend connection refusals do not establish backend connectivity.
+Single implementer, no subagents, one matched baseline/candidate layout sequence;
+application-provider cost none, Codex usage unavailable. About 12 minutes local
+implementation/validation; no extended benchmark. Child release identity is
+stored in compact-cover-implementation/release.json outside the product tree.
