@@ -82,7 +82,7 @@ export function BrowseReadingPanel() {
         <div className="px-4 md:hidden lg:block lg:px-16" data-testid="browse-reading-panel">
             <div className={cn(
                 "grid gap-2",
-                showResumeCard && "lg:min-h-32 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4 lg:rounded-2xl lg:border lg:border-border lg:bg-card/70 lg:shadow-[0_10px_30px_rgba(0,0,0,0.15)]",
+                showResumeCard && "lg:min-h-32 lg:items-center lg:rounded-2xl lg:border lg:border-border lg:bg-card/70 lg:shadow-[0_10px_30px_rgba(0,0,0,0.15)]",
             )}>
                 {showResumeCard ? (
                     <section aria-labelledby="browse-resume-title" className="min-h-32 rounded-2xl border border-border bg-card/70 p-3 shadow-[0_10px_30px_rgba(0,0,0,0.15)] lg:min-h-0 lg:border-0 lg:bg-transparent lg:p-4 lg:shadow-none">
@@ -143,37 +143,36 @@ export function BrowseReadingPanel() {
                     </section>
                 ) : null}
 
-                <section aria-labelledby="browse-reading-title" aria-busy={activityPending} className={showResumeCard
-                    ? "flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 py-1 lg:max-w-72 lg:justify-start lg:p-4 lg:pl-0"
-                    : "flex min-h-24 flex-col justify-between rounded-2xl border border-border bg-card/70 p-3 shadow-[0_10px_30px_rgba(0,0,0,0.15)] lg:min-h-48 lg:p-5 xl:p-6"}>
-                    <div className={showResumeCard ? "order-2 flex shrink-0 items-center" : "flex flex-wrap items-start justify-between gap-2 lg:gap-4"}>
-                        <h2 id="browse-reading-title" className={showResumeCard ? "sr-only" : "font-display text-base font-semibold text-foreground lg:text-lg"}>Your reading</h2>
-                        <Link href="/profile" className={cn("focus-ring touch-target-44 inline-flex shrink-0 items-center gap-1 rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground", showResumeCard && "min-h-11")}>
-                            View progress <ArrowRight className="size-4" aria-hidden="true" />
-                        </Link>
-                    </div>
-                    {activityPending ? (
-                        <div className={showResumeCard ? "order-1 flex min-w-0 items-center gap-2" : "flex items-center gap-2 lg:mt-5"} role="status" aria-label="Loading reading activity">
-                            <span className={showResumeCard ? "h-4 w-4 animate-pulse rounded bg-secondary/70" : "h-8 w-8 animate-pulse rounded bg-secondary/70 lg:h-9"} aria-hidden="true" />
-                            <span className={showResumeCard ? "h-4 w-28 animate-pulse rounded bg-secondary/70" : "h-4 w-36 animate-pulse rounded bg-secondary/70 lg:w-40"} aria-hidden="true" />
+                {!showResumeCard ? (
+                    <section aria-labelledby="browse-reading-title" aria-busy={activityPending} className="flex min-h-24 flex-col justify-between rounded-2xl border border-border bg-card/70 p-3 shadow-[0_10px_30px_rgba(0,0,0,0.15)] lg:min-h-48 lg:p-5 xl:p-6">
+                        <div className="flex flex-wrap items-start justify-between gap-2 lg:gap-4">
+                            <h2 id="browse-reading-title" className="font-display text-base font-semibold text-foreground lg:text-lg">Your reading</h2>
+                            <Link href="/profile" className="focus-ring touch-target-44 inline-flex shrink-0 items-center gap-1 rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                                View progress <ArrowRight className="size-4" aria-hidden="true" />
+                            </Link>
                         </div>
-                    ) : activityError && !activityDays ? (
-                        <div className={cn("flex flex-wrap items-center gap-2 text-sm text-muted-foreground", showResumeCard ? "order-1" : "lg:mt-5 lg:gap-3")} role="alert">
-                            <span>Reading activity is unavailable.</span>
-                            <button type="button" onClick={() => void refetchActivity()} className={cn("focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline", showResumeCard && "min-h-11")}>Retry</button>
-                        </div>
-                    ) : daysReadThisWeek > 0 ? (
-                        <p className={showResumeCard ? "order-1 flex items-baseline gap-2 text-sm text-muted-foreground" : "flex items-baseline gap-2 text-foreground lg:mt-5"}>
-                            <span className={showResumeCard ? "font-medium tabular-nums text-foreground" : "font-display text-3xl font-semibold tabular-nums lg:text-4xl"}>
-                                {daysReadThisWeek}
-                            </span>
-                            <span className="text-sm leading-5 text-muted-foreground">
-                                reading {daysReadThisWeek === 1 ? "day" : "days"} this week
-                            </span>
-                        </p>
-                    ) : <p className={cn("text-sm text-muted-foreground", showResumeCard ? "order-1" : "lg:mt-5")}>No reading days yet this week</p>}
-                    {activityError && activityDays ? (
-                        <p className={cn("text-xs text-muted-foreground", showResumeCard ? "order-3 w-full" : "mt-1")}>Could not refresh activity. <button type="button" onClick={() => void refetchActivity()} className={cn("focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline", showResumeCard && "inline-flex min-h-11 items-center")}>Retry</button></p>
+                        {activityPending ? (
+                            <div className="flex items-center gap-2 lg:mt-5" role="status" aria-label="Loading reading activity">
+                                <span className="h-8 w-8 animate-pulse rounded bg-secondary/70 lg:h-9" aria-hidden="true" />
+                                <span className="h-4 w-36 animate-pulse rounded bg-secondary/70 lg:w-40" aria-hidden="true" />
+                            </div>
+                        ) : activityError && !activityDays ? (
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground lg:mt-5 lg:gap-3" role="alert">
+                                <span>Reading activity is unavailable.</span>
+                                <button type="button" onClick={() => void refetchActivity()} className="focus-ring touch-target-44 rounded-sm font-medium text-foreground hover:underline">Retry</button>
+                            </div>
+                        ) : daysReadThisWeek > 0 ? (
+                            <p className="flex items-baseline gap-2 text-foreground lg:mt-5">
+                                <span className="font-display text-3xl font-semibold tabular-nums lg:text-4xl">
+                                    {daysReadThisWeek}
+                                </span>
+                                <span className="text-sm leading-5 text-muted-foreground">
+                                    reading {daysReadThisWeek === 1 ? "day" : "days"} this week
+                                </span>
+                            </p>
+                        ) : <p className="text-sm text-muted-foreground lg:mt-5">No reading days yet this week</p>}
+                        {activityError && activityDays ? (
+                            <p className="mt-1 text-xs text-muted-foreground">Could not refresh activity. <button type="button" onClick={() => void refetchActivity()} className="focus-ring rounded-sm font-medium text-foreground hover:underline">Retry</button></p>
                     ) : null}
                     {progressError && resumeIds.length === 0 ? (
                         <p className="mt-2 text-xs text-muted-foreground" role="alert">{recoveryMessage} {!rateLimited && <button type="button" onClick={retryHydration} className="focus-ring rounded-sm font-medium text-foreground hover:underline">Retry</button>}</p>
@@ -181,6 +180,7 @@ export function BrowseReadingPanel() {
                         <p className="mt-2 text-xs text-muted-foreground" role="status">Preparing your library…</p>
                     ) : null}
                 </section>
+                ) : null}
             </div>
         </div>
     );

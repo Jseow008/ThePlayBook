@@ -3437,3 +3437,58 @@ validate backend connectivity. Final scope is exactly the panel, its existing
 behavior test and this checkpoint. Ready PR publication/auto-merge identity
 will be recorded in the external evidence directory; required hosted CI/security
 remain merge gates. No deployment monitoring or production check is claimed.
+
+
+### Approved refinement: resume panel only — 31 October 2026
+
+User requested removal of the reading-day count and View progress from the
+Continue reading panel on desktop and narrow screens. PR #298 remains open;
+auto-merge was disabled before editing, so the superseded screenshot/layout
+will not be knowingly released. This is a refinement of the same change and
+branch, not an independently stacked PR. Final PR description is rewritten
+around the resulting layout.
+
+When showResumeCard is true, the activity section is omitted and its desktop
+column removed. Cover/title, saved progress and the existing Continue action
+remain; loading/error headings and Retry are unchanged. When no resume panel
+exists, the original standalone activity card remains, including its own
+loading/failure handling and account-progress recovery. Query/data/auth logic,
+hero, catalog/card styling, destinations and breakpoints are unchanged.
+
+32 focused tests pass after updating existing expectations for the requested
+absence of activity alongside resume; singular activity wording still has a
+no-unfinished-read case. Existing tests still exercise hydration, inaccessible
+items, empty accounts, slow loading, failures/retries and account switching.
+No CSS-literal or duplicated implementation tests added.
+
+Bounded Chrome check used a temporary actual-component copy, body byte-identical
+to the candidate with only hook imports replaced by synthetic local state. At
+1440x900 and 390x844, ready resume panel is 128 px and has its title, 9% progress
+and exactly one visible Continue destination; no activity count or profile
+link, and no horizontal overflow. Narrow pending/failure states show the visible
+Continue heading with no destination or false progress. Failure keeps Retry;
+confirmed recovery restores the unchanged destination/9% progress and removes
+the alert. A first immediate post-click snapshot did not show recovery; that
+attempt is retained as unconfirmed rather than counted as a pass. A fresh page
+and native Retry click with an explicit visible-action wait confirmed recovery.
+The no-resume state has no Continue region/action and retains the original
+96 px narrow activity card/profile destination. No live API or account data.
+
+Evidence added beside the earlier artifacts: desktop-resume-only.jpg,
+narrow-resume-only.jpg, resume-only-geometry.json, resume-only-recovery.json.
+Earlier screenshots/geometry describe the superseded activity-alongside layout;
+use the resume-only artifacts for the final candidate. Temporary fixture/dev
+cache removed, own server/tabs closed, viewport restored. No paid resources,
+AI calls, database changes or production writes. Phones, Safari, production
+browser verification and skipped tests remain outside coverage.
+Final local validation and updated release identity follow in this checkpoint
+and the external release record. One agent; no additional benchmark.
+
+Refined final validation: full lint/ratchets, typecheck and production build
+pass (including Sharp tracing/critical CSS). Full suite passes 260 suites /
+2,107 tests with 12 suites / 307 tests skipped; capacity harness 34/34. Inert
+localhost build settings do not establish backend connectivity. Data/query/auth
+logic again compared byte-for-byte with main and is unchanged. No dependencies,
+configuration or gates changed. #298 remains the release vehicle, with scope
+recheck and required CI/security rerun on the updated head; external release
+record stores final identity. No additional production/device verification.
