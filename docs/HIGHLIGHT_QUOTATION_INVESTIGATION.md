@@ -3354,3 +3354,86 @@ package lock, configuration, CI gate or test was changed to obtain the pass.
 One agent; no new hosted resources or application AI usage. Three visual
 approaches were inspected, two discarded; no benchmark or production journey
 was run for this bounded presentation change.
+
+
+## Browse Continue first — 31 October 2026
+
+Authorized scope: place Continue reading before weekly activity on desktop and
+narrow screens. Hide its duplicate visible heading when the existing resume
+link is present; preserve its accessible heading and visible loading/error
+heading. Keep the existing Continue reading action copy, destinations, hero,
+catalog order, card treatment and data behavior. No new action was introduced.
+
+Worktree `/Users/j/.codex/workspaces/netflux-browse-continue-first`, branch
+`codex/browse-continue-first`, fresh base `53c11a51ce136ea1b8f9842df2b5be27397f779f`.
+Resume is first in DOM and visually; the activity count/profile link becomes a
+secondary compact area when resuming is possible. The no-unfinished-read full
+activity card and guest behavior remain. Tablet visibility remains unchanged
+(hidden from 768 through 1023 px, present again at 1024 px). Only presentation
+and accessible labels/order changed; the source from ActivityDay through the
+render boundary is byte-identical to main. No hooks, fetching, auth, recovery,
+query keys, dependency, database, migration, CI or accounting change.
+
+Browser verification used the actual candidate component (body byte-identical
+to product) and main baseline in a temporary local fixture, with synthetic
+reading/activity/account states, existing HeroCarousel and ContentLane, and
+inert localhost public client settings. No user data, paid resource, live AI
+call or production mutation. Fixed fixture pages establish variant/mode before
+inspection. Browser Chrome responsive viewports are not physical devices.
+
+Observed final results:
+- Desktop 1440x900: ready panel 128 px versus main 192 px; catalog starts at
+  y=858 versus 922. Hero is identical (666 px, Outfit 54 px); catalog titles,
+  order, 240x360 card geometry, title clamps and destination hrefs agree.
+  Desktop loading panel is also 128 px, with visible heading and no false
+  progress. Ready heading is sr-only but names the resume region.
+- Narrow 390x844: resume begins y=450 rather than after activity at y=554.
+  Ready personal area 188 px versus 232 px; catalog y=698 versus 742. Hero
+  422 px / Outfit 32 px and 176x264 catalog cards/five-line titles agree.
+  Profile link retains a 44 px target. No horizontal overflow.
+- At 320 px activity wraps naturally (216 px panel) without overflow. At
+  1024 px panel is 128 px without overflow; at 1023 it remains hidden.
+- Resume and activity failures both remain visible; their independent Retry
+  buttons recover one section at a time (two panel errors -> one -> zero).
+  Keyboard Tab from Continue reaches View progress. Error content grows rather
+  than clipping into the resume action. Cached progress/activity retain their
+  stale warning/recovery controls; switching account shows neither the old
+  resume title nor its link. No unfinished read preserves the full activity
+  card (96 px narrow); guest has no personal panel.
+
+Evidence directory:
+`/Users/j/.codex/visualizations/2026/10/21/01a15e86-edbe-79c1-8d88-6877902e13bf/continue-first-implementation/`
+contains final desktop/narrow screenshots and geometry.json. The fixture,
+fixture-only images and generated dev route cache were removed, owned dev
+server/tab closed, and browser viewport reset before repository checks.
+
+Retained verification failures/limitations: first local navigation timed out
+while dev compilation completed; a capability tied to a closed test tab and a
+measurement helper closing over that tab became stale, so a fresh tab capability
+and pure DOM measurement callback were used. Hot-reloaded select controls later
+showed a selected value without switching the rendered fixture; those affected
+readings were rejected and replaced by fixed route checks with explicit mode
+markers. Empty global notification alerts were excluded by scoping assertions
+to the personal panel. Final desktop loading/ready height mismatch found during
+inspection was corrected by a common minimum and compact desktop placeholder;
+final measurements above replace that earlier candidate. No timing benchmark
+or speed claim; no production, phone or Safari verification. Skips remain
+outside verified coverage. No test/configuration or gate weakened.
+
+Initial focused suites: 32 tests passed (BrowseReadingPanel and HomeFeed), with
+focused lint and diff whitespace clean. Existing behavior suite covers account
+switching/loading/recovery; one assertion extends its real-progress case to
+check named sections and resume-before-activity DOM order. React review found
+no new hooks/effects or client data work; accessible names, normal flow,
+wrapping and existing keyboard actions preserved. Final repository checks and
+PR identity follow. One agent; no additional application provider usage.
+
+Final local validation: full lint and all four ratchets pass; typecheck and
+production build pass, including Sharp trace and critical-CSS checks. Full npm
+test passes 260 suites / 2,107 tests, with 12 suites / 307 tests skipped; the
+capacity harness passes 34/34. Build uses inert localhost settings, so expected
+catalog connection refusals and the existing Node localstorage warning do not
+validate backend connectivity. Final scope is exactly the panel, its existing
+behavior test and this checkpoint. Ready PR publication/auto-merge identity
+will be recorded in the external evidence directory; required hosted CI/security
+remain merge gates. No deployment monitoring or production check is claimed.
