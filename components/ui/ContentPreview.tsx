@@ -14,6 +14,7 @@ import { APP_NAME } from "@/lib/brand";
 import { buildReadPath } from "@/lib/content-paths";
 import { promoteFocusPreviewReadIntent } from "@/lib/focus-read-attribution";
 import { ResilientImage } from "@/components/ui/ResilientImage";
+import { PreviewAppearanceMenu } from "@/components/ui/PreviewAppearanceMenu";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import {
@@ -343,6 +344,10 @@ export function ContentPreview({
                             )}
                         </div>
                     </div>
+                </div>
+
+                <div className="mb-3 flex justify-end">
+                    <PreviewAppearanceMenu />
                 </div>
 
                 {/* ── Quick Mode Content ── */}

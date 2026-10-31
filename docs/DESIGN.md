@@ -122,6 +122,10 @@ Reader-specific themes currently supported:
 
 These are scoped theme overrides and should be documented separately from the browse shell.
 
+Preview also exposes the shared Light, Sepia and Dark theme through an Appearance
+control. Its description makes the shared Preview/reader setting explicit. Font,
+size, spacing and fullscreen remain reader controls.
+
 ### 4.3 Reader Controls
 
 Reader settings currently include:
