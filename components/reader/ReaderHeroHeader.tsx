@@ -9,9 +9,10 @@ import { ReaderSettingsMenu } from "./ReaderSettingsMenu";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 import { SaveToLibraryButton } from "@/components/ui/SaveToLibraryButton";
 import {
-    READER_COVER_FRAME_CLASS,
-    READER_COVER_IMAGE_SIZES,
-    READER_COVER_WRAPPER_CLASS,
+    COMPACT_READER_HERO_CLASS,
+    COMPACT_READER_COVER_FRAME_CLASS,
+    COMPACT_READER_COVER_IMAGE_SIZES,
+    COMPACT_READER_COVER_WRAPPER_CLASS,
 } from "@/components/ui/content-card-standards";
 
 /**
@@ -92,16 +93,16 @@ export function ReaderHeroHeader({
 
 
             {/* Hero Card */}
-            <div className="flex flex-col sm:flex-row gap-6 sm:gap-8">
+            <div className={coverImageUrl ? COMPACT_READER_HERO_CLASS : "grid gap-4"}>
                 {/* Cover Image */}
                 {coverImageUrl && (
-                    <div className={READER_COVER_WRAPPER_CLASS}>
-                        <div className={`${READER_COVER_FRAME_CLASS} rounded-xl overflow-hidden shadow-xl shadow-black/30 border border-white/10 relative mx-auto sm:mx-0`}>
+                    <div className={COMPACT_READER_COVER_WRAPPER_CLASS}>
+                        <div className={`${COMPACT_READER_COVER_FRAME_CLASS} rounded-xl overflow-hidden shadow-xl shadow-black/30 border border-white/10 relative`}>
                             <ResilientImage
                                 src={coverImageUrl}
                                 alt={title}
                                 fill
-                                sizes={READER_COVER_IMAGE_SIZES}
+                                sizes={COMPACT_READER_COVER_IMAGE_SIZES}
                                 priority
                                 surface="reader-hero"
                                 className="object-cover"
@@ -117,61 +118,61 @@ export function ReaderHeroHeader({
 
                 {/* Title & Info */}
                 <div className="flex-1 flex flex-col justify-center min-w-0">
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-[1.15] mb-2 text-center sm:text-left">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-[1.15] mb-2">
                         {title}
                     </h1>
                     {author && (
-                        <p className="text-base sm:text-lg text-muted-foreground mb-5 text-center sm:text-left">
+                        <p className="text-base sm:text-lg text-muted-foreground">
                             {author}
                         </p>
                     )}
+                </div>
 
-                    {/* Metadata Row */}
-                    <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-start sm:gap-2.5">
-                        <div className="flex flex-wrap items-center justify-center gap-2.5 sm:justify-start">
-                            {/* Duration Badge */}
-                            {durationSeconds && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs font-medium text-muted-foreground border border-border">
-                                    <Clock className="size-3.5" />
-                                    {Math.round(durationSeconds / 60)} min
-                                </span>
-                            )}
-
-                            {/* Type Badge */}
-                            <span className="px-3 py-1.5 rounded-lg bg-secondary text-xs font-bold uppercase tracking-wider text-muted-foreground border border-border">
-                                {type}
+                {/* Metadata Row */}
+                <div className={`flex flex-wrap items-center justify-between gap-x-2.5 gap-y-3 sm:justify-start ${coverImageUrl ? "col-span-2 sm:col-span-1 sm:col-start-2" : ""}`}>
+                    <div className="flex flex-wrap items-center justify-center gap-2.5 sm:justify-start">
+                        {/* Duration Badge */}
+                        {durationSeconds && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs font-medium text-muted-foreground border border-border">
+                                <Clock className="size-3.5" />
+                                {Math.round(durationSeconds / 60)} min
                             </span>
+                        )}
 
-                        </div>
+                        {/* Type Badge */}
+                        <span className="px-3 py-1.5 rounded-lg bg-secondary text-xs font-bold uppercase tracking-wider text-muted-foreground border border-border">
+                            {type}
+                        </span>
 
-                        <div className="flex items-center justify-center gap-2.5 sm:justify-start">
-                            {/* Display Settings */}
-                            <ReaderSettingsMenu />
+                    </div>
 
-                            {/* Save Button */}
-                            {contentId && (
-                                <SaveToLibraryButton
-                                    contentId={contentId}
-                                    contentTitle={title}
-                                    className="focus-ring inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors disabled:cursor-wait sm:h-10 sm:w-10"
-                                    loadingClassName="border-border/35 bg-secondary/25 text-muted-foreground/60"
-                                    savedClassName="border-primary/35 bg-primary/10 text-primary"
-                                    unsavedClassName="border-border/45 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                                    iconClassName="size-5"
-                                />
-                            )}
+                    <div className="flex items-center justify-center gap-2.5 sm:justify-start">
+                        {/* Display Settings */}
+                        <ReaderSettingsMenu />
 
-                            {/* Share Menu */}
-                            <ContentShareMenu
-                                url={shareUrl}
-                                title={title}
-                                text={`Read "${title}" on ${APP_NAME}`}
-                                source="reader_header"
+                        {/* Save Button */}
+                        {contentId && (
+                            <SaveToLibraryButton
                                 contentId={contentId}
-                                contentType={type}
-                                className="focus-ring h-11 w-11 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground sm:h-10 sm:w-10"
+                                contentTitle={title}
+                                className="focus-ring inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors disabled:cursor-wait sm:h-10 sm:w-10"
+                                loadingClassName="border-border/35 bg-secondary/25 text-muted-foreground/60"
+                                savedClassName="border-primary/35 bg-primary/10 text-primary"
+                                unsavedClassName="border-border/45 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                iconClassName="size-5"
                             />
-                        </div>
+                        )}
+
+                        {/* Share Menu */}
+                        <ContentShareMenu
+                            url={shareUrl}
+                            title={title}
+                            text={`Read "${title}" on ${APP_NAME}`}
+                            source="reader_header"
+                            contentId={contentId}
+                            contentType={type}
+                            className="focus-ring h-11 w-11 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground sm:h-10 sm:w-10"
+                        />
                     </div>
                 </div>
             </div>
