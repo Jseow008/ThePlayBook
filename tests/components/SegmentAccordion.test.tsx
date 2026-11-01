@@ -151,6 +151,17 @@ describe('SegmentAccordion', () => {
         expect(screen.getByRole('button', { name: 'Mark complete and continue' })).toBeInTheDocument();
     });
 
+    it.each([
+        { desktop: false, order: ['Continue', 'Mark incomplete'] },
+        { desktop: true, order: ['Mark incomplete', 'Continue'] },
+    ])('keeps completion keyboard order aligned with the viewport (desktop: $desktop)', ({ desktop, order }) => {
+        mockedUseMediaQuery.mockReturnValue(desktop);
+        render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-1" />);
+
+        const actions = screen.getByRole('button', { name: 'Continue' }).parentElement!;
+        expect([...actions.querySelectorAll('button')].map(button => button.textContent)).toEqual(order);
+    });
+
     it('uses Finish Reading on the final section until every section is complete', () => {
         const onFinishReading = vi.fn();
 

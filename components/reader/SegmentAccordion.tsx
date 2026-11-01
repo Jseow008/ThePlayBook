@@ -508,6 +508,15 @@ export function SegmentAccordion({
                 const isCompleted = completedSegments.has(segment.id);
                 const isLastSegment = index === segments.length - 1;
                 const isAudioActive = activeNarratedSegmentId === segment.id;
+                const incompleteAction = isCompleted && onSegmentIncomplete ? (
+                    <button
+                        type="button"
+                        onClick={() => onSegmentIncomplete(segment.id, index)}
+                        className="focus-ring inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:min-h-0 sm:order-first"
+                    >
+                        Mark incomplete
+                    </button>
+                ) : null;
                 return (
                     <div
                         key={segment.id}
@@ -629,16 +638,11 @@ export function SegmentAccordion({
                                         />
                                     </div>
 
-                                    <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                                        {isCompleted && onSegmentIncomplete && (
-                                            <button
-                                                type="button"
-                                                onClick={() => onSegmentIncomplete(segment.id, index)}
-                                                className="focus-ring inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:min-h-0"
-                                            >
-                                                Mark incomplete
-                                            </button>
-                                        )}
+                                    <div className={cn(
+                                        "mt-8 flex flex-wrap items-center justify-center gap-3 max-sm:-ml-[3.25rem] max-sm:w-[calc(100%_+_3.25rem)]",
+                                        incompleteAction && "max-sm:flex-col max-sm:gap-1"
+                                    )}>
+                                        {isReaderInteractionDesktop && incompleteAction}
                                         <button
                                             onClick={() => {
                                                 if (isLastSegment) {
@@ -684,6 +688,7 @@ export function SegmentAccordion({
                                                 </>
                                             )}
                                         </button>
+                                        {!isReaderInteractionDesktop && incompleteAction}
                                     </div>
                                 </div>
                             </div>

@@ -4440,3 +4440,71 @@ standalone typecheck passed. Local build used inert localhost configuration;
 backend-connectivity warnings are outside this presentation check. Temporary test
 route/baseline files and generated dev references are absent from candidate.
 Only the seven intended product/design/checkpoint files remain in scope.
+
+## Centered narrow completion actions — 1 November 2026
+
+User approved centering section completion under the wider narrow prose, with
+Continue above Mark incomplete and a tighter gap. Desktop, typography, button
+styling/padding/targets and completion behavior remain unchanged. Intentional
+stack on PR #308, exact parent fdd0de8855d14c702fc07a973264af6b889ae4be;
+branch codex/reader-completion-center, worktree
+/Users/j/.codex/workspaces/netflux-reader-completion-center. Parent header/token
+changes do not touch SegmentAccordion. Parent is mergeable against fetched main
+bf65fd38; local merge-tree confirms no conflicts. No parent branch or existing
+worktree was edited. Do not merge this child into the parent's feature branch.
+
+Below 640px the action container shares the prose width and center. Completed
+states use a 4px gap instead of 12px, without shrinking either button's padding
+or 44px target. Existing reader-interaction breakpoint puts Continue before
+Mark incomplete in both DOM and visible order on narrow screens; desktop keeps
+its existing Mark incomplete then Continue order. No new media-query hook,
+completion callback, label, persistence, API, account or dependency change.
+
+CUA Chrome exercised actual candidate and exact-parent SegmentAccordion copies
+with synthetic sections and memory-only callback recording. At 320/390px the
+candidate prose/action centers agree (160/195px); completed buttons are 44px
+high with a measured 4px gap. Unfinished labels wrap at 320px and fit at 390px.
+At 640/1440px both unfinished/completed group/button geometry and recorded
+font/spacing/colors/borders/padding match the parent exactly. No horizontal
+document overflow. Existing complete/open, Continue, incomplete, Finish Reading
+and Close section callbacks agree for parent and candidate at 320px. Tab follows
+Continue to Mark incomplete on narrow, and Mark incomplete to Continue on
+desktop. Enter on Continue and Space on Finish Reading trigger the expected
+single callback sequence. These are component/callback checks, not a claim
+about live progress storage. The 28 focused tests pass, including two added
+regressions for actual responsive DOM/keyboard ordering.
+
+Retained setup/check limitations: initial patch validation rejected an inaccurate
+test context and applied no files; corrected context before editing. One initial
+320px parent geometry sample caught the existing responsive prose transition;
+retained and excluded, then captured that affected sample settled. One later
+390px capture caught the existing section expansion after scenario switching;
+retained as during-expansion-not-used.png, followed by a settled capture. The
+first build caught an unsupported Testing Library exact option in the new test;
+removed that option (string names already match exactly), reran affected tests
+and build. No product workaround or weakened gate.
+
+Evidence in thread reader-completion-center-implementation/: geometry.json,
+behavior.json, parent-320.png, candidate-unfinished-320.png,
+candidate-completed-320.png, candidate-completed-390.png, fixture-source/ and
+check logs. Guest theme restored Dark, own Chrome tab closed, viewport reset,
+server stopped. Temporary route/baseline copies and generated dev types removed.
+No production data, real account, hosted project, paid resource or model call.
+Physical phones, Safari, skipped tests and production remain outside coverage.
+
+Next: finish lint/type/build checks, verify parent identity and conflict-free
+integration again, inspect own history and files, publish a ready stacked PR
+with parent #308 named and verify its GitHub scope. Hold child merge until #308
+lands, then retarget/refresh normally with all required checks; never merge the
+child into #308 or bypass required gates. No timer/post-merge wait requested.
+One implementer, no subagents; exact Codex usage unavailable.
+
+Final candidate: full lint/ratchets, corrected 28-test focused suite, production
+build (including Sharp traces/critical CSS) and standalone typecheck passed.
+The inert localhost build does not establish backend connectivity. While these
+checks ran, #308 merged as 4c8511e495248949d8cc367b6ee0d5029d456be0. Its full
+tree is byte-for-byte identical to tested parent fdd0de88, verified by Git diff;
+refresh own commit onto that merge without changing the tested application
+tree. Publish against main, containing #308, rather than merging into its feature
+branch. Preserve all required checks and recheck conflict-free integration and
+own file/history scope before publication/auto-merge.
