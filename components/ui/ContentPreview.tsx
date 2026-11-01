@@ -309,6 +309,7 @@ export function ContentPreview({
                                     <BookOpen className="size-5" />
                                     <span className="truncate">{readCtaLabel}</span>
                                 </Link>
+                                <PreviewAppearanceMenu />
                                 <SaveToLibraryButton
                                     contentId={item.id}
                                     contentTitle={item.title}
@@ -345,10 +346,6 @@ export function ContentPreview({
                             )}
                         </div>
                     </div>
-                </div>
-
-                <div className="mb-3 flex justify-end">
-                    <PreviewAppearanceMenu />
                 </div>
 
                 {/* ── Quick Mode Content ── */}
@@ -464,6 +461,8 @@ export function ContentPreview({
                         <BookOpen className="size-4 shrink-0" />
                         <span className="truncate">{readCtaLabel}</span>
                     </Link>
+
+                    <PreviewAppearanceMenu />
 
                     <SaveToLibraryButton
                         contentId={item.id}
