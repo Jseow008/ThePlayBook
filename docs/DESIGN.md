@@ -124,6 +124,11 @@ Mark incomplete uses a faint theme-accent background on hover and keyboard
 focus, with a stronger pressed fill. Its existing focus ring, dimensions and
 text styling remain.
 
+Finish Reading closes the final section and brings the completion area into view
+only when needed after the collapse, with keyboard focus on that region. Reduced
+motion uses instant scrolling; Undo cancels any pending completion navigation.
+Reopening an already-completed read does not repeat this navigation.
+
 ### 4.2 Reader Themes
 
 Reader-specific themes currently supported:

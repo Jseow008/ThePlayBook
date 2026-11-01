@@ -797,6 +797,53 @@ describe('ReaderView', () => {
         }
     });
 
+    it.each([
+        { label: 'desktop offscreen', desktop: true, reducedMotion: false, top: 1000, scrolls: true },
+        { label: 'narrow offscreen', desktop: false, reducedMotion: false, top: 20, scrolls: true },
+        { label: 'reduced motion', desktop: false, reducedMotion: true, top: 1000, scrolls: true },
+        { label: 'already visible', desktop: true, reducedMotion: false, top: 200, scrolls: false },
+    ])('Finish Reading reaches completion once when $label', async ({ desktop, reducedMotion, top, scrolls }) => {
+        vi.useFakeTimers();
+        try {
+            vi.mocked(useMediaQuery).mockReturnValue(desktop);
+            vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: reducedMotion }));
+            const scrollIntoView = vi.fn();
+            Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+            vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top } as DOMRect);
+            const { rerender } = render(<ReaderView content={mockContent} />);
+            fireEvent.click(screen.getByTestId('manual-open-seg-1'));
+            fireEvent.click(screen.getByTestId('finish-reading'));
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
+            await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+            expect(scrollIntoView).not.toHaveBeenCalled();
+            await act(async () => { await vi.advanceTimersByTimeAsync(100); });
+            const completion = screen.getByRole('region', { name: 'Reading complete' });
+            expect(completion).toHaveFocus();
+            expect(scrollIntoView).toHaveBeenCalledTimes(scrolls ? 1 : 0);
+            if (scrolls) expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' });
+            expect(saveReadingProgressMock).toHaveBeenCalledWith(mockContent.id, expect.objectContaining({ isCompleted: true }));
+            rerender(<ReaderView content={mockContent} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+            expect(scrollIntoView).toHaveBeenCalledTimes(scrolls ? 1 : 0);
+            expect(window.scrollTo).not.toHaveBeenCalled();
+        } finally { vi.useRealTimers(); }
+    });
+
+    it('Undo cancels pending Finish Reading navigation', async () => {
+        vi.useFakeTimers();
+        try {
+            const scrollIntoView = vi.fn();
+            Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+            render(<ReaderView content={mockContent} />);
+            fireEvent.click(screen.getByTestId('finish-reading'));
+            act(() => { toastSuccessMock.mock.calls[0][1].action.onClick(); });
+            await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+            expect(screen.queryByRole('region', { name: 'Reading complete' })).not.toBeInTheDocument();
+            expect(scrollIntoView).not.toHaveBeenCalled();
+            expect(removeFromProgressMock).toHaveBeenCalledWith(mockContent.id);
+        } finally { vi.useRealTimers(); }
+    });
+
     it('finishes all segments and lets undo restore the prior reading state', async () => {
         progressState.value = {
             completed: ['seg-1'],
