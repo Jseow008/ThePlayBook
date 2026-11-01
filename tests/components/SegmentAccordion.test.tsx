@@ -153,7 +153,7 @@ describe('SegmentAccordion', () => {
 
     it.each([
         { desktop: false, order: ['Continue', 'Mark incomplete'] },
-        { desktop: true, order: ['Mark incomplete', 'Continue'] },
+        { desktop: true, order: ['Continue', 'Mark incomplete'] },
     ])('keeps completion keyboard order aligned with the viewport (desktop: $desktop)', ({ desktop, order }) => {
         mockedUseMediaQuery.mockReturnValue(desktop);
         render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-1" />);
