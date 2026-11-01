@@ -116,6 +116,9 @@ Below `sm`, expanded section prose uses the wider body area with balanced side
 padding. Section headings and completion controls retain their existing inset;
 desktop prose width and all typography remain unchanged.
 
+Below `sm`, section-completion labels wrap within the existing body inset when
+needed, preserving icon size and the minimum 44px target. Desktop stays single-line.
+
 ### 4.2 Reader Themes
 
 Reader-specific themes currently supported:

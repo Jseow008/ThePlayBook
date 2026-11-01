@@ -658,7 +658,7 @@ export function SegmentAccordion({
                                                 handleToggle(nextSegment, index + 1);
                                             }}
                                             className={cn(
-                                                "focus-ring inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors sm:min-h-0 sm:px-5",
+                                                "focus-ring inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors max-sm:max-w-full max-sm:whitespace-normal max-sm:text-center sm:min-h-0 sm:px-5",
                                                 !isLastSegment
                                                     ? "border-primary/35 bg-primary/10 text-primary hover:border-primary/50 hover:bg-primary/15"
                                                     : isContentCompleted
@@ -669,9 +669,9 @@ export function SegmentAccordion({
                                                 {!isLastSegment ? (
                                                     <>
                                                         {isCompleted
-                                                            ? <ChevronRight className="size-4" aria-hidden="true" />
-                                                            : <CheckCircle2 className="size-4" aria-hidden="true" />}
-                                                        <span>{isCompleted ? "Continue" : "Mark complete and continue"}</span>
+                                                            ? <ChevronRight className="size-4 max-sm:shrink-0" aria-hidden="true" />
+                                                            : <CheckCircle2 className="size-4 max-sm:shrink-0" aria-hidden="true" />}
+                                                        <span className="max-sm:min-w-0">{isCompleted ? "Continue" : "Mark complete and continue"}</span>
                                                     </>
                                             ) : isContentCompleted ? (
                                                 <>
@@ -679,7 +679,7 @@ export function SegmentAccordion({
                                                 </>
                                             ) : (
                                                 <>
-                                                    <CheckCircle2 className="size-4" />
+                                                    <CheckCircle2 className="size-4 max-sm:shrink-0" />
                                                     Finish Reading
                                                 </>
                                             )}
