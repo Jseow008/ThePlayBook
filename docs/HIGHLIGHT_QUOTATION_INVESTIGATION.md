@@ -3973,3 +3973,87 @@ subsequent typecheck passed. No temporary route remains. Scope is the seven-line
 ContentPreview placement diff plus this continuity record. One implementer, no
 subagents/provider calls/paid resources; approximately seven minutes including
 setup corrections and full local checks. Exact Codex token usage unavailable.
+
+### Title-aligned narrow reader header — 2026-11-01
+
+Approved implementation of the clarified visual: below sm, metadata and the
+Aa/Save/Share controls occupy separate rows beginning at the title/author's left
+edge, to the right of the cover. Preserve desktop layout, typography, cover and
+button sizes. This does not implement the earlier paragraph-width proposal.
+
+Branch codex/reader-title-alignment in
+/Users/j/.codex/workspaces/netflux-reader-title-alignment starts at #302 head
+14929d525c80046a0f8be04443e41ab7fb98063b, preserving its Preview action order.
+#302 was still open with protected auto-merge enabled when this work started.
+Keep the dependency explicit until it merges; never bypass either release gate.
+The managed-worktree helper rejected the source path because this project chat
+is attached to the reference mirror; a normal isolated git worktree was created
+instead. The previous review checkout and its uncommitted checkpoint were left
+untouched.
+
+Product changes are class-only in ReaderHeroHeader and ReaderHeroSkeleton:
+second grid column for covered narrow headers, separate left-aligned rows,
+wrapping within each row when necessary, explicit restoration of desktop flex
+direction/alignment. No-cover headers retain the full title column. Loading
+presentation matches. No new hooks, state, requests, persistence, dependencies,
+copy, image sizes, button sizes, settings or Preview changes.
+
+Local CUA Chrome verification used the actual candidate component and a parent
+#302 component copy differing only by export name and relative-import paths.
+Actual guest providers, settings, save/share controls and AudioPlayer were used.
+Data was synthetic: logo cover, sample headings, local five-second silent WAV;
+public backend configuration points only to inert localhost. No live account,
+saved note, paid service or model call was involved.
+
+- Short/long titles at 320, 390, 640 and 1440; screenshot-length title also at561.
+  Narrow candidate title, author, badges and controls all start at x100 with
+  20px page gutter, 64px cover and 16px gap. No horizontal overflow. Narrow
+  controls remain44x44; cover frame64x96 (inner image62x94).
+- At640/1440, parent and candidate title/author, cover and control geometry,
+  header dimensions and progress agree. Controls40x40; cover frame112x168.
+  Audio height remains115. The first post-mount audio position was captured
+  during its existing entrance animation; it is not a static-position result.
+- Computed family, size, weight, spacing and line height agree before/after:
+  narrow title24/27.6 and author16/24; desktop title36/41.4 and author18/28.
+- No-cover390: title, badges and controls x20; no phantom cover column.
+  Reader loading at320/390 aligns its title, badges and controls at x100;
+  640/1440 retains the desktop row. No loading overflow or false progress.
+- Settings opens; Escape closes and restores focus; Tab proceeds Aa -> Save ->
+  Share. No Save/share action or preference change was performed. These checks
+  do not establish live persistence or sharing. Test tab closed, viewport reset,
+  own server stopped, temporary route/audio/generated dev types removed.
+
+Retained harness corrections: initial Chrome navigation timed out and left an
+about:blank tab while the fixture compiled; warm navigation succeeded after
+inspection. Initial no-cover measurement assumed three grid children; corrected
+the DOM measurement to use the last child. No product change was needed for
+either. A patch with incorrect documentation context made no file change.
+
+15 focused component/settings/loading tests pass. Full lint and all ratchets,
+production build (including Sharp traces/critical CSS) pass; typecheck follows.
+Build used inert localhost client configuration, with existing offline-catalog
+and Node localstorage warnings; it is not backend validation. No new class-
+mirroring unit test was added for this reversible layout adjustment. Required
+hosted CI/security retain the full suite; no skips count as verified coverage.
+Physical phones, Safari and production browsing remain outside these checks.
+
+Evidence: thread reader-title-alignment-implementation/ contains geometry.json,
+boundaries-and-typography.json, interaction-checks.json, parent/candidate captures,
+fixture sources and check logs. One implementer, no agents; token usage unknown.
+Next: complete typecheck, inspect exact scope/history, publish a ready PR on top
+of #302, verify GitHub file list and required PR scope, then enable protected
+squash auto-merge with parent dependency respected. No post-merge monitoring
+or recurring follow-up requested.
+
+Final standalone typecheck passed after the clean production build. Intended
+own scope is exactly the two reader/loading TSX files, design guide and this
+checkpoint; inherited #302 consists only of ContentPreview and its checkpoint.
+Local uncommitted scope and parent/main ancestry inspected before publication.
+
+#303 created as an intentional stack while #302 was open. #302 then merged as
+66a07591853a085a43758bbbd590eba47b6f0b9f. Refreshed this branch onto that freshly
+fetched main, dropping the inherited parent commit; verified the entire tracked
+tree matches the already-tested candidate before this evidence-only addition.
+#303 now contains only the four own files. Remove its temporary stacked-pr label,
+verify the refreshed GitHub diff/PR scope, and enable normal protected squash
+auto-merge. Final head/check state is retained externally in release.json.

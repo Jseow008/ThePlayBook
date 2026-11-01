@@ -84,12 +84,12 @@ function ReaderHeroSkeleton() {
                 <div className="h-8 w-full rounded-full bg-secondary/55 sm:h-9" />
                 <div className="h-5 w-3/5 rounded-full bg-secondary/40" />
             </div>
-            <div className="col-span-2 flex flex-wrap items-center justify-between gap-3 sm:col-span-1 sm:col-start-2 sm:justify-start">
-                <div className="flex gap-2">
+            <div className="col-start-2 flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start">
+                <div className="flex flex-wrap gap-2">
                     <div className="h-7 w-16 rounded-lg border border-border/60 bg-secondary/45" />
                     <div className="h-7 w-20 rounded-lg border border-border/60 bg-secondary/45" />
                 </div>
-                <div className="flex gap-2.5">
+                <div className="flex flex-wrap gap-2.5 sm:flex-nowrap">
                     {[0, 1, 2].map((key) => <div key={key} className="size-11 rounded-full border border-border/50 bg-secondary/35 sm:size-10" />)}
                 </div>
             </div>
