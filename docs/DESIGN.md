@@ -112,6 +112,10 @@ It includes:
 
 Primary source: `components/reader/ReaderView.tsx`
 
+Below `sm`, expanded section prose uses the wider body area with balanced side
+padding. Section headings and completion controls retain their existing inset;
+desktop prose width and all typography remain unchanged.
+
 ### 4.2 Reader Themes
 
 Reader-specific themes currently supported:

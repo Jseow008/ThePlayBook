@@ -4183,3 +4183,87 @@ run41280910265 attempt1; successful retry is distinct evidence, not a relabeled 
 Next: publish a separate ready test-fix PR and retain CI/security merge gates.
 Refresh #305's approved prose-width commit without changing its product tree;
 keep the test fix separate and include it through main after protected merge.
+
+### Wider narrow-screen prose — 2026-11-01
+
+Approved implementation of the reviewed wider paragraphs, on top of #304.
+Branch codex/reader-narrow-paragraphs in
+/Users/j/.codex/workspaces/netflux-reader-narrow-paragraphs starts at #304 head
+57018a4952e4010f48293befcb519825e80ece57. The parent is still open. Preserve its
+single-row header refinement; do not replace it with #303's earlier two-row UI.
+
+Only SegmentAccordion's prose-container classes change: recover the existing
+3.25rem (52px) body inset below sm using a negative margin and matching width;
+restore margin0/widthauto at sm. The wrapper, headings, completion controls,
+typography, markup, anchor resolver, callbacks, notes, auth and storage code are
+unchanged. Update DESIGN to record that narrow prose has balanced side padding.
+
+40 focused tests pass: SegmentAccordion/HighlightPopover/drafts34, NotesDrawer6.
+Lint and every ratchet, production build (Sharp traces/critical CSS included) and
+standalone typecheck pass. Build used inert localhost public client settings;
+existing offline-catalog/Node warnings do not establish backend connectivity.
+No implementation-mirroring test added for this one-line CSS change; full CI
+remains required. Skipped tests, physical phones and Safari remain unverified.
+
+CUA Chrome checks used actual SegmentAccordion against an exact #304 copy with
+only its export renamed. Real NotesDrawer, HighlightPopover and useNoteDraft
+bodies were copied into a temporary fixture with imports redirected only to a
+controlled synthetic identity, fetch response and memory-only mutation service;
+MobileNoteComposer and settings remained actual imports. This verifies geometry,
+activation and component interaction, not hosted auth, RLS, persistence, complete
+ReaderView navigation or real data. Two synthetic saved passages/thoughts were
+used; no production account, note, provider call or paid resource was involved.
+
+- At390px prose266 ->318, x88 ->36. At320px196 ->248. Computed18px Georgia stack,
+  weight400 and30.96 line height match. Text and both highlight IDs/quotations,
+  colours and stored anchor data remain unchanged; marks reflow naturally.
+- At640px prose508 and1440px636 remain identical to parent. Heading positions,
+  completion-button class strings, horizontal positions and widths match at
+  every measured size; vertical position naturally follows shorter paragraphs.
+  No document overflow was introduced.
+- Tapping the wrapped narrow highlight opens its own thought; Edit opens the
+  composer with the exact quotation. Multiline unfinished text survives Escape
+  and reopening. Writes stay0 through dismissal/reopening; explicit Cancel
+  returns to the saved baseline. Explicit Save changes only noteA in the memory
+  adapter (writes1); noteB and both saved quotations remain unchanged.
+- Desktop native click on an actual visible highlight fragment opens the floating
+  note; Edit works. Escape retains its multiline unsaved edit without a write;
+  Cancel discards the test edit, and read-only Escape closes the popover.
+
+Retained attempts: first navigation timed out while Next compiled; inspected the
+blank tab/server then warm navigation worked. The first drawer Edit locator
+incorrectly searched inside the note-row button rather than its sibling controls;
+corrected from observed DOM. Two draft comparisons encountered CUA's redacted
+textarea.value proxy; rendered-text equality and the visible screenshot confirm
+the exact54-character synthetic draft. This was not product draft loss. A desktop
+bounding-box-center click missed the gap between wrapped fragments; native click
+at a measured getClientRects fragment succeeded. No product workaround added.
+
+Separate pre-existing observation: at320px the264.55px completion button extends
+18.28px past the overflow-hidden section edge, identically in parent and candidate.
+Its classes/position/size remain untouched as requested. Not counted as a pass or
+fixed by widening prose. Record separately rather than expanding this change.
+
+Test-owned drafts removed and guest theme restored to Dark; memory-only note
+data disappears with fixture teardown. Owned tab/server closed, viewport reset,
+temporary route/components and generated dev types removed before lint/build.
+Evidence: thread reader-narrow-paragraphs-implementation/{geometry.json,
+mobile-note-controls.json,desktop-note-controls.json,preexisting-completion-320.json,
+parent-390.png,candidate-390.png,mobile-draft-recovered.png,fixture-source/,logs}.
+
+Parent #304's required validate run41280910265 failed on unchanged FocusFeed
+impression observer assertion at tests/components/FocusFeed.test.tsx:428. The
+parent/full run passed2113 tests and skipped307, with1 failure; skips are not
+verified coverage. Neither changed reader file is imported by that test/FocusFeed,
+and their source plus lockfile are unchanged. Isolated FocusFeed53/53 passes.
+Requested one failed-job rerun, without code/test/CI changes or weakened gates.
+Do not repeatedly rerun unchanged failures. Keep release dependent on the parent
+passing, and preserve its failure even if the rerun passes.
+
+Next: inspect exact local history/scope, publish a ready intentional stack naming
+#304 and verify the GitHub file list. While #304 is held, do not merge this child
+into its parent feature branch or bypass the parent gate. Once parent merges,
+refresh onto merged main, compare the tested product tree and use normal protected
+squash auto-merge after own PR scope/required gates. No recurring monitor requested.
+One implementer, no subagents; exact usage unavailable. This is a presentation
+change, not a speed claim or a historical-content/highlight-matching change.

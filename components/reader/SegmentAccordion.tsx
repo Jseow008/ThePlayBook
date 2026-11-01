@@ -610,7 +610,7 @@ export function SegmentAccordion({
                                             onMouseLeave={isReaderInteractionDesktop ? endHighlightPreview : undefined}
                                             onClick={activateHighlight}
                                             className={cn(
-                                            "reading-copy reading-copy-prose reading-copy-strong prose max-w-none relative transition-all duration-300",
+                                            "reading-copy reading-copy-prose reading-copy-strong prose max-w-none relative -ml-[3.25rem] w-[calc(100%_+_3.25rem)] transition-all duration-300 sm:ml-0 sm:w-auto",
                                             `reader-size-${fontSize}`,
                                             `reader-font-${fontFamily}`,
                                             `reader-spacing-${lineHeight}`,
