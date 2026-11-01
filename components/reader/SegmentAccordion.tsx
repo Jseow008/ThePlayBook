@@ -512,7 +512,7 @@ export function SegmentAccordion({
                     <button
                         type="button"
                         onClick={() => onSegmentIncomplete(segment.id, index)}
-                        className="focus-ring inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:min-h-0"
+                        className="focus-ring inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-accent/40 focus-visible:bg-accent/40 focus-visible:text-foreground active:bg-accent/60 active:text-foreground sm:min-h-0"
                     >
                         Mark incomplete
                     </button>
