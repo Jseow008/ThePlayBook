@@ -124,7 +124,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         focusAfterScroll?: boolean;
     } | null>(null);
     const [progressChoiceDestination, setProgressChoiceDestination] = useState<
-        { kind: "segment"; segmentId: string } | { kind: "completion" } | null
+        { kind: "segment"; segmentId: string } | { kind: "completion"; afterCollapse?: boolean } | null
     >(null);
     const completionRef = useRef<HTMLDivElement | null>(null);
     const latestAudioStateRef = useRef({ timeSec: 0, durationSec: 0 });
@@ -606,6 +606,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         setManuallyIncompleteSegments(new Set());
         setMaxSegmentIndex(finalMaxSegmentIndex);
         setExpandedSegmentId(null);
+        setProgressChoiceDestination({ kind: "completion", afterCollapse: true });
         progressSnapshotRef.current = finalProgress;
 
         if (finalProgress && readingProgressLoaded) {
@@ -619,6 +620,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             action: {
                 label: "Undo",
                 onClick: () => {
+                    setProgressChoiceDestination(null);
                     setCompletedSegments(new Set(previousCompletedSegments));
                     setManuallyIncompleteSegments(new Set(previousManuallyIncompleteSegments));
                     setMaxSegmentIndex(previousMaxSegmentIndex);
@@ -666,6 +668,8 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         if (!isBookCompleted || !completionRef.current) return;
         const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        // Finish Reading must wait for the section's 300ms collapse even when
+        // the destination scroll itself uses reduced-motion (instant) behavior.
         const timeoutId = window.setTimeout(() => {
             const completion = completionRef.current;
             if (completion) {
@@ -680,7 +684,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                 completion.focus({ preventScroll: true });
             }
             setProgressChoiceDestination(null);
-        }, reducedMotion ? 0 : 320);
+        }, reducedMotion && !progressChoiceDestination.afterCollapse ? 0 : 320);
         return () => window.clearTimeout(timeoutId);
     }, [isBookCompleted, progressChoiceDestination, requestSegmentScroll]);
 

@@ -4576,3 +4576,85 @@ checks, compare its tree and refresh/retarget onto main without bypassing gates.
 No timer or post-merge monitoring requested. One implementer, no subagents.
 
 Final local checks: full lint/ratchets, production build including Sharp traces/critical CSS, and standalone types passed. Inert localhost build is not backend-connectivity verification. #310 remains open at the tested exact parent; publish against its branch with merge held.
+
+## Finish Reading completion destination — 2 November 2026
+
+User requested the narrow Finish Reading navigation correction built on #311.
+Parent #311 remains open at3323154892a0fd0c5b6c8567f62ee5181de88ce5, branch
+codex/mark-incomplete-feedback; its parent #310 is already merged asbb3c9c6b.
+Own branch codex/reader-finish-destination starts at that exact #311 head in
+/Users/j/.codex/workspaces/netflux-reader-finish-destination. Managed-worktree
+creation rejected the external repository source path, so a separate ordinary
+Git worktree was created instead. Existing worktrees/dirty checkpoints untouched.
+
+Reproduction: local actual #311 ReaderView + real SegmentAccordion and completion
+card, three synthetic sections with long final prose. At1440px, clicking Finish
+Reading collapsed the final section and the browser returned toscrollY0. The
+completion heading was at925.75px (below900px viewport); no completion focus.
+This confirms collapse-induced loss of destination in this controlled case,
+without claiming every production browser follows identical scroll anchoring.
+
+Candidate reuses existing completion navigation. Explicit Finish requests the
+completion destination after the section's300ms collapse (320ms settlement),
+scrolls only if its start is outside the existing visible range, and focuses the
+region with preventScroll. Reduced-motion destination scrolling is instant but
+still waits for collapse. Existing guest completed-progress choice timing stays
+unchanged. Undo clears pending navigation. Progress snapshots/persistence, Undo
+restore data, completion contents, AI/recommendation behavior, #311 feedback,
+layout and styling are unchanged. No API/auth/database/accounting/dependency or
+workflow changes.
+
+Browser evidence: real candidate desktop completion heading268.75px and region
+focused; narrow390px final candidate heading188.09px, region108.09px and focused.
+All3 sections completed and collapsed. Actual toast Undo restores0/3 and removes
+completion region. Candidate reload preserves3/3 without automatically focusing
+completion or returning to it. Reset synthetic progress used the normal provider
+operation afterward; no disposable accounts or paid services created, no model
+requests made. Dev API failures/429 from inert localhost data configuration mean
+actual recommendation retrieval is not validated. Completion navigation and
+existing chat/recommendation entry-point presentation are what this fixture
+covers. Physical devices, Safari, native reduced-motion browser behavior and
+production remain unverified.
+
+All113 ReaderView/SegmentAccordion tests pass on final candidate. Five new cases
+cover desktop/narrow offscreen completion, reduced motion, already-visible
+completion and pending Undo. They assert no premature scroll before collapse,
+correct single scroll/focus, unchanged completed save, no repeat on rerender,
+and removal of progress on Undo when no previous snapshot existed. Existing
+partial-progress Undo tests still pass. First new Undo test incorrectly expected
+an empty prior read to be saved as incomplete; corrected to existing remove
+behavior without changing application accounting/persistence.
+
+Retained setup limitations: first browser navigation timed out during compilation;
+existing tab was recovered, without another navigation. Its failed declaration
+needed a new handle binding. First reload sequence ran before hydration and kept
+old fixture state, so it was rejected and repeated only after actual state was
+confirmed. First manual Undo inspection outlasted the toast; repeated the same
+entry path with immediate Undo in one call and verified restored progress. One
+local default Turbopack build failed because shared node_modules symlink lies
+outside its hermetic worktree root; preserved log and using supported local
+webpack build instead. CI's normal build configuration is unchanged and required.
+
+Evidence: thread reader-finish-destination/{browser-results.json,candidate-390.png,
+fixture-source/,turbopack-symlink-build-failure.log}. Screenshot is actual local
+reader with synthetic content, not production. Own tab/server closed, viewport
+reset, synthetic progress removed; temporary route and parent-copy component
+removed before final lint/build. Generated fixture type outputs archived outside
+source tree. No subagents, no timer; exact Codex usage unavailable.
+
+Next: finish local webpack build with Sharp/critical CSS and typecheck; inspect
+own four-file diff against exact #311 parent. Publish ready stacked PR naming
+#311 and label stacked-pr. Hold child merge while #311 is unmerged; never merge
+child into parent's feature branch. Once parent merges, refresh/retarget child
+onto main with fresh required CI/security checks. No post-merge waiting requested.
+
+Final local validation: webpack compilation passed, but its Sharp trace check
+also exposed the shared-dependency path issue. Kept that failed trace log,
+replaced only this worktree's symlink with a local copy-on-write dependency copy,
+and reran the unchanged standard npm build. Default Turbopack build, Sharp traces
+and critical CSS all now pass; subsequent standalone typecheck passes. No build
+config/workflow/dependency versions changed. Full lint and final113 focused tests
+also pass. Own final scope is ReaderView, ReaderView tests, DESIGN and checkpoint.
+Final browser navigation flag uses same320ms normal path already tested desktop;
+390px final candidate rechecked after the reduced-motion settlement refinement.
+No post-merge monitoring requested; keep child merge held while #311 is open.
