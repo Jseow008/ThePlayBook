@@ -4057,3 +4057,96 @@ tree matches the already-tested candidate before this evidence-only addition.
 #303 now contains only the four own files. Remove its temporary stacked-pr label,
 verify the refreshed GitHub diff/PR scope, and enable normal protected squash
 auto-merge. Final head/check state is retained externally in release.json.
+
+### Read first-screen review — 2026-11-01 (no implementation)
+
+Public production guest IAB review, one long-title audio record:
+9d98d96c-4f38-430a-bfb1-ea5e4e6614c9. Desktop1440x900: title36px, compact112px
+cover; audio top296.2,h115; Big Idea heading528.2, Sections heading718.1, first
+section title775.7. Full Big Idea and first section are visible: no desktop
+hierarchy change justified by this sample. Narrow390x844: title24px in270px
+column beside64px cover. Metadata and actions wrap within that same title column;
+Aa/Save/Share y288.4..332.4; audio364.4..479.4; Big Idea heading588.4 and Sections
+heading894.0. No horizontal overflow. This is a layout opportunity, not evidence
+of broken reading, slow loading or confusing controls.
+
+Proposal only: give narrow metadata and Aa/Save/Share full width below title/cover,
+with8px gaps at390px. Preserve every control, existing order,44px targets, typography,
+audio player, progress, Big Idea and section structure. Allow natural wrapping at
+smaller widths rather than shrinking targets. Desktop unchanged. Current views
+in comparison are actual production screenshots; proposed narrow view is an
+approximate HTML mockup, not a screenshot of implemented product. Prototype
+initially wrapped Share; corrected gap10 to8 and verified all five items fit44px
+single-row height at350px content width. No claim of exact implementation savings.
+
+Guest Preview→Read→Back preserved Dark appearance. Scroll sample716 before vs831
+after is inconclusive because PageDown was still settling before navigation;
+not classified as a defect and not proof of position preservation. No prefs,
+notes, save/share state, audio or content were edited. No app tests run or product
+code changed. Physical phones/Safari and other content lengths unverified.
+
+Evidence in thread reader-first-screen-review/{observations.json,current-desktop.png,
+current-narrow.png,cover.png}; comparison netflux-reader-first-screen.html.
+Render wrapper setup initially rejected destination with --serve, corrected invocation;
+server restart needed for updated cached fragment. Owned tabs/server closed and
+viewport override reset. Next action: await user design choice before implementation.
+
+### Reader single-line refinement — 2026-11-01
+
+User approved the title-aligned single row with compact metadata, directly below
+its author even for short text. Preserve current icon/button sizes;320px single-line
+sizing is explicitly deferred. Discovered #303 already merged as2afbb93b; freshly
+fetched origin/main and started codex/reader-aligned-controls in the sequentially
+reused /Users/j/.codex/workspaces/netflux-preview-appearance-theme. Initial checkout
+was blocked by local review checkpoint additions; preserved them externally and
+appended them onto the fresh checkpoint, losing no evidence. No stacked change.
+
+ReaderHeroHeader groups title/author and controls in a narrow normal-flow wrapper;
+sm:contents retains desktop's original grid placement. Narrow controls use4px gaps,
+compact pill padding, title-case type and omit the decorative clock icon. Font
+family/size, cover,44px narrow targets,40px desktop targets,20px Save/Share icons,
+shared Aa implementation/settings, audio and progress logic unchanged. Sixteen
+pixels separates author and controls. Matching ReaderHeroSkeleton and design guide
+updated. No requests, hooks, account/persistence/auth, Preview or dependency changes.
+
+15 focused header/settings/loading tests pass. Local CUA IAB actual-component
+synthetic guest fixture compares #303 parent copied with export rename only against
+candidate. Logo cover and synthetic content; inert localhost backend, no real
+account, notes, Save/Share, preference changes, audio playback, AI or paid resource.
+
+-390 long: title/actions x100, one44px row; author-to-row16px. Header254.375 vs
+parent296.375. Short: row16px below author, header171.594 vs250. Parent's cover-height
+space removed. Same typeface/title24px and unchanged three44px targets.
+-320 short and missing-author: title/actions x100, safe78px two-row layout, no
+horizontal overflow. No-cover320: title/actions x20, one44px row, no phantom column.
+This is not a completed320px single-row refinement; that remains deferred.
+-1440 long/short and640 long: parent/candidate title and action positions,40px row
+and total header dimensions agree; desktop title36px at1440. Original sm gap-y3
+restored explicitly; measured cases do not wrap at desktop.
+-390 loading cover64x96 atx20 and text/control wrapperx100,w270. No horizontal
+overflow. Actual settings opens, Escape restores Aa, Tab goes Aa→Save→Share. No
+settings values changed. No app state or server data saved.
+
+Retained setup issue: first local navigation timed out while Next compiled; after
+reading server200 and obtaining the existing tab, checks worked. Removed trailing
+whitespace from initial edit. No repeated product experiments or scope expansion.
+Temporary route/parent component removed, own server/tab closed, viewport reset,
+generated .next/dev removed before final build to avoid deleted-fixture types.
+Local screenshots are component fixtures, not production. Evidence: thread
+reader-aligned-controls-implementation/{checks.json,local-long-390.png,
+local-short-390.png}. Physical phones, Safari, signed-in persistence and skipped
+tests are outside verified coverage. No new implementation-mirroring unit tests;
+required hosted CI retains full-suite verification. React checklist: no added
+state/effects/fetches/deps, existing semantic buttons and keyboard order preserved.
+
+Final build/typecheck and lint pending. Next: finish clean checks, inspect own
+scope/history, open ready PR, verify file list/PR scope, enable normal protected
+squash auto-merge. No production monitoring requested this turn; no recurring task.
+
+Final clean production build (Sharp traces and critical CSS included), subsequent
+typecheck and full lint/ratchets all passed. Existing inert-backend JWT/offline
+warnings do not establish backend connectivity. No failed candidate tests; no
+local full-suite repetition for this reversible presentation-only change. Required
+hosted CI/security still gate merge. One implementer, no subagents; approximately
+six minutes; exact usage unknown. Intended scope: two TSX files, DESIGN guide and
+this checkpoint (including preceding local visual review). Temporary files absent.

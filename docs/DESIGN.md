@@ -91,7 +91,7 @@ Content cards use a consistent 2:3 cover/card ratio across public discovery, rea
 | Landing featured card | Landing featured reads strip | `10.75rem x 16.125rem`, `13.125rem x 19.7rem` at `sm`, `15.5rem x 23rem` at `md` | One horizontal row with native touch scrolling and mouse drag. Keep its sizing in landing CSS custom properties. |
 | Focus card cover | Focus feed | Desktop cover widths are `132px`, `116px`, `104px`, and `92px` by compact level; mobile uses `96px/112px` compact and `112px/124px` default | Preserve `getDesktopCoverWidth()` as the behavior API because it factors viewport height and compact level. |
 | Preview cover | Preview hero and Preview loading placeholder | `96px` below `sm`, then `192px` at `sm`, `224px` at `md` | Compact Preview sizing stays independent from reader covers. |
-| Reader cover | Compact reader hero and reader loading placeholder | `64px` below `sm`, then `112px` | Cover sits beside title/author; narrow metadata and controls occupy separate rows aligned with the title column. Typography and Preview sizing remain independent. |
+| Reader cover | Compact reader hero and reader loading placeholder | `64px` below `sm`, then `112px` | Cover sits beside title/author; narrow metadata and controls flow immediately below the author in the title column, sharing one compact row where space allows and wrapping safely on smaller screens. Typography and Preview sizing remain independent. |
 
 Implementation source: `components/ui/content-card-standards.ts`, with focus-specific cover widths in `components/focus/focus-feed-layout.ts`.
 
