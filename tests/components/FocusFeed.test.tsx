@@ -424,9 +424,13 @@ describe("FocusFeed", () => {
     it("counts a card impression only after meaningful foreground visibility and suppresses repeats", async () => {
         render(<FocusFeed />);
         const card = (await screen.findAllByTestId("focus-feed-card"))[0]!;
-        const impressionObserver = observerInstances.filter((observer) => observer.thresholds.length === 3).at(-1);
-        expect(impressionObserver).toBeDefined();
-        expect(impressionObserver!.observe).toHaveBeenCalledWith(card);
+        // A visible card can commit before its impression effect attaches the observer.
+        const impressionObserver = await waitFor(() => {
+            const observer = observerInstances.filter((instance) => instance.thresholds.length === 3).at(-1);
+            expect(observer).toBeDefined();
+            expect(observer!.observe).toHaveBeenCalledWith(card);
+            return observer!;
+        });
         expect(document.visibilityState).toBe("visible");
         await waitFor(() => expect(analyticsCaptureMock).toHaveBeenCalledWith(
             "focus_visit_started",

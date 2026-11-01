@@ -4150,3 +4150,36 @@ local full-suite repetition for this reversible presentation-only change. Requir
 hosted CI/security still gate merge. One implementer, no subagents; approximately
 six minutes; exact usage unknown. Intended scope: two TSX files, DESIGN guide and
 this checkpoint (including preceding local visual review). Temporary files absent.
+
+### FocusFeed impression-test readiness fix — 2026-11-01
+
+User authorized investigating/fixing the recurring FocusFeed test separately from
+#304/#305 UI work. #304's unchanged failed-job retry ultimately passed, normal
+protected merge42f10d8d completed, and Vercel public alias was confirmed READY at
+that merge (dpl_4Ka6C5F3VEyjzKhQcZtWLwPsZWnZ). This does not repair the flaky test.
+#305 is open at95637ead, originally stacked on #304; CI/security passed on that
+old head but main now conflicts. User subsequently authorized refresh and release
+with unchanged UI scope and fresh gates.
+
+Fresh origin/main42f10d8d → codex/focus-impression-test-readiness in sequentially
+reused preview-appearance-theme worktree. Original #304 CI attempt1 fails at
+FocusFeed.test.tsx428: impression observer undefined immediately after
+findAllByTestId resolves. Card rendering does not guarantee that the passive
+effect has constructed/attached its observer. The effect observes the active card
+at thresholds[0,0.75,1] and starts its existing500ms timer after visibility>=0.75.
+
+Test-only correction: waitFor observer existence AND observe(card) before
+triggering visibility. Keep the same default wait timeout, visibility threshold,
+550ms negative observation, positive event/context assertions and repeat
+suppression. No sleeps/retries/skips or global timeout increases added. Production
+FocusFeed, application UI, reader files, workflows and lockfile untouched.
+
+Focused full FocusFeed53/53 pass. One full local suite:261 suites/2,114 tests pass,
+12 suites/307 tests skipped; capacity34/34 pass. Lint/all ratchets and typecheck
+pass. Skips excluded from coverage. No new browser work needed for test-only fix;
+no provider calls, accounts or paid resources. Original failed CI retained at
+run41280910265 attempt1; successful retry is distinct evidence, not a relabeled run.
+
+Next: publish a separate ready test-fix PR and retain CI/security merge gates.
+Refresh #305's approved prose-width commit without changing its product tree;
+keep the test fix separate and include it through main after protected merge.
