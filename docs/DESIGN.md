@@ -113,11 +113,13 @@ It includes:
 Primary source: `components/reader/ReaderView.tsx`
 
 Below `sm`, expanded section prose uses the wider body area with balanced side
-padding. Section headings and completion controls retain their existing inset;
-desktop prose width and all typography remain unchanged.
+padding. Section headings retain their existing inset; completion actions center
+under the wider prose. Desktop prose width and all typography remain unchanged.
 
-Below `sm`, section-completion labels wrap within the existing body inset when
-needed, preserving icon size and the minimum 44px target. Desktop stays single-line.
+Below `sm`, section-completion labels wrap when needed, preserving icon size and
+the minimum 44px target. Completed sections place Continue above Mark incomplete
+with a 4px gap, keeping each button's padding. Desktop retains its existing
+single-line layout, order and spacing.
 
 ### 4.2 Reader Themes
 
