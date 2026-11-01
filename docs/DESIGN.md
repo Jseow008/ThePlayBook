@@ -120,6 +120,9 @@ Below `sm`, section-completion labels wrap when needed, preserving icon size and
 the minimum 44px target. At every width, completed sections place Continue above
 Mark incomplete with a 4px gap, keeping each button's padding and typography.
 Desktop action groups remain centered in their existing paragraph column.
+Mark incomplete uses a faint theme-accent background on hover and keyboard
+focus, with a stronger pressed fill. Its existing focus ring, dimensions and
+text styling remain.
 
 ### 4.2 Reader Themes
 

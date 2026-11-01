@@ -4544,3 +4544,35 @@ Next: finish local lint/build/types, inspect own history/files, publish ready PR
 verify GitHub scope and enable protected squash auto-merge after PR scope passes.
 Required CI/security remain mandatory. No timer/post-merge wait requested.
 One implementer, no subagents; exact usage unavailable.
+
+## Mark incomplete interaction feedback — 2 November 2026
+
+User approved faint rounded hover/focus fill and stronger pressed feedback,
+preserving size, typography, placement and behavior on top of #310. Branch
+codex/mark-incomplete-feedback, worktree
+/Users/j/.codex/workspaces/netflux-mark-incomplete-feedback; exact parent
+d369d059545c42d1b26f0e94dcb8c720f586cf6d. Only the Mark incomplete class string
+changes: theme-accent 40% hover/focus-visible fill, 60% active fill and existing
+foreground text on focus/press. Existing focus-ring, transition-colors, padding,
+rounded shape, dimensions and handler retained. No new dependencies or logic.
+
+CUA Chrome actual parent/candidate component fixture verifies identical rest
+geometry, font, colors and padding at 1440/390px (129.63px width; 36/44px height).
+Tab gives actual focus-visible fill and original ring. Pointer click yields hover
+and exactly one incomplete callback. Held native Space yields actual :active,
+stronger alpha during transition, unchanged geometry, and one additional callback
+on release. The synthetic fixture keeps the button mounted after callback solely
+for state inspection; it does not test real persistence. Existing 28 focused tests
+pass unchanged. No CSS-class-mirroring tests added. Evidence: thread
+mark-incomplete-feedback/{evidence.json,keyboard.png,hover.png,pressed.png,
+fixture-source/,lint.log,build.log}. Browser restored Dark, viewport reset, own
+tab/server closed and temporary fixture/dev types removed. No live accounts,
+data, model calls or paid resources. Phones, Safari and production unverified.
+
+Next: finish lint/build/types, publish ready stacked child naming #310 and label
+stacked-pr, verify GitHub scope; hold child merge while parent is unmerged.
+Never merge child into the parent's feature branch. If parent merges during
+checks, compare its tree and refresh/retarget onto main without bypassing gates.
+No timer or post-merge monitoring requested. One implementer, no subagents.
+
+Final local checks: full lint/ratchets, production build including Sharp traces/critical CSS, and standalone types passed. Inert localhost build is not backend-connectivity verification. #310 remains open at the tested exact parent; publish against its branch with merge held.
