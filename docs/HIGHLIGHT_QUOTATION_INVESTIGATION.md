@@ -3885,3 +3885,91 @@ candidate tests or additional benchmark loops in this expansion; the 30 focused
 and one bounded production-built browser sequence above were followed by one
 clean full suite/build. Ready updated #301 requires fresh hosted CI/security for
 its new head; earlier theme-only checks are not reused as gate results.
+
+
+### #301 production closure — 2026-11-01
+
+Required CI (41225979636), Security Validation (41225979729), PR scope and
+Catalog Search Evidence passed. Normal protected squash auto-merge completed:
+7c248e51e03b8decbf2e0e757b026df660fd9d8f. Vercel public-alias inspection confirms
+www.netflux.blog and netflux.blog assigned to READY production deployment
+dpl_8KW8jegDo6M9xB1uQ149AsE7u16y at that exact merge SHA. No extra rebuild,
+promotion or domain change. Optional skipped jobs are not verified coverage.
+
+Bounded public-production guest IAB checks passed at desktop1440x900 and
+narrow390x844. Preview exposes Aa with Theme/Font/Size/Spacing and the shared
+setting footer; fullscreen remains absent on Preview and present on actual Read.
+Description/takeaways changed Georgia18/30.96 to Inter20/37.6 while desktop title
+stayed36. Reload retained Sepia/Sans/Large/Relaxed. Actual data-backed Read opened
+with those four values; Read Serif/Medium/Compact returned to Preview as
+Georgia18/27. Escape closed Preview and returned focus to Appearance at scroll0.
+
+Narrow sheet x0,y347.5,width390,height496.5 contained all groups/footer; document
+width390, no horizontal overflow. Narrow changes yielded20px/34.4px prose with
+title24px. Escape returned focus; Close worked. Original guest baseline
+Dark/Serif/Medium/Default restored, verified after reload. Owned IAB tab closed
+and viewport override reset. No account/saved-note/content/audio/model changes.
+
+Chrome automation timed out before preference changes. Production interaction
+coverage is guest IAB, not authenticated Chrome/cloud persistence, physical phones
+or Safari. Native AX exposed pressed buttons as checkboxes; that selector failed
+without changing settings, then actual DOM button roles worked. Earlier local
+307 skipped tests remain outside coverage. No broader checks added.
+
+External production evidence: preview-aa-implementation/production-checks.json,
+release.json, production-desktop.png and production-narrow.png in this thread's
+visualization directory. Checkpoint updated locally only; no evidence-only deploy.
+
+### Preview Aa action placement — 2026-11-01
+
+Authorized layout: Read Summary → Aa → Save → Share on desktop and the narrow
+fixed rail. Fresh origin/main7c248e51, branch codex/preview-aa-action-order in
+/Users/j/.codex/workspaces/netflux-preview-appearance-theme (reused sequentially;
+no parallel task). Only ContentPreview changes: move the existing shared
+PreviewAppearanceMenu into each breakpoint's action group; remove the standalone
+row. ReaderSettingsMenu and wrapper, fonts, classes, settings and persistence
+remain untouched. Existing responsive visibility means one trigger is visible.
+
+30 focused tests passed. Local CUA IAB synthetic guest fixture used actual
+ContentPreview and providers, inert localhost backend, logo cover (not the real
+book cover), and a synthetic takeaway. No real notes/account/data writes. At
+1440x900 desktop visible controls are Read(x648), Aa(x956), Save(x1006), Share(x1064)
+with vertically centered controls. Aa retains Read's40px desktop size and serif
+italic glyph; other actions retain48px. At390x844 all four narrow actions are44px
+high, x21/221/273/325, bottom823; width390 has no overflow. At320x568 x21/151/203/255,
+bottom547 and no overflow. Narrow menu is above the rail with all four groups and
+shared footer, bounds x0,y347.5,w390,h496.5. Theme/font changes work; Escape/Close
+restore focus. Defaults Dark/Serif/Medium/Default restored; own tab closed and
+viewport reset. No physical-phone/Safari or cloud-persistence claim.
+
+Retained setup failures: initial fixture used a disallowed local image path and
+omitted inert public backend config; corrected both. The first generic route also
+showed app mobile navigation; moved fixture under Preview to use actual Preview
+chrome before final geometry/screenshots. Initial lint correctly rejected the
+unregistered temporary route. Fixture removed and own server stopped before final
+checks; lint/build/typecheck/full tests pending. No product correction was needed
+for those fixture errors. Evidence: thread preview-aa-placement-implementation/
+{browser-checks.json,local-desktop.png,local-narrow.png}. Screenshots are local
+synthetic fixture, not live production. No added regression tests for this
+reversible JSX-only reposition; existing settings/Preview coverage reused.
+
+Next: finish clean checks, inspect scope, publish ready PR, enable protected squash
+auto-merge only after PR scope passes. No post-merge monitoring requested this turn.
+
+Final local verification: lint/ratchets passed; 30 focused tests passed. Full suite
+260 passed suites, 2,113 passing tests, 307 skips, one FocusFeed observer assertion
+failure (observerInstances did not yet include the impression observer at line428).
+FocusFeed/test do not import the changed ContentPreview; isolated full FocusFeed
+suite53/53 passes without changes. Preserve full-suite failure; required hosted CI
+must pass. Capacity34/34 passes. No test/product fix or weakened check.
+
+Build setup corrections retained: deleting temporary fixture leaves stale .next/dev
+route types, removed generated .next/dev only. Build then reached collection but
+required public backend variables; final build uses inert localhost URL/key (no
+real service). Clean final build/typecheck pending. No unrelated source changes.
+
+Clean final production build (Sharp trace and critical CSS checks included) and
+subsequent typecheck passed. No temporary route remains. Scope is the seven-line
+ContentPreview placement diff plus this continuity record. One implementer, no
+subagents/provider calls/paid resources; approximately seven minutes including
+setup corrections and full local checks. Exact Codex token usage unavailable.
