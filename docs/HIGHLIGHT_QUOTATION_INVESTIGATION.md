@@ -4508,3 +4508,39 @@ refresh own commit onto that merge without changing the tested application
 tree. Publish against main, containing #308, rather than merging into its feature
 branch. Preserve all required checks and recheck conflict-free integration and
 own file/history scope before publication/auto-merge.
+
+## Desktop completion-action stack — 2 November 2026
+
+User approved extending the centered Continue-above-Mark-incomplete arrangement
+to desktop with a 4px gap, preserving narrow layout, typography, button styles,
+padding and completion behavior. Branch codex/reader-desktop-completion-stack,
+worktree /Users/j/.codex/workspaces/netflux-reader-desktop-completion-stack,
+fresh main base 067daadf (#309). Only the completed-action container layout and
+DOM order change; existing callbacks, primary button classes and secondary
+padding/targets remain. Removed the viewport-dependent action placement and
+desktop order override, preserving the existing media hook for highlights.
+
+CUA Chrome actual-component fixture compared candidate and exact parent at
+1440/640/390/320px. Desktop actions share their horizontal center with a 4px
+vertical gap. Both buttons retain baseline dimensions, font, colors, borders
+and padding. At 390/320px the full captured button geometry/styles and gap
+match the parent exactly; no horizontal overflow. Desktop Tab moves from
+Continue to Mark incomplete; incomplete emits only incomplete:fixture-a:0;
+Enter on Mark complete and continue emits complete:fixture-a:0 then
+open:fixture-b:1. Existing focused suite passes 28/28 with the desktop DOM-order
+expectation updated. No new callback/state/API/data behavior or CSS-mirroring test.
+
+Evidence: thread reader-desktop-completion-stack/{geometry.json,behavior.json,
+desktop.png,fixture-source/,lint.log,build.log}. Local synthetic, memory-only
+sections; not a live progress-storage test. Initial browser binding was absent
+after a session reset; selected Chrome again. Initial navigation timed out while
+compiling; a fresh snapshot found the loaded fixture and reused it. No repeated
+navigation or product workaround. Own tab/server closed, viewport reset, guest
+theme restored Dark; temporary route and generated dev types removed. No real
+accounts, production data, paid resources or provider calls. Physical phones,
+Safari, production and skipped tests remain outside coverage.
+
+Next: finish local lint/build/types, inspect own history/files, publish ready PR,
+verify GitHub scope and enable protected squash auto-merge after PR scope passes.
+Required CI/security remain mandatory. No timer/post-merge wait requested.
+One implementer, no subagents; exact usage unavailable.

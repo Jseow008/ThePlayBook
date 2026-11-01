@@ -512,7 +512,7 @@ export function SegmentAccordion({
                     <button
                         type="button"
                         onClick={() => onSegmentIncomplete(segment.id, index)}
-                        className="focus-ring inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:min-h-0 sm:order-first"
+                        className="focus-ring inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:min-h-0"
                     >
                         Mark incomplete
                     </button>
@@ -640,9 +640,8 @@ export function SegmentAccordion({
 
                                     <div className={cn(
                                         "mt-8 flex flex-wrap items-center justify-center gap-3 max-sm:-ml-[3.25rem] max-sm:w-[calc(100%_+_3.25rem)]",
-                                        incompleteAction && "max-sm:flex-col max-sm:gap-1"
+                                        incompleteAction && "flex-col gap-1"
                                     )}>
-                                        {isReaderInteractionDesktop && incompleteAction}
                                         <button
                                             onClick={() => {
                                                 if (isLastSegment) {
@@ -688,7 +687,7 @@ export function SegmentAccordion({
                                                 </>
                                             )}
                                         </button>
-                                        {!isReaderInteractionDesktop && incompleteAction}
+                                        {incompleteAction}
                                     </div>
                                 </div>
                             </div>
