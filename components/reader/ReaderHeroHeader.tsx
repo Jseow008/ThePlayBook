@@ -128,9 +128,9 @@ export function ReaderHeroHeader({
                     )}
                 </div>
 
-                {/* Metadata Row */}
-                <div className={`flex flex-wrap items-center justify-between gap-x-2.5 gap-y-3 sm:justify-start ${coverImageUrl ? "col-span-2 sm:col-span-1 sm:col-start-2" : ""}`}>
-                    <div className="flex flex-wrap items-center justify-center gap-2.5 sm:justify-start">
+                {/* Narrow metadata and controls share the title column. */}
+                <div className={`flex flex-col items-start gap-x-2.5 gap-y-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start ${coverImageUrl ? "col-start-2" : ""}`}>
+                    <div className="flex flex-wrap items-center justify-start gap-2.5">
                         {/* Duration Badge */}
                         {durationSeconds && (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs font-medium text-muted-foreground border border-border">
@@ -146,7 +146,7 @@ export function ReaderHeroHeader({
 
                     </div>
 
-                    <div className="flex items-center justify-center gap-2.5 sm:justify-start">
+                    <div className="flex flex-wrap items-center justify-start gap-2.5 sm:flex-nowrap">
                         {/* Display Settings */}
                         <ReaderSettingsMenu />
 
