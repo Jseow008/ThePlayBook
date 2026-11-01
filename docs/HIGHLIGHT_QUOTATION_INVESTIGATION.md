@@ -4267,3 +4267,44 @@ refresh onto merged main, compare the tested product tree and use normal protect
 squash auto-merge after own PR scope/required gates. No recurring monitor requested.
 One implementer, no subagents; exact usage unavailable. This is a presentation
 change, not a speed claim or a historical-content/highlight-matching change.
+
+Publication checkpoint (local evidence update; no CI-triggering evidence commit):
+PR #305 https://github.com/Jseow008/ThePlayBook/pull/305, head
+95637ead294ed63637114b1f0ffa147fbf65fcce. Ready intentional stack on #304 with
+stacked-pr label; GitHub file list matches the approved inherited parent plus
+three own files. #304's one failed-job rerun is now in progress; Security passed.
+#305's own CI/security are pending. Auto-merge intentionally remains OFF while
+its parent release is held; this prevents merging the child before #304's gate.
+Next: after #304 passes and merges, fetch main, rebase only the own commit onto
+its merge, compare the verified product tree, verify refreshed PR scope/gates,
+then enable normal protected squash auto-merge. No timer/automation was created.
+
+
+### #305 conflict refresh — 2026-11-01
+
+User explicitly authorized resolving #305 and releasing after fresh required
+CI/security, with its UI scope unchanged. #304 merged as42f10d8d after its unchanged
+CI rerun passed. Refreshed only #305's own commit using rebase --onto origin/main
+57018a49; no manual product conflict resolution was needed. New local commit
+7c97af57. Full tracked product tree (components/hooks/lib/app/types plus package
+files) matches pre-refresh HEAD byte-for-byte; own diff only SegmentAccordion,
+DESIGN and checkpoint. Local publication-only notes preserved and restored.
+
+FocusFeed test fix is separate PR #306 (c417eaca), no UI code. Wait for its required
+CI/security and protected merge, then refresh #305 once more onto that main so it
+inherits the fix normally. Avoid an unnecessary CI run on the intermediate head.
+Current remote #305 remains95637ead until final refresh push. Original CI/security
+passed for95637ead but do not validate the eventual refreshed head. No UI expansion
+or new browser/device work. Existing320px completion-button clipping remains an
+unfixed, separate limitation.
+
+
+Final #305 refresh onto merged #306 (1c827027) resolved one documentation-only
+append conflict by retaining both the test-fix and prose-verification records.
+No application conflict or product edit. Recompared entire tracked product tree
+against original95637ead: identical. FocusFeed test fix now inherited through main,
+not included in #305's own diff. Post-initial-refresh37 accordion/header/loading
+tests pass. Existing application build/browser evidence remains applicable; final
+required hosted CI/security will run afresh on pushed head. Parent/test-fix gates
+are not substituted for these checks. Remove obsolete stacked-pr label and update
+PR body to final scope. Normal protected squash auto-merge only after clean scope.
