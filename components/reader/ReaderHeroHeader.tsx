@@ -116,8 +116,8 @@ export function ReaderHeroHeader({
                     </div>
                 )}
 
-                {/* Keep narrow controls in the title flow, independent of cover height. */}
-                <div className="min-w-0 sm:contents">
+                {/* Keep controls directly below the author, independent of cover height. */}
+                <div className="min-w-0">
                     {/* Title & Info */}
                     <div className="flex-1 flex flex-col justify-center min-w-0">
                         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-[1.15] mb-2">
@@ -131,7 +131,7 @@ export function ReaderHeroHeader({
                     </div>
 
                     {/* Compact metadata and actions wrap safely until smaller-screen sizing is refined. */}
-                    <div className={`mt-4 flex flex-wrap items-center gap-1 sm:mt-0 sm:gap-x-2.5 sm:gap-y-3 sm:justify-start ${coverImageUrl ? "col-start-2" : ""}`}>
+                    <div className={`mt-3 flex flex-wrap items-center gap-1 sm:gap-x-2.5 sm:gap-y-3 sm:justify-start ${coverImageUrl ? "col-start-2" : ""}`}>
                         <div className="flex shrink-0 flex-wrap items-center justify-start gap-1 sm:gap-2.5">
                             {/* Duration Badge */}
                             {durationSeconds && (
@@ -157,7 +157,7 @@ export function ReaderHeroHeader({
                                 <SaveToLibraryButton
                                     contentId={contentId}
                                     contentTitle={title}
-                                    className="focus-ring inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors disabled:cursor-wait sm:h-10 sm:w-10"
+                                    className="reader-header-control focus-ring inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors disabled:cursor-wait sm:h-10 sm:w-10"
                                     loadingClassName="border-border/35 bg-secondary/25 text-muted-foreground/60"
                                     savedClassName="border-primary/35 bg-primary/10 text-primary"
                                     unsavedClassName="border-border/45 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
@@ -173,7 +173,7 @@ export function ReaderHeroHeader({
                                 source="reader_header"
                                 contentId={contentId}
                                 contentType={type}
-                                className="focus-ring h-11 w-11 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground sm:h-10 sm:w-10"
+                                className="reader-header-control focus-ring h-11 w-11 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground sm:h-10 sm:w-10"
                             />
                         </div>
                     </div>

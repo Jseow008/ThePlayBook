@@ -295,6 +295,7 @@ export function ReaderSettingsMenu({ surface = "reader" }: { surface?: "reader" 
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
                     "inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-secondary p-0 text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground sm:h-10 sm:w-10",
+                    !isPreview && "reader-header-control",
                     isOpen && "bg-secondary/80 text-foreground ring-2 ring-ring"
                 )}
                 aria-label={isPreview ? "Appearance" : "Display Settings"}

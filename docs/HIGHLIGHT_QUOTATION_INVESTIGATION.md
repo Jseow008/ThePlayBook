@@ -4375,3 +4375,68 @@ critical CSS) and subsequent standalone typecheck passed. Inert localhost build
 warnings are not backend-connectivity validation. Temporary fixture is absent;
 own scope is exactly SegmentAccordion, DESIGN and this checkpoint. Verified
 before publication that no parent/test-fix changes are included in own diff.
+
+## Reader hero softer borders and 12px gap — 1 November 2026
+
+User approved softer Aa/Save/Share borders and a 12px author-to-controls gap on
+desktop and narrow screens, preserving target sizes, metadata pills and all other
+controls/preferences. Branch codex/reader-softer-controls, worktree
+/Users/j/.codex/workspaces/netflux-preview-appearance-theme, base bf65fd38.
+Earlier local reader-wrap evidence was preserved in Git stash named
+“Preserve prior reader-wrap verification notes before softer-control work”.
+
+Candidate uses the existing reader border token at 60% opacity only on the three
+reader hero triggers. The unlayered global universal border rule overrides
+Tailwind border-opacity utilities, so a dedicated unlayered class is necessary;
+no global theme/pill border rule changed. Save state fills/icons, focus rings,
+button sizes, padding and handlers are unchanged. Preview Aa is excluded.
+Desktop title/author/actions now share the existing title-column flow rather
+than two grid rows stretched by the spanning cover. This removes the extra
+short-title space and makes the real gap 12px, matching narrow mt-3. Cover size,
+horizontal columns, wrapping groups and fonts stay unchanged. Reader skeleton
+uses the same title grouping and spacing.
+
+CUA IAB compared actual candidate components against copies of bf65fd38 on a
+synthetic local fixture, with inert localhost backend configuration. No production
+accounts/data/paid resources were used. At 1440/390/320px, both short and long
+titles have a measured 12px candidate author-to-row gap, title-aligned controls,
+unchanged pill width/height/background/border/padding and unchanged 40/44/44px
+button targets. No horizontal document overflow. Cover-free desktop also has
+12px gap. Preview border retains full opacity; reader triggers measure theme
+border alpha0.6. Desktop Escape and narrow Close dismiss the actual Aa menu;
+shared settings unchanged. Guest theme restored to Dark, own tab closed and
+viewport override reset. Development server stopped; all temporary fixture and
+baseline-copy source removed from the repository and retained only in evidence.
+
+Retained failed setup/checks: underscore-prefixed fixture route was private and
+returned404; renamed it. Initial fixture lacked ReadingProgressProvider and
+returned500; restored normal auth/progress providers. AX reported theme buttons
+as checkboxes, so the first checkbox locator failed; DOM confirmed pressed
+buttons and semantic button interaction worked. Initial border utility change
+was ineffective because of global CSS; dedicated local class corrected it.
+Initial grid-gap-only change left short desktop text too far above controls;
+normal title flow corrected it. One initial theme measurement preceded hydration;
+that affected pair was recaptured after Sepia settled. Initial production build
+failed on generated dev types referencing the removed fixture; archived generated
+types outside the project before the clean rebuild. No product workaround,
+acceptance threshold or test gate was weakened.
+
+Evidence directory (thread visualization root):
+reader-softer-controls-implementation/{geometry.json,summary.json,candidate-390.png,
+candidate-desktop.png,fixture-source/,build-stale-fixture-types.log}.
+Screenshots are actual local component fixtures with synthetic cover art, not
+production screenshots. Physical phones, Safari and production remain unverified.
+Existing 22 focused component tests and full lint/ratchets pass; no CSS-mirroring
+unit tests added for the reversible style change. React review found no new
+hooks, data fetches, dependencies or interaction changes.
+
+Next: finish clean build and typecheck, inspect own history/file scope, publish
+ready PR, verify GitHub files and PR scope, then enable protected squash
+auto-merge. Required CI/security gate merge. No timer or post-merge wait requested.
+One implementer; no subagents; exact Codex usage unavailable.
+
+Final clean production build passed, including Sharp traces and critical CSS;
+standalone typecheck passed. Local build used inert localhost configuration;
+backend-connectivity warnings are outside this presentation check. Temporary test
+route/baseline files and generated dev references are absent from candidate.
+Only the seven intended product/design/checkpoint files remain in scope.
