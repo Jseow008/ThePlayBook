@@ -4308,3 +4308,70 @@ tests pass. Existing application build/browser evidence remains applicable; fina
 required hosted CI/security will run afresh on pushed head. Parent/test-fix gates
 are not substituted for these checks. Remove obsolete stacked-pr label and update
 PR body to final scope. Normal protected squash auto-merge only after clean scope.
+
+### Narrow completion-button wrapping — 2026-11-01
+
+User approved the Wrap when needed visual, preserving desktop, typography,
+styling and completion behavior, on top of #306. #306 is merged as1c827027;
+fresh origin/main also contains #305 as2016fa5c. New branch
+codex/reader-completion-wrap starts at2016fa5c in isolated worktree
+/Users/j/.codex/workspaces/netflux-reader-completion-wrap. The earlier worktree's
+local checkpoint/visual notes remain untouched. No stacked ancestry is needed.
+
+Only SegmentAccordion presentation attributes change: max-sm bounds the completion
+button to its existing container, permits normal word wrapping, keeps the icon
+from shrinking, and lets the long label shrink/wrap. Existing padding, gaps,
+fonts, colours, borders, rounded styling, labels, button/heading order, inset,
+callbacks and conditional completion logic stay unchanged. All responsive changes
+are restricted below640px; desktop keeps the original classes/computed styles.
+DESIGN documents the narrow wrap and existing44px minimum touch target.
+
+26 existing SegmentAccordion tests pass. No class-mirroring test was added for
+this reversible CSS change. Required full CI/security still gate release.
+
+CUA Chrome browser acceptance used actual SegmentAccordion against a copy of
+the merged baseline with only its export name changed. Synthetic two-section
+content and in-memory completion/event callbacks isolate the user interface;
+no live account, progress, note, service or paid resource was modified. Actual
+settings and application CSS/fonts were used with inert localhost backend config.
+
+-320px: current264.55x44 button clips18.28px; candidate196x62 fits fully with
+ two label lines. Existing14px/20px Georgia stack, weight600,16px icon, padding,
+ colours/borders and rounded treatment match. No document overflow.
+-390px: both264.55x44, same single-line label and horizontal placement. Heading
+ position and surrounding inset stay unchanged. No document overflow.
+-640/1440px: both272.55x42; font/colour/border/padding/whitespace/alignment and
+ icon geometry match baseline. Desktop has no wrapping or size change.
+-Both baseline and candidate at320: Complete and continue emits exactly one
+ complete(A,0) then open(B,1); Continue emits only open(B,1); Finish Reading
+ emits finish once; Close section emits no completion/finish and collapses.
+ Candidate Mark incomplete emits incomplete(A,0). Enter on Complete/continue
+ and Space on Finish produce the same expected callback sequence, without
+ duplicates. These are component/callback checks, not server progress persistence.
+
+Retained setup/capture limitations: the initial navigation call timed out during
+compilation; fresh URL/DOM inspection found the fully loaded fixture, which was
+reused without another navigation. A later cropped screenshot caught the existing
+accordion expansion transition before the button appeared; retained as
+capture-during-expansion-not-used.png and excluded from acceptance. Earlier stable
+candidate-320.png clearly shows the implemented wrapped button and matches the
+measured geometry. No product workaround or repeated implementation trial.
+
+Guest theme restored to Dark; own tab/server closed and viewport reset. Temporary
+fixture/parent component and generated dev types removed before final checks.
+Evidence: thread reader-completion-wrap-implementation/{geometry.json,behavior.json,
+parent-320.png,candidate-320.png,parent-390.png,candidate-390.png,fixture-source/,
+focused-tests.log,lint.log,build.log,typecheck.log}. Physical phones, Safari,
+production browsing, real progress storage and skipped tests remain unverified.
+No speed claim, API/data/auth change, new dependency or new UI feature.
+
+Next: finish clean lint/type/build checks, inspect exact own history/file scope,
+publish ready PR and verify GitHub files/PR scope, then enable normal protected
+squash auto-merge. No post-merge monitoring or timer requested. One implementer,
+no subagents; exact Codex usage unavailable.
+
+Final full lint/ratchets, clean production build (including Sharp traces and
+critical CSS) and subsequent standalone typecheck passed. Inert localhost build
+warnings are not backend-connectivity validation. Temporary fixture is absent;
+own scope is exactly SegmentAccordion, DESIGN and this checkpoint. Verified
+before publication that no parent/test-fix changes are included in own diff.
