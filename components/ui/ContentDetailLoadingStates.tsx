@@ -80,12 +80,12 @@ function ReaderHeroSkeleton() {
                     className={`${COMPACT_READER_COVER_FRAME_CLASS} rounded-xl border border-border bg-secondary/45 shadow-2xl shadow-black/20`}
                 />
             </div>
-            <div className="min-w-0 sm:contents">
+            <div className="min-w-0">
                 <div className="min-w-0 space-y-3">
                     <div className="h-8 w-full rounded-full bg-secondary/55 sm:h-9" />
                     <div className="h-5 w-3/5 rounded-full bg-secondary/40" />
                 </div>
-                <div className="col-start-2 mt-4 flex flex-wrap items-center gap-1 sm:mt-0 sm:gap-3 sm:justify-start">
+                <div className="col-start-2 mt-3 flex flex-wrap items-center gap-1 sm:gap-3 sm:justify-start">
                     <div className="flex shrink-0 flex-wrap gap-1 sm:gap-2">
                         <div className="h-7 w-12 rounded-lg sm:w-16 border border-border/60 bg-secondary/45" />
                         <div className="h-7 w-16 rounded-lg sm:w-20 border border-border/60 bg-secondary/45" />

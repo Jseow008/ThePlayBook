@@ -134,6 +134,11 @@ spacing. Its description and takeaways use the shared reading preferences; title
 metadata and actions keep their UI typography. The bottom description makes the
 shared Preview/reader setting explicit. Fullscreen remains exclusive to Read.
 
+Reader hero controls keep a 12px gap below the author at all widths. Their
+1px borders use the reader theme border at 60% opacity; metadata pills keep
+their existing borders and padding. Button targets remain 44px below `sm` and
+40px above it. Preview styling stays independent.
+
 ### 4.3 Reader Controls
 
 Reader settings currently include:

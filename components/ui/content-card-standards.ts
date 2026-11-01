@@ -26,7 +26,7 @@ export const READER_COVER_IMAGE_SIZES =
 export const COMPACT_READER_HERO_CLASS =
     "grid grid-cols-[64px_minmax(0,1fr)] items-start gap-x-4 gap-y-4 sm:grid-cols-[112px_minmax(0,1fr)] sm:items-center sm:gap-x-6";
 export const COMPACT_READER_COVER_WRAPPER_CLASS =
-    "w-16 shrink-0 sm:row-span-2 sm:w-28 sm:self-center";
+    "w-16 shrink-0 sm:w-28 sm:self-center";
 export const COMPACT_READER_COVER_FRAME_CLASS = "aspect-[2/3] w-full";
 export const COMPACT_READER_COVER_IMAGE_SIZES = "(max-width: 639px) 64px, 112px";
 
