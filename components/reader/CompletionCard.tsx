@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { CompletionCelebration } from "./CompletionCelebration";
 import { useState } from "react";
 import { MessageCircleQuestion, BookOpen, ArrowRight, PartyPopper, BookmarkCheck, Lightbulb, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,9 +41,11 @@ interface CompletionCardProps {
     author: string | null;
     segmentCount: number;
     readerTheme?: ReaderTheme;
+    celebrationRequested?: boolean;
+    onCelebrationConsumed?: () => void;
 }
 
-export function CompletionCard({ contentId, title, author, segmentCount, readerTheme = "dark" }: CompletionCardProps) {
+export function CompletionCard({ contentId, title, author, segmentCount, readerTheme = "dark", celebrationRequested = false, onCelebrationConsumed }: CompletionCardProps) {
     const { completedIds, inProgressIds, myListIds, isLoaded, user } = useReadingProgress();
     const [showChat, setShowChat] = useState(false);
     const [showReflectionComposer, setShowReflectionComposer] = useState(false);
@@ -67,7 +70,8 @@ export function CompletionCard({ contentId, title, author, segmentCount, readerT
         <>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-8">
                 {/* ── Celebration Header ────────────────────────────────────── */}
-                <div className="text-center mb-6">
+                <div className="relative text-center mb-6">
+                    {onCelebrationConsumed && <CompletionCelebration requested={celebrationRequested} onConsumed={onCelebrationConsumed} />}
                     <div className="inline-flex items-center justify-center size-16 rounded-full bg-green-500/15 mb-4">
                         <PartyPopper className="size-7 text-green-500" />
                     </div>

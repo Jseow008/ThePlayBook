@@ -124,6 +124,12 @@ Mark incomplete uses a faint theme-accent background on hover and keyboard
 focus, with a stronger pressed fill. Its existing focus ring, dimensions and
 text styling remain.
 
+New reading or audio completion can play one brief green-and-gold side burst
+when its heading becomes visible. The same 24-particle, 800ms effect scales its
+travel uniformly with available width. It adds no sound, layout space, focus or
+scroll changes; reduced motion suppresses it. Restored progress and rerenders
+do not replay it, and Undo/account changes cancel a pending effect.
+
 ### 4.2 Reader Themes
 
 Reader-specific themes currently supported:

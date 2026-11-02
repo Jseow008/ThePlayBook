@@ -1453,3 +1453,26 @@ mark[data-highlight-spotlight="true"] {
     opacity: 1;
   }
 }
+
+/* Scoped completion particles: initial stylesheet also covers the lazy completion card. */
+.reader-completion-burst {
+    position: absolute;
+    inset: -45px -18px -5px;
+    overflow: clip;
+    pointer-events: none;
+}
+
+.reader-completion-particle {
+    position: absolute;
+    top: 72%;
+    width: 4px;
+    height: 7px;
+    border-radius: 1px;
+    background: var(--color-green-400, #4ade80);
+    opacity: 0;
+}
+
+.reader-completion-left { left: 2px; }
+.reader-completion-right { right: 2px; }
+.reader-completion-gold { background: #caa969; }
+.reader-completion-dot { width: 3px; height: 3px; border-radius: 50%; }

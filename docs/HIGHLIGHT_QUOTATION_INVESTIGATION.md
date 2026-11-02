@@ -4576,3 +4576,72 @@ checks, compare its tree and refresh/retarget onto main without bypassing gates.
 No timer or post-merge monitoring requested. One implementer, no subagents.
 
 Final local checks: full lint/ratchets, production build including Sharp traces/critical CSS, and standalone types passed. Inert localhost build is not backend-connectivity verification. #310 remains open at the tested exact parent; publish against its branch with merge held.
+
+## Shared side-particle completion celebration — 2 November 2026
+
+User approved the desktop burst on both desktop and narrow screens after rejecting
+separate narrow choreography. Branch codex/completion-side-burst starts from fresh
+main ad09c611, worktree /Users/j/.codex/workspaces/netflux-reader-finish-destination.
+#312 remains a separate open navigation fix and is not included in this change.
+Prior local #312 release/audio investigation notes are preserved in stash
+“Preserve312 release and audio investigation notes before celebration”.
+
+One 24-particle green/gold burst:800ms motion with up to24ms delay, removed850ms
+after starting. Positions, particle count, easing and rotations are shared at all
+widths. Travel scales uniformly by min(1, available layer width /480). Only a new
+explicit reading completion or newly completed audio marks a one-use request;
+restored progress does not. Requests are in-memory and content/account scoped.
+Actual heading visibility and foreground tab gate playback; reduced motion skips
+it, including preference changes during playback. Undo, unmount or account/content
+change cancels pending/running effects. Overlay is aria-hidden, pointer-events:none,
+clipped to its local header area and adds no layout space. No sound, dependency,
+new product button, automatic navigation or changes to recommendations/chat,
+completion persistence, saved notes, existing focus/Undo or progress policy.
+
+New CompletionCelebration contains native browser animations with cancellation
+and timer/listener/observer cleanup. Parent produces/consumes requests without
+persisting them. Initial stylesheet carries narrowly named particle classes so
+lazy CompletionCard arrival does not depend on a late style chunk. Existing
+completion icon and message remain; no additional icon-pulse effect was selected.
+
+CUA IAB used actual ReaderView/SegmentAccordion/CompletionCard with synthetic
+content, inert localhost backend config and a generated1.2s silent WAV. At1440,
+390 and320px, actual visible24-particle transforms scale with width; no document
+overflow, no layout-space insertion, pointer-events:none. Native audio DOM reports
+ended:true/currentTime1.2 and3/3 complete. While completion heading was offscreen,
+24 pending particles remained unanimated (transform:none); bringing the heading
+into view started the burst, then the layer was removed. Real manual toast Undo
+removed completion/burst and restored0/3. Restored completed reload showed no
+particles. Browser screenshots are local synthetic fixtures, not production.
+Recommendation fetches failed/limited against inert test config and are not
+retrieval coverage. No accounts, paid resources, private data or model calls.
+Synthetic progress reset; own tab/server closed, viewport restored; test route,
+WAV and generated dev types removed from source before final checks.
+
+Retained corrections/limits: first navigation timed out during compilation, then
+the loaded tab was reused. Initial lazy CSS-module rules were absent in the actual
+browser (zero-width unstyled spans); scoped initial-stylesheet rules corrected it.
+First visibility check watched the entire header and could fire before the title
+was visible; now observes the full h2. A reload wait ran ahead of hydration and
+failed once; fresh DOM confirmed readiness before continuing. Source review caught
+request resets copied into two unrelated audio-restore locations; removed them,
+kept the single entry/account reset, and added a pending-through-save regression.
+No weaker checks, retry-until-pass acceptance, UI workaround or changed CI policy.
+Physical devices, Safari, native OS reduced-motion preference switching and
+production remain outside verified coverage; controlled unit media responses
+cover reduced-motion logic and live browser checks cover native audio ending.
+
+Final126 focused reader/card/accordion/celebration tests pass. New cases cover
+one-use manual/audio requests, no restored/repeated playback, pending progress
+save, account/Undo isolation, offscreen/background waiting, cancellation and
+reduced motion. Full lint/ratchets, default Turbopack production build including
+Sharp traces/critical CSS, and standalone typecheck pass. React review confirmed
+stable callback dependencies, no render-time browser reads and cleanup of all
+new effects. No CSS-mirroring unit tests or extra provider/device campaign.
+
+Evidence: thread completion-side-burst-implementation/{browser.json,
+candidate-1440.png,candidate-390.png,candidate-320.png,native-audio-320.png,fixture/,
+fixture-generated-types/} plus local check logs. One implementer; no subagents;
+exact Codex usage unavailable. Next: inspect own eight-file history/scope, publish
+ready main-based PR, verify GitHub file list and PR scope, then enable protected
+squash auto-merge. Required CI/security gate merge; no timer/post-merge wait.
