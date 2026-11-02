@@ -130,6 +130,13 @@ travel uniformly with available width. It adds no sound, layout space, focus or
 scroll changes; reduced motion suppresses it. Restored progress and rerenders
 do not replay it, and Undo/account changes cancel a pending effect.
 
+The completion area uses a compact acknowledgement with the finished title,
+then reflection and author-persona chat actions. The actions share a row when
+space permits and stack on narrow screens, retaining at least 46px height.
+A saved reflection remains available through Edit reflection. One next-read
+recommendation follows, with distinct loading and Browse fallback states;
+hydrated guests see a quiet sign-in link below. Existing feedback remains.
+
 ### 4.2 Reader Themes
 
 Reader-specific themes currently supported:

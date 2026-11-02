@@ -4645,3 +4645,55 @@ fixture-generated-types/} plus local check logs. One implementer; no subagents;
 exact Codex usage unavailable. Next: inspect own eight-file history/scope, publish
 ready main-based PR, verify GitHub file list and PR scope, then enable protected
 squash auto-merge. Required CI/security gate merge; no timer/post-merge wait.
+
+
+## 2026-11-02 — Simplified completion area
+
+Authorized implementation of the approved desktop/narrow visual. Worktree:
+`/Users/j/.codex/workspaces/netflux-reader-finish-destination`, branch
+`codex/simplify-completion`, freshly based on main `444da94b` (#313).
+Prior #313 release-note edits were stashed separately and preserved. #312's
+separate navigation change is not included.
+
+CompletionCard now has a compact acknowledgement/title, two compact reflection
+and author-persona chat actions, and one next-read card below. Actions share a
+row when space permits and stack at narrow widths. Saved reflections remain
+reachable through Edit reflection; the existing object is passed to the same
+composer. Guests receive one quiet SignInLink below the recommendation. Section
+count remains screen-reader accessible. ContentFeedback remains. Recommendation
+seed/exclusions/count, canonical read destination, loading and Browse fallback,
+reflection/chat logic, progress/Undo and side-burst implementation are unchanged.
+No API, database, auth, dependency or workflow change.
+
+18 focused completion-card/celebration/composer tests passed, including saved
+multiline reflection reopening, compact chat open/close, canonical next-read
+link, feedback, exclusions, hydration and guest prompt. First added saved-edit
+test used an ambiguous Close reflection selector (backdrop plus close button);
+corrected to the visible header close button, then all18 passed. This was a test
+selector issue, not a product defect. React review: no new effects, fetches or
+state machinery; lazy author chat and native keyboard buttons retained.
+
+Local CUA browser verified the actual component copy with controlled progress,
+reflection and recommendation hooks, retaining real composer/chat/feedback.
+At1440px: both actions363x46px on one row. At390px:350x46px stacked; at320px:
+280x46px stacked. Document width equalled viewport in all cases. Sepia screenshots
+visually reviewed; dark empty fallback also captured. Real reflection and chat
+opened/closed without Save/Send. Synthetic saved reflection reopened exactly;
+loading status and empty Browse fallback were distinct; guest sign-in retained
+current-route return destination. No backend writes or model calls. Own fixture
+session draft cleared through a temporary cleanup button; viewport restored,
+own tab/server closed. Fixture/temporary generated types removed before build.
+
+Evidence root: thread `simplified-completion-implementation/` contains local
+screenshots, browser.json, archived fixture/types and check logs. These are local
+synthetic checks, not production/account/AI-provider verification. Physical phones
+and Safari unverified; skipped tests outside verified coverage. One implementer,
+no subagents; exact Codex usage unavailable. No repeated benchmark or timer.
+Final lint/build/type checks and PR publication state recorded below.
+
+Final local gates: full lint/ratchets, default Turbopack production build
+(including Sharp route traces and critical CSS), standalone typecheck and
+`git diff --check` all passed. Build used inert localhost configuration, no
+production credentials. Ready PR will contain only CompletionCard, its focused
+tests, DESIGN and this checkpoint. Next: protected PR scope then squash auto-merge;
+required CI/security remain release gates. Do not wait for full CI or deployment.
