@@ -222,7 +222,9 @@ vi.mock('@/components/ui/ContentFeedback', () => ({
 }));
 
 vi.mock('@/components/reader/CompletionCard', () => ({
-    CompletionCard: () => <div data-testid="mock-completion-card" />
+    CompletionCard: (props: { celebrationRequested?: boolean; onCelebrationConsumed?: () => void }) => <div data-testid="mock-completion-card" data-celebrate={String(props.celebrationRequested)}>
+        <button data-testid="consume-celebration" onClick={props.onCelebrationConsumed} />
+    </div>
 }));
 
 vi.mock('@/components/reader/GuestProgressChoice', () => ({
@@ -795,6 +797,52 @@ describe('ReaderView', () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+
+    it('requests one celebration for manual completion, not rerenders or restored progress', () => {
+        const { rerender, unmount } = render(<ReaderView content={mockContent} />);
+        fireEvent.click(screen.getByTestId('finish-reading'));
+        expect(screen.getByTestId('mock-completion-card')).toHaveAttribute('data-celebrate', 'true');
+        fireEvent.click(screen.getByTestId('consume-celebration'));
+        rerender(<ReaderView content={mockContent} />);
+        expect(screen.getByTestId('mock-completion-card')).toHaveAttribute('data-celebrate', 'false');
+        unmount();
+        progressState.value = { completed: ['seg-1'], maxSegmentIndex: 0, lastSegmentIndex: 0, isCompleted: true };
+        render(<ReaderView content={mockContent} />);
+        expect(screen.getByTestId('mock-completion-card')).toHaveAttribute('data-celebrate', 'false');
+    });
+
+    it('keeps an offscreen celebration pending through a progress save', async () => {
+        vi.useFakeTimers();
+        try {
+            render(<ReaderView content={mockContent} />);
+            fireEvent.click(screen.getByTestId('finish-reading'));
+            await act(async () => { await vi.advanceTimersByTimeAsync(1500); });
+            expect(screen.getByTestId('mock-completion-card')).toHaveAttribute('data-celebrate', 'true');
+            fireEvent.click(screen.getByTestId('consume-celebration'));
+            expect(screen.getByTestId('mock-completion-card')).toHaveAttribute('data-celebrate', 'false');
+        } finally { vi.useRealTimers(); }
+    });
+
+    it('requests a celebration when audio newly completes the content, without repeating it on another ended signal', () => {
+        render(<ReaderView content={{ ...mockContent, audio_url: 'https://example.com/audio.mp3' }} />);
+        fireEvent.click(screen.getByTestId('sync-audio-ended'));
+        expect(screen.getByTestId('mock-completion-card')).toHaveAttribute('data-celebrate', 'true');
+        fireEvent.click(screen.getByTestId('consume-celebration'));
+        fireEvent.click(screen.getByTestId('sync-audio-ended-short'));
+        expect(screen.getByTestId('mock-completion-card')).toHaveAttribute('data-celebrate', 'false');
+    });
+
+    it('clears an unshown celebration on account change and Undo', () => {
+        const { rerender } = render(<ReaderView content={mockContent} />);
+        fireEvent.click(screen.getByTestId('finish-reading'));
+        act(() => toastSuccessMock.mock.calls[0][1].action.onClick());
+        expect(screen.queryByTestId('mock-completion-card')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('finish-reading'));
+        storageScopeState.value = 'user:another-account';
+        progressState.value = { completed: ['seg-1'], maxSegmentIndex: 0, lastSegmentIndex: 0, isCompleted: true };
+        rerender(<ReaderView content={mockContent} />);
+        expect(screen.getByTestId('mock-completion-card')).toHaveAttribute('data-celebrate', 'false');
     });
 
     it('finishes all segments and lets undo restore the prior reading state', async () => {

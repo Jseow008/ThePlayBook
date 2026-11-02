@@ -126,6 +126,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [progressChoiceDestination, setProgressChoiceDestination] = useState<
         { kind: "segment"; segmentId: string } | { kind: "completion" } | null
     >(null);
+    const [celebrationRequest, setCelebrationRequest] = useState<string | null>(null);
     const completionRef = useRef<HTMLDivElement | null>(null);
     const latestAudioStateRef = useRef({ timeSec: 0, durationSec: 0 });
     const openedContentIdRef = useRef<string | null>(null);
@@ -157,6 +158,10 @@ export function ReaderView({ content }: ReaderViewProps) {
     useEffect(() => () => { currentDestinationRef.current = ""; }, []);
 
     const readerEntryKey = `${content.id}:${content.audio_url ?? ""}`;
+    const celebrationScopeKey = `${storageScope}:${readerEntryKey}`;
+    const consumeCelebration = useCallback(() => {
+        setCelebrationRequest(current => current === celebrationScopeKey ? null : current);
+    }, [celebrationScopeKey]);
     const popoverHighlight = popoverHighlightId
         ? highlights.find((highlight) => highlight.id === popoverHighlightId) ?? null
         : null;
@@ -419,6 +424,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             setSegmentScrollRequest(null);
         }
 
+        setCelebrationRequest(null);
         previousStorageScopeRef.current = storageScope;
         setHasPendingProgressSave(false);
     }, [readerEntryKey, storageScope]);
@@ -559,6 +565,10 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     // Handle explicit segment completion
     const handleSegmentComplete = (segmentId: string, index: number) => {
+        if (!content.segments.every(segment => completedSegments.has(segment.id))
+            && content.segments.every(segment => segment.id === segmentId || completedSegments.has(segment.id))) {
+            setCelebrationRequest(celebrationScopeKey);
+        }
         // Mark explicitly completed
         setCompletedSegments((prev) => {
             const next = new Set(prev);
@@ -602,6 +612,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         const finalMaxSegmentIndex = content.segments.length - 1;
         const finalProgress = buildProgressSnapshot(finalCompletedSegments, finalMaxSegmentIndex, new Set());
 
+        setCelebrationRequest(celebrationScopeKey);
         setCompletedSegments(finalCompletedSegments);
         setManuallyIncompleteSegments(new Set());
         setMaxSegmentIndex(finalMaxSegmentIndex);
@@ -619,6 +630,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             action: {
                 label: "Undo",
                 onClick: () => {
+                    setCelebrationRequest(null);
                     setCompletedSegments(new Set(previousCompletedSegments));
                     setManuallyIncompleteSegments(new Set(previousManuallyIncompleteSegments));
                     setMaxSegmentIndex(previousMaxSegmentIndex);
@@ -642,6 +654,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         });
     }, [
         buildProgressSnapshot,
+        celebrationScopeKey,
         completedSegments,
         manuallyIncompleteSegments,
         content.id,
@@ -1043,6 +1056,9 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
 
         if (didAdvanceCompletedSegments) {
+            if (content.segments.every(segment => nextCompletedSegments.has(segment.id))) {
+                setCelebrationRequest(celebrationScopeKey);
+            }
             setCompletedSegments(nextCompletedSegments);
         }
 
@@ -1051,7 +1067,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
 
         setHasPendingProgressSave(true);
-    }, [audioCurrentTimeSec, completedSegments, content.segments, hasCompletedAudioPlayback, hasSyncedAudioPosition, manuallyIncompleteSegments, maxSegmentIndex]);
+    }, [audioCurrentTimeSec, completedSegments, content.segments, hasCompletedAudioPlayback, hasSyncedAudioPosition, manuallyIncompleteSegments, maxSegmentIndex, celebrationScopeKey]);
 
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
@@ -1279,6 +1295,8 @@ export function ReaderView({ content }: ReaderViewProps) {
                             author={content.author}
                             segmentCount={content.segments.length}
                             readerTheme={readerTheme}
+                            celebrationRequested={celebrationRequest === celebrationScopeKey}
+                            onCelebrationConsumed={consumeCelebration}
                         />
                     </div>
                 ) : (
