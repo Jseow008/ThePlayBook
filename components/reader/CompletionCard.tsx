@@ -77,7 +77,7 @@ export function CompletionCard({ contentId, title, author, segmentCount, readerT
                     <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
                         You&apos;ve finished reading!
                     </h2>
-                    <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
+                    <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto text-balance">
                         {title}
                         <span className="sr-only"> — {segmentCount} sections completed</span>
                     </p>
