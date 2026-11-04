@@ -98,7 +98,43 @@ describe('SegmentAccordion', () => {
 
         const firstSegmentBadge = screen.getByText('Introduction').closest('button')?.querySelector('.text-green-400, .bg-green-500\\/15');
         expect(firstSegmentBadge).not.toBeNull();
+        expect(screen.getByText('01')).toBeInTheDocument();
+        expect(screen.getByText('Completed')).toBeInTheDocument();
         expect(screen.getByText('02')).toBeInTheDocument();
+    });
+
+    it.each([true, false])('focuses the next header after keyboard Continue (desktop=%s)', async (desktop) => {
+        vi.useFakeTimers();
+        try {
+            mockedUseMediaQuery.mockReturnValue(desktop);
+            render(<SegmentAccordion {...defaultProps} />);
+            fireEvent.click(screen.getByText('Introduction').closest('button')!);
+            await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+            const continueButton = screen.getByRole('button', { name: 'Continue' });
+            continueButton.focus();
+            fireEvent.click(continueButton, { detail: 0 });
+            await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+            const nextHeader = screen.getByText('Chapter 1').closest('button')!;
+            expect(nextHeader).toHaveAttribute('aria-expanded', 'true');
+            expect(nextHeader).toHaveFocus();
+            expect(defaultProps.onSegmentComplete).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('does not move keyboard focus after pointer Continue', async () => {
+        vi.useFakeTimers();
+        try {
+            render(<SegmentAccordion {...defaultProps} />);
+            fireEvent.click(screen.getByText('Introduction').closest('button')!);
+            await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+            fireEvent.click(screen.getByRole('button', { name: 'Continue' }), { detail: 1 });
+            await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+            expect(screen.getByText('Chapter 1').closest('button')).not.toHaveFocus();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('calls onSegmentOpen when a segment is clicked', () => {

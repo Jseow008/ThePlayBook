@@ -340,7 +340,7 @@ export function SegmentAccordion({
     }, [cancelPendingScroll, scrollSegmentIntoView]);
 
     const handleToggle = useCallback(
-        (segment: SegmentFull, index: number) => {
+        (segment: SegmentFull, index: number, options?: { focusAfterScroll?: boolean }) => {
             const isOpening = currentExpandedId !== segment.id;
 
             if (isOpening) {
@@ -348,7 +348,7 @@ export function SegmentAccordion({
                 onSegmentOpen(segment.id, index);
 
                 const initialScrollY = window.scrollY;
-                scheduleScrollAfterExpansion(segment.id, initialScrollY);
+                scheduleScrollAfterExpansion(segment.id, initialScrollY, options);
                 return;
             }
 
@@ -542,7 +542,7 @@ export function SegmentAccordion({
                         >
                             <span
                                 className={cn(
-                                    "flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold transition-all",
+                                    "relative flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold transition-all",
                                     isCompleted
                                         ? "bg-green-500/15 text-green-400"
                                         : isExpanded
@@ -551,10 +551,14 @@ export function SegmentAccordion({
                                     isAudioActive && !isCompleted && "bg-primary/18 text-primary ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(99,102,241,0.08)]"
                                 )}
                             >
-                                {isCompleted ? (
-                                    <CheckCircle2 className="size-4.5" />
-                                ) : (
-                                    (index + 1).toString().padStart(2, "0")
+                                {(index + 1).toString().padStart(2, "0")}
+                                {isCompleted && (
+                                    <>
+                                        <span className="absolute -bottom-0.5 -right-0.5 rounded-full bg-background p-0.5" aria-hidden="true">
+                                            <CheckCircle2 className="size-3" />
+                                        </span>
+                                        <span className="sr-only">Completed</span>
+                                    </>
                                 )}
                             </span>
 
@@ -643,7 +647,7 @@ export function SegmentAccordion({
                                         incompleteAction && "flex-col gap-1"
                                     )}>
                                         <button
-                                            onClick={() => {
+                                            onClick={(event) => {
                                                 if (isLastSegment) {
                                                     if (!isContentCompleted) {
                                                         onFinishReading?.();
@@ -658,7 +662,7 @@ export function SegmentAccordion({
                                                 }
 
                                                 const nextSegment = segments[index + 1];
-                                                handleToggle(nextSegment, index + 1);
+                                                handleToggle(nextSegment, index + 1, { focusAfterScroll: event.detail === 0 });
                                             }}
                                             className={cn(
                                                 "focus-ring inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors max-sm:max-w-full max-sm:whitespace-normal max-sm:text-center sm:min-h-0 sm:px-5",
