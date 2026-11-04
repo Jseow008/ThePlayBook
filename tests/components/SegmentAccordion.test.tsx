@@ -312,6 +312,20 @@ describe('SegmentAccordion', () => {
         }
     });
 
+    it.each([false, true])('explicit Follow tolerates layout scroll movement unless the user intervenes (%s)', async (interrupted) => {
+        vi.useFakeTimers();
+        try {
+            render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-2" scrollRequest={{segmentId: 'seg-2', initialScrollY: 500, requestId: 9, explicitFollow: true, focusAfterScroll: true}} />);
+            if (interrupted) fireEvent.wheel(window);
+            await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+            if (interrupted) expect(window.scrollTo).not.toHaveBeenCalled();
+            else {
+                expect(window.scrollTo).toHaveBeenCalled();
+                expect(screen.getByText('Chapter 1').closest('button')).toHaveFocus();
+            }
+        } finally { vi.useRealTimers(); }
+    });
+
     it('cancels a queued audio-follow scroll when the request is cleared', async () => {
         vi.useFakeTimers();
 

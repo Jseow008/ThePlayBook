@@ -276,7 +276,7 @@ describe("AudioPlayer", () => {
         );
         const playbackRateButton = screen.getByRole("button", { name: "Change mini player playback speed" });
         expect(playbackRateButton).toHaveClass("size-11");
-        expect(playbackRateButton.parentElement).toHaveClass("col-start-5", "row-start-2");
+        expect(playbackRateButton).toHaveClass("col-start-5", "row-start-2");
         expect(playbackRateButton).toHaveTextContent("1x");
         expect(screen.getByRole("button", { name: "Close audio mini player" })).toHaveClass(
             "col-start-5",

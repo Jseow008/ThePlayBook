@@ -546,12 +546,12 @@ export function AudioPlayer({
                                             <span className="text-[9px] font-bold leading-none">10</span>
                                         </span>
                                     </button>
-                                    <div className="col-start-5 row-start-2 flex min-h-11 items-center justify-self-end sm:contents">
+                                    <div className="contents">
                                         {showResumeAudioFollow && onResumeAudioFollow && (
                                             <button
                                                 type="button"
                                                 onClick={onResumeAudioFollow}
-                                                className="focus-ring inline-flex h-11 items-center justify-center rounded-full border border-border/70 bg-background/60 px-2 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-accent/45 sm:h-auto sm:px-2.5"
+                                                className="focus-ring col-span-5 col-start-1 row-start-3 justify-self-center inline-flex h-11 items-center justify-center rounded-full border border-border/70 bg-background/60 px-2 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-accent/45 sm:h-auto sm:px-2.5"
                                             >
                                                 Follow
                                             </button>
@@ -559,7 +559,7 @@ export function AudioPlayer({
                                         <button
                                             type="button"
                                             onClick={cyclePlaybackRate}
-                                            className="focus-ring group inline-flex size-11 flex-shrink-0 items-center justify-center text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground sm:h-auto sm:w-auto sm:min-w-9"
+                                            className="focus-ring col-start-5 row-start-2 justify-self-end group inline-flex size-11 flex-shrink-0 items-center justify-center text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground sm:h-auto sm:w-auto sm:min-w-9"
                                             aria-label="Change mini player playback speed"
                                             title="Change playback speed"
                                         >
