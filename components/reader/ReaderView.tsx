@@ -122,6 +122,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         initialScrollY: number;
         requestId: number;
         focusAfterScroll?: boolean;
+        explicitFollow?: boolean;
     } | null>(null);
     const [progressChoiceDestination, setProgressChoiceDestination] = useState<
         { kind: "segment"; segmentId: string } | { kind: "completion" } | null
@@ -232,11 +233,12 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         setIsAudioFollowEnabled(false);
     }, [activeNarrationSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled]);
-    const requestSegmentScroll = useCallback((segmentId: string, initialScrollY = window.scrollY, options?: { focusAfterScroll?: boolean }) => {
+    const requestSegmentScroll = useCallback((segmentId: string, initialScrollY = window.scrollY, options?: { focusAfterScroll?: boolean; explicitFollow?: boolean }) => {
         setSegmentScrollRequest((previous) => ({
             segmentId,
             initialScrollY,
             focusAfterScroll: options?.focusAfterScroll,
+            explicitFollow: options?.explicitFollow,
             requestId: (previous?.requestId ?? 0) + 1,
         }));
     }, []);
@@ -276,7 +278,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         if (activeNarrationSegmentId) {
             setExpandedSegmentId(activeNarrationSegmentId);
-            requestSegmentScroll(activeNarrationSegmentId, window.scrollY, { focusAfterScroll: true });
+            requestSegmentScroll(activeNarrationSegmentId, window.scrollY, { focusAfterScroll: true, explicitFollow: true });
         }
     }, [activeNarrationSegmentId, requestSegmentScroll]);
     const handleAudioPlaybackStarted = useCallback((timeSec: number) => {
