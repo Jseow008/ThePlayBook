@@ -229,6 +229,11 @@ describe("BrainClientPage", () => {
         expect(screen.getByText("Note")).toBeInTheDocument();
         expect(screen.getAllByText("Highlight").length).toBeGreaterThan(0);
         expect(screen.queryByText("   ")).not.toBeInTheDocument();
+        expect(screen.getAllByRole("link", { name: "Open passage" }).map(link => link.getAttribute("href"))).toEqual([
+            "/read/content-1/can-t-hurt-me?highlightId=highlight-1",
+            "/read/content-2/12-rules-for-life?highlightId=highlight-2",
+            "/read/content-1/can-t-hurt-me?highlightId=highlight-3",
+        ]);
     });
 
     it("uses the shared notes card style for reflections while preserving their identity", () => {

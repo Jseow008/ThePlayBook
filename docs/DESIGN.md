@@ -205,3 +205,8 @@ When docs and artifacts disagree, prefer:
 3. this file
 
 [AGENTS.md](../AGENTS.md) owns assistant workflow and UI-change guardrails. [UI_UX_PRO_MAX.md](./UI_UX_PRO_MAX.md) covers optional local tooling. Any locally generated `design-system/netflux/*` artifacts are reference material, not live product authority or guaranteed checkout assets.
+
+Notes highlight/note cards allow two source-title lines and use stronger thought
+text within the existing Your note block. Their footer labels the existing
+exact-highlight destination Open passage, alongside unchanged Edit/Add, copy and
+delete actions. Reflections, filtering, search and Ask behavior stay independent.

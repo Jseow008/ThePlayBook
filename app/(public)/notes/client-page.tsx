@@ -324,7 +324,7 @@ function HighlightListItem({
                     aria-hidden="true"
                     className={cn("absolute inset-y-0 left-0 w-[3px]", colorClasses.swatch)}
                 />
-                <div className="flex flex-col items-stretch gap-2 p-3 sm:flex-row sm:items-start sm:p-4">
+                <div className="flex flex-col items-stretch gap-2 p-3 sm:p-4">
                     {href ? (
                         <Link
                             href={href}
@@ -347,7 +347,7 @@ function HighlightListItem({
                                 )}
 
                                 <div className="min-w-0 flex-1">
-                                    <h3 className="line-clamp-1 text-[0.98rem] font-semibold tracking-[-0.01em] text-foreground">
+                                    <h3 className="line-clamp-2 text-[0.98rem] font-semibold tracking-[-0.01em] text-foreground">
                                         {item.content_item?.title || "Saved passage"}
                                     </h3>
 
@@ -380,7 +380,7 @@ function HighlightListItem({
                                     <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
                                         Your note
                                     </p>
-                                    <p className="mt-1.5 line-clamp-4 max-w-3xl text-[0.88rem] leading-6 text-muted-foreground">
+                                    <p className="mt-1.5 line-clamp-4 max-w-3xl text-[0.88rem] leading-6 text-foreground/90">
                                         {noteText}
                                     </p>
                                 </div>
@@ -393,7 +393,7 @@ function HighlightListItem({
                                     <BookOpen className="size-4" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <h3 className="line-clamp-1 text-[0.98rem] font-semibold tracking-[-0.01em] text-foreground">
+                                    <h3 className="line-clamp-2 text-[0.98rem] font-semibold tracking-[-0.01em] text-foreground">
                                         Saved passage
                                     </h3>
                                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.76rem] text-muted-foreground">
@@ -417,7 +417,7 @@ function HighlightListItem({
                                     <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
                                         Your note
                                     </p>
-                                    <p className="mt-1.5 line-clamp-4 max-w-3xl text-[0.88rem] leading-6 text-muted-foreground">
+                                    <p className="mt-1.5 line-clamp-4 max-w-3xl text-[0.88rem] leading-6 text-foreground/90">
                                         {noteText}
                                     </p>
                                 </div>
@@ -425,41 +425,43 @@ function HighlightListItem({
                         </div>
                     )}
 
-                    <div className="mt-0.5 flex shrink-0 self-start items-center gap-1 sm:gap-1.5">
-                        <button
-                            type="button"
-                            onClick={() => onEdit(item)}
-                            className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-card/35 px-2.5 py-1.5 text-[0.72rem] font-medium text-foreground/85 transition-colors hover:bg-card/55 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                            aria-label={noteText ? "Edit note" : "Add note"}
-                        >
-                            <Edit3 className="size-3.5" />
-                            <span>{noteText ? "Edit" : "Add"}</span>
-                        </button>
-                        <SavedNoteCopyButton item={item} passageHref={href} />
+                    <div className="mx-3 mt-2 flex flex-wrap items-center gap-1 border-t border-white/8 pt-2 sm:gap-1.5">
                         {href && (
                             <Link
                                 href={href}
-                                className="rounded-md p-2 text-muted-foreground/80 transition-colors hover:bg-background/40 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                aria-label={`Open ${itemType.toLowerCase()} in reader`}
+                                className="mr-auto inline-flex min-h-9 items-center gap-1.5 rounded-md px-2 py-2 text-sm font-medium text-foreground/90 transition-colors hover:bg-background/40 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                <ExternalLink className="size-4" />
+                                Open passage
+                                <ExternalLink aria-hidden="true" className="size-4" />
                             </Link>
                         )}
-                        <button
-                            type="button"
-                            onClick={() => onDelete(item.id, itemType)}
-                            disabled={deletePending}
-                            className={cn(
-                                "rounded-md p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60",
-                                isDeleteArmed
-                                    ? "bg-destructive/12 text-destructive hover:bg-destructive/18"
-                                    : "text-muted-foreground/80 hover:bg-destructive/10 hover:text-destructive"
-                            )}
-                            aria-label={isDeleteArmed ? `Confirm delete ${itemType.toLowerCase()}` : `Delete ${itemType.toLowerCase()}`}
-                            title={isDeleteArmed ? `Click again to delete this ${itemType.toLowerCase()}` : `Delete ${itemType.toLowerCase()}`}
-                        >
-                            {isDeleteArmed ? <X className="size-4" /> : <Trash2 className="size-4" />}
-                        </button>
+                        <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => onEdit(item)}
+                                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-card/35 px-2.5 py-1.5 text-[0.72rem] font-medium text-foreground/85 transition-colors hover:bg-card/55 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                aria-label={noteText ? "Edit note" : "Add note"}
+                            >
+                                <Edit3 className="size-3.5" />
+                                <span>{noteText ? "Edit" : "Add"}</span>
+                            </button>
+                            <SavedNoteCopyButton item={item} passageHref={href} />
+                            <button
+                                type="button"
+                                onClick={() => onDelete(item.id, itemType)}
+                                disabled={deletePending}
+                                className={cn(
+                                    "rounded-md p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60",
+                                    isDeleteArmed
+                                        ? "bg-destructive/12 text-destructive hover:bg-destructive/18"
+                                        : "text-muted-foreground/80 hover:bg-destructive/10 hover:text-destructive"
+                                )}
+                                aria-label={isDeleteArmed ? `Confirm delete ${itemType.toLowerCase()}` : `Delete ${itemType.toLowerCase()}`}
+                                title={isDeleteArmed ? `Click again to delete this ${itemType.toLowerCase()}` : `Delete ${itemType.toLowerCase()}`}
+                            >
+                                {isDeleteArmed ? <X className="size-4" /> : <Trash2 className="size-4" />}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
