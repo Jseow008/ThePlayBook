@@ -4545,6 +4545,47 @@ verify GitHub scope and enable protected squash auto-merge after PR scope passes
 Required CI/security remain mandatory. No timer/post-merge wait requested.
 One implementer, no subagents; exact usage unavailable.
 
+## Notes card hierarchy — 4 November 2026
+
+Approved: two title lines, brighter thought text and Open passage footer on
+desktop/narrow, retaining search/filters and existing behavior. Exact parent
+#316 a51f558d4ded44d49a4752fc5d3dd5fe4abeb606, still open. Branch
+codex/notes-card-hierarchy, worktree /Users/j/.codex/workspaces/netflux-notes-card-hierarchy.
+Only HighlightListItem markup/classes change in the Notes page: linkable and
+source-less titles clamp to two lines; thought text uses foreground/90; existing
+reader link becomes visibly labeled Open passage in a footer. Edit/Add, copy,
+delete and the existing body link retain their destinations/handlers. Secondary
+actions stay together when the footer wraps at 320px. Reflections and all page
+query/search/filter/Ask/editor/delete/storage logic remain byte-for-byte unchanged.
+
+Actual-function CUA Chrome fixture compared exact parent/candidate at 1440,
+390 and 320px using synthetic records (long-title note, short highlight, missing
+source). Narrow long title changes from 23.52px to 47.03px height; short remains
+one line. Thought text is brighter, overflow absent, and both footer/body hrefs
+retain content/section-highlight destinations. Missing-source record has no
+Open passage link; saved quote/thought still render. Tab from Open passage
+reaches Edit. Edit/Add and armed-delete callbacks use the correct synthetic IDs.
+Fixture renders extracted copies of the exact shipped function, not private
+production notes; no real persistence is exercised. Existing Notes/search/copy
+tests pass 29/29, with the existing row-link test extended to verify all three
+footer exact-highlight hrefs. No class-mirroring tests added.
+
+Evidence: thread notes-card-hierarchy-implementation/{geometry.json,behavior.json,
+candidate-390.png,candidate-desktop.png,fixture-source/,lint.log,build.log}.
+No saved/private data, account, paid resource or model calls. Own tab/server
+closed and viewport restored; temporary route/function copies and dev types
+removed before final checks. Initial test scan used unmatched shell globs;
+switched to rg --files. Initial source read was on the previous checkout; final
+implementation and fixture use the actual #316 parent. Screenshots after action
+checks retain synthetic armed-delete state. Physical phones, Safari, production
+and skipped tests are outside coverage. One implementer; usage unavailable.
+
+Next: finish local checks, inspect exact own history/files, publish ready stacked
+PR naming #316 with stacked-pr label. Hold merge while parent remains open;
+never merge child into its feature branch. If parent lands, compare parent and
+candidate trees and refresh/retarget normally; required CI/security gate release.
+No timer/post-merge monitoring requested.
+
 ## Mark incomplete interaction feedback — 2 November 2026
 
 User approved faint rounded hover/focus fill and stronger pressed feedback,
@@ -4697,3 +4738,5 @@ Final local gates: full lint/ratchets, default Turbopack production build
 production credentials. Ready PR will contain only CompletionCard, its focused
 tests, DESIGN and this checkpoint. Next: protected PR scope then squash auto-merge;
 required CI/security remain release gates. Do not wait for full CI or deployment.
+
+Final local checks: full lint/ratchets, clean production build (Sharp traces and critical CSS), standalone typecheck, and all 29 focused Notes/search/copy tests passed. #316 remains open at the tested parent; own four-file diff is presentation, existing-link regression and documentation only. Inert build configuration is not backend-connectivity verification.
