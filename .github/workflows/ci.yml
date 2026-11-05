@@ -90,13 +90,14 @@ jobs:
           status_output="$(
             npx supabase status -o env \
               --override-name api.url=NEXT_PUBLIC_SUPABASE_URL \
-              --override-name auth.anon_key=NEXT_PUBLIC_SUPABASE_ANON_KEY
+              --override-name auth.anon_key=NEXT_PUBLIC_SUPABASE_ANON_KEY \
+              --override-name auth.service_role_key=SUPABASE_SERVICE_KEY
           )"
           exported_environment="$(
             printf '%s\n' "$status_output" \
-              | sed -nE 's/^(NEXT_PUBLIC_SUPABASE_(URL|ANON_KEY))="(.*)"$/\1=\3/p'
+              | sed -nE 's/^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|SUPABASE_SERVICE_KEY)="(.*)"$/\1=\2/p'
           )"
-          test "$(printf '%s\n' "$exported_environment" | sed '/^$/d' | wc -l)" -eq 2
+          test "$(printf '%s\n' "$exported_environment" | sed '/^$/d' | wc -l)" -eq 3
           printf '%s\n' "$exported_environment" >> "$GITHUB_ENV"
 
       - name: Build
