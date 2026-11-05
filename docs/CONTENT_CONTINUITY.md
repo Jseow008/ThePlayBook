@@ -187,3 +187,136 @@ this second consumer caused an unnecessary CI attempt. Hosted/product evidence
 is unchanged. This is a necessary fixture correction, not a relaxed assertion or
 an unchanged retry. No production credentials enter CI. Required gates must run
 on the new head; do not infer their outcome from earlier security successes.
+
+### Stage2 restriction prepared; ordered production rollout pending
+
+Branch `codex/catalog-search-rpc-restriction`, worktree
+`/Users/j/.codex/workspaces/netflux-catalog-search-restriction`, intentionally
+stacks on #321 at `ad75b5af9ef3c0432e4590fa8b2b142be21f67cc`. New migration
+`20261105094614_restrict_catalog_search_to_server.sql` adds a signed service-role
+guard to the exact existing search body and revokes PUBLIC/anon/authenticated
+execution, retaining service_role. A regression compares the remaining body
+exactly with the original. Existing published-only projection, ranking,
+pagination, index privacy and Notes RLS are preserved. ACL checks remove the
+public exception and now require the general service-role guard/browser denials.
+No advisor exception or schema/type expansion.
+
+Hosted results for this restriction:19 focused contract/module/security tests
+passed;5 catalog/Notes runtime cases passed,1 performance case skipped locally
+(the unchanged required CI performance job still runs). Raw SQL pool startup
+options did not establish JWT claims through the hosted pooler; the harness now
+uses its supported awaited onConnect query, and explicitly restores account
+claims in browser-role probes. The configured pool still has2 connections.
+Ten SQL ACL/RLS/invariant checks passed. Real HTTP direct RPC returned401 anon /
+403 authenticated, both42501, while the unchanged production build returned the
+exact same25 public IDs, snippets, ranks and next/previous cursors before/after.
+Second account read only its own private thought; public search excluded both
+private thoughts and draft/retired records. Chrome search also matched exactly
+after restriction.83 public build files contained no service key.
+
+Fresh candidate/production public types match exactly after only PostgREST
+platform-version normalization. Full hosted reset/replay matched all14 pre-reset
+schema categories, left zero auth users/content, and final dry-run was clean.
+Strict hosted security advisor script passed with12 INFOs and zero WARN/ERROR;
+the existing private RLS/no-policy INFOs intentionally deny browser access.
+Preserve all skipped-test/device limitations; no broad benchmark or provider call
+was used for this hosted proof. Required CI/performance gates still apply.
+
+Leaked-password protection was enabled and behavior-tested on the candidate:
+known pwned password rejected422; strong update and sign-in200. Then applied
+only the user-approved password_hibp_enabled=true setting to production.
+Reviewed email/Google/signup/password-length/reauthentication settings stayed
+unchanged. First production attempt failed its rejection assertion; its response
+shape was not retained, so its cause remains unknown (do not attribute it to
+propagation as fact). The test account was signed out and deleted. A subsequent
+diagnostic attempt, without another setting update, recorded422 with reason
+pwned, strong update200 and subsequent login200. That second account was also
+signed out globally, deleted and independently confirmed404. No real user's
+password/session/profile or content was changed. No email-delivery or external
+Google OAuth login claim is made. Temporary candidate Auth enabling also had an
+initial immediate configuration-comparison failure; a later read/behavior proof
+confirmed enabled. These failed attempts remain recorded, not relabelled passed.
+
+Production read-only dry-run, in a separate workdir linked only to
+`xmuqsgfxuaaophxnwure`, lists exactly
+`20261105094614_restrict_catalog_search_to_server.sql`; no #320 migration.
+Supabase reports completed physical backup2026-11-04T23:49:55.369Z, under24h old
+for this permission-only mutation; PITR is off. No new backup purchase inferred.
+Production search grants are NOT yet changed. Release order is #321 required
+checks → protected merge → READY production/public-alias identity and search
+check → explicit exact-list migration approval → permission change/parity/access
+and advisor checks → #322 protected merge. Keep #320 held throughout. The
+user's general rollout instruction does not skip OPS's exact-list decision.
+
+Artifacts are sanitized under the task's `catalog-security/` directory. Candidate
+`xlhrenvtpwmxmnlzuler` must be deleted and local processes/container/secrets/tabs
+cleaned before completing this verification; reset already removed its fixtures.
+No production catalog rows, private notes, #320 migration or matching rules have
+changed. One agent; application-provider usage zero; Codex billing unavailable.
+
+### Exact migration authorization and cleanup
+
+Owner explicitly approved applying only
+`20261105094614_restrict_catalog_search_to_server.sql` after #321 is live and
+the required gates pass. This supersedes the pending exact-list decision above;
+it does not authorize #320's migration or bypass any gate. #321 head
+`ad75b5af9ef3c0432e4590fa8b2b142be21f67cc` has protected squash auto-merge enabled
+after clean scope inspection and hosted proof. Security Validation and Catalog
+Search Evidence passed; validate is still in its browser step. Stage2 PR #322
+head `923a50d5947927954bf47b70a7d7407d9a5af6eb` is open/held with stacked-pr label
+and parent #321. Its required checks are running; do not enable auto-merge before
+the ordered production restriction is verified.
+
+Candidate project `xlhrenvtpwmxmnlzuler` deleted by CLI; fresh connector inventory
+confirmed absence and production still present. Full reset had already removed
+all synthetic auth/content rows. Closed only the test-created Chrome tab,
+stopped owned app/ingress/REST processes, removed the labelled Redis container,
+and confirmed no listeners on3440/3441/3442. Removed candidate environment,
+generated build, keys/passwords, isolated candidate CLI state and fixture
+helpers. No exact candidate keychain item remained; global CLI login untouched.
+Production disposable users were already deleted/confirmed404. Sanitized proofs
+and screenshot remain under task artifacts `catalog-security/`. The separate
+production read-only CLI workdir is retained only for the approved rollout.
+
+Candidate performance advisor had unused-index INFO62 on the freshly reset
+empty database plus auth connection-count INFO1, zero WARN/ERROR and no
+unindexed-FK finding. Only function_definition/function_acl fingerprints changed
+from baseline; index/schema design did not change. Before #321 release, public
+alias resolved to READY production `dpl_TuXchSoEoAySegvFxtbbD98aMt53`, main
+`232e104a680207eaa8228a1f408d99a85109f7f4`. Next: finish normal #321 gates,
+verify its new READY deployment and public alias/search, refresh #322 onto merged
+main without changing the reviewed application/SQL tree, require final gates,
+reconfirm exact production dry-run and apply the approved single migration.
+
+Latest stage1 head is `0ab10134b1e41ff3272a70187556420531dc83fd` (application
+source identical to the hosted build). In addition to the separate catalog
+evidence job, the main CI browser job needed its own ephemeral service-key
+export. Its old run42006126202 finished with12 search failures across six
+viewports,200 passes/118 skips; do not label that run passed or merely cancelled.
+The missing credential prevented normal search/empty-result states. Corrected
+only that fixture export and its exact three-variable count; synthetic extraction
+check and18 focused tests passed. Final CI42009280885 and security42009280666
+are running; PR scope and Catalog Search Evidence passed at the corrected head.
+Protected auto-merge remains enabled only for #321. #322 must refresh onto the
+actual merged main (which has strict required-current-base rules) before its
+final release; its old-head hosted SQL evidence is reusable because the reviewed
+SQL/application body is unchanged. Do not repeat paid hosted verification for
+CI credential wiring or Git ancestry alone. No new resource remains running.
+
+### Consolidated ordered release candidate
+
+The approved application and permission changes are consolidated in #321 to
+avoid a strict-base stacked-PR refresh starting another full CI cycle after the
+caller merges. #322 becomes a superseded review reference. This changes release
+packaging only: the exact approved migration/hash and application source are
+unchanged. The only cherry-pick conflict was overlapping checkpoint appendices,
+resolved by retaining both records. No product/SQL merge conflict.
+
+The production build does not apply migrations automatically (verified package
+scripts/workflows). Thus #321 can deploy its compatible caller while the old
+RPC grants remain, and the separately approved single migration is applied only
+after that build is READY on the public alias and every final gate passes.
+The owner's condition “after #321 is live and the required checks pass” remains
+fully enforced. No new approval, paid resource, API behavior or scope change.
+#320 remains OPEN/unmerged with auto-merge off. All earlier intermediate PR/head
+status paragraphs are historical, superseded by this consolidated candidate.
