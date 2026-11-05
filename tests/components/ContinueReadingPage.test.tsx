@@ -103,6 +103,7 @@ describe("ContinueReadingPage", () => {
         updated_at: "2026-03-01T00:00:00Z",
         deleted_at: null,
         isbn: null,
+        update_source_id: null,
     };
 
     beforeEach(() => {

@@ -233,4 +233,20 @@ describe("ContentForm", () => {
         expect(global.fetch).not.toHaveBeenCalled();
         expect(await screen.findByText("Please drop an image file here.")).toBeInTheDocument();
     });
+    it("saves an updated version privately before review and invalidates review when editing resumes", async () => {
+        const item = createInitialData();
+        vi.mocked(fetch).mockResolvedValueOnce({json: async () => ({success:true})} as Response)
+            .mockResolvedValueOnce({ok:true,json:async () => ({source:{id:"old",title:"Old",updated_at:"old-time"},replacement:{id:item.id,title:"New",updated_at:"new-time"},preserved:{libraryRecords:1,highlights:1,reflections:0}})} as Response);
+        render(<ContentForm initialData={item} isEditing isVersionDraft />);
+        fireEvent.change(screen.getByLabelText("Big Idea"),{target:{value:"Unpublished rewrite"}});
+        fireEvent.click(screen.getByRole("button",{name:"Save and review updated version"}));
+        const publish = await screen.findByRole("button",{name:"Publish updated version"});
+        await waitFor(() => expect(publish).toBeEnabled());
+        expect(JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body))).toMatchObject({status:"draft",quick_mode_json:{big_idea:"Unpublished rewrite"}});
+        expect(routerPushMock).not.toHaveBeenCalled();
+        fireEvent.change(screen.getByLabelText("Big Idea"),{target:{value:"Newer unsaved rewrite"}});
+        await waitFor(() => expect(screen.queryByRole("button",{name:"Publish updated version"})).not.toBeInTheDocument());
+        expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
 });

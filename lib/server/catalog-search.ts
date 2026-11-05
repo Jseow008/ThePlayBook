@@ -259,6 +259,7 @@ export async function searchCatalog(input: {
         updated_at: row.created_at,
         deleted_at: null,
         isbn: null,
+        update_source_id: null,
         rank: row.result_rank,
         snippet: { source: row.snippet_source ?? "Summary", ...parseCatalogSearchHeadline(row.snippet_headline ?? row.title) },
     }));

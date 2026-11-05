@@ -320,3 +320,483 @@ The owner's condition “after #321 is live and the required checks pass” rema
 fully enforced. No new approval, paid resource, API behavior or scope change.
 #320 remains OPEN/unmerged with auto-merge off. All earlier intermediate PR/head
 status paragraphs are historical, superseded by this consolidated candidate.
+
+
+## Publish updated version — implementation checkpoint, 5 November 2026
+
+- Worktree: `/Users/j/.codex/workspaces/netflux-publish-updated-version`.
+  Branch: `codex/publish-updated-version`, intentionally stacked on #319,
+  parent `182e5b38fca69874f216f9a6c493427b198c60da`.
+- Scope: create/resume a separate edition draft from the persisted published
+  graph; save/review it privately; atomically retire the original and publish
+  its successor through `admin_replace_content`. Preserve original section
+  IDs/text, highlights, thoughts, reflections and reading/listening records.
+  Keep the existing replacement notice; no original-summary reader, automatic
+  re-anchoring, progress transfer or historical-content restoration.
+- `20261105072759_publish_updated_content_versions.sql` adds the edition source
+  reference, one-active-draft constraint, guarded ordinary graph saves and
+  atomic draft publication. `published_at` protects reading text even after
+  Save as Draft. Changes to quick-mode wording or section identity/title/body/
+  ordering require a new edition; identical resubmissions, timing maintenance
+  and metadata edits remain supported. This is deliberately conservative;
+  small wording corrections also create editions. Privileged manual SQL is
+  an administrative capability, not a supported alternative editing path.
+- The create action explicitly uses the saved copy; unsaved changes in the
+  original editor are not copied. New edition sections/artifacts get fresh
+  IDs; personal records, audio/timings and embeddings are not cloned. Narration
+  and AI indexing follow existing explicit readiness workflows. New-draft
+  series controls are disabled; publication inherits the current original's
+  position. The active-slot unique index excludes soft-deleted originals,
+  retaining their series metadata instead of detaching archives.
+- Publication checks both reviewed timestamps and required cover/category/
+  quick-mode/readable-section fields under locks. Failed/stale publication
+  keeps the original live and draft resumable; repeated creates/publishes are
+  idempotent. Child-only graph saves invalidate a held publication review.
+  Bulk/direct status publication of an update draft is blocked by a trigger.
+- No production mutations, paid resources, provider calls or user data copied.
+  Local instance `/tmp/netflux-version-local`, project ID
+  `netflux-content-versions`, ports 57621/57622, isolated from every existing
+  developer database. Fixtures are synthetic and must be deleted with the
+  owned local instance/processes after verification. Never reset another stack.
+
+### Evidence so far
+
+- Local full migration replay/reset passed. Existing continuity + new runtime
+  and simultaneous request checks: **18/18 passed**. Includes exact original
+  personal/section state comparison, no old audio/embedding/timing copy,
+  private drafts, Save/Save-as-Draft guard and downgrade bypass prevention,
+  safe metadata/identical graph maintenance, same series slot with archived
+  metadata retained, stale/invalid publication recovery, archive immutability,
+  role restrictions, repeated editions and concurrent create/publish admission.
+- SQL function ACL, admin RPC ACL, new-object access and updated DB-002
+  transactional proof passed on the isolated database using the repository SQL
+  through `pg`. CLI `db query --db-url` failed to connect locally, although
+  `pg` connects and runs the same checks. This is a harness limitation, not a
+  passing hosted gate.
+- Initial runtime attempt had three JSON-parameter fixture failures: `pg`
+  encoded JavaScript arrays as SQL arrays. Explicit JSON serialization corrected
+  the harness; original failures retained in session logs.
+- Initial focused API/component checks: **19 passed**; additional form review
+  invalidation regression and final candidate checks pending.
+- Initial full suite: 2,141 passed, 314 skipped, 4 failed. One narration failure
+  came from install with lifecycle scripts omitted (ffmpeg missing); installed
+  its locked dependency executable and isolated narration tests passed. Three
+  parent-#319 unavailable-history tests lacked `useSearchParams` router context;
+  added the isolated router mock in this stack; its 9 tests passed. No product
+  change to #319. Subsequent full run: 2,143 passed, 314 skipped, 2 reader timeout
+  failures under concurrent build/dev/test load. These are unresolved until a
+  quiet final run, not converted to verified coverage.
+- Lint/ratchets and types passed on the earlier candidate. First build failed
+  because the new worktree had no Supabase environment. With the isolated local
+  environment, production build, Sharp traces and critical CSS passed. Repeat
+  only affected checks after final changes.
+- CUA Chrome navigation twice timed out; native address entry did not navigate
+  the test-created blank tab. In-app browser fallback works. Initial in-app
+  navigation/route waits also timed out during first compilation, then fresh
+  state confirmed the real page and successful API responses. One section
+  selector did not match; retargeted the visible section title. No writes to
+  production or unrelated tabs.
+- Actual in-app browser journey created a new draft, rewrote Big Idea and
+  section text, saved privately, loaded preservation counts and explicitly
+  published it. Returned to admin list showing one published item. At 390px
+  the review panel fit without horizontal overflow (viewport and scrollWidth
+  both 390). Original-link notice/Notes verification still pending.
+- Evidence directory (synthetic content only):
+  `/Users/j/.codex/visualizations/2026/10/21/01a15e86-edbe-79c1-8d88-6877902e13bf/content-version-updates`.
+
+### Release hold / exact next steps
+
+Finish the bounded local browser notice/Notes check, final runtime replay,
+focused regressions, lint/types/build and quiet full suite; review final diff.
+Open a `stacked-pr` PR naming #319 and verify its exact file list. **Do not enable
+merge or promote:** disposable hosted §2.2 verification, fresh types/security/
+schema comparison and reviewed production dry-run are still required. A paid
+hosted project requires a fresh quoted-cost approval; previous projects' cost
+approvals do not create another project. Production migration needs explicit
+approval for the exact dry-run list. Keep #319's own gate status separate.
+Physical devices, Safari, all skipped tests and production behavior remain
+outside coverage.
+
+### Final local findings and limits
+
+- In-app browser completed Create → separate draft → rewrite Big Idea/section →
+  Save and review → explicit Publish. Admin list showed exactly one active
+  published edition. The original reader link displayed the unchanged replacement
+  notice and its View original notes link displayed the exact synthetic quotation
+  and thought. Screenshot: `content-version-updates/local-original-notes-preserved.png`.
+- Initial Notes hydration/search failed because the new worktree lacked the
+  restricted snapshot-worker URL and account cursor secret. Provisioned only
+  the owned local worker role with a temporary password and local secret; after
+  configuration, snapshot creation/collection and filtered Notes reads returned
+  201/200, and the original note was visible. No application workaround added.
+- Opening the new reader hit a test-fixture image error (`example.invalid` is
+  not an allowed image host). Corrected only the synthetic successor's cover to
+  a local asset. The next reload was blocked by the in-app browser's
+  `ERR_NETWORK_IO_SUSPENDED` error page and URL policy. Do not call that new-reader
+  browser check passed; repeat with supported fixtures during hosted proof.
+  Attempts to reset/close that blocked in-app tab were also rejected by the
+  URL policy; it is an unmarked ephemeral test tab. The Chrome blank test tab
+  was closed. Viewport had already been reset before the reader checks.
+- Final review caught existing book-identity/ISBN uniqueness preventing a
+  same-title/author/ISBN edition draft. The migration permits only linked
+  unpublished drafts to share that identity, retaining normal-draft uniqueness
+  and rechecking on publication. Runtime fixtures now include a real author,
+  ISBN and checklist; they verify fresh artifact IDs/exact original state,
+  ordinary duplicates still blocked, and publish conflict rolling retirement
+  back. A second-generation archive also preserves the existing series-delete
+  FK behavior. No archive-edit exception was added.
+- Final targeted database tests: **19 passed**. Function/admin/new-object ACL,
+  DB-002, book identity, content invariants and RLS SQL checks all passed locally.
+  One local harness refresh raced the owned database reset and saw a missing
+  `private` schema; stopped, awaited reset, then reran against the ready database.
+  This failed setup attempt is not application evidence.
+- Focused API/component/reader regression run: **104 passed**, including private
+  save-before-review and invalidating review after newer editing. Quiet full
+  application suite: **2,146 passed, 315 skipped** (14 skipped files) at that
+  application tree. Final additional SQL/runtime cases were verified separately;
+  all skips remain unverified, and hosted CI must establish its own final counts.
+- Final production build/Sharp traces/critical CSS passed with the disposable
+  environment. Lint/type/capacity checks and clean full migration replay are
+  being finalized before PR submission. No provider calls. One agent, no
+  delegated work; Codex token/billing usage not available. Repeated local runs
+  addressed the recorded setup failures and changed guard/identity cases, not
+  a benchmark or repeated sampling to seek favorable timing.
+- Supabase quoted **$10/month** for a disposable hosted project in Jseow008,
+  with no prorated total. No project created and no approval inferred from
+  earlier verification projects. The PR must remain held until §2.2 and exact
+  production migration authorization are satisfied.
+
+### Ready for review; release held
+
+The final migration replay from a clean owned local database passed, followed by
+**19/19** runtime tests and all seven SQL security/invariant checks listed above.
+The replay left **zero auth users and zero edition drafts** after transactional
+fixture cleanup. Final changed admin tests: **53/53 passed**; lint/ratchets,
+types, production build, Sharp tracing and critical CSS passed. The 2,146-test
+quiet full-suite result is reused only for unchanged application paths; the
+subsequent admin failure-message branches and added database cases have their
+own passing focused checks. Capacity harness passed without skips.
+
+Final schema change also preserves existing normal-draft duplicate book rules;
+linked update drafts alone are excluded from active identity/ISBN reservations.
+Final required CI executes the version and continuity runtime files explicitly
+against its disposable database; default local unit skips do not count for them.
+The migration is new and **not applied to production**. No protected merge,
+production promotion or production key/configuration changes are authorized by
+this implementation request. Keep auto-merge off pending hosted evidence and
+reviewed migration approval. #319 remains its explicitly requested parent; its
+own required check failure remains separate from this feature's release gate.
+
+Next action after review: obtain the quoted-cost decision for one temporary
+Jseow008 hosted project, run §2.2 against this candidate including the supported
+cover/new-reader browser check, remove that project, then present the exact
+production dry-run list for authorization. No new research or UX scope is needed.
+
+Cleanup completed: stopped only project `netflux-content-versions` with
+`--no-backup`; no matching running containers remain. Removed the owned local
+fixture credentials, worker password, generated temporary types/configuration
+and `.env.local`. No unrelated local stack, user Chrome tab, production account
+or paid resource was changed. Sanitized test summaries and zero-fixture proof
+remain in the evidence directory. The rejected in-app error-tab close remains
+a browser limitation, not a data-cleanup failure (its backing users/data and
+server have been removed).
+
+PR opened: https://github.com/Jseow008/ThePlayBook/pull/320, candidate
+`6e99a30938717a8b4bc53bdbff5d7a0d99d4acd2`, base
+`codex/library-return-selection` (#319), labelled `stacked-pr`. GitHub file list
+matches the reviewed 29-file scope. PR scope passed (an earlier cancelled run
+was superseded); validate/security are running. Auto-merge is **off**. No timers
+or deployment monitoring created. Waiting only for the fresh hosted-project
+cost decision before the dependent §2.2 work; exact production migration
+approval is a later, separate gate. This post-submission checkpoint is left
+uncommitted to avoid an evidence-only CI restart.
+
+### Hosted verification authorized — 5 November 2026
+
+User approved the quoted $10/month and requested hosted proof, the outstanding
+new-reader browser check, and deletion afterward. Created only
+`netflux-pr320-verification-20261105`, ref `pgshakvnicgnlmssceal`, in Jseow008
+(`gpzuqaperuoiqvtgugzb`), ap-south-1. Production ref remains
+`xmuqsgfxuaaophxnwure`; they are different. Candidate commit remains
+`6e99a30938717a8b4bc53bdbff5d7a0d99d4acd2`. Auto-merge stays off; no production
+migration/deployment authorization inferred. Mandatory cleanup: delete this
+exact candidate even if a verification stage fails; confirm absence from list.
+
+Hosted progress: pinned candidate replay baseline matched production across all
+14 fingerprint categories after setting identical empty read-only search_path
+on both connections (the first raw mismatch was schema-qualification formatting
+only). Fresh baseline/production types differ only in PostgREST platform version.
+Applied exactly the reviewed migration to the candidate; 19/19 hosted runtime
+and concurrency tests passed (30s remote test/hook budgets only). Full hosted
+reset/replay then matched the pre-reset candidate in all 14 categories, and a
+subsequent dry-run was clean. Ten SQL ACL/RLS/invariant checks passed. Generated
+new schema matches tracked public types structurally after reviewing the three
+pre-existing email-RPC nullable-input overrides already on main; no #320 type
+mismatch or type change was made during this verification.
+
+Strict advisor script is **blocked**, not waived: existing public.search_catalog
+SECURITY DEFINER execution warnings for anon/authenticated, plus Auth leaked-
+password protection. These are also reported on production and not introduced
+by this migration. The script's allowlist is empty. Candidate/prod no-policy
+INFO findings match (12 intentional private tables); empty candidate has 34
+unused-index INFOs vs production 14, consistent with zero usage and the reviewed
+new indexes. No unindexed-FK or schema-design performance warning was reported.
+Do not claim a fully passed hosted gate or merge. Finish the independently
+requested synthetic browser check and cleanup; report this existing-policy
+block separately, without changing the checks or security settings.
+
+Setup failures retained: management auth initially received a keychain-encoded
+credential (401; decoded the existing CLI credential in memory); Node TLS rejected
+the pooler chain until the official Supabase root CA was supplied. No certificate
+checks were disabled. The outdated guessed CA download path returned403; resolved
+its current /prod/ssl path from Supabase's published dashboard source. No extra
+project, production credential reset or application code change resulted.
+
+### Hosted feature proof complete; advisor hold retained
+
+Pinned application commit `6e99a30938717a8b4bc53bdbff5d7a0d99d4acd2`, production
+build ID `Hatr8nCUEUzJNE2cmitsM`, ran locally against the disposable hosted project.
+This was not a production deployment. The 16 baseline-to-candidate schema
+identity changes all match the reviewed migration (version linkage, indexes,
+publication/graph guards and RPCs); no unexplained schema change was found.
+
+CUA Chrome completed the real create/save/review/publish journey with synthetic
+data and a supported hosted PNG. Published-text Save as Draft was rejected;
+creating an updated version produced a separate private draft; review and explicit
+publication left exactly one active published edition. Before/after database
+comparison proved the original sections, highlights, library and reflection
+records unchanged, apart from the planned original retirement timestamps.
+The new reader displayed the exact revised Big Idea and multiline section on
+desktop and at 390px (scrollWidth=clientWidth=390). The old reader retained its
+existing replacement notice, and View original notes showed the exact original
+saved quotation and thought. This closes the earlier unsupported-cover and
+new-reader verification gap; it does not add an original-summary reader.
+
+The seven smoke scenarios passed: login entry, missing-code auth callback
+recovery, Browse, public read, anonymous admin denial, authenticated admin, and
+shallow/detailed health (HTTP200/ok, database reachable). Additional API checks
+confirmed owner access to the exact original quotation/thought, zero matching
+rows for a second synthetic account, and denial of its admin version RPC.
+No live/paid AI calls occurred. Auth sessions were synthetic; the user's existing
+production login was not changed.
+
+Browser setup failures retained: the first localhost callback attempted HTTPS
+and failed with ERR_SSL_PROTOCOL_ERROR; the test ingress's forwarded host was
+corrected so the unchanged callback used its configured HTTP fallback origin.
+The admin-login gate initially returned404 because the local fixture lacked an
+allowed IP; setting only the fixture's ADMIN_ALLOWED_IPS=127.0.0.1 restored it.
+No application security checks were bypassed. Local HTTP ingress does not prove
+Vercel TLS behavior. Chrome control worked for this run; responsive desktop
+Chrome does not establish physical-phone or Safari coverage.
+
+Final GitHub validate, Security Validation and superseding PR scope passed at
+the pinned head. CI unit result: **2,149 passed, 316 skipped**. Browser result:
+**211 passed, 118 skipped, 1 flaky passed on configured retry** (analytics pageview).
+Security SQL runtime checks additionally retain one existing skipped case.
+All skips remain outside verified coverage. The separate hosted strict advisor
+script still exited1 on the three existing production warnings described above;
+GitHub success does not waive that failure. No allowlist or security setting
+was changed. PR remains open on #319 with auto-merge off.
+
+Cleanup completed: Supabase CLI deletion of exact ref `pgshakvnicgnlmssceal`
+succeeded; a fresh connector project list confirmed it absent while production
+`xmuqsgfxuaaophxnwure` remained present. Deletion removes both synthetic users,
+their notes/content, uploaded cover and database. Stopped both owned local
+servers, removed only the labelled `netflux-pr320-redis` container, and confirmed
+no listeners remain on3330/3331/3332. Removed candidate `.env.local`, generated
+build, private fixture credentials and the isolated linked CLI directory. No
+exact candidate keychain item remained; the global CLI login was untouched.
+Reset the Chrome viewport and closed only the two test-created tabs.
+
+Sanitized evidence and screenshots are retained in
+`/Users/j/.codex/visualizations/2026/10/21/01a15e86-edbe-79c1-8d88-6877902e13bf/content-version-updates/`,
+including `hosted-final-summary.json`, schema/type/SQL proofs, preservation/API
+proofs and desktop/390px reader images. No fixture credentials were copied.
+
+**Release hold remains.** Next requires a separate decision on the pre-existing
+advisor policy warnings, followed by the reviewed production dry-run and exact
+migration authorization. Production migration, merge and deployment have not
+occurred. No new research, paid resource or extra UX change is needed to finish
+this requested verification. This evidence-only checkpoint remains uncommitted
+to avoid restarting unchanged candidate checks.
+
+### Existing advisor investigation — read-only, 5 November 2026
+
+Authorization: investigate the existing warnings and recommend a solution only;
+keep #320 held, make no production changes. Re-read Supabase skill, agent/run
+rules, current advisor output and official remediation/password-security docs.
+Fetched current main `232e104a680207eaa8228a1f408d99a85109f7f4` (#319 is now
+merged). The search/auth implementations examined here match main; the only
+catalog module difference is #320's new `update_source_id: null` result field.
+#320 remains OPEN at `6e99a30938717a8b4bc53bdbff5d7a0d99d4acd2`, old intentional
+stack base unchanged, auto-merge off. No branch refresh or implementation done.
+
+**Two search warnings, one intentional public endpoint.** Fresh live metadata
+confirms the exact eight-argument `public.search_catalog` RPC is STABLE, SECURITY
+DEFINER, owned by postgres (BYPASSRLS), and executable by anon/authenticated plus
+service_role; PUBLIC has no execute grant. Search path is fixed to pg_catalog,
+public, and browser roles cannot create objects in public. Its index table has
+RLS, a deny policy, and no SELECT privileges for browser roles. The function
+uses static read-only SQL with explicit returned fields; it references no user
+notes/library/reflection/auth tables, filters verified/non-deleted content, and
+clamps page size to1..21. Thus these are real privileged-execution warnings, but
+not evidence of a private-data disclosure. Existing contract tests explicitly
+permit this exact public function; the advisor allowlist is independently empty.
+
+Read-only role probes used the ordinary query `risk`, a5s statement timeout, and
+transactions rolled back afterward. Both anon and authenticated produced21
+results, with zero results outside the active verified catalog. No record text,
+personal identifiers, hashes/passwords, new accounts or writes were needed.
+These database-role probes do not prove every query safe or replace browser
+account testing. Current owner privileges remain broad even though the present
+function body is narrow. The database function does not itself cap query length;
+the160-character application normalization can currently be bypassed by calling
+the public Supabase RPC directly. This establishes an additional exposed input
+surface, not observed denial of service or exploitation.
+
+All discovered product call sites are server routes/components using
+`lib/server/catalog-search.ts`; that module is already `server-only` and uses
+the cookie-free anon client. Browser results come from the application route.
+Revoking anon now would therefore break public search. Merely switching to
+SECURITY INVOKER would fail on its private index; granting browsers the index
+instead would expand access and is not recommended.
+
+**Recommended separate security change:** keep the same search function,
+private index, published-only output, ranking, pagination and account-bound Notes
+search. Change only this server-only catalog module to use the existing server
+service credential for the fixed RPC, then revoke EXECUTE from PUBLIC, anon and
+authenticated while retaining service_role and an explicit signed service-role
+guard. Update the exact catalog ACL/static/runtime expectations rather than
+weakening the general checks. This removes direct privileged browser execution
+and leaves public search available through Netflux. It is optional hardening of
+an intentional design, not a claim that the existing function leaked notes.
+A precisely scoped, reviewed advisor exception is technically supported by
+Supabase for intentional functions, but is not the recommended first option
+because all current product callers are already on the server. No exception
+was added or approved in this investigation.
+
+Deployment order matters: first deploy the compatible server caller while the
+existing live function already permits service_role. Only after confirming that
+caller is live should the separately approved ACL/guard migration restrict the
+RPC. Reversing the order would break the old application's anon call. Keep the
+server credential out of browser code; expose only this fixed read operation.
+Follow the normal independent-PR and database release gates; no migration SQL,
+app change, deployment, or rollout authorization is supplied by this report.
+
+**Leaked-password warning is an actual disabled control.** Read-only management
+configuration reports password_hibp_enabled=false; email and Google providers
+are enabled, signup is open. Organization Jseow008 is already Pro, with both
+auth.leaked_password_protection and auth.password_hibp entitlements available.
+No upgrade/additional recurring plan purchase is required. Public UI uses Google
+and email OTP, but `/api/admin-login` uses signInWithPassword and email-provider
+password APIs remain enabled. The warning cannot be dismissed because the main
+UI is passwordless. No actual password was inspected or tested for compromise.
+
+Recommend enabling only leaked-password protection after approval, with a
+synthetic known-compromised signup/password-change rejection and strong-password
+acceptance check, plus existing admin sign-in and Google/OTP regression checks
+appropriate to the changed setting. Do not disable the email provider (it also
+serves OTP), force resets, rotate secrets, revoke sessions or change current
+user passwords. Supabase documents existing-password sign-in behavior separately
+from new-password checks; do not claim enabling this retroactively cleans all
+accounts. The observed6-character minimum is a separate password-policy choice;
+do not silently bundle a length/complexity or reauthentication change into this
+warning's remedy.
+
+Local read-only verification: catalog search contract, catalog module and
+security gate tests **16/16 passed**, no skips. No database-mutating runtime
+tests ran against production. The twelve private RLS/no-policy findings remain
+INFO and intentionally deny browser access; no policies should be added just to
+clear them. Preserve prior skipped tests and physical-device limitations.
+
+Acceptance for the proposed security work: anonymous/signed-in application
+search retains exact results, snippets and pagination; direct anon/authenticated
+RPC and index access fail; server RPC retains published-only output and cannot
+retrieve another account's Notes. Check drafts, retired content and malicious or
+oversized inputs with synthetic local/approved disposable data. Confirm no
+service secret in browser artifacts, rerun affected ACL/contract/runtime checks
+and strict advisors after the actual approved rollout. For password protection,
+verify the flag and behavior rather than relying only on advisor freshness.
+Reuse unrelated #320 feature evidence; refresh its candidate onto secured main
+and rerun affected integration/gates before its separate exact migration decision.
+
+Official references:
+- https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable
+- https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable
+- https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+Structured audit: task evidence `content-version-updates/advisor-investigation.json`
+and `advisor-settings-summary.json`. Only safe selected settings/entitlements
+were saved; management token stayed in process memory. No paid resource, account,
+provider call or browser session was created. No production setting, grant,
+schema, data, migration, app code, allowlist or PR merge state changed. One agent;
+Codex billing/token usage unavailable. Release remains held. Exact next action:
+owner reviews this separate two-part security proposal; implement only on a new
+approved request. Existing implementation evidence/checkpoint remains local and
+uncommitted; no evidence-only CI restart.
+
+### Security dependency released; #320 still held
+
+The subsequent explicitly approved security work is complete in merged #321,
+production commit `ddbecb9b4dbd9dae0821d46e2968e982bb841073`, READY deployment
+`dpl_AW6Z4uoFL3aE4C3DvceEYXnyM1hq` on www.netflux.blog. Deployed the compatible
+server caller first, then applied only the approved
+`20261105094614_restrict_catalog_search_to_server.sql`. Public search/pagination,
+direct anon/auth denial, isolated-account access and strict production advisors
+passed. Leaked-password protection is enabled and behavior-verified. Temporary
+hosted project and all three production synthetic users were cleaned. #322 was
+consolidated into #321 and closed; no second security PR remains to release.
+
+Full checkpoint and retained failures/limitations:
+`/Users/j/.codex/workspaces/netflux-catalog-search-security/docs/CONTENT_CONTINUITY.md`,
+Production security release complete section. Final security candidate differed
+from hosted-tested application/SQL only in CI fixture wiring and release records.
+Final CI2,140 unit passes/308 skips;211 browser passes/118 skips and1 retry success.
+No gates weakened, no paid AI calls or real user note/content edits.
+
+#320 remains OPEN at `6e99a30938717a8b4bc53bdbff5d7a0d99d4acd2`, auto-merge off,
+feature migration NOT applied. The owner approved only the named security
+migration; that approval does not extend to #320 SQL. Advisor block is cleared;
+next step for this feature is refresh onto secured main, resolve any integration
+conflicts and run affected/final required checks before its separate production
+dry-run and exact migration decision. Do not deploy the old anon catalog caller
+now that direct RPC access is restricted. No action on #320 was taken during the
+bounded security release beyond retaining this hold/checkpoint.
+
+### Refresh onto secured main — 5 November 2026
+
+Owner requested refresh of #320 onto secured main, required checks, an unmerged
+hold, and the exact production migration list before any apply. Rebased only the
+feature commit from former #319 parent onto main
+`ddbecb9b4dbd9dae0821d46e2968e982bb841073`. Source merged automatically; only
+checkpoint appendices conflicted, resolved by retaining secured-main records and
+all existing #320 hosted/investigation evidence. No feature or security behavior
+change intended. The preserved pre-refresh report is also in task artifacts.
+
+Migration remains byte-for-byte unchanged, SHA-256
+`4b61acedd09836010e5f35c212e4d91ac924a1215ddd6b12ce3c9072438f4730`.
+Keep the server-only service caller, signed-role catalog guard, restrictive ACL
+checks and all three CI credential-export paths. Reuse the unchanged migration's
+19-case hosted and browser evidence; rerun affected local contracts/types and
+required CI/security against the full integrated schema. No new paid project,
+account, production data change, merge or migration is authorized by this refresh.
+Auto-merge stays off. Exact production dry-run will be shown for separate approval.
+
+Refresh preflight:81 focused admin/version/form/history/catalog/security tests
+passed, plus typecheck and full lint/ratchets. Byte comparison confirms all
+feature migration/admin UI/API/types and version-runtime files match the
+previously hosted-tested implementation exactly. Secured main's CI service-key
+exports, server-only caller, signed-role guard and restrictive ACL checks remain
+intact; this PR adds only the nullable result field to that caller and its19-case
+version/continuity runtime command to the security workflow. Parent-history
+fixture integration merged without a product-code conflict.
+
+Production read-only CLI used an isolated workdir without relinking the repo.
+`db push --linked --include-all --dry-run` lists exactly:
+`20261105072759_publish_updated_content_versions.sql`. Include-all is necessary
+because this unchanged file predates the already-applied security migration;
+it is not permission to apply other files. Migration list confirms that one
+pending version and the applied secured-main history. No schema/data/Auth
+settings were changed, no paid project/account/model call was created. Fresh
+required CI/security must still pass on the refreshed head; no auto-merge or
+production application authorization is inferred from the refresh request.

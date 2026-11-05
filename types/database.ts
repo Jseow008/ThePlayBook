@@ -234,6 +234,7 @@ export type Database = {
           status: Database["public"]["Enums"]["content_status"]
           title: string
           type: Database["public"]["Enums"]["content_type"]
+          update_source_id: string | null
           updated_at: string
         }
         Insert: {
@@ -265,6 +266,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["content_status"]
           title: string
           type: Database["public"]["Enums"]["content_type"]
+          update_source_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -296,6 +298,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["content_status"]
           title?: string
           type?: Database["public"]["Enums"]["content_type"]
+          update_source_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -304,6 +307,20 @@ export type Database = {
             columns: ["series_id"]
             isOneToOne: false
             referencedRelation: "content_series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_item_update_source_id_fkey"
+            columns: ["update_source_id"]
+            isOneToOne: false
+            referencedRelation: "admin_content_workbench_readiness"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_item_update_source_id_fkey"
+            columns: ["update_source_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
             referencedColumns: ["id"]
           },
         ]
@@ -1228,6 +1245,10 @@ export type Database = {
           p_segment_timings?: Json
         }
         Returns: boolean
+      }
+      admin_create_content_version: {
+        Args: { p_source_id: string; p_source_updated_at: string }
+        Returns: string
       }
       admin_replace_content: {
         Args: {

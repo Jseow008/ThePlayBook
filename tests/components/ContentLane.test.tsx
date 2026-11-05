@@ -72,6 +72,7 @@ describe("ContentLane", () => {
             updated_at: "2026-03-01T00:00:00Z",
             deleted_at: null,
         isbn: null,
+        update_source_id: null,
         },
         {
             id: "22222222-2222-2222-2222-222222222222",
@@ -103,6 +104,7 @@ describe("ContentLane", () => {
             updated_at: "2026-03-02T00:00:00Z",
             deleted_at: null,
         isbn: null,
+        update_source_id: null,
         },
     ];
 

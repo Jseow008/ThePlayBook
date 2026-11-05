@@ -7,6 +7,7 @@
 import { notFound } from "next/navigation";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { fetchPublishedContentOptions } from "@/lib/server/content-requests";
+import { ContentVersionActions } from "@/components/admin/ContentVersionActions";
 import { ReplaceContentPanel } from "@/components/admin/ReplaceContentPanel";
 import { ContentForm } from "@/components/admin/ContentForm";
 import { getAdminSeriesOptions } from "@/lib/server/admin-series";
@@ -113,11 +114,14 @@ export default async function EditContentPage({ params, searchParams }: EditCont
                 </p>
             </div>
 
-            <ReplaceContentPanel contentId={id} options={replacementOptions} />
+            {contentItem.status === "verified" && <ContentVersionActions key={id} mode="create" contentId={id} updatedAt={contentItem.updated_at} />}
+            {!contentItem.update_source_id && <ReplaceContentPanel contentId={id} options={replacementOptions} />}
 
             <ContentForm
+                key={id}
                 initialData={formData}
                 isEditing
+                isVersionDraft={Boolean(contentItem.update_source_id) && !contentItem.published_at}
                 seriesOptions={seriesOptions}
                 aiReadiness={aiReadinessById[contentItem.id]}
                 narrationEstimate={narrationEstimate}
