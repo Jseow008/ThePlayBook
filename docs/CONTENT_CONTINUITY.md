@@ -155,3 +155,26 @@ the exact-list approval required by OPS before that database mutation. The
 explicit user authorization covers enabling leaked-password protection; verify
 it with synthetic data first. Do not change password length/complexity,
 authentication methods, account sessions or #320 release state.
+
+Stage1 hosted baseline matched production in all14 fingerprint categories.
+Production build passed, including Sharp/critical CSS. Real Chrome showed the
+same20 results signed out/in, next page5 results, exact previous-page return,
+and no private-note or draft/retired result. Login, missing-code callback,
+Browse, public read (after expanding the normally collapsed section), anonymous
+admin denial and synthetic admin login passed; shallow/detailed health200/ok
+with reachable hosted DB. API proof found all25 expected IDs exactly once and
+the second synthetic account saw only its own thought. No provider calls.
+The reader's initial exact-text probe ran before expanding its section and
+failed; the correct visible entry point then passed. A library-sync warning is
+retained as a fixture limitation (snapshot worker not configured), not search
+coverage. No completion or existing production content was changed.
+
+Stage1 full unit suite2,139 passed/307 skipped; all34 capacity harness cases
+passed. A review caught the separate catalog CI evidence job still exporting
+only the anon fixture key. Updated that job to export its ephemeral service key
+and its route harness to use it; this is required by the changed caller and
+does not inject production credentials or weaken a check. Final affected
+contract/security tests18/18 and typecheck/lint passed. PR #321 first candidate
+`d47e0b01` is superseded by this necessary fixture correction; required gates
+must run on the corrected head. Auto-merge stays off until hosted proof and scope
+review are attached. Stage2 remains separate and must wait for the live caller.

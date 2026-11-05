@@ -538,10 +538,11 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
             }> = [];
 
             // Load the actual route only after replacing the disposable CI
-            // values. The route uses the same server module and public RPC
+            // values. The route uses the same server credential and fixed RPC
             // path as production; no test record is sent to production.
             process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.DB107_SUPABASE_URL;
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.DB107_SUPABASE_ANON_KEY;
+            process.env.SUPABASE_SERVICE_KEY = process.env.DB107_SUPABASE_SERVICE_ROLE_KEY;
             process.env.CATALOG_SEARCH_CURSOR_SECRET ??= "catalog-search-runtime-secret";
             const [{ GET }, { NextRequest }] = await Promise.all([
                 import("@/app/api/catalog/search/route"),
