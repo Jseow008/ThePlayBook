@@ -111,3 +111,47 @@ The complete DB-103 role matrix passed against the restored disposable local dat
 Production migration `20261022021946_content_replacements_preserve_history.sql` applied successfully to `xmuqsgfxuaaophxnwure`; subsequent dry-run reports up to date. No replacement operation or personal-record deletion was performed. Required PR scope passed and squash auto-merge is enabled at `d1b6cd53`, pending remaining CI. Production still served #273 when last inspected. Exact next action: wait for required CI, confirm merge and Vercel production deployment identity, then record the result. Production backup freshness remains unverified under the owner's recorded exception.
 
 CI at `d1b6cd53` exposed the companion unit test's old count plus pre-existing database fixtures that deleted protected content before personal records. The approved test correction was completed across the companion assertion and affected cleanup hooks; the old content-deletion assertion now verifies rejection, retained library state and unchanged revision. Product/migration SQL is unchanged. A focused local run passed all five affected test files: 235 tests passed, one skipped; lint and typecheck passed. The skipped case is not claimed as verified. CI must rerun before merge.
+
+## Catalog advisor remediation — 5 November 2026
+
+Owner approved separate security changes: deploy the compatible server search
+caller before restricting direct database access, enable leaked-password
+protection, verify both, and keep #320 on hold. This branch
+`codex/catalog-search-server-access`, worktree
+`/Users/j/.codex/workspaces/netflux-catalog-search-security`, starts from fresh
+main `232e104a680207eaa8228a1f408d99a85109f7f4` (#319). It does not contain #320.
+The earlier investigation and #320 hosted evidence remain in that task's
+uncommitted `docs/CONTENT_CONTINUITY.md` checkpoint and sanitized task artifacts.
+
+Stage1 changes only the fixed catalog RPC caller to the existing server service
+credential, with an explicit `server-only` import boundary. The earlier report
+called this module server-only because its consumers were on the server; it
+lacked the explicit import, which this change now adds. Result projection,
+normalization, cursors, ranking, caching, public UI, and account-bound Notes
+search remain unchanged. Existing live RPC already permits service_role, so this
+application stage is compatible with both sides of the later ACL restriction.
+Do not revoke browser execution until the exact server caller is live.
+
+Prepared an isolated hosted project `xlhrenvtpwmxmnlzuler`,
+`netflux-catalog-security-verification-20261105`, in the already approved Jseow008
+organization/region for the security rehearsal. The connector create call
+succeeded without requesting a new confirmation ID. It must be deleted after
+verification, including on failure. Production remains `xmuqsgfxuaaophxnwure`.
+Only a private isolated CLI workdir is linked to the candidate. Baseline migration
+replay passed. Stage1 focused tests11/11, typecheck and full lint/ratchets passed;
+full unit suite, hosted schema/app proof and required CI still pending.
+
+Setup failure retained: first pooler-metadata URL omitted `/config` and returned
+404 before private fixture initialization. Dependent CLI calls consequently
+failed without a fixture file; none reached a database mutation. Used the
+documented endpoint, reinitialized only the disposable password, linked the
+isolated workdir and replayed baseline successfully. No production password,
+schema, setting, grant, account or content change at this checkpoint.
+
+Next: verify the hosted application baseline and prepared restriction; publish
+stage1 PR with release hold until its app gate and required checks pass. Prepare
+a separate ACL migration/PR and reviewed exact production dry-run, then obtain
+the exact-list approval required by OPS before that database mutation. The
+explicit user authorization covers enabling leaked-password protection; verify
+it with synthetic data first. Do not change password length/complexity,
+authentication methods, account sessions or #320 release state.

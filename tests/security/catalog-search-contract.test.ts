@@ -16,6 +16,13 @@ const searchCatalogFunction = migration.slice(
 );
 
 describe("catalog search security contract", () => {
+    it("keeps the privileged catalog caller behind an explicit server boundary", () => {
+        const source = readFileSync(join(process.cwd(), "lib/server/catalog-search.ts"), "utf8");
+        expect(source).toContain('import "server-only"');
+        expect(source).toContain('import { getAdminClient } from "@/lib/supabase/admin"');
+        expect(source).not.toContain("createPublicServerClient");
+    });
+
     it("keeps the projection private and grants the reviewed RPC only to public application roles", () => {
         expect(migration).toContain("ALTER TABLE public.catalog_search_document ENABLE ROW LEVEL SECURITY");
         expect(migration).toContain("CREATE POLICY catalog_search_document_no_direct_browser_access");

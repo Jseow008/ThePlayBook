@@ -2,8 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const rpc = vi.fn();
 
+vi.mock("@/lib/supabase/admin", () => ({
+    getAdminClient: () => ({ rpc }),
+}));
+
 vi.mock("@/lib/supabase/public-server", () => ({
-    createPublicServerClient: () => ({ rpc }),
+    createPublicServerClient: () => { throw new Error("Catalog RPC must use the server credential"); },
 }));
 
 import { parseCatalogSearchHeadline, searchCatalog } from "@/lib/server/catalog-search";
@@ -41,6 +45,16 @@ describe("catalog search server contract", () => {
             text: "Before unterminated",
             highlights: [],
         });
+    });
+
+    it("returns only catalog fields from the fixed server RPC", async () => {
+        rpc.mockResolvedValueOnce({ data: [{ ...row, note_body: "private-field-sentinel" }], error: null });
+        const result = await searchCatalog({ query: "searchable" });
+
+        expect(rpc).toHaveBeenCalledOnce();
+        expect(rpc).toHaveBeenCalledWith("search_catalog", expect.objectContaining({ p_query: "searchable" }));
+        expect(result.results[0]).toMatchObject({ title: row.title, snippet: { text: "A searchable result" } });
+        expect(JSON.stringify(result)).not.toContain("private-field-sentinel");
     });
 
     it("reports missing cursor configuration without sending a database query", async () => {

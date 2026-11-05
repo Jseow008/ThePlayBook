@@ -1,5 +1,7 @@
+import "server-only";
+
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { createPublicServerClient } from "@/lib/supabase/public-server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { logApiError } from "@/lib/server/api";
 import type { ContentItem, ContentType } from "@/types/database";
 
@@ -187,7 +189,9 @@ export async function searchCatalog(input: {
     const type = input.type ?? null;
     const hash = contextHash(query, categories, type);
     const cursor = input.cursor ? decodeCursor(input.cursor, hash, categories, type) : null;
-    const client = createPublicServerClient() as unknown as {
+    // Only this fixed public-catalog RPC uses the server credential. Notes
+    // search continues to use the account-bound client and its RLS policies.
+    const client = getAdminClient() as unknown as {
         rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: SearchRow[] | null; error: { message: string } | null }>;
     };
     const { data, error } = await client.rpc("search_catalog", {
