@@ -1108,3 +1108,100 @@ denial preflight for production-build checks. No production environment or keys
 were reused. Owner explicitly approved the quoted10 USD/month for one temporary
 hosted project in Jseow008; it will be removed after candidate verification.
 No additional cost or migration authorization is inferred.
+
+### #323 hosted candidate verification and hold — 5 November 2026
+
+Implementation candidate337b57b516e68b1fbc5344ce102987c3cbf960d7, PR323,
+branch codex/notes-replacement-source, same isolated worktree. No application
+changes after candidate testing. A documentation-only follow-up carries results.
+
+Temporary hosted candidate zityiokdzftzwajjjnfz (Jseow008), distinct from
+production xmuqsgfxuaaophxnwure. Owner approved quoted10USD/month without a
+prorated quote. One project created. Initial CLI login failed before schema
+application; aligned only the disposable database password through the documented
+Management API. Full push, candidate-only reset/replay, clean final dry-run
+passed.14schema fingerprint categories match production; fresh generated types
+match after normalizing only PostgREST platform-version metadata. Five security
+checks and disposable-only DB002 passed. Strict security advisor:12INFO,
+zeroWARN/ERROR. Performance:35unused-indexINFO on an empty candidate and one
+absolute-auth-connectionsINFO; no schema/index-policy changes or WARN/ERROR.
+No production migration, configuration, saved data or credentials were changed.
+
+Built exact candidate with hosted public/service credentials, isolated production
+Next server3337 behind localhost3338 HTTP ingress, real owned Redis58379 with
+REST58380. No AI/provider/monitoring keys, production data or production secrets
+copied. Supabase skill and full-story verification guidance applied; final React
+review found no added client request/effect or layout/accessibility change.
+
+CUA browser proof (in-app Chromium desktop1280 and390x844):
+- Synthetic owner: normal Notes baseline → Create updated version → changed
+  title/Big Idea → Save and review → Publish updated version. Existing review
+  explicitly counted2highlights retained. Publication completed normally.
+- Fresh Notes and genuine reload retained original public title, quotation,
+  exact thought textContent (including newline), original sourceID/highlightID.
+  Desktop footer and narrow card both opened existing replacement notice;
+  Open updated summary reached changed new edition without old highlightID or
+  reassigned marks. View original notes kept original item filter. No overflow.
+- Normal Open passage/control card reached one exact saved quotation mark in
+  original section. Withdrawn synthetic successor caused fresh Notes to hide
+  View source and show unavailable fallback, preserving exact thought. Restoring
+  only that fixture restored the source link after reload.
+- Built HTTP API with two real synthetic sessions: each owner saw only own rows;
+  direct caller-RLS reads denied other owner's note and original retired body;
+  unauthenticated endpoint401. Exact saved fields/anchors/IDs unchanged; dates
+  compared at client millisecond precision, not claimed byte-identical strings.
+- UI sign-out cleared personal Notes. Working tab closed; responsive override
+  reset. Failed setup tab could not be rebound/closed because browser URL policy
+  rejects its error-page data URL; left to automatic ephemeral-tab cleanup.
+
+Smoke coverage is6of7 outcomes using CUA/API equivalents, not a claim that
+production-smoke.spec.ts ran: login, missing-code callback recovery, browse,
+public reader, anonymous-admin denial and synthetic-admin entry passed.
+Shallow health200; detailed health503/degraded. Database, Supabase configuration,
+site URLs and real Redis rate limiting ready. Only missing components were AI
+creation/retrieval keys and Sentry monitoring, deliberately omitted to avoid
+live external processing. Do not substitute dummy keys or call this healthy.
+OPS§2.2 requires all seven smoke checks and an explicit exception before promotion
+if any cannot pass. This source-link change does not modify those services;
+recommend a narrow exception for their absent test credentials, pending owner
+acceptance. Keep auto-merge OFF and release HELD until that decision and required
+CI/security. No production release claim.
+
+Retained failed attempts/limits:
+- First callback followed forwarded-host HTTPS on HTTP localhost. Added isolated
+  ingress with explicit headers; fresh test tab then recovered correctly.
+  Error-tab URL policy blocked further actions; no security warning bypassed.
+- Initial admin wait used Content Dashboard; actual heading Admin Dashboard.
+  Premature Publish wait preceded required Save and review; completed through
+  real UI after reading state. Source fixture initially used missing /icon.png;
+  corrected to owned Storage PNG before publication. Normal control retained
+  an image fallback visible in evidence; not a product-image regression claim.
+- Management-query timestamps include microseconds while pg fixtures serialize
+  milliseconds. Initial whole-row string comparison failed; exact saved fields
+  verified separately and dates normalized only to client precision.
+- innerText collapses existing paragraph whitespace; exact multiline textContent
+  and API/storage were retained. No multiline presentation change claimed.
+- Auxiliary API global sign-out invalidated disposable owner's browser session;
+  restored the synthetic login before narrow checks. No production login touched.
+- Shared synthetic IP and accumulated library sync requests produced sync/rate
+  warnings. One normal footer click was covered by the toast and did not navigate;
+  dismissed it and visible card opened exact mark. No new activation fix inferred.
+-36focused tests rerun and passed after final code/mock adjustment. Types, full
+  lint/ratchets, build, Sharp and criticalCSS passed. Explicit-local continuity
+  E2E remains outside hosted CUA proof; current CI skipped tests, phones, Safari,
+  real AI/monitoring readiness remain outside coverage. No new paid AI calls.
+
+Cleanup completed: hosted project deleted and absent from project list,
+including its synthetic users/content/highlights/Storage. Only owned isolated
+Next/ingress/Redis processes stopped; local Supabase stopped with no-backup and
+owned Redis removed. Private credentials/generated types/fixtures/workdirs and
+candidate .env.local/build removed after sanitized evidence capture. Unrelated
+services and existing authenticated Chrome session untouched.
+
+Evidence: content-version-updates/notes-source-fix contains verification-summary,
+API/preservation results, schema fingerprints, advisor/security/DB002 proofs,
+health503 explanation, project-deletion/absence proof and synthetic screenshots.
+At cleanup CI42051778856 validate still running E2E; Security42051778789 passed.
+No unchanged retry, gate waiver or auto-merge enabled. Next action: resolve only
+that narrowly described health exception, then inspect final required checks and
+normal protected release. Never recreate a paid project without approval.
