@@ -431,7 +431,7 @@ function HighlightListItem({
                                 href={href}
                                 className="mr-auto inline-flex min-h-9 items-center gap-1.5 rounded-md px-2 py-2 text-sm font-medium text-foreground/90 transition-colors hover:bg-background/40 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                Open passage
+                                {item.source_replaced ? "View source" : "Open passage"}
                                 <ExternalLink aria-hidden="true" className="size-4" />
                             </Link>
                         )}

@@ -9,6 +9,8 @@ const databaseUrl = process.env.CONTENT_CONTINUITY_DATABASE_URL;
 const sourceId = randomUUID();
 const keptId = randomUUID();
 const segmentId = randomUUID();
+const highlightId = randomUUID();
+const noteText = "Original retained thought.\nKeep this exact second line.";
 const email = `continuity-${randomUUID()}@example.invalid`;
 const password = randomUUID();
 let adminId: string;
@@ -35,6 +37,9 @@ test.describe("replacement continuity", () => {
             VALUES ($1,$2,'Original','Original retained reflection'),($1,$3,'Kept','Unrelated kept reflection')`, [adminId,sourceId,keptId]);
         await db.query(`INSERT INTO public.segment(id,item_id,order_index,title,markdown_body)
             VALUES ($1,$2,0,'Original section','Original passage'), ($3,$4,0,'New section','New passage')`, [segmentId, sourceId, randomUUID(), keptId]);
+        await db.query(`INSERT INTO public.user_highlights(id,user_id,content_item_id,segment_id,highlighted_text,note_body,anchor_start,anchor_end)
+            VALUES ($1,$2,$3,$4,'Original passage',$5,0,16)`, [highlightId,adminId,sourceId,segmentId,noteText]);
+        await db.query("UPDATE private.personal_evidence_index SET next_attempt_at=now()+interval '7 days' WHERE user_id=$1", [adminId]);
     });
     test.afterAll(async () => {
         if (!db) return;
@@ -47,7 +52,7 @@ test.describe("replacement continuity", () => {
         await db.query("DELETE FROM public.content_item WHERE id=ANY($1::uuid[])", [[sourceId, keptId]]);
         await db.end();
     });
-    test("replacement retains original reflections and explicit library controls", async ({ page, context }, info) => {
+    test("replacement retains Notes source links after reload, original reflections and library controls", async ({ page, context }, info) => {
         const { createServerClient } = await import("@supabase/ssr");
         const auth = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
             cookies: { getAll: () => [], setAll: (cookies: Array<{ name: string; value: string }>) => {
@@ -66,6 +71,20 @@ test.describe("replacement continuity", () => {
         await expect(page.getByText(/Preserve 0 library records/)).toBeVisible();
         await page.getByRole("button", { name: "Confirm replacement", exact: true }).click();
         await expect(page).toHaveURL(/\/admin\/content$/);
+        // Start with fresh API data, then reload: retained cached metadata must
+        // not hide a broken Notes → replacement notice journey.
+        await page.goto(`/notes?item=${sourceId}`);
+        const sourceLink = page.getByRole("link", { name: "View source", exact: true });
+        await expect(sourceLink).toHaveAttribute("href", new RegExp(`/read/${sourceId}/[^?]+\\?highlightId=${highlightId}$`));
+        await expect(page.getByRole("heading", { name: `Original continuity ${sourceId}`, exact: true })).toBeVisible();
+        await page.reload();
+        await expect(sourceLink).toBeVisible();
+        await sourceLink.click();
+        await expect(page.getByRole("heading", { name: "This summary has been replaced" })).toBeVisible();
+        await page.getByRole("link", { name: "Open updated summary", exact: true }).click();
+        await expect(page).toHaveURL(new RegExp(`/read/${keptId}/[^?]+$`));
+        const retainedNote = await db.query("SELECT content_item_id,segment_id,highlighted_text,note_body FROM public.user_highlights WHERE id=$1", [highlightId]);
+        expect(retainedNote.rows).toEqual([{ content_item_id: sourceId,segment_id:segmentId,highlighted_text:"Original passage",note_body:noteText }]);
         await page.goto(`/read/${sourceId}`);
         const scopedReflectionResponse = page.waitForResponse((response) => response.url().includes(`/api/library/reflections?content_item_id=${sourceId}`));
         await page.getByRole("link", { name: "View original notes" }).click();

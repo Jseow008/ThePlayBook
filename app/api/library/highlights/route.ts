@@ -22,6 +22,7 @@ const HIGHLIGHT_SEARCH_CURSOR_VERSION = "highlights-v1";
 const HighlightColorSchema = z.enum(["yellow", "blue", "green", "pink", "purple", "red"]);
 type HighlightInsert = Database["public"]["Tables"]["user_highlights"]["Insert"];
 type HighlightRow = Database["public"]["Tables"]["user_highlights"]["Row"];
+type ReplacementSource = Pick<Database["public"]["Tables"]["content_replacement"]["Row"], "source_id" | "source_title">;
 type HighlightSearchSort = "newest" | "oldest";
 type HighlightSearchType = "note" | "highlight";
 type HighlightSearchCursor = {
@@ -380,6 +381,23 @@ export async function GET(request: NextRequest) {
         const rows = data ?? [];
         const hasNextPage = rows.length > limit;
         const pageRows = rows.slice(0, limit);
+        const missingSourceIds = [...new Set(pageRows
+            .filter((row) => !row.content_title)
+            .map((row) => row.content_item_id))];
+        const replacedSources = new Map<string, string>();
+        if (missingSourceIds.length > 0) {
+            // Caller-scoped RLS exposes a replacement notice only while its
+            // successor is published and accessible. Never read the retired body.
+            const { data: replacements, error: replacementError } = await supabase
+                .from("content_replacement")
+                .select("source_id,source_title")
+                .in("source_id", missingSourceIds)
+                .returns<ReplacementSource[]>();
+            if (replacementError) throw replacementError;
+            for (const replacement of replacements ?? []) {
+                replacedSources.set(replacement.source_id, replacement.source_title);
+            }
+        }
         const finalRow = pageRows.at(-1);
         const nextCursor = hasNextPage && finalRow?.cursor_created_at
             ? encodeHighlightCursor({
@@ -410,7 +428,13 @@ export async function GET(request: NextRequest) {
                 title: row.content_title,
                 author: row.content_author,
                 cover_image_url: row.content_cover_image_url,
+            } : replacedSources.has(row.content_item_id) ? {
+                id: row.content_item_id,
+                title: replacedSources.get(row.content_item_id)!,
+                author: null,
+                cover_image_url: null,
             } : null,
+            source_replaced: replacedSources.has(row.content_item_id),
             segment: row.segment_id ? { id: row.segment_id, title: row.segment_title } : null,
         }));
 

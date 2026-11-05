@@ -5,6 +5,8 @@ import type { HighlightRangeRelationship } from "@/lib/highlight-ranges";
 
 // Type for the API response which includes joined content item data
 export type HighlightWithContent = UserHighlight & {
+    // Replacement source metadata keeps the original identity, not its successor.
+    source_replaced?: boolean;
     content_item: {
         id: string;
         title: string;

@@ -3,11 +3,13 @@ import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
     rpc: vi.fn(),
+    from: vi.fn(),
+    replacementLookup: vi.fn(),
     getVerifiedAccountDataSession: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
-    createClient: vi.fn(async () => ({ rpc: mocks.rpc })),
+    createClient: vi.fn(async () => ({ rpc: mocks.rpc, from: mocks.from })),
 }));
 vi.mock("@/lib/server/account-data-snapshot-auth", () => ({ getVerifiedAccountDataSession: mocks.getVerifiedAccountDataSession }));
 vi.mock("@/lib/server/rate-limit", () => ({ rateLimit: vi.fn(async () => ({ success: true })) }));
@@ -44,6 +46,10 @@ describe("GET /api/library/highlights search cursors", () => {
     beforeEach(() => {
         process.env.ACCOUNT_DATA_CURSOR_SECRET = "highlight-search-unit-test-secret";
         mocks.rpc.mockReset();
+        mocks.from.mockReset().mockReturnValue({ select: vi.fn(() => ({
+            in: (...args: unknown[]) => ({ returns: () => mocks.replacementLookup(...args) }),
+        })) });
+        mocks.replacementLookup.mockReset().mockResolvedValue({ data: [], error: null });
         mocks.getVerifiedAccountDataSession.mockReset();
         mocks.getVerifiedAccountDataSession.mockResolvedValue({ accountId, sessionId: sessionOne });
     });
@@ -91,5 +97,63 @@ describe("GET /api/library/highlights search cursors", () => {
         const response = await GET(new NextRequest("http://localhost/api/library/highlights?q=saved"));
         expect(response.status).toBe(401);
         await expect(response.json()).resolves.toMatchObject({ error: { code: "UNAUTHORIZED" } });
+        expect(mocks.from).not.toHaveBeenCalled();
+    });
+
+    it("retains only the original public source identity for an owned note with an accessible replacement", async () => {
+        const row = { ...searchRow(1), content_title: null, content_author: null,
+            note_body: "Exact original thought.\nSecond line stays here.", segment_title: null };
+        mocks.rpc.mockResolvedValue({ data: [row], error: null });
+        mocks.replacementLookup.mockResolvedValue({ data: [{ source_id: contentId, source_title: "Original edition" }], error: null });
+
+        const response = await GET(new NextRequest("http://localhost/api/library/highlights"));
+        const body = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(mocks.from).toHaveBeenCalledWith("content_replacement");
+        expect(mocks.replacementLookup).toHaveBeenCalledWith("source_id", [contentId]);
+        expect(body.data[0]).toMatchObject({
+            id: row.id, content_item_id: contentId, highlighted_text: row.highlighted_text,
+            note_body: row.note_body, anchor_start: row.anchor_start, anchor_end: row.anchor_end,
+            source_replaced: true,
+            content_item: { id: contentId, title: "Original edition", author: null, cover_image_url: null },
+        });
+    });
+
+    it("leaves normal source metadata intact without an extra replacement lookup", async () => {
+        mocks.rpc.mockResolvedValue({ data: [searchRow(1)], error: null });
+        const response = await GET(new NextRequest("http://localhost/api/library/highlights"));
+        expect((await response.json()).data[0]).toMatchObject({ source_replaced: false,
+            content_item: { id: contentId, title: "Source item", author: "Author" } });
+        expect(mocks.from).not.toHaveBeenCalled();
+    });
+
+    it("does not invent source metadata when replacement RLS returns no accessible successor", async () => {
+        const row = { ...searchRow(1), content_title: null };
+        mocks.rpc.mockResolvedValue({ data: [row], error: null });
+        const response = await GET(new NextRequest("http://localhost/api/library/highlights"));
+        expect((await response.json()).data[0]).toMatchObject({ id: row.id,
+            content_item_id: contentId, content_item: null, source_replaced: false });
+    });
+
+    it("reports lookup failure instead of silently removing a replacement source link", async () => {
+        mocks.rpc.mockResolvedValue({ data: [{ ...searchRow(1), content_title: null }], error: null });
+        mocks.replacementLookup.mockResolvedValue({ data: null, error: { code: "08006", message: "Connection lost" } });
+        const response = await GET(new NextRequest("http://localhost/api/library/highlights"));
+        expect(response.status).toBe(500);
+        await expect(response.json()).resolves.toMatchObject({ error: { code: "INTERNAL_ERROR" } });
+    });
+
+    it("looks up only returned notes, with deduplicated original IDs and no cursor lookahead", async () => {
+        mocks.rpc.mockResolvedValue({ data: [
+            { ...searchRow(1), content_title: null },
+            { ...searchRow(2), content_title: null },
+            { ...searchRow(3), content_title: null, content_item_id: "00000000-0000-0000-0000-000000000099" },
+        ], error: null });
+        const response = await GET(new NextRequest("http://localhost/api/library/highlights?limit=2"));
+        const body = await response.json();
+        expect(body.data).toHaveLength(2);
+        expect(body.nextCursor).toEqual(expect.any(String));
+        expect(mocks.replacementLookup).toHaveBeenCalledWith("source_id", [contentId]);
     });
 });
