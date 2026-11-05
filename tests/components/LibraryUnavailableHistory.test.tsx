@@ -4,6 +4,11 @@ import ReadingPage from "@/app/(public)/library/reading/page";
 import CompletedPage from "@/app/(public)/library/completed/page";
 import SavedPage from "@/app/(public)/library/my-list/page";
 
+vi.mock("next/navigation", async (importOriginal) => ({
+    ...await importOriginal<typeof import("next/navigation")>(),
+    useSearchParams: () => new URLSearchParams(),
+}));
+
 const mocks = vi.hoisted(() => ({ progress: vi.fn(), batch: vi.fn(), remove: vi.fn(), removeSaved: vi.fn(), archive: vi.fn() }));
 vi.mock("@/hooks/useReadingProgress", () => ({ useReadingProgress: mocks.progress }));
 vi.mock("@/hooks/use-content-queries", () => ({ useBatchContentItems: mocks.batch }));

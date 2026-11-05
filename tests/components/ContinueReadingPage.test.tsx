@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import ContinueReadingPage from "@/app/(public)/library/reading/page";
 import type { ContentItem } from "@/types/database";
 
+vi.mock("next/navigation", () => ({
+    useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
 const mockUseReadingProgress = vi.fn();
 const mockUseBatchContentItems = vi.fn();
 const mockToastSuccess = vi.fn();
@@ -102,6 +106,7 @@ describe("ContinueReadingPage", () => {
     };
 
     beforeEach(() => {
+        window.history.replaceState(null, "", "/library/reading");
         mockContentCard.mockClear();
         mockToastSuccess.mockClear();
         mockUseReadingProgress.mockReturnValue({
@@ -283,4 +288,25 @@ describe("ContinueReadingPage", () => {
         expect(screen.queryByText("No reading in progress")).not.toBeInTheDocument();
         expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
     });
+    it("retains rapid Book and A-Z selections in the URL and reads them on remount", () => {
+        const { unmount } = render(<ContinueReadingPage />);
+        fireEvent.click(screen.getByRole("button", { name: "book" }));
+        fireEvent.change(screen.getByRole("combobox", { name: "Sort library items" }), { target: { value: "title" } });
+        expect(window.location.search).toBe("?filter=book&sort=title");
+        unmount();
+        render(<ContinueReadingPage />);
+        expect(screen.getByRole("button", { name: "book" })).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getByRole("combobox", { name: "Sort library items" })).toHaveValue("title");
+    });
+
+    it("falls back for invalid selections and preserves unrelated URL state", () => {
+        window.history.replaceState(null, "", "/library/reading?filter=invalid&sort=invalid&keep=yes#saved");
+        render(<ContinueReadingPage />);
+        expect(screen.getByRole("button", { name: "all" })).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getByRole("combobox", { name: "Sort library items" })).toHaveValue("newest");
+        fireEvent.click(screen.getByRole("button", { name: "book" }));
+        expect(window.location.search).toContain("keep=yes");
+        expect(window.location.hash).toBe("#saved");
+    });
+
 });
