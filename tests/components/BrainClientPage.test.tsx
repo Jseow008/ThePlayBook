@@ -236,6 +236,38 @@ describe("BrainClientPage", () => {
         ]);
     });
 
+    it.each([true, false])("retains replacement source links from fresh data and remounts (desktop=%s)", (desktop) => {
+        mediaQueryState.value.isNotesAskSidebarAvailable = desktop;
+        const thought = "Keep the original thought.\nAnd this exact second line.";
+        const original = {
+            ...initialPage.data[0],
+            content_item: { id: "original-edition", title: "Original saved edition", author: null, cover_image_url: null },
+            content_item_id: "original-edition", segment: null,
+            note_body: thought, source_replaced: true,
+        };
+        const unavailable = { ...initialPage.data[2], content_item: null, segment: null, source_replaced: false };
+        const freshPage: HighlightsPage = { data: [original, initialPage.data[1], unavailable], nextCursor: null };
+        infiniteHighlightsState.value.data = { pages: [freshPage], pageParams: [null] };
+
+        function assertSourceLink() {
+            const href = "/read/original-edition/original-saved-edition?highlightId=highlight-1";
+            expect(screen.getByRole("heading", { name: "Original saved edition" })).toBeInTheDocument();
+            expect(screen.getByRole("link", { name: "View source" })).toHaveAttribute("href", href);
+            expect(screen.getByRole("link", { name: "Note from Original saved edition" })).toHaveAttribute("href", href);
+            expect(screen.getAllByRole("link", { name: "Open passage" })).toHaveLength(1);
+            expect(screen.getByRole("heading", { name: "Saved passage" })).toBeInTheDocument();
+            expect(screen.getByText(/Keep the original thought/).textContent).toBe(thought);
+        }
+
+        const first = render(<BrainClientPage initialPage={freshPage} />);
+        assertSourceLink();
+        first.unmount();
+        render(<BrainClientPage initialPage={freshPage} />);
+        assertSourceLink();
+        expect(original.content_item_id).toBe("original-edition");
+        expect(original.highlighted_text).toBe(initialPage.data[0].highlighted_text);
+    });
+
     it("uses the shared notes card style for reflections while preserving their identity", () => {
         reflectionsState.value = [{
             id: "reflection-1",

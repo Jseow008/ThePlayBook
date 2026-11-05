@@ -800,3 +800,311 @@ pending version and the applied secured-main history. No schema/data/Auth
 settings were changed, no paid project/account/model call was created. Fresh
 required CI/security must still pass on the refreshed head; no auto-merge or
 production application authorization is inferred from the refresh request.
+
+### Refreshed integration evidence — candidate ae42a7e2
+
+Candidate `ae42a7e2ce9adb2d27139831102998924af8913a` targets secured main
+`ddbecb9b4dbd9dae0821d46e2968e982bb841073`; PR #320 is open and auto-merge is
+off. Fresh Security Gates run `42019274962` passed Security Validation and
+Catalog Search Evidence. The integrated database ran all 19 preservation cases:
+10 continuity, 8 content-version and 1 concurrent publication case, zero skips.
+Security route/static checks passed 199 cases. Catalog runtime passed 5 with
+1 performance case skipped there and exercised independently by the successful
+dedicated evidence job.
+
+CI began just before retargeting the PR to main. Its checked-out synthetic merge
+`f82162cb4a20b8f37561842352c3ce4807f52b87` has tree
+`66c36cfdcd01a1d39ac447874158225679ddc910`, exactly matching the refreshed
+candidate tree. Base main is already an ancestor of the candidate; this evidence
+validates the complete final source tree, not a stale stacked implementation.
+The required CI `validate` run `42019274957` has passed unit tests and build and
+is still running browser tests at this checkpoint. PR scope passed.
+
+A repeated production read-only dry-run still lists only
+`20261105072759_publish_updated_content_versions.sql`. No SQL was applied.
+The isolated linked production workdir and in-memory credential helper have been
+removed; sanitized inventory/dry-run evidence is retained in the task artifacts.
+No new paid project, synthetic account, model call or production-data mutation
+was needed for this refresh. Historical hosted/browser evidence remains bounded
+to unchanged code; phones, Safari, skipped cases and earlier failed attempts
+remain outside verified coverage. Final CI results are still required; no merge,
+promotion or production apply is authorized by this refresh.
+
+### Final refreshed gates and production hold
+
+All required gates passed on `ae42a7e2ce9adb2d27139831102998924af8913a`:
+PR scope, CI validate (`42019274957`) and Security Validation
+(`42019274962`). Catalog Search Evidence and Vercel preview also passed.
+CI: 2,152 unit tests passed / 317 skipped; browser: 211 passed directly,
+1 passed on its configured retry / 118 skipped. The retry was the existing
+PostHog first-pageview/client-navigation proxy case at analytics.spec.ts:149:
+its initial capture count was 0 when >0 was expected. Retain that failed first
+attempt; no check was weakened or entire workflow retried for this refresh.
+The 19 continuity/version/concurrency cases skipped by ordinary unit mode were
+all explicitly executed and passed, with zero skips, in Security Validation.
+Other skipped tests, physical phones and Safari remain outside verified coverage.
+
+Final read-only production dry-run lists exactly one pending migration:
+
+- `20261105072759_publish_updated_content_versions.sql`
+
+SHA-256: `4b61acedd09836010e5f35c212e4d91ac924a1215ddd6b12ce3c9072438f4730`.
+The secured-main migration is already applied. No feature SQL has been applied.
+PR #320 remains OPEN against main, CLEAN, auto-merge OFF, with no merge or
+production promotion. The exact list is presented to the owner; explicit
+authorization for this file is the next production decision. Refresh approval
+is not treated as production migration approval.
+
+Sanitized final results and dry-run inventory are retained in the task artifacts.
+The isolated production link and credential helper were removed; the repository
+was not relinked. No paid resource, account, model call, or production application
+data/Auth setting change was created by the refresh. Final report edits remain
+uncommitted so that evidence-only changes do not replace the tested PR head.
+
+### Authorized production release #320 — 5 November 2026
+
+Owner explicitly approved `20261105072759_publish_updated_content_versions.sql`,
+releasing #320, and verifying original highlight/note preservation. Rechecked
+required PR scope, validate and Security Validation gates at `ae42a7e2`; all
+passed. Exact production dry-run and migration inventory still listed only the
+approved file, with unchanged SHA-256
+`4b61acedd09836010e5f35c212e4d91ac924a1215ddd6b12ce3c9072438f4730`.
+
+Production `xmuqsgfxuaaophxnwure`: verified completed daily physical backup
+`2168165671` from 2026-11-04 23:49:55 UTC and captured fresh affected-function
+definitions before mutation. Applied only the approved SQL through an isolated
+CLI workdir. Follow-up dry-run is clean and all local/remote migration versions
+match. Before/after server-side fingerprints for content, sections, highlights
+(including note_body), library and reflections are identical, excluding only
+the added nullable update_source_id field. No existing editorial/user row was
+rewritten by the migration. This is not a backup restoration test.
+
+Post-apply checks: five production-safe function/admin/analytics/embedding/Storage
+ACL/RLS checks passed; full read-only object-access inventory passed; all five
+reviewed new/replaced function bodies match the SQL; the existing graph body
+was moved intact. Strict security advisors passed with the existing 12 INFOs.
+Performance returned INFO only (15 unused indexes, including new unexercised
+version indexes, and one Auth connection-sizing notice); no policy, grant or
+configuration was changed to hide findings. The guarded publication function
+and version column were confirmed.
+
+Protected squash merge: `14e84be19866f18ccd331af60c17a17c7ecd4583` at
+2026-11-05 11:55:48 UTC. Production build
+`dpl_B27zQSmRAZ3KM7tbr2X2Lh9TR9mG` /
+`netflux-x15j095i9-jseow008s-projects.vercel.app` reached READY. The public alias
+initially still resolved to #321. Promoted this exact READY production build,
+without rebuilding a preview or changing project/domain configuration; a fresh
+www.netflux.blog lookup resolved to the merge commit and same deployment before
+testing. Public health returned HTTP200/ok. The deployment-specific 15-minute
+error-level runtime-log scan returned no records; this is bounded observability,
+not proof that every request is error-free.
+
+Production CUA verification used one temporary synthetic admin/owner in an
+isolated IAB Chromium session. Existing Chrome login was untouched. Created
+synthetic original content, a section, a highlight with a multiline thought,
+library progress and a reflection, plus an owned PNG. Postponed only that
+account's personal-index jobs within fixture setup; attempts remained0. Used
+the real admin controls to Create updated version, rewrite its Big Idea and
+section, Save and review updated version, then Publish updated version. Review
+reported preserving1 library record,1 highlight and1 reflection. Immediately
+after publication, deep before/after comparison proved the original section,
+complete highlight/note row, library and reflection unchanged. The successor
+was verified with a new section ID and zero copied personal records.
+
+Browser outcomes: original /read showed the existing replacement notice; View
+original notes reached the owner-filtered Notes page. DOM comparison confirmed
+the exact saved quotation and exact thought including its newline, with the
+original reflection visible. Updated /read displayed the exact revised Big Idea
+and expanded section, with no inherited highlights. Signed out via the UI and
+confirmed the original Notes destination required login. No original-summary
+reader, historical restoration or other UI scope was added. Screenshots are in
+the production-release artifacts; the Notes viewport image shows the reflection
+while the lower quotation/thought were verified by DOM comparison.
+
+Cleanup confirmed zero owned Auth users/sessions/profiles, original/replacement
+content and sections, highlights, library/reflections, personal-index jobs and
+Storage cover objects. UI sign-out left0 sessions before deleting the synthetic
+account. Both test-created tabs were closed, no viewport override was used, and
+only the private release helper/workdir/fixture credentials were removed. No
+paid project or live AI/narration action was used; no test embedding processing
+attempt occurred. The global CLI login and unrelated processes/tabs were left
+alone.
+
+Retained harness/setup attempts: the read-only wrapper stopped DB-107's negative
+fixture CREATE, so no DDL occurred; only its non-mutating access inventory was
+run in production (full negative proof passed in CI). The local function-body
+parser first assumed a trailing semicolon in pg_get_functiondef; corrected and
+reran the affected schema proof. Fixture transaction initially named nonexistent
+profiles.full_name and rolled back; reused the same single Auth user/owned cover
+with role-only setup. An initial wait for review before saving timed out because
+the draft correctly requires Save and review first. A read-only log query used
+a string level where the connector required an array; corrected once. None was
+a product regression, an extra paid rehearsal, or a weakened check.
+
+Coverage remains bounded: final pre-merge CI2,152 unit passes/317 skips; browser
+211 direct passes+1 configured analytics retry success/118 skips. All19 feature
+database cases passed separately with zero skips. Physical phones and Safari
+remain unverified; prior hosted390px proof is reused only for unchanged code.
+All skipped cases and earlier failed attempts remain outside verified coverage.
+Release and preservation verification are complete within this scope. Final
+evidence-only checkpoint edits are local/uncommitted to avoid an unrelated new
+deployment; sanitized proofs live under content-version-updates/production-release.
+
+### Reopened Notes → reader verification — 5 November 2026
+
+Owner supplied How Minds Change / Street Epistemology screenshots and asked for
+actual production verification rather than assumptions. No product implementation
+change was authorized or made. Worktree/branch remain
+`netflux-publish-updated-version` / `codex/publish-updated-version`, local tested
+head ae42a7e2; production is READY at merge14e84be1, deployment
+dpl_B27zQSmRAZ3KM7tbr2X2Lh9TR9mG, freshly resolved from www.netflux.blog.
+
+Correction to prior broad explanations: #320's notice is for an explicitly
+published replacement relationship. A later updated_at timestamp alone neither
+establishes a substantive rewrite nor creates such a relationship. The actual
+notice copy is “This summary has been replaced”, not the paraphrase “An updated
+summary is available”. Zero replacement rows did not establish zero historical
+in-place edits. The earlier release verified original URL → notice → original
+Notes and preservation, not the full fresh Notes card → notice return journey.
+The end-to-end release claim is qualified by the confirmed defect below.
+
+**Real user case PASS within current design:** used the existing authenticated
+Chrome account named by the owner, opened /notes?q=test, and clicked the actual
+How Minds Change Open passage link. It reached the original stored highlight ID
+and marked exactly “challe” once in Street Epistemology. No missing-passage or
+replacement warning appeared. Production data confirms this exact highlighted
+text remains in the current section, source available/verified, update_source_id
+null, and no replacement relationship. The last content timestamp is 30 October;
+that is not evidence of a version publication. The screenshot does not show a
+failed replacement notification. Saved highlight timestamp, quotation, thought
+and content timestamp were compared again after verification and are unchanged.
+No private thought text was persisted in evidence.
+
+**Synthetic replaced-note journey FAIL:** one disposable Auth/admin owner, one
+synthetic content item/section/highlight/multiline thought and one owned PNG were
+created in the existing production project. No paid project or new configuration
+was needed. Own personal-index work was postponed in fixture setup and remained
+at0 processing attempts. Before publication, the actual Notes card and footer
+linked to the exact original highlight; clicking marked its exact quotation once.
+Published a separate saved rewrite through the existing production version RPCs
+(the admin create/save/review/publish UI was already verified in the release).
+Deep comparison proved the original section and entire highlight/thought row
+unchanged after publication.
+
+On Back to Notes, old cached metadata briefly retained the source title and
+Open passage link. Before the attempted click, the fresh response removed both;
+the click failed with no matching link. AX diff confirmed removal, so this is
+not attributed to browser-control failure. Reload reproduced the stable state:
+one retained note/quotation/exact multiline thought, generic Saved passage
+heading, zero Open passage links. A read-only authenticated-owner SQL probe
+against the deployed search_user_highlights returned the retained original
+content_item_id but null content_title and segment_title, with both quote and
+thought exact.
+
+**Saved URL and successor PASS:** opened the exact original highlight URL copied
+from the card before publication, including highlightId. It displayed the actual
+replacement notice. Clicking its Open updated summary link reached the correct
+successor and revised Big Idea, with no stale highlightId forwarded. Signed out
+through the UI and verified Notes requires login. The notice and destination work;
+fresh Notes currently fails to provide the route to them.
+
+Root cause: caller-scoped search correctly hides retired source/segment metadata
+through RLS while retaining the owner's note. API
+app/api/library/highlights/route.ts:408 maps missing content_title to
+content_item:null. Notes client-page.tsx:183 then returns no href without the
+joined content_item.id, despite the retained content_item_id and available public
+replacement relationship. This is a confirmed navigation/source-identification
+defect, not loss of the saved thought or a reason to weaken RLS.
+
+Recommendation for a separate narrow correction: retain routing to the original
+/read for owned saved notes whose original has a recorded, accessible published
+replacement; let the existing notice offer the updated summary. Recover only
+appropriate public source-identification metadata. Distinguish truly deleted,
+withdrawn or inaccessible targets. Do not automatically relocate highlights,
+restore historical content, or infer an update from general timestamps. Test
+card/footer and refresh/reload after publication, exact saved data preservation,
+updated-target availability and account denial before any new release claim.
+No fix has been implemented by this audit.
+
+Existing BrainClientPage + ContentReplacementNotice tests:22 passed in2 files.
+They do not cover the full publication → fresh Notes → notice journey, so they
+do not negate the reproduced failure. Retained harness attempt: first read-only
+owner SQL probe omitted required RPC arguments; corrected once using the actual
+eight-argument signature. No product change or data mutation resulted.
+
+Cleanup: UI sign-out revoked the disposable session before Auth deletion;
+confirmed0 owned users/sessions/profiles/content/sections/highlights/library/
+reflections/index jobs/replacements/Storage cover objects. Only the two created
+verification tabs were closed. Existing Chrome login and user notes/content were
+not edited; ordinary navigation can update last-read/reading-position telemetry.
+No viewport override, live AI action, narration generation, paid resource or
+production policy/configuration change was used. Private helper/fixture password
+files were removed after sanitized results were retained.
+
+Evidence: content-version-updates/notes-link-audit contains audit-results.json,
+production RPC/preservation/cleanup proofs,22-test summary and synthetic-only
+missing-link/working-notice screenshots. Desktop Chrome/IAB Chromium only;
+phones, Safari, CI skips and untested journeys remain outside coverage. Feature
+#320 remains live; its data-preservation/publication proof stands, while the
+Notes → replacement return path is explicitly open pending an approved fix.
+
+### Source-link proposal visual — 5 November 2026
+
+Owner requested findings plus a current/proposed visual only; no implementation.
+The standalone netflux-replaced-note-source.html comparison recreates the verified
+replaced-note fallback with synthetic text, then proposes preserving the original
+public source title and a View source action. Card and footer route to the same
+existing replacement notice. View source is proposed for replaced sources because
+Open passage would imply an original reader that has not been implemented.
+Available normal notes keep their existing Open passage behavior. Recover only
+source metadata appropriate to a recorded, accessible published replacement.
+
+The comparison includes the existing notice and an illustrative successor so the
+route can be explored, with a narrow-screen setting. Proposal is not the state
+of How Minds Change, which has no recorded replacement. Historical-edit alerts,
+original-body restoration, new badges and account/access changes are outside it.
+
+Local preview inspected at desktop,390px and320px; original-note return and
+source → notice interaction worked,320px had no horizontal overflow and the
+footer wrapped. Script syntax/fragment contract checked; no product tests/CI or
+production resources were used. An initial preview invocation supplied both a
+destination and --serve, which the helper rejected; corrected to --serve only.
+Preview viewport was reset, tab closed and only the owned server stopped. The
+last small visual-only edit added a return-to-example control on the illustrative
+reader and corrected its font fallback; it received syntax validation and reuses
+the already checked local routing handler. Product code remains unchanged.
+
+### Retained Notes source implementation — 5 November 2026
+
+Owner approved implementing the reviewed current/proposed visual. Independent
+branch codex/notes-replacement-source, worktree netflux-notes-replacement-source,
+starts from refreshed origin/main14e84be1 (#320 is already merged/live). The app
+worktree helper rejected its argument shape; an isolated Git worktree was used.
+The original worktree and its uncommitted verification records were preserved;
+this report carries those release/audit records forward.
+
+Scope: enrich only owned, returned highlight rows with missing source metadata,
+using one batched caller-scoped read of existing public replacement notices.
+Their RLS policy requires an accessible published successor. Retain only the
+original source ID/title, no retired text/author/cover or new permissions. Notes
+uses View source for these rows, the existing card/footer routes remain on the
+original read destination with highlightId, and the existing notice offers the
+successor. Available sources keep Open passage; missing/withdrawn/inaccessible
+replacements keep the unavailable fallback. Lookup errors must fail explicitly,
+not silently hide links. No migration, original-reader restoration, historical
+edit notification, note mutation, search/filter or draft change is planned.
+
+Regression verification will cover fresh server data/remount, original IDs,
+normal/unavailable states, failed lookup, pagination, real publication → fresh
+Notes/reload → notice → successor in the browser, and owner/account isolation.
+Implementation and verification are in progress; no new release claim yet.
+
+Implementation preflight:36 focused tests in4 files passed, plus typecheck,
+full lint/ratchets and production build/Sharp/CSS checks. The existing continuity
+browser regression now exercises fresh Notes, reload, View source → notice →
+successor and an unchanged original note. Local disposable Supabase uses only
+owned583xx ports/containers; a real Redis/Lua REST adapter passed admission and
+denial preflight for production-build checks. No production environment or keys
+were reused. Owner explicitly approved the quoted10 USD/month for one temporary
+hosted project in Jseow008; it will be removed after candidate verification.
+No additional cost or migration authorization is inferred.
