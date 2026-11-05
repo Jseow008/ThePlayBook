@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -22,11 +23,32 @@ import {
  * Shows all items the user has started reading but not completed with filters.
  */
 export default function ContinueReadingPage() {
+    return (
+        <Suspense fallback={<LibraryGridSkeleton />}>
+            <ContinueReadingContent />
+        </Suspense>
+    );
+}
+
+function ContinueReadingContent() {
     const { archiveFromProgressList, getProgress, inProgressIds, isLoaded, restoreProgressListArchive } = useReadingProgress();
 
     // Filter/Sort State
-    const [activeFilter, setActiveFilter] = useState("all");
-    const [activeSort, setActiveSort] = useState<"newest" | "oldest" | "title">("newest");
+    const searchParams = useSearchParams();
+    const filter = searchParams.get("filter");
+    const sort = searchParams.get("sort");
+    const activeFilter = filter && ["book", "podcast", "article", "video"].includes(filter) ? filter : "all";
+    const activeSort = sort === "oldest" || sort === "title" ? sort : "newest";
+
+    function updateSelection(key: "filter" | "sort", value: string) {
+        // Read the current URL so rapid changes preserve each other's selection.
+        const url = new URL(window.location.href);
+        if (value === "all" || value === "newest") url.searchParams.delete(key);
+        else url.searchParams.set(key, value);
+        window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+    const setActiveFilter = (value: string) => updateSelection("filter", value);
+    const setActiveSort = (value: string) => updateSelection("sort", value);
 
     const {
         data: allItems = [],
