@@ -178,3 +178,12 @@ contract/security tests18/18 and typecheck/lint passed. PR #321 first candidate
 `d47e0b01` is superseded by this necessary fixture correction; required gates
 must run on the corrected head. Auto-merge stays off until hosted proof and scope
 review are attached. Stage2 remains separate and must wait for the live caller.
+
+Second fixture correction before release: the main validate browser job also
+exported only the disposable public URL/key. Its search paths now need the
+service credential, so export that third exact local variable and require all
+three lines. The separate catalog evidence job was corrected earlier; missing
+this second consumer caused an unnecessary CI attempt. Hosted/product evidence
+is unchanged. This is a necessary fixture correction, not a relaxed assertion or
+an unchanged retry. No production credentials enter CI. Required gates must run
+on the new head; do not infer their outcome from earlier security successes.
