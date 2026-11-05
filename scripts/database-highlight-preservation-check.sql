@@ -47,7 +47,7 @@ BEGIN
     );
 
     INSERT INTO public.content_item (id, type, title, status)
-    VALUES (v_content_id, 'article', 'DB-002 original title', 'verified');
+    VALUES (v_content_id, 'article', 'DB-002 original title', 'draft');
 
     INSERT INTO public.segment (id, item_id, order_index, title, markdown_body)
     VALUES
@@ -110,7 +110,8 @@ BEGIN
         '1.0.0'
     );
 
-    -- Edit a highlighted body, reorder both existing segments, and add a new
+    -- A never-published draft can still edit/reorder its graph. Published text
+    -- is separately protected by the edition guard below. Add a new
     -- segment. Existing UUIDs and the attached highlight must survive.
     PERFORM public.admin_update_content_graph(
         v_content_id,
@@ -183,13 +184,13 @@ BEGIN
         RAISE EXCEPTION 'DB-002 regression: a changed segment body retained a stale Gemini embedding';
     END IF;
 
-    IF NOT EXISTS (
+    IF EXISTS (
         SELECT 1
         FROM public.segment_embedding_gemini
         WHERE id = v_unhighlighted_embedding_id
           AND segment_id = v_unhighlighted_segment_id
     ) THEN
-        RAISE EXCEPTION 'DB-002 regression: an unchanged segment body lost its Gemini embedding';
+        RAISE EXCEPTION 'DB-002 regression: a never-published draft retained a retrieval embedding';
     END IF;
 
     -- Omit the highlighted segment. The function must return its stable error
@@ -254,13 +255,13 @@ BEGIN
         RAISE EXCEPTION 'DB-002 regression: a rejected graph update partially changed artifacts';
     END IF;
 
-    IF NOT EXISTS (
+    IF EXISTS (
         SELECT 1
         FROM public.segment_embedding_gemini
         WHERE id = v_unhighlighted_embedding_id
           AND segment_id = v_unhighlighted_segment_id
     ) THEN
-        RAISE EXCEPTION 'DB-002 regression: a rejected graph update partially changed embeddings';
+        RAISE EXCEPTION 'DB-002 regression: a rejected graph update recreated a draft embedding';
     END IF;
 
     -- Omitting an unhighlighted segment remains supported.
@@ -300,6 +301,15 @@ BEGIN
     ) THEN
         RAISE EXCEPTION 'DB-002 regression: later unhighlighted cleanup removed the saved highlight';
     END IF;
+
+    -- Once published, the same body change must fail even via Save as Draft.
+    UPDATE public.content_item SET status='verified' WHERE id=v_content_id;
+    BEGIN
+        PERFORM public.admin_update_content_graph(v_content_id, '{"status":"draft"}', '[]', NULL);
+        RAISE EXCEPTION 'DB-002 regression: published sections were removed';
+    EXCEPTION WHEN SQLSTATE 'P0001' THEN
+        IF SQLERRM <> 'Create an updated version before rewriting published sections' THEN RAISE; END IF;
+    END;
 
     INSERT INTO public.segment_embedding_gemini (
         id,

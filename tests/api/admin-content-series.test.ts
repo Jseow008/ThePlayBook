@@ -2123,4 +2123,18 @@ describe("Admin content series support", () => {
         expect(res.status).toBe(404);
         expect(json.error.code).toBe("NOT_FOUND");
     });
+    it.each(["CONTENT_VERSION_REQUIRED", "CONTENT_VERSION_PUBLISH_REQUIRED"])("returns a recoverable conflict for %s", async hint => {
+        const rpc = vi.fn().mockResolvedValue({error:{code:"P0001",hint}});
+        vi.mocked(getAdminClient).mockReturnValue({
+            from: () => ({select: () => ({eq: () => ({single: async () => ({data:{status:"draft"},error:null})})})}),
+            rpc,
+        } as unknown as ReturnType<typeof getAdminClient>);
+        const res = await updateAdminContent(new NextRequest("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000", {
+            method:"PUT",body:JSON.stringify({status:"draft"}),
+        }),{params:Promise.resolve({id:"123e4567-e89b-12d3-a456-426614174000"})});
+        expect(res.status).toBe(409);
+        expect((await res.json()).error.code).toBe("CONFLICT");
+        expect(rpc).toHaveBeenCalledTimes(1);
+    });
+
 });

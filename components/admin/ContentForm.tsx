@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { ContentVersionActions } from "@/components/admin/ContentVersionActions";
 import { useRouter } from "next/navigation";
 import {
     Loader2,
@@ -67,6 +68,7 @@ interface ContentFormProps {
     } | null;
     narrationEstimate?: NarrationCostEstimate | null;
     returnTo?: string;
+    isVersionDraft?: boolean;
 }
 
 const defaultQuickMode: QuickModeJson = {
@@ -122,6 +124,7 @@ export function ContentForm({
     aiReadiness = null,
     narrationEstimate = null,
     returnTo,
+    isVersionDraft = false,
 }: ContentFormProps) {
     const router = useRouter();
     const safeReturnTo = normalizeAdminReturnTo(returnTo);
@@ -141,6 +144,9 @@ export function ContentForm({
             })),
         };
     });
+
+    const [reviewVersion, setReviewVersion] = useState(false);
+    useEffect(() => { setReviewVersion(false); }, [formData]);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
@@ -487,6 +493,7 @@ export function ContentForm({
 
     const handleSubmit = async (status: "draft" | "verified") => {
         setError("");
+        setReviewVersion(false);
         setIsSubmitting(true);
 
         // Remove client_id before submitting
@@ -505,7 +512,7 @@ export function ContentForm({
         const didAudioUrlChange = !isEditing || normalizedAudioUrl !== persistedAudioUrl;
         const dataToSubmit: Record<string, unknown> = {
             ...formData,
-            status,
+            status: isVersionDraft ? "draft" : status,
             segments: segmentsToSubmit,
             artifacts: artifactsToSubmit,
             is_featured: formData.is_featured || false,
@@ -537,6 +544,10 @@ export function ContentForm({
             const data = await response.json();
 
             if (data.success) {
+                if (isVersionDraft && status === "verified") {
+                    setReviewVersion(true);
+                    return;
+                }
                 const narrationWarning = typeof data.data?.narration_warning === "string"
                     ? data.data.narration_warning
                     : "";
@@ -761,6 +772,7 @@ export function ContentForm({
                                 </label>
                                 <select
                                     id="content-series"
+                                    disabled={isVersionDraft}
                                     value={formData.series_id}
                                     onChange={(e) => updateSeriesAssignment(e.target.value)}
                                     className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent ${fieldErrors.series_id ? "border-red-500 bg-red-50" : "border-zinc-300"}`}
@@ -796,7 +808,7 @@ export function ContentForm({
                                     }
                                     placeholder={formData.series_id ? "1" : "Select a series first"}
                                     min="1"
-                                    disabled={!formData.series_id}
+                                    disabled={isVersionDraft || !formData.series_id}
                                     className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent disabled:bg-zinc-50 disabled:text-zinc-400 ${fieldErrors.series_order ? "border-red-500 bg-red-50" : "border-zinc-300"}`}
                                 />
                                 <p className="mt-1 text-xs text-zinc-500">Required when this item belongs to a series.</p>
@@ -1219,8 +1231,10 @@ export function ContentForm({
                 onChange={(artifacts) => updateField("artifacts", artifacts)}
             />
 
+            {isVersionDraft && <p className="text-sm text-zinc-600">This is an unpublished updated version. Its series position will be inherited when published; the original remains available until then.</p>}
+
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex flex-wrap items-center justify-end gap-3">
                 <button
                     type="button"
                     onClick={() => router.push(safeReturnTo)}
@@ -1249,10 +1263,11 @@ export function ContentForm({
                     {isSubmitting ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                        "Publish"
+                        isVersionDraft ? "Save and review updated version" : "Publish"
                     )}
                 </button>
             </div>
+            {reviewVersion && formData.id && <ContentVersionActions mode="publish" contentId={formData.id} />}
         </div>
     );
 }

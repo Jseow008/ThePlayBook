@@ -80,7 +80,8 @@ export async function POST(request: NextRequest, { params }: Context) {
         });
         if (error) {
             if (error.code === "40001") return apiError("CONFLICT", "Summary changed. Preview the replacement again.", 409, requestId);
-            if (error.code === "22023") return apiError("VALIDATION_ERROR", "Replacement must be a different published summary", 400, requestId);
+            if (error.code === "22023") return apiError("VALIDATION_ERROR", "Replacement must be available and ready to publish. Complete required publish fields and wait for narration before reviewing an updated version again.", 400, requestId);
+            if (error.code === "23505") return apiError("CONFLICT", "The updated version conflicts with an existing book identity, ISBN or series position. Edit the draft and review again.", 409, requestId);
             if (error.code === "P0002") return apiError("NOT_FOUND", "Summary not found", 404, requestId);
             throw error;
         }

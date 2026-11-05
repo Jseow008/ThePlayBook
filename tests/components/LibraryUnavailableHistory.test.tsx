@@ -16,6 +16,9 @@ vi.mock("@/hooks/useReflections", () => ({ useReflections: () => ({ data: [] }) 
 vi.mock("@/components/reader/ReflectionComposer", () => ({ ReflectionComposer: () => null }));
 vi.mock("@/lib/analytics", () => ({ captureAnalyticsEvent: vi.fn() }));
 
+// #319 reads the current URL; this isolated history fixture has no Next router.
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
+
 const oldId = "11111111-1111-4111-8111-111111111111";
 
 describe.each([["Continue Reading", ReadingPage], ["Completed", CompletedPage], ["Saved", SavedPage]] as const)("%s unavailable history", (_name, Page) => {

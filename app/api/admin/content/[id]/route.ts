@@ -541,6 +541,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const { error: updateGraphError } = await supabase.rpc("admin_update_content_graph", rpcArgs);
 
         if (updateGraphError) {
+            if (updateGraphError.hint === "CONTENT_VERSION_REQUIRED" || updateGraphError.hint === "CONTENT_VERSION_PUBLISH_REQUIRED") {
+                return apiError("CONFLICT", updateGraphError.hint === "CONTENT_VERSION_REQUIRED"
+                    ? "Published reading text is protected. Create an updated version before rewriting it. Your changes have not been saved."
+                    : "Save this updated version as a draft, then use Publish updated version. Leave its series unassigned until publication.", 409, requestId);
+            }
+
             if (isHighlightedSegmentRemovalBlocked(updateGraphError)) {
                 return apiError(
                     "CONFLICT",

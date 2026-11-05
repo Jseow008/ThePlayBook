@@ -60,4 +60,13 @@ describe("admin replacement API", () => {
         mocks.rpc.mockResolvedValue({ data: null, error: { code: "XX000" } });
         expect((await POST(request(), context)).status).toBe(500);
     });
+    it("reports incomplete publication and identity conflicts without pretending the draft must already be public", async () => {
+        mocks.rpc.mockResolvedValueOnce({data:null,error:{code:"22023"}});
+        const missing=await POST(request(),context);
+        expect(missing.status).toBe(400);
+        expect((await missing.json()).error.message).toContain("Complete required publish fields");
+        mocks.rpc.mockResolvedValueOnce({data:null,error:{code:"23505"}});
+        expect((await POST(request(),context)).status).toBe(409);
+    });
+
 });

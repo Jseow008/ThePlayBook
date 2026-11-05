@@ -161,6 +161,7 @@ jobs:
           npm run database:content-invariants
           npm run database:legacy-embedding-retirement
           npm run database:highlight-preservation
+          CONTENT_CONTINUITY_DATABASE_URL="$DB107_ADMIN_DATABASE_URL" npx vitest run tests/database/content-continuity-runtime.test.ts tests/database/content-version-runtime.test.ts tests/database/content-version-concurrency.test.ts
           npm run database:published-at
           npm run database:book-identity
           npm run database:account-data-snapshots
