@@ -20,7 +20,6 @@ import type { ContentItem } from "@/types/database";
 import {
     LIBRARY_CARD_GRID_CLASS,
     LibraryGridSkeleton,
-    LibraryStatBadge,
     LibraryToolbarSkeleton,
 } from "@/components/ui/LibraryLoadingStates";
 
@@ -233,24 +232,26 @@ export default function CompletedPage() {
 
     return (
         <div className="min-h-screen bg-background pb-20">
-            <div className="max-w-7xl mx-auto px-6 lg:px-16 py-8 md:py-12">
+            <div className="max-w-7xl mx-auto px-6 lg:px-16 py-6 md:py-8">
 
 
                 {/* Header */}
-                <div className="flex flex-col gap-2 mb-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">Completed</h1>
-                        </div>
-
-                        {/* Stats Summary */}
-                        {shouldShowLibraryControls && (
-                            <LibraryStatBadge
-                                count={completedIds.length}
-                                label={allItems.length === 1 ? "Completed Item" : "Completed Items"}
-                                isLoading={isPageLoading}
-                            />
-                        )}
+                <div className="flex flex-col gap-2 mb-3 lg:mb-6">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">Completed</h1>
+                        {isPageLoading ? (
+                            <span aria-hidden="true" className="h-4 w-16 animate-pulse rounded-full bg-secondary/30" />
+                        ) : shouldShowLibraryControls && (!isError || allItems.length > 0) ? (
+                            <span
+                                role="status"
+                                aria-label={`Showing ${filteredItems.length} of ${completedIds.length} completed ${completedIds.length === 1 ? "item" : "items"}`}
+                                className="text-xs text-muted-foreground"
+                            >
+                                {activeFilter === "all" && filteredItems.length === completedIds.length
+                                    ? `${filteredItems.length} ${filteredItems.length === 1 ? "item" : "items"}`
+                                    : `${filteredItems.length} of ${completedIds.length} shown`}
+                            </span>
+                        ) : null}
                     </div>
                     <p className="text-muted-foreground">
                         Your knowledge milestones
@@ -259,11 +260,12 @@ export default function CompletedPage() {
 
                 {/* Controls Toolbar */}
                 {shouldShowLibraryControls && (
-                    <div className="mb-8">
+                    <div className="mb-6">
                         {isPageLoading ? (
-                            <LibraryToolbarSkeleton className="w-full" showSearch={false} />
+                            <LibraryToolbarSkeleton compact className="w-full" showSearch={false} />
                         ) : (
                             <LibraryToolbar
+                                compact
                                 showSearch={false}
                                 activeFilter={activeFilter}
                                 onFilterChange={setActiveFilter}
@@ -342,12 +344,6 @@ export default function CompletedPage() {
                         </div>
                     ) : (
                         <>
-                            <div className="mb-4 flex items-center justify-between">
-                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Showing {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
-                                </p>
-                            </div>
-
                             <div className={LIBRARY_CARD_GRID_CLASS}>
                                 {filteredItems.map((item) => (
                                     <ContentCard
