@@ -89,3 +89,42 @@ origin/main remains1c56b069 (#328),329 remains open and independent. Only six
 intended files: Completed page, Toolbar, loading states, Completed tests, DESIGN
 and this record. Next: commit/publish, verify PR scope and enable protected auto-
 merge after that scope gate passes. CI/security pending, no live claim.
+
+
+Publication handoff: https://github.com/Jseow008/ThePlayBook/pull/330,
+headed52181451e783a37967e754926780083ec6c856. GitHub file list is exactly the
+six intended files; own ancestry contains one commit and no unmerged329 history.
+PR scope passed, branch mergeable. Protected squash auto-merge enabled and read
+back. CI42256814198 and Security42256814228 are pending for this exact head;
+PR330 remains OPEN, not production. No gate bypass, timer or deployment work.
+Next action belongs to required checks; no additional implementation is needed.
+This post-publication status appendix is local/uncommitted to avoid restarting
+CI for documentation only. Product/evidence before this appendix are committed.
+
+
+Evidence caveat at final image inspection: the extra filtered screenshot taken
+immediately after resizing from desktop was a320x225 thumbnail of the prior
+layout, not a valid320x844 viewport capture. Rejected it as a viewport/screenshot
+race; do not count it as narrow visual evidence. The three main candidate
+captures have the expected320x844,390x844,1280x900 dimensions and accompanying
+DOM measurements. Browser filtering/count interactions remain established by
+actual state reads; no product defect is inferred. Retained rejected image with
+that label. Screenshot bytes are JPEG, so valid captures were renamed .jpg
+without editing content. Final illustration uses valid candidate-390.jpg and is
+explicitly synthetic local data. No further code/check changes needed.
+
+
+## Production follow-up — 7 November 2026
+
+Owner requests merge/deployment status and live desktop/narrow verification.
+Initial head ed521814 had passed CI42256814198 and Security42256814228, but strict
+freshness held merging after329 landed as eefed48c. Refresh includes only its
+Requests files, RequestBoard tests and old shared checkpoint; no Completed,
+Toolbar, skeleton, search, card or own test logic changed. Merge clean, no conflict.
+Earlier local browser/count/action evidence remains applicable to identical
+Completed implementation. No new product scope or additional test fixtures.
+Next: publish refreshed integration, confirm PR scope and required CI/security
+for that head, then normal protected merge. Verify production READY + www alias
+for the actual merge SHA before live read-only320/390/1280 checks. Never bypass
+gates or manually cancel slow downloads. No automation, paid resources, account
+creation or saved-content/history edits are authorized or needed here.

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { RequestBoard } from "@/components/requests/RequestBoard";
+import RequestsPage from "@/app/(public)/requests/page";
 
 const { authUser, fetchMock } = vi.hoisted(() => ({
     authUser: { value: null as { id: string } | null },
@@ -25,6 +26,17 @@ describe("RequestBoard sign-in return", () => {
         window.sessionStorage.clear();
         fetchMock.mockReset();
         vi.stubGlobal("fetch", fetchMock);
+    });
+
+    it.each(["book", "video", "podcast"])("requires an explicit format after a %s Search handoff", async (type) => {
+        render(await RequestsPage({ searchParams: Promise.resolve({ prefill: "Requested source", type }) }));
+
+        const format = screen.getByRole("combobox", { name: "Format" });
+        expect(format).toHaveValue("");
+        expect(screen.getByRole("option", { name: "Please Select" })).toHaveValue("");
+        expect(format).toBeInvalid();
+        expect(screen.getByPlaceholderText("Paste a URL or type a title by author")).toHaveValue("Requested source");
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it("restores the entered request after sign-in and clears it only after submission", async () => {
