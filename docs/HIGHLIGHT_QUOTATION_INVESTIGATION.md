@@ -5123,3 +5123,15 @@ Intended PR scope: Search page, SearchTopicSelect, SearchPage tests, DESIGN and
 this checkpoint only. Next: verify own history/files, publish ready PR, verify
 GitHub scope, then protected squash auto-merge after PR scope passes. Required
 CI/security remain merge gates; no deployment monitoring requested here.
+
+Publication follow-up: ready PR #326 initially headd498d241. Before auto-merge,
+inspection found the existing rapid-two-filter browser regression assumed topic
+links were visible at every viewport. Updated that same test to use the native
+Topics select on narrow screens and preserve the original link assertions on
+larger screens, retaining the existing hydration readiness guard and simultaneous
+Book/topic intent. This is an affected test adaptation, not another product
+change. Final scope is six files including tests/e2e/search.spec.ts. Targeted
+ESLint and standalone typecheck pass after that adaptation; application build and
+53 focused tests remain applicable because their inputs/product source did not
+change. The updated browser test awaits hosted CI execution; not claimed as a
+local browser-suite pass. Fresh final gates must cover the new head before merge.
