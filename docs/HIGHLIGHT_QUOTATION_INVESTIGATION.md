@@ -5306,3 +5306,28 @@ one corrected local dependency-layout setup failure, no repeated benchmark.
 Next: commit intended component+checkpoint only; inspect local/GitHub scope, open
 ready PR and enable protected squash auto-merge after its PR-scope gate passes.
 Required hosted CI/security and eventual production verification remain pending.
+
+Published ready PR329 atad31417b31f2f8e721f9406582bc24317513ec78 on097205af.
+Local log contains only the intended commit; GitHub diff exactly matches the two
+intended files. Connector PR creation returned integration403, so used the existing
+authenticated gh connection without changing permissions. CI42253406628,
+Security42253408526 and PRscope42253406378 started for the final head. Waiting only
+for PR scope before protected squash auto-merge; not monitoring full deployment.
+No gates bypassed and no production verification claim.
+
+Initial PRscope passed; protected squash auto-merge enabled. Before handoff,
+GitHub marked the branch BEHIND:328 had just merged as1c56b069. Fetched and merged
+that main without conflicts (integration91cd6beb); RequestBoard unchanged. Repeated
+the affected request/route/auth hook checks:47 passed, plus full lint/ratchets and
+production build/typecheck/Sharp traces/critical CSS on the integration. Repeated
+the built signed-out320x780 entry: same action y558..602, nav y696..768,94px gap,
+exact synthetic prefill, unchanged Select format/Book/Video, no extra copy or
+horizontal overflow. final-320x780.png/final-browser.json record this candidate.
+Earlier desktop390/short-height geometry remains applicable to unchanged form and
+shell code. Own final tab/server closed; viewport reset. No saved data changed.
+
+PR329 remains the bounded two-file change, now includes328's merged updates.
+Push this refresh and require fresh hosted gates; auto-merge must remain protected.
+No deployment monitoring or production claim. Original review's unsupported-format
+clarity finding is deliberately deferred: user explicitly declined explanation or
+format changes. Physical phones/Safari/skipped tests remain outside coverage.
