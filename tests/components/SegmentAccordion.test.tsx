@@ -17,7 +17,7 @@ vi.mock('@/hooks/useMediaQuery', () => ({
     useMediaQuery: vi.fn(() => true),
 }));
 
-describe('SegmentAccordion', () => {
+describe.each([false, true])('SegmentAccordion (reducedMotion=%s)', (reducedMotion) => {
     const mockedUseMediaQuery = vi.mocked(useMediaQuery);
 
     const mockSegments: SegmentFull[] = [
@@ -55,6 +55,82 @@ describe('SegmentAccordion', () => {
         vi.clearAllMocks();
         mockedUseMediaQuery.mockReturnValue(true);
         window.scrollTo = vi.fn();
+        vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: reducedMotion }));
+    });
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it.each([true, false])('keeps Follow and focus while only reduced mode skips the transition wait (desktop=%s)', async (desktop) => {
+        vi.useFakeTimers();
+        try {
+            mockedUseMediaQuery.mockReturnValue(desktop);
+            const { container } = render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-2"
+                scrollRequest={{ segmentId: 'seg-2', initialScrollY: 500, requestId: 10, explicitFollow: true, focusAfterScroll: true }} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(35); });
+            if (!reducedMotion) {
+                expect(window.scrollTo).not.toHaveBeenCalled();
+                fireEvent.transitionEnd(container.querySelector('[data-reader-segment-id="seg-2"] [data-reader-segment-panel]')!);
+            }
+            expect(window.scrollTo).toHaveBeenCalledTimes(1);
+            expect(window.scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: reducedMotion ? 'auto' : 'smooth' }));
+            expect(screen.getByText('Chapter 1').closest('button')).toHaveFocus();
+            await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+            expect(window.scrollTo).toHaveBeenCalledTimes(1);
+        } finally { vi.useRealTimers(); }
+    });
+
+    it.each(['wheel', 'touchmove', 'keydown'])('cancels Follow during layout settling on %s', async (input) => {
+        vi.useFakeTimers();
+        try {
+            render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-2"
+                scrollRequest={{ segmentId: 'seg-2', initialScrollY: 500, requestId: 11, explicitFollow: true, focusAfterScroll: true }} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(17); });
+            if (input === 'keydown') fireEvent.keyDown(window, { key: 'PageDown' });
+            else fireEvent(window, new Event(input));
+            await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+            expect(window.scrollTo).not.toHaveBeenCalled();
+            expect(screen.getByText('Chapter 1').closest('button')).not.toHaveFocus();
+        } finally { vi.useRealTimers(); }
+    });
+
+    it('only scrolls and focuses the latest section when a pending request is replaced', async () => {
+        vi.useFakeTimers();
+        try {
+            const { container, rerender } = render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-1"
+                scrollRequest={{ segmentId: 'seg-1', initialScrollY: 0, requestId: 20, focusAfterScroll: true }} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(17); });
+            rerender(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-2"
+                scrollRequest={{ segmentId: 'seg-2', initialScrollY: 0, requestId: 21, focusAfterScroll: true }} />);
+            const target = container.querySelector('[data-reader-segment-id="seg-2"]')!;
+            target.getBoundingClientRect = vi.fn().mockReturnValue({ top: 240 });
+            await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+            expect(window.scrollTo).toHaveBeenCalledTimes(1);
+            expect(window.scrollTo).toHaveBeenCalledWith({ top: 140, behavior: reducedMotion ? 'auto' : 'smooth' });
+            expect(screen.getByText('Chapter 1').closest('button')).toHaveFocus();
+        } finally { vi.useRealTimers(); }
+    });
+
+    it('does not pull an ordinary reader back after their scroll position changes', async () => {
+        vi.useFakeTimers();
+        try {
+            render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-2"
+                scrollRequest={{ segmentId: 'seg-2', initialScrollY: 500, requestId: 22, focusAfterScroll: true }} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+            expect(window.scrollTo).not.toHaveBeenCalled();
+            expect(screen.getByText('Chapter 1').closest('button')).not.toHaveFocus();
+        } finally { vi.useRealTimers(); }
+    });
+
+    it('cancels a pending scroll when unmounted', async () => {
+        vi.useFakeTimers();
+        try {
+            const { unmount } = render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-2"
+                scrollRequest={{ segmentId: 'seg-2', initialScrollY: 0, requestId: 23, focusAfterScroll: true }} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(17); });
+            unmount();
+            await act(async () => { await vi.advanceTimersByTimeAsync(450); });
+            expect(window.scrollTo).not.toHaveBeenCalled();
+        } finally { vi.useRealTimers(); }
     });
 
     it('defers unopened markdown and retains visited text after collapsing', () => {
@@ -158,7 +234,7 @@ describe('SegmentAccordion', () => {
                 await vi.advanceTimersByTimeAsync(450);
             });
 
-            expect(scrollToSpy).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
+            expect(scrollToSpy).toHaveBeenCalledWith(expect.objectContaining({ behavior: reducedMotion ? 'auto' : 'smooth' }));
         } finally {
             vi.useRealTimers();
         }
@@ -279,7 +355,7 @@ describe('SegmentAccordion', () => {
 
             expect(scrollToSpy).toHaveBeenCalledWith({
                 top: 140,
-                behavior: 'smooth',
+                behavior: reducedMotion ? 'auto' : 'smooth',
             });
         } finally {
             vi.useRealTimers();

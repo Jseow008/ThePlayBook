@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ContentLane } from "@/components/ui/ContentLane";
 import { COMPACT_SHELF_CARD_CLASS } from "@/components/ui/content-card-standards";
@@ -107,6 +107,28 @@ describe("ContentLane", () => {
         update_source_id: null,
         },
     ];
+
+    it.each([false, true])("keeps the shelf destination and honors reduced motion (%s)", (reducedMotion) => {
+        vi.mocked(window.matchMedia).mockImplementation(query => query.includes('prefers-reduced-motion')
+            ? { ...desktop, matches: reducedMotion } : desktop);
+        const { container } = render(<ContentLane title="Test Lane" items={items} />);
+        const scroller = screen.getByTestId('content-lane-scroller');
+        Object.defineProperties(scroller, {
+            clientWidth: { configurable: true, value: 200 },
+            scrollWidth: { configurable: true, value: 500 },
+            scrollLeft: { configurable: true, value: 0 },
+        });
+        container.querySelectorAll('[data-content-lane-card]').forEach((card, index) => {
+            Object.defineProperties(card, {
+                offsetLeft: { configurable: true, value: index * 240 },
+                offsetWidth: { configurable: true, value: 240 },
+            });
+        });
+        scroller.scrollTo = vi.fn();
+        fireEvent.click(screen.getByRole('button', { name: 'Scroll right' }));
+        expect(scroller.scrollTo).toHaveBeenCalledWith({ left: 240, behavior: reducedMotion ? 'auto' : 'smooth' });
+        expect(scroller).toHaveClass('scroll-smooth', 'motion-reduce:scroll-auto');
+    });
 
     it("recalculates arrow visibility based on actual overflow", () => {
         const { container } = render(<ContentLane title="Test Lane" items={items} />);

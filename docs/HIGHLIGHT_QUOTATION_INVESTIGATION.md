@@ -5541,3 +5541,73 @@ Repeated owner status check:333 remains open/unmerged atf5a470e1. Public alias n
 serves READY dpl_9TC1omdUvPXnSAaZPT8k3MZDMzc6, gitb4be6fa1 (#330), not333.
 Stopped again as explicitly requested; no browser test, branch/gate/deployment
 action, waiting or automation. Production verification remains outstanding.
+
+## 2026-11-07 — Reduced-motion replacement for conflicting257
+
+Owner authorized fresh implementation on current main, preserve Follow/scroll
+cancellation/keyboard focus, desktop/narrow normal+reduced verification, then close
+257. Worktree /Users/j/.codex/workspaces/netflux-reduced-motion-current, branch
+codex/reduced-motion-current, baseline5269c4e3. Did not resolve/merge old branch.
+
+Implementation limited to ReaderView,SegmentAccordion,ContentLane:
+- Reduced-mode section/highlight jumps use auto; shelf CSS also overrides smooth.
+- Expansion/header/chevron/prose transitions disabled only for reduced preference.
+- Saved-highlight expansion does not wait for a disabled transition. Exact matching,
+  unavailable warnings, account checks and visible-passage preservation unchanged.
+- Shared section scheduler retains explicitFollow/current-expanded/reader-movement
+  guards, focus preventScroll and wheel/touch/key interruption. Reduced/missing-panel
+  path uses two layout frames with tracked cancellation rather than animation wait.
+  Normal transitionend/400ms fallback remains; cancelled/superseded work cannot run.
+- No layout, fonts, copy, targets, native mobile swipe, audio playback policy,
+  databases/auth/API/provider or dependency changes.
+
+Verification on final product source:
+-189 focused component tests pass (3 files), including final supersession, ordinary-scroll interruption and unmount regressions. Accordion suite runs both preferences,
+ including keyboard/pointer Continue, explicit Follow with layout scroll changes,
+ cancelled/cleared/closed/superseded requests, latest request and focus. Added
+ interruptions between layout frames (wheel,touchmove,PageDown), one-scroll-only
+ after fallback, shelf target equivalence, and ReaderView highlight-target/wait
+ checks in both layouts/preferences.
+-Full lint/ratchets, standalone typecheck and normal production build passed;
+ Sharp trace and critical CSS checks passed. Build used synthetic localhost public
+ configuration; unavailable static catalog/JWT warnings are not a data-flow pass.
+ Initial build failed because Turbopack disallows dependencies symlinked outside
+ root. Replaced own symlink with local cloned identical dependencies, no config or
+ lockfile change, then build succeeded.
+-Actual product SegmentAccordion/ContentLane plus compiled production CSS rendered
+ in isolated local Vite fixture. Only reader-settings provider/card/link adapters
+ stubbed; native browser media preference/layout/scroll/keyboard are real Chromium.
+ Synthetic sections/cards, no account, backend, provider calls or production writes.
+ 8/8 local browser checks pass at1440x900/390x844 with reduce/no-preference:
+ expansion/Continue/Follow correct target and focus, auto vs smooth behavior,
+ disabled transition property and zero animations in reduce,300ms normal transition,
+ explicit Follow wheel cancellation and subsequent new Follow recovery, no overflow.
+ Shelf arrows move at desktop; stay hidden narrow; computed scroller CSS reflects
+ preference at both widths. This is not a physical phone or Safari claim.
+-Added durable e2e Continue regression for both preferences.4/4 pass using the same
+ fixture under repo desktop-chromium and mobile-iphone Chromium profiles. Fixture
+ needed meta viewport to match real app; initial mobile-profile runs failed scroll
+ position without it, corrected only fixture HTML and reran. Final assertion permits
+ normal document-end scroll clamping rather than requiring unreachable100px offset.
+ Fixture URL explicitly configured; these are not full deployed app/auth/data tests.
+ CI will also exercise durable tests against its normal dataset (skip if unavailable
+ or fewer than2 sections; never count a skip as verification).
+
+Failed attempts retained: initial scratch timing test ran before lazy NotesDrawer
+loaded; awaited drawer then all4 passed. Initial browser assertion expected0s
+computed duration, but transition:none leaves duration0.3s while disabling animation;
+corrected assertion to property:none plus no active animations, no product edit.
+First matrix6 passed/2 assertion failures, final8 passed without retries. Original
+mobile-profile2 failures were fixture viewport mismatch, not erased by final4pass.
+Artifacts: /Users/j/.codex/visualizations/2026/11/07/netflux-reduced-motion-current
+(results.json,results-initial-duration-assertion.json, four motion screenshots,
+fixture source/spec). No speed or subjective-comfort claim; no new device coverage.
+
+React review: event-time preference reads avoid subscriptions/rerenders; same
+scheduler owns timers/frames/input listener cleanup and focus. Media overrides
+change only motion. Existing guards retained; no async data or client boundary
+changes. Local checks complete, replacement PR/required hosted gates pending.
+Next: commit intended files, ready PR, scope inspection/check, protected squash
+auto-merge per AGENTS; close257 with replacement link, not merge old branch.
+
+Final local candidate:189/189 focused tests, final typecheck/focused lint and diff whitespace check pass. One implementing agent, no subagents; provider/Codex billed usage unavailable. Local fixture server will be stopped after evidence capture. Physical phones/Safari/full deployed-page verification remain outside this local evidence.
