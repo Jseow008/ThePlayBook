@@ -70,6 +70,19 @@ const TYPE_ICONS: Record<ContentItem["type"], React.ComponentType<{ className?: 
     video: Video,
 };
 
+const AUTHOR_TYPOGRAPHY = "translate-z-0 max-w-[82%] break-words text-center font-medium uppercase leading-relaxed tracking-[0.1em] whitespace-normal text-white/86 drop-shadow-md text-[9px] md:text-[11px] md:tracking-[0.15em]";
+
+// Offset coordinates stay stable while the card's existing press/hover transform runs.
+function topWithinCard(element: HTMLElement, card: HTMLElement) {
+    let top = 0;
+    let current: HTMLElement | null = element;
+    while (current && current !== card) {
+        top += current.offsetTop;
+        current = current.offsetParent as HTMLElement | null;
+    }
+    return current === card ? top : null;
+}
+
 function hasUsableProgress(progress: ReturnType<typeof useReadingProgress>["getProgress"] extends (itemId: string) => infer T ? T : never) {
     if (!progress) {
         return false;
@@ -189,6 +202,11 @@ function BaseContentCard({
     const [isCoverLoaded, setIsCoverLoaded] = useState(false);
     const [isRemoveMenuOpen, setIsRemoveMenuOpen] = useState(false);
     const removeMenuRef = useRef<HTMLDivElement>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
+    const authorFrameRef = useRef<HTMLDivElement>(null);
+    const authorRef = useRef<HTMLParagraphElement>(null);
+    const titleRef = useRef<HTMLHeadingElement>(null);
+    const captionRef = useRef<HTMLDivElement>(null);
     const Icon = TYPE_ICONS[item.type] || BookOpen;
     const RemoveIcon = removeIcon === "archive" ? Archive : Trash2;
     const SecondaryRemoveIcon = secondaryRemoveIcon === "archive" ? Archive : Trash2;
@@ -234,6 +252,48 @@ function BaseContentCard({
         };
     }, [isRemoveMenuOpen]);
 
+    useEffect(() => {
+        const card = cardRef.current;
+        const author = authorRef.current;
+        const title = titleRef.current;
+        const frame = authorFrameRef.current;
+        const caption = captionRef.current;
+        if (!item.author || !card || !author || !title || !frame || !caption) return;
+
+        let active = true;
+        const desktop = window.matchMedia?.("(min-width: 768px)");
+        const update = () => {
+            if (!active) return;
+            if (desktop?.matches ?? window.innerWidth >= 768) {
+                author.style.removeProperty("--content-card-author-lines");
+                return;
+            }
+            if (!card.offsetWidth) return;
+            const authorTop = topWithinCard(author, card);
+            const titleTop = topWithinCard(title, card);
+            const lineHeight = parseFloat(window.getComputedStyle(author).lineHeight);
+            if (authorTop === null || titleTop === null || !Number.isFinite(lineHeight)) return;
+            const available = titleTop - authorTop - 8;
+            const lines = available >= 2 * lineHeight + 0.5 ? "2" : "1";
+            if (author.style.getPropertyValue("--content-card-author-lines") !== lines) {
+                author.style.setProperty("--content-card-author-lines", lines);
+            }
+        };
+        // The full-credit sizing copy preserves the existing gradient's footprint.
+        // Observing that frame, rather than the clipped text, avoids resize loops.
+        const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+        for (const element of [card, title, frame, caption]) observer?.observe(element);
+        desktop?.addEventListener("change", update);
+        update();
+        void document.fonts?.ready.then(update);
+        return () => {
+            active = false;
+            observer?.disconnect();
+            desktop?.removeEventListener("change", update);
+            author.style.removeProperty("--content-card-author-lines");
+        };
+    }, [item.author, showMoreTitleLines, showReflectionButton, titleDensity]);
+
     const titleTypography = cn(
         "w-full font-serif font-medium text-white/95 transition-colors group-hover:text-white md:text-base md:leading-snug",
         isAppCompact ? "text-[0.92rem] leading-[1.16]" : "text-[0.95rem] leading-[1.18]",
@@ -247,13 +307,13 @@ function BaseContentCard({
         </p>
     ) : null;
     const titleHeading = (
-        <h3 className={cn(titleTypography, showMoreTitleLines ? "content-card-expanded-title" : "line-clamp-3")}>
+        <h3 ref={titleRef} className={cn(titleTypography, showMoreTitleLines ? "content-card-expanded-title" : "line-clamp-3")}>
             {item.title}
         </h3>
     );
 
     return (
-        <div onMouseEnter={() => setPrefetchOnIntent(true)} onFocus={() => setPrefetchOnIntent(true)} className={cn(
+        <div ref={cardRef} onMouseEnter={() => setPrefetchOnIntent(true)} onFocus={() => setPrefetchOnIntent(true)} className={cn(
             "content-card-title-container content-card-motion-surface group relative block w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 max-md:active:scale-[0.98] max-md:active:ring-white/30 max-md:active:shadow-[0_8px_20px_rgba(0,0,0,0.38)] max-md:duration-150 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)] motion-reduce:active:scale-100 motion-reduce:transition-none",
             CONTENT_CARD_ASPECT_CLASS
         )}>
@@ -347,25 +407,29 @@ function BaseContentCard({
 
             {item.author ? (
                 <div
+                    ref={authorFrameRef}
                     className={cn(
                         "pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center bg-gradient-to-b from-black/70 via-black/25 to-transparent px-5 pb-5 md:px-8 md:pb-8",
                         showReflectionButton ? "pt-14 md:pt-16" : "pt-5 md:pt-10"
                     )}
                 >
-                    <p
-                        className={cn(
-                            "translate-z-0 max-w-[82%] break-words text-center font-medium uppercase leading-relaxed tracking-[0.1em] whitespace-normal text-white/86 drop-shadow-md md:text-[11px] md:tracking-[0.15em]",
-                            "text-[9px]"
-                        )}
-                    >
+                    <p aria-hidden="true" className={cn(AUTHOR_TYPOGRAPHY, "invisible select-none")}>
                         {item.author}
                     </p>
+                    <div className={cn(
+                        "absolute inset-x-5 flex justify-center md:inset-x-8",
+                        showReflectionButton ? "top-14 md:top-16" : "top-5 md:top-10"
+                    )}>
+                        <p ref={authorRef} className={cn(AUTHOR_TYPOGRAPHY, "content-card-author-credit")}>
+                            {item.author}
+                        </p>
+                    </div>
                 </div>
             ) : null}
 
             <div className="content-card-motion-overlay pointer-events-none absolute inset-0 rounded-md bg-black/40 opacity-0 transition-opacity duration-300 max-md:group-active:opacity-25 md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none" />
 
-            <div className={cn(
+            <div ref={captionRef} className={cn(
                 "pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/92 via-black/62 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20",
                 reduceDesktopGradient && "md:bg-none",
             )}>

@@ -592,6 +592,22 @@ mark[data-highlight-spotlight="true"] {
   }
 }
 
+/* Keep mobile credits readable before measurement and when scripting is unavailable. */
+.content-card-author-credit {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--content-card-author-lines, 1);
+}
+
+@media (min-width: 768px) {
+  .content-card-author-credit {
+    overflow: visible;
+    display: block;
+    -webkit-line-clamp: unset;
+  }
+}
+
 /* Card hover animation */
 .card-hover {
   @apply transition-transform duration-300 hover:-translate-y-1;

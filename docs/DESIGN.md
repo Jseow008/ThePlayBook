@@ -102,7 +102,11 @@ by default. Below the existing `md` screen breakpoint, cards narrower than
 narrower than `240px` retain three lines and cards at least that wide allow up to four. CSS
 container queries measure each card, with no resize listeners. These cutoffs
 were checked with short/long titles, long author credits, hooks and Completed
-controls; they do not repair pre-existing long-credit overlap on tiny cards.
+controls. On narrow screens, author credits allow two lines when there is room
+above the title, falling back to one line on crowded cards. Resizing and font
+readiness update that fit without changing title limits. A hidden full-credit
+sizing copy preserves the original backdrop footprint; the visible accessible
+credit retains its full text. Desktop author rendering remains untruncated.
 Keep fonts, card sizing, backdrop footprints and actions unchanged. Other card
 families retain their own title treatment. Explicit `showMoreTitleLines={false}`
 keeps the legacy three-line rendering.

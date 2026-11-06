@@ -5135,3 +5135,106 @@ ESLint and standalone typecheck pass after that adaptation; application build an
 53 focused tests remain applicable because their inputs/product source did not
 change. The updated browser test awaits hosted CI execution; not claimed as a
 local browser-suite pass. Fresh final gates must cover the new head before merge.
+
+
+## Author-credit fitting — approved implementation
+
+Owner approved one-line fallback where needed and two lines where they fit,
+keeping desktop, #325 title caps/fonts, cover sizes and actions unchanged.
+Fresh base4cc07bd3, branch codex/fit-card-author-credits, worktree
+/Users/j/.codex/workspaces/netflux-card-author-credits.326 is open but touches
+Search topic controls, not this card/CSS; independent implementation authorised.
+Existing source worktree and its uncommitted status/visual records left intact.
+Native worktree used because the managed helper repeatedly did not respond in
+prior tasks; no further helper retry. Proposal/evidence in thread
+netflux-author-credit-comparison.html and author-credit-review/.
+
+Current implementation preserves a hidden full-credit sizing copy so the
+existing backdrop footprint cannot shrink. The one accessible credit stays
+complete in the DOM; only its mobile visible lines are clipped. Mobile CSS
+starts safely at1line; measured available space allows2 with an8px title gap.
+Offset coordinates avoid the existing press/hover transforms, and observers
+watch stable frame/title/caption/card boxes rather than clipped text. Desktop
+CSS restores the original untruncated text. No data/auth/API/schema change,
+new disclosure action, navigation, paid project or production edit. Verification
+pending below; do not claim readiness until real before/after checks and gates.
+
+
+Author-credit browser verification (2026-11-06): actual shared ContentCard and
+app styles rendered in an identical temporary synthetic fixture in baseline
+#325 and candidate. A font-ready/hydration marker and real button state changes
+settled each visit. Same-tab before/after at320,390 and1280px: matched card,
+title position/caps/font, author font, gradient bounds/background and action
+positions/labels/links. Desktop author bounds matched exactly.320px Completed
+credits use2/1/1/1 lines (short/long/medium/very-long samples),390px uses2/2/2/2;
+zero overlaps or horizontal overflow. Baseline long credits overlapped titles
+by up to51.21px at320 and17.71px at390. Full accessible credit occurs once.
+Resized through all three widths and all six fixture surface configurations
+(Completed, Saved, Continue Reading, Search, Library search, Browse): no overlap
+or overflow; desktop unclipped. Default typography320px also no overlap.
+Keyboard reflection callback worked; Manage menu opened and Escape dismissed.
+Links and action positions were compared without navigating synthetic IDs or
+writing accounts/data. This is shared-renderer coverage, not authenticated
+end-to-end coverage of all routes. No phone/Safari or real screen-reader claim.
+
+Rejected harness attempts retained: first two-tab mobile comparisons used a
+viewport override only on the active tab, leaving baseline desktop; discarded.
+A read-only browser DOM helper cannot expose document.fonts.ready/offsetParent,
+so its unsupported probe was replaced with a fixture-rendered ready marker.
+Initial immediate navigation samples read the safe one-line SSR fallback;
+settled button/hydration checks established final correct fit. No product
+correction was needed for these harness issues. One existing test query first
+failed because the aria-hidden sizing copy duplicates text; query now selects
+the accessible visible credit. An unchanged rerun repeated that same setup
+failure before correction; final focused119 tests/10 files passed. Skips are
+outside verified coverage. Evidence: author-credit-implementation/settled-*
+and surface-measurements.json under the thread visualizations directory.
+Temporary fixture routes/images removed from both worktrees; own tabs closed,
+viewport reset, servers stopped. No temporary fixture will ship.
+
+Next: lint/build/types and final scope inspection, publish a ready isolated PR,
+verify its file list and scope gate, then enable protected squash auto-merge.
+No deployment monitoring is requested. No claim of being live.
+
+Final local checks: npm run lint passed (including type-safety ratchet,
+revalidation boundaries, route-shell policy and dependency isolation); production
+build passed with inert localhost backend configuration, including TypeScript,
+Sharp traces and critical CSS. No fixture routes/assets present in build.
+119 focused tests passed; full hosted CI/security remain required. Production
+credentials, private notes, real accounts and backend services were not used.
+Fresh origin/main is still4cc07bd3;326 remains open and independent. Only five
+intended files changed (card,CSS,test,DESIGN,existing checkpoint). No subagents,
+new paid resources, migrations or production changes. Phones/Safari and skipped
+tests outside verified coverage. Existing earlier no-op/service-error findings
+are untouched. Next: ready PR + PR-scope gate + protected squash auto-merge.
+
+Separate final npm run typecheck also passed. Working candidate ready for PR.
+
+Publication checkpoint: PR https://github.com/Jseow008/ThePlayBook/pull/327,
+branch codex/fit-card-author-credits, implementation commit d3c55864. GitHub file
+list verified: exactly card,CSS,test,DESIGN and this checkpoint. Working tree
+clean before this documentation-only update.119 focused tests, lint, build and
+separate typecheck passed. Current PR gates are pending; no merge/deployment
+claim. Next action is final PR-scope check and repeated local commit/file-scope
+inspection, followed by protected squash auto-merge only after scope passes.
+Required validate and Security Validation still gate release. No post-merge
+monitoring requested; do not create an automation. Own browser/server/fixture
+cleanup is complete. Full signed-in route/device/phone/Safari coverage excluded.
+
+
+## PR327 release follow-up — 2026-11-06
+
+Owner requests production deployment identity and live320/390/desktop verification.
+At follow-up start327 was OPEN, security passed and CI browser checks pending.
+326 merged as05c3375e meanwhile, causing only an append conflict in this shared
+checkpoint. Refreshed327 by merging secured origin/main; retained both complete
+investigation sections and auto-merged DESIGN. No card/CSS/test logic conflict.
+Local previous terminal handoff preserved outside the repo; all implementation
+and browser evidence still applies to the unchanged author renderer. Final
+integration focused checks below, then push refreshed head and wait for its
+required gates. Never bypass gates or manually cancel slow downloads. No live
+claim yet, no new product scope, accounts, paid resources or data writes.
+
+Refreshed integration: all125 focused tests across10 files pass (six additional
+Search cases came from326). Only documentation conflict resolution was required.
+Next: push merge refresh, verify clean five-file PR scope and let final gates run.

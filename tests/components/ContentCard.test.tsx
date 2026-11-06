@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ContentCard } from "@/components/ui/ContentCard";
 import {
@@ -411,6 +411,60 @@ describe("ContentCard", () => {
         expect(screen.getByRole("heading", { name: item.title })).toHaveClass("line-clamp-3");
     });
 
+    it("fits mobile credits, restores desktop text and disconnects pending resize work", () => {
+        let resize = () => {};
+        const disconnect = vi.fn();
+        const observe = vi.fn();
+        vi.stubGlobal("ResizeObserver", class {
+            constructor(callback: () => void) { resize = callback; }
+            observe = observe;
+            unobserve() {}
+            disconnect = disconnect;
+        });
+        const media = window.matchMedia("(min-width: 768px)");
+        Object.defineProperty(media, "matches", { configurable: true, writable: true, value: false });
+        const matchMedia = vi.spyOn(window, "matchMedia").mockReturnValue(media);
+        try {
+            const { unmount } = render(<ContentCard item={item} onReflectionClick={() => {}} />);
+            const credits = screen.getAllByText(item.author!);
+            const author = credits.find(element => element.getAttribute("aria-hidden") !== "true")!;
+            const title = screen.getByRole("heading", { name: item.title });
+            const card = author.closest(".content-card-title-container")!;
+            let titleTop = 100;
+            Object.defineProperty(card, "offsetWidth", { configurable: true, value: 128 });
+            Object.defineProperty(author, "offsetParent", { configurable: true, value: card });
+            Object.defineProperty(title, "offsetParent", { configurable: true, value: card });
+            Object.defineProperty(author, "offsetTop", { configurable: true, value: 56 });
+            Object.defineProperty(title, "offsetTop", { configurable: true, get: () => titleTop });
+            author.style.lineHeight = "13.5px";
+
+            act(() => resize());
+            expect(author.style.getPropertyValue("--content-card-author-lines")).toBe("2");
+            titleTop = 78;
+            act(() => resize());
+            expect(author.style.getPropertyValue("--content-card-author-lines")).toBe("1");
+            expect(credits.filter(element => element.getAttribute("aria-hidden") !== "true")).toHaveLength(1);
+            expect(author).toHaveTextContent(item.author!);
+            expect(screen.getByRole("link", { name: "Preview Deep Work" })).toHaveAttribute("href", `/preview/${item.id}`);
+            expect(observe).toHaveBeenCalledTimes(4);
+
+            Object.defineProperty(media, "matches", { value: true });
+            act(() => resize());
+            expect(author.style.getPropertyValue("--content-card-author-lines")).toBe("");
+            Object.defineProperty(media, "matches", { value: false });
+            titleTop = 100;
+            act(() => resize());
+            expect(author.style.getPropertyValue("--content-card-author-lines")).toBe("2");
+            unmount();
+            expect(disconnect).toHaveBeenCalledOnce();
+            resize();
+            expect(author.style.getPropertyValue("--content-card-author-lines")).toBe("");
+        } finally {
+            matchMedia.mockRestore();
+            vi.unstubAllGlobals();
+        }
+    });
+
     it("renders a desktop hover hook without changing the primary link", () => {
         render(
             <ContentCard
@@ -486,7 +540,8 @@ describe("ContentCard", () => {
         expect(reflectionButton.parentElement).toBe(bookmarkButton.parentElement);
         expect(reflectionButton).toHaveClass("text-primary");
         expect(reflectionButton.parentElement).toHaveClass("right-2", "gap-2");
-        expect(screen.getByText("Cal Newport").parentElement).toHaveClass("pt-14");
+        const visibleCredit = screen.getAllByText("Cal Newport").find(element => element.getAttribute("aria-hidden") !== "true");
+        expect(visibleCredit?.closest(".pointer-events-none")).toHaveClass("pt-14");
 
         fireEvent.click(reflectionButton);
         expect(onReflectionClick).toHaveBeenCalledOnce();
