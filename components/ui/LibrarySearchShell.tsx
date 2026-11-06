@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { Suspense, useMemo, type ReactNode } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { AudioListenLink } from "@/components/ui/AudioListenLink";
@@ -11,7 +12,26 @@ import { useBatchContentItems } from "@/hooks/use-content-queries";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 
 export function LibrarySearchShell({ children }: { children: ReactNode }) {
-    const [query, setQuery] = useState("");
+    return (
+        <Suspense fallback={<LibraryGridSkeleton />}>
+            <LibrarySearchContent>{children}</LibrarySearchContent>
+        </Suspense>
+    );
+}
+
+function LibrarySearchContent({ children }: { children: ReactNode }) {
+    const searchParams = useSearchParams();
+    const query = searchParams.get("q") ?? "";
+
+    function setQuery(value: string) {
+        // Persist before leaving the page, without adding a history entry per keystroke.
+        // Read the live URL so rapid edits retain the latest filter and sort.
+        const url = new URL(window.location.href);
+        if (value) url.searchParams.set("q", value);
+        else url.searchParams.delete("q");
+        window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+
     const { completedIds, inProgressIds, isLoaded, myListIds } = useReadingProgress();
     const normalizedQuery = query.trim().toLowerCase();
     const isSearching = normalizedQuery.length > 0;
