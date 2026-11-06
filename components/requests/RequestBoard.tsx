@@ -34,15 +34,13 @@ function parseApiError(response: Response) {
 
 export function RequestBoard({
     initialInput = "",
-    initialContentType,
 }: {
     initialInput?: string;
-    initialContentType?: ContentType;
 }) {
     const user = useAuthUser();
     const [input, setInput] = useState(initialInput);
     const [author, setAuthor] = useState("");
-    const [contentType, setContentType] = useState<ContentType | "">(initialContentType ?? "");
+    const [contentType, setContentType] = useState<ContentType | "">("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionState, setSubmissionState] = useState<SubmissionState>("idle");
 
@@ -141,8 +139,7 @@ export function RequestBoard({
         <div className="bg-background text-foreground lg:min-h-screen">
             <section className="mx-auto flex min-h-[calc(100dvh-var(--mobile-header-height)-var(--mobile-bottom-nav-height)-var(--safe-area-bottom))] w-full max-w-2xl flex-col justify-center px-4 py-10 sm:px-6 lg:min-h-screen lg:px-8">
                 <div className="mb-6 text-center">
-                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Summary Request</p>
-                    <h1 className="mt-4 text-3xl font-bold tracking-normal text-foreground sm:text-4xl">
+                    <h1 className="text-3xl font-bold tracking-normal text-foreground sm:text-4xl">
                         Request a summary.
                     </h1>
                 </div>
@@ -165,7 +162,7 @@ export function RequestBoard({
                                         !contentType && "text-muted-foreground"
                                     )}
                                 >
-                                    <option value="">Select format</option>
+                                    <option value="">Please Select</option>
                                     {TYPE_OPTIONS.map(({ value, label }) => (
                                         <option key={value} value={value}>
                                             {label}

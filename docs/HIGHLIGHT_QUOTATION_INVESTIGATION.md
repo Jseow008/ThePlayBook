@@ -5331,3 +5331,39 @@ Push this refresh and require fresh hosted gates; auto-merge must remain protect
 No deployment monitoring or production claim. Original review's unsupported-format
 clarity finding is deliberately deferred: user explicitly declined explanation or
 format changes. Physical phones/Safari/skipped tests remain outside coverage.
+
+## 2026-11-07 — Explicit Format choice and single request heading (329 follow-up)
+
+User asked for “Please Select” instead of Book and questioned repeated Summary
+Request / Request a summary headings. Explained that fresh requests will require
+an explicit choice while recovered user-selected drafts retain their format, and
+kept only the main “Request a summary.” heading. Existing title/Creator fields,
+Book/Video options, submission, supported formats and mobile clearance unchanged.
+Book was previously prefilled from a Book Search handoff, not every direct entry.
+Removed route-type normalization and the now-unused initialContentType prop, so
+URL type no longer preselects any fresh format; exact search title still carries.
+No format explanation or new supported type added. Draft restoration code intact.
+
+329 was still open at53c7ecca; temporarily disabled auto-merge while incorporating
+the feedback, retaining every required gate. Current main remains1c56b069 (#328).
+Added actual page→component regressions for Book, Video and Podcast handoffs:
+empty required Format with Please Select, exact prefilled title, no automatic
+request. Existing sign-in recovery still restores explicit Book and exact fields.
+All50 focused tests pass; targeted ESLint passes. Build/browser check pending.
+Next: finish build and actual desktop/narrow appearance/draft-return checks,
+update final PR scope/title/body and publish; re-enable protected squash auto-merge
+only after the new PR-scope check passes. No production or submitted data changes.
+
+Final follow-up: production build incl. TypeScript, Sharp traces and critical CSS
+passed; standalone typecheck passed. Actual built app at320x780 and1440x1000
+shows Please Select with empty required value, exact Search-prefilled title and
+one Request a summary heading. At320, action y540..584 vs nav y696..768 gives112px
+clearance, no horizontal overflow. Explicitly chose Video and synthetic Creator,
+visited sign-in without credentials, then Back+reload restored Video and both
+fields exactly even though the URL still says type=book. No submission, automatic
+request or account created. please-select-320.png / please-select-desktop.png /
+please-select-browser.json under existing thread evidence directory.
+Own local server/tab closed and viewport reset. Earlier short-screen scrolling
+evidence remains applicable (same layout with less heading content); no phone,
+virtual keyboard, Safari or completed-authentication claim. Fresh required hosted
+CI/security must pass for the revised head before merging.
