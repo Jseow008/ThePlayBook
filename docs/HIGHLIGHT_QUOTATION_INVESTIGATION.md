@@ -5238,3 +5238,71 @@ claim yet, no new product scope, accounts, paid resources or data writes.
 Refreshed integration: all125 focused tests across10 files pass (six additional
 Search cases came from326). Only documentation conflict resolution was required.
 Next: push merge refresh, verify clean five-file PR scope and let final gates run.
+
+## 2026-11-07 — Request form copy and usable viewport spacing
+
+User authorized removing only the introductory paragraph and keeping the primary
+action clear of the fixed mobile bottom navigation. Existing fields, Book/Video
+formats, submission/sign-in/draft behavior and desktop sizing remain unchanged;
+no format explanation added. Prior review at320x780 observed a20px overlap of
+Sign in to submit and the bottom nav, recoverable by scrolling.
+
+Independent branch codex/request-form-spacing in
+/Users/j/.codex/workspaces/netflux-request-form-spacing starts at freshly fetched
+main097205af8cc86631f61ac2144ad1cd8f8db9a9a6. Checked #328 metadata and11-file list:
+Library Ask recovery only (chat components/hooks/tests and its own document), no
+RequestBoard or shell/CSS changes. This presentation change does not depend on328
+and is not stacked on it. Its hooks are consumed as before; no auth logic changed.
+
+Implementation is localized to RequestBoard.tsx: remove the requested paragraph;
+below lg, replace page-sized minimum height with dynamic viewport minus existing
+header, bottom-nav and safe-area tokens. Shell header spacer/bottom padding stay
+in charge of fixed chrome. Retain py-10 and natural document flow so short screens
+can scroll instead of clipping. Desktop retains the full-height centered section.
+
+Existing RequestBoard, request validation and route-policy tests:28/28 passed.
+Full lint and repository ratchets passed. First build failed because a symlinked
+node_modules pointed outside Turbopack's root; removed only this worktree's own
+symlink and installed the unchanged lockfile locally. No dependency/config change.
+Production build/browser checks are pending. No source tests added for removed
+copy or CSS classes; verify real geometry in the built browser instead.
+
+Next: finish production build, typecheck, desktop/narrow/short-height browser checks;
+record evidence and clean up own server/tab; inspect two-file scope and publish a
+ready PR. Enable normal protected squash auto-merge only after PR scope passes.
+No production release claim or timer. No accounts, submitted requests, paid calls,
+database/schema or deployment changes authorized or needed for this presentation.
+
+Final local evidence: standalone typecheck and production build passed, including
+all five Sharp route traces and critical CSS. Build used synthetic localhost-only
+keys; unrelated catalog/sitemap prerenders logged expected invalid-JWT fallback
+errors, not a request-form failure. No production credentials were loaded.
+Installed exactly the existing package lock; package files unchanged.
+
+Built app served on127.0.0.1:3097; CUA in-app Chromium, actual compiled form/shell:
+-320x780 initial: section y56..708 (652px =780-56-72), guest action y558..602,
+  fixed nav y696..768:94px clearance; no horizontal overflow. Paragraph absent,
+  exact synthetic prefill retained, Format Book, options Select format/Book/Video.
+-390x844 initial: action y572..616, nav y760..832:144px clearance; no overflow.
+-320x480 deliberately short: form grows naturally beyond viewport. Creator fill
+  then keyboard Tab focuses Sign in to submit and scrolls202px, revealing its full
+  44px action y307..351 above nav y396..468 (45px clearance). No clipping/overflow;
+  no action activated and no request submitted. This is scrollability evidence,
+  not a claim that all content fits initially on every short viewport.
+-1440x1000 desktop: full-height1000px section and existing608px form width retained,
+  no horizontal overflow; exact prefill/Book and three fields present, introductory
+  paragraph absent, no bottom nav. Reload retained prior document scroll72px from
+  viewport testing; screenshot reflects that state, not fresh-entry timing.
+-No browser console errors captured. Data/API submission and actual authentication
+  are unchanged and not re-exercised live; existing unit tests cover draft/sign-in
+  preservation and payload. No physical phone, virtual keyboard or Safari claim.
+
+Actual built screenshots/DOM evidence under thread request-form-spacing-implementation/
+(320x780.png,390x844.png,320x480-action-focus.png,desktop-1440.png,browser.json).
+Own test tab closed, viewport reset, owned local server stopped. Only synthetic
+form text entered; no sign-in/request submission, account or database data created.
+No added tests mirroring CSS or removed copy. One implementer, no agents/timer;
+one corrected local dependency-layout setup failure, no repeated benchmark.
+Next: commit intended component+checkpoint only; inspect local/GitHub scope, open
+ready PR and enable protected squash auto-merge after its PR-scope gate passes.
+Required hosted CI/security and eventual production verification remain pending.

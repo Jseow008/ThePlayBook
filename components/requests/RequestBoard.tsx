@@ -138,16 +138,13 @@ export function RequestBoard({
     };
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
-            <section className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center px-4 py-10 sm:px-6 lg:px-8">
+        <div className="bg-background text-foreground lg:min-h-screen">
+            <section className="mx-auto flex min-h-[calc(100dvh-var(--mobile-header-height)-var(--mobile-bottom-nav-height)-var(--safe-area-bottom))] w-full max-w-2xl flex-col justify-center px-4 py-10 sm:px-6 lg:min-h-screen lg:px-8">
                 <div className="mb-6 text-center">
                     <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Summary Request</p>
                     <h1 className="mt-4 text-3xl font-bold tracking-normal text-foreground sm:text-4xl">
                         Request a summary.
                     </h1>
-                    <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-muted-foreground">
-                        Tell us what you want Netflux to summarize. This works best when search does not have the source yet.
-                    </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card/80 p-4 shadow-sm backdrop-blur sm:p-5">
