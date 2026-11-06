@@ -127,6 +127,7 @@ export async function selectLibraryEvidence(options: {
     semanticQuestion?: string;
     signal: AbortSignal;
     selectionGenerator?: PersonalEvidenceSelectionGenerator;
+    includeFollowups?: boolean;
 }) {
     const sourceQuote = Boolean(exactPersonalQuoteField(options.question)) && !options.personal.quoteField;
     const candidates = [
@@ -137,7 +138,8 @@ export async function selectLibraryEvidence(options: {
         }))),
     ];
     const selection = await selectPersonalEvidence({ question: options.semanticQuestion ?? options.question, candidates,
-        exactQuote: sourceQuote || Boolean(options.personal.quoteField), signal: options.signal, generate: options.selectionGenerator });
+        exactQuote: sourceQuote || Boolean(options.personal.quoteField), signal: options.signal, generate: options.selectionGenerator,
+        includeFollowups: options.includeFollowups });
     const personalItems = materializePersonalSelection(options.personal.items, selection.ids, options.personal.quoteField);
     const personal = { ...options.personal, ...formatRankedPersonalEvidence(personalItems), selection };
     const sources = selection.ids.flatMap((id) => options.sources.filter((source) => source.evidenceId === id));

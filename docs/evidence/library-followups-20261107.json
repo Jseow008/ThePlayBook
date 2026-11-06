@@ -1,0 +1,79 @@
+{
+  "version": "library-followups-verification-v1",
+  "date": "2026-11-07",
+  "base": "eefed48c",
+  "corpusSha256": "dd866de9d24c712e929085f240ca5a47760cab74ef15f4a60d829bc937d58608",
+  "captureBaselineSha256": "645a5d6572c0135cfd376f0759d2bcff19a239e3ff5bae85ad2b02c796e1f079",
+  "archiveSha256": "a835546da82bb805cc6144ba9fe4ebd0d7fe0d161deef039e9ac99e66e75bed2",
+  "calls": 66,
+  "complete": true,
+  "requiredPassageCases": 66,
+  "zeroExtraCases": 63,
+  "forbiddenCases": 0,
+  "runs": [
+    {
+      "run": 1,
+      "cases": 22,
+      "missing": 0,
+      "extra": 1
+    },
+    {
+      "run": 2,
+      "cases": 22,
+      "missing": 0,
+      "extra": 1
+    },
+    {
+      "run": 3,
+      "cases": 22,
+      "missing": 0,
+      "extra": 1
+    }
+  ],
+  "servedQuestions": 66,
+  "turnsWithQuestions": 42,
+  "usage": {
+    "inputTokens": 617187,
+    "outputTokens": 19132
+  },
+  "outputCap": 1600,
+  "retries": 0,
+  "concurrency": 2,
+  "metadataProbe": {
+    "calls": 1,
+    "outputCap": 250,
+    "outputTokens": 65,
+    "finishReason": "stop",
+    "questions": 2
+  },
+  "localTests": {
+    "passed": 2230,
+    "conditionalSkips": 317,
+    "capacityHarnessPassed": 34
+  },
+  "browser": {
+    "actualComponent": true,
+    "deterministicResponses": true,
+    "fixedSyntheticOwner": true,
+    "desktop": true,
+    "width390": true,
+    "overflow": false,
+    "draftClickAndReloadPreserved": true,
+    "missingQuestionsRetainAnswer": true
+  },
+  "limits": [
+    "Selection-only historical synthetic candidate capture; no new database authorization or quote-fidelity claim.",
+    "No production or physical-device verification.",
+    "Added tokens, no production cost or latency saving claimed.",
+    "Optional questions can be absent; English advice/interview questions filtered without retry.",
+    "Optional-suffix disconnect after a complete answer is covered by real SDK transport tests; the live metadata probe exercised normal completion."
+  ],
+  "sourceHashes": {
+    "lib/library-followups.ts": "42f9d663d8912f783737ca85102365a2f18e955b4ddcee32c116d06e5ac98bed",
+    "lib/server/library-followup-output.ts": "b1902f26f164e3999faae05b649a14b37091369de8a4772c7d71d5d042cf06d1",
+    "lib/server/personal-evidence-selector.ts": "f5d0145b24de5d4586f5b0192e367f848d866263a9904b22b7ab194bd95af4fe",
+    "app/api/chat/route.ts": "c786dedcf8ef3ff8d6befa09396c51518ce17838af6421c09de78fe9453ebffb"
+  },
+  "incorrectExactQuoteTargets": 0,
+  "questionValidation": "66 served questions across 42 of 66 turns after deterministic search-scope filtering; raw model sample is preserved unchanged in the archive."
+}
