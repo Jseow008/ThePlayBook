@@ -4817,3 +4817,86 @@ normal squash auto-merge behind required gates. Required checks remain pending
 until GitHub reports their final result; no production/live claim.
 Never merge into the obsolete311 feature branch or bypass a gate. No timer or
 post-merge monitoring requested.
+
+## 2026-11-06 — Library search return implementation
+
+Authorized scope: retain Library search text/results across Preview or Read and
+browser Back, preserving filter/sort. Independent worktree
+`/Users/j/.codex/workspaces/netflux-library-search-return`, branch
+`codex/library-search-return`, freshly based on `origin/main` `189f6a47`.
+The prior worktree's uncommitted release checkpoints remain untouched there.
+
+LibrarySearchShell reads the exact `q` value from useSearchParams and synchronously
+replaces the current history entry on typing/clear. Updates start from the live
+URL, preserving the latest filter, sort, unrelated parameters and hash. No entry
+per keystroke, delayed URL update, separate search cache or account data storage.
+Results continue to derive from the existing current-library IDs/catalog hook;
+resume/Preview destinations, searching across all Library lists, status badges,
+layout, fetching, auth and underlying filter/sort behavior are unchanged. Existing
+grid skeleton supplies the required Suspense fallback around the URL reader.
+No database, API, dependency, accounting or workflow change.
+
+27 focused Library search/Continue Reading/toolbar/unavailable-history tests pass.
+Regressions cover exact query including surrounding spaces, remount from both
+route shapes, immediate/rapid edits against the latest URL, no per-keystroke
+history growth, restored-URL changes while mounted, explicit clear retaining
+filter/sort/hash/other parameters, and the real ContinueReadingPage's Book + A-Z
+controls after search remount/clear. Component history restoration is simulated;
+native browser Back was separately exercised through CUA.
+
+Local CUA browser: production-component copies of LibrarySearchShell, ContentCard
+and ContinueReadingPage with only progress/catalog hooks replaced by deterministic
+synthetic data, plus simple synthetic Preview/Read destination pages. Actual Next
+links, native Back, useSearchParams and history integration retained. At1440,
+390 and320px, both Preview -> Back and Read -> Back restored query and two matching
+results. At1440/320 exact surrounding whitespace also survived. Clear returned to
+Book + A-Z; reload at390 restored the query/results. No document horizontal
+overflow in sampled result views. These are local synthetic navigation checks,
+not deployed or signed-in catalog verification. No account/model call/production
+mutation or paid resource. Physical phones, Safari, long-list scroll restoration
+and skipped tests remain outside verified coverage.
+
+Retained unsuccessful attempts: initial unit regression had rerender declared in
+the wrong test (ReferenceError); corrected before the27-test pass. Initial lint
+was run before fixture cleanup and correctly rejected two undocumented temporary
+public routes; no policy weakened. Initial fixture was outside the public layout
+and a dev InnerLayoutRouter conditional-use warning appeared; moved the fixture
+under the same public layout as the real Library/targets, restarted, and repeated
+both journeys. No error log in the final fresh-tab shared-layout check. One reload
+before restart readiness got connection-refused; its data-URL error page blocked
+further control. A fresh tab initially timed out while compiling but subsequently
+settled successfully. One default Read-heading wait expired during compilation;
+the destination was confirmed on the next observation before Back. Final bounded
+loops used explicit destination-heading waits; all passed. Fresh test tab closed,
+viewport reset. The failed error-page tab could not be closed by control and is
+unmarked/temporary for automatic IAB cleanup. Own fixtures archived and removed;
+server stopped before final checks. No product change was needed for these setup
+issues.
+
+Evidence: thread `library-search-return-implementation/` contains browser.json,
+desktop/narrow screenshots and the archived temporary fixtures/generated types.
+One implementer, no subagents, provider usage zero; exact Codex usage unavailable.
+Final lint passed after fixture removal. Production build/typecheck and protected
+PR publication follow; required CI/security remain merge gates. Do not wait for
+post-merge deployment unless requested. Next: finish build/typecheck, inspect own
+three-file diff/history, publish ready PR, verify GitHub scope, enable protected
+squash auto-merge only after PR scope passes.
+
+Final local candidate: all27 focused tests, full lint/ratchets, production build
+(including Sharp traces and critical CSS), standalone typecheck and diff check
+passed. Build used inert localhost configuration. The first production build
+caught a test-only Playwright-style `exact` option unsupported by Testing
+Library's ByRoleOptions; removed it (string role names already match exactly),
+reran the affected27 tests and build successfully. Product candidate unchanged.
+Final React review: URL-derived state has no synchronization effect or timer;
+hooks remain unconditional, controls/labels and data boundary stay unchanged.
+Ready PR contains only LibrarySearchShell, its regression tests and this checkpoint.
+
+Publication: ready PR #324; original tested commit3dce7f31. GitHub connector
+creation was unavailable (403), so existing gh authentication published it.
+Main advanced to e8d6f9fd (#312) during testing; rebased onto that parent and
+resolved only an append/append conflict in this checkpoint, retaining both
+records in full. Search product/test diff unchanged byte-for-byte after refresh;
+prior browser/navigation evidence remains applicable. PR GitHub file list is the
+same intended three files. Next: fresh required gates, PR scope pass, protected
+squash auto-merge. No deployment or live verification claim.
