@@ -4,9 +4,10 @@ import { vi } from 'vitest';
 import type { ContentItemWithSegments } from '@/types/domain';
 import { audioResumeKey } from '@/lib/local-user-storage';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 
 const {
+    completionSuspension,
     localStorageState,
     notesDrawerSpy,
     progressState,
@@ -24,6 +25,7 @@ const {
     syncFromCloudMock,
     toastSuccessMock,
 } = vi.hoisted(() => ({
+    completionSuspension: { promise: null as Promise<void> | null },
     localStorageState: new Map<string, string>(),
     notesDrawerSpy: vi.fn(),
     progressState: {
@@ -222,9 +224,12 @@ vi.mock('@/components/ui/ContentFeedback', () => ({
 }));
 
 vi.mock('@/components/reader/CompletionCard', () => ({
-    CompletionCard: (props: { celebrationRequested?: boolean; onCelebrationConsumed?: () => void }) => <div data-testid="mock-completion-card" data-celebrate={String(props.celebrationRequested)}>
-        <button data-testid="consume-celebration" onClick={props.onCelebrationConsumed} />
-    </div>
+    CompletionCard: (props: { celebrationRequested?: boolean; onCelebrationConsumed?: () => void }) => {
+        if (completionSuspension.promise) throw completionSuspension.promise;
+        return <div data-testid="mock-completion-card" data-celebrate={String(props.celebrationRequested)}>
+            <button data-testid="consume-celebration" onClick={props.onCelebrationConsumed} />
+        </div>;
+    }
 }));
 
 vi.mock('@/components/reader/GuestProgressChoice', () => ({
@@ -352,6 +357,7 @@ describe('ReaderView', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        completionSuspension.promise = null;
         notesDrawerSpy.mockClear();
         removeFromProgressMock.mockClear();
         progressState.value = null;
@@ -843,6 +849,98 @@ describe('ReaderView', () => {
         progressState.value = { completed: ['seg-1'], maxSegmentIndex: 0, lastSegmentIndex: 0, isCompleted: true };
         rerender(<ReaderView content={mockContent} />);
         expect(screen.getByTestId('mock-completion-card')).toHaveAttribute('data-celebrate', 'false');
+    });
+
+    it.each([
+        { label: 'desktop offscreen', desktop: true, reducedMotion: false, top: 1000, scrolls: true },
+        { label: 'narrow offscreen', desktop: false, reducedMotion: false, top: 20, scrolls: true },
+        { label: 'reduced motion', desktop: false, reducedMotion: true, top: 1000, scrolls: true },
+        { label: 'already visible', desktop: true, reducedMotion: false, top: 200, scrolls: false },
+    ])('Finish Reading reaches completion once when $label', async ({ desktop, reducedMotion, top, scrolls }) => {
+        vi.useFakeTimers();
+        try {
+            vi.mocked(useMediaQuery).mockReturnValue(desktop);
+            vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: reducedMotion }));
+            const scrollIntoView = vi.fn();
+            Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+            vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top } as DOMRect);
+            const { rerender } = render(<ReaderView content={mockContent} />);
+            fireEvent.click(screen.getByTestId('manual-open-seg-1'));
+            fireEvent.click(screen.getByTestId('finish-reading'));
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
+            expect(screen.getByTestId('mock-completion-card')).toHaveAttribute('data-celebrate', 'true');
+            await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+            expect(scrollIntoView).not.toHaveBeenCalled();
+            await act(async () => { await vi.advanceTimersByTimeAsync(100); });
+            const completion = screen.getByRole('region', { name: 'Reading complete' });
+            expect(completion).toHaveFocus();
+            expect(scrollIntoView).toHaveBeenCalledTimes(scrolls ? 1 : 0);
+            if (scrolls) expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' });
+            expect(saveReadingProgressMock).toHaveBeenCalledWith(mockContent.id, expect.objectContaining({ isCompleted: true }));
+            rerender(<ReaderView content={mockContent} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+            expect(scrollIntoView).toHaveBeenCalledTimes(scrolls ? 1 : 0);
+            expect(window.scrollTo).not.toHaveBeenCalled();
+        } finally { vi.useRealTimers(); }
+    });
+
+    it('Undo cancels pending Finish Reading navigation', async () => {
+        vi.useFakeTimers();
+        try {
+            const scrollIntoView = vi.fn();
+            Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+            render(<ReaderView content={mockContent} />);
+            fireEvent.click(screen.getByTestId('finish-reading'));
+            act(() => { toastSuccessMock.mock.calls[0][1].action.onClick(); });
+            await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+            expect(screen.queryByRole('region', { name: 'Reading complete' })).not.toBeInTheDocument();
+            expect(scrollIntoView).not.toHaveBeenCalled();
+            expect(removeFromProgressMock).toHaveBeenCalledWith(mockContent.id);
+            fireEvent.click(screen.getByTestId('finish-reading'));
+            act(() => toastSuccessMock.mock.calls.at(-1)![1].action.onClick());
+            expect(screen.queryByTestId('mock-completion-card')).not.toBeInTheDocument();
+        } finally { vi.useRealTimers(); }
+    });
+
+    it.each(['account', 'content'])('does not carry a pending Finish Reading destination into another %s', async (change) => {
+        vi.useFakeTimers();
+        try {
+            const scrollIntoView = vi.fn();
+            Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+            vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 1000 } as DOMRect);
+            const { rerender } = render(<ReaderView content={mockContent} />);
+            fireEvent.click(screen.getByTestId('finish-reading'));
+            if (change === 'account') storageScopeState.value = 'user:next-account';
+            progressState.value = { completed: ['seg-1'], maxSegmentIndex: 0, lastSegmentIndex: 0, isCompleted: true };
+            rerender(<ReaderView content={change === 'content' ? { ...mockContent, id: 'next-content' } : mockContent} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+            expect(screen.getByTestId('mock-completion-card')).toHaveAttribute('data-celebrate', 'false');
+            expect(screen.getByRole('region', { name: 'Reading complete' })).not.toHaveFocus();
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        } finally { vi.useRealTimers(); }
+    });
+
+    it('retains pending completion navigation while the completion card suspends on its first load', async () => {
+        vi.useFakeTimers();
+        try {
+            const scrollIntoView = vi.fn();
+            Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+            vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 1000 } as DOMRect);
+            let release: () => void = () => {};
+            completionSuspension.promise = new Promise<void>(resolve => { release = resolve; });
+            render(<Suspense fallback={<p>Loading completion</p>}>
+                <ReaderView content={{ ...mockContent, audio_url: 'https://example.com/synthetic.wav' }} />
+            </Suspense>);
+            fireEvent.click(screen.getByTestId('finish-reading'));
+            expect(screen.getByText('Loading completion')).toBeVisible();
+            await act(async () => {
+                completionSuspension.promise = null;
+                release();
+            });
+            await act(async () => { await vi.advanceTimersByTimeAsync(400); });
+            expect(screen.getByRole('region', { name: 'Reading complete' })).toHaveFocus();
+            expect(scrollIntoView).toHaveBeenCalledTimes(1);
+        } finally { completionSuspension.promise = null; vi.useRealTimers(); }
     });
 
     it('finishes all segments and lets undo restore the prior reading state', async () => {

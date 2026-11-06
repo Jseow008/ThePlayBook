@@ -130,6 +130,11 @@ travel uniformly with available width. It adds no sound, layout space, focus or
 scroll changes; reduced motion suppresses it. Restored progress and rerenders
 do not replay it, and Undo/account changes cancel a pending effect.
 
+Finish Reading reveals and focuses the completion area after section collapse,
+scrolling only if needed. Undo cancels both pending navigation and celebration;
+account or content changes cancel pending navigation. Restored progress does not
+request another completion scroll.
+
 The completion area uses a compact acknowledgement with the finished title,
 then reflection and author-persona chat actions. The actions share a row when
 space permits and stack on narrow screens, retaining at least 46px height.

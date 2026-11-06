@@ -125,7 +125,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         explicitFollow?: boolean;
     } | null>(null);
     const [progressChoiceDestination, setProgressChoiceDestination] = useState<
-        { kind: "segment"; segmentId: string } | { kind: "completion" } | null
+        { kind: "segment"; segmentId: string } | { kind: "completion"; afterCollapse?: boolean; scopeKey?: string } | null
     >(null);
     const [celebrationRequest, setCelebrationRequest] = useState<string | null>(null);
     const completionRef = useRef<HTMLDivElement | null>(null);
@@ -619,6 +619,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         setManuallyIncompleteSegments(new Set());
         setMaxSegmentIndex(finalMaxSegmentIndex);
         setExpandedSegmentId(null);
+        setProgressChoiceDestination({ kind: "completion", afterCollapse: true, scopeKey: celebrationScopeKey });
         progressSnapshotRef.current = finalProgress;
 
         if (finalProgress && readingProgressLoaded) {
@@ -633,6 +634,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                 label: "Undo",
                 onClick: () => {
                     setCelebrationRequest(null);
+                    setProgressChoiceDestination(null);
                     setCompletedSegments(new Set(previousCompletedSegments));
                     setManuallyIncompleteSegments(new Set(previousManuallyIncompleteSegments));
                     setMaxSegmentIndex(previousMaxSegmentIndex);
@@ -679,8 +681,14 @@ export function ReaderView({ content }: ReaderViewProps) {
             return;
         }
 
+        if (progressChoiceDestination.scopeKey && progressChoiceDestination.scopeKey !== celebrationScopeKey) {
+            setProgressChoiceDestination(null);
+            return;
+        }
+
         if (!isBookCompleted || !completionRef.current) return;
         const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        // Reduced-motion scrolling still waits for the accordion to collapse.
         const timeoutId = window.setTimeout(() => {
             const completion = completionRef.current;
             if (completion) {
@@ -695,9 +703,9 @@ export function ReaderView({ content }: ReaderViewProps) {
                 completion.focus({ preventScroll: true });
             }
             setProgressChoiceDestination(null);
-        }, reducedMotion ? 0 : 320);
+        }, reducedMotion && !progressChoiceDestination.afterCollapse ? 0 : 320);
         return () => window.clearTimeout(timeoutId);
-    }, [isBookCompleted, progressChoiceDestination, requestSegmentScroll]);
+    }, [celebrationScopeKey, isBookCompleted, progressChoiceDestination, requestSegmentScroll]);
 
     useEffect(() => {
         setShowAuthorChat(false);
