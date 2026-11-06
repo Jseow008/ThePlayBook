@@ -30,9 +30,14 @@ export {
 const OPENAI_WAV_FORMAT = "wav";
 const FINAL_AUDIO_FORMAT = "mp3";
 const FINAL_AUDIO_CONTENT_TYPE = "audio/mpeg";
-const FISH_NARRATION_DIRECTION = "[clear, natural book narration]";
+const FISH_NARRATION_DIRECTION = "[speak in a calm, grounded conversational tone, with natural pauses and understated emphasis]";
 const FISH_NARRATION_TEMPERATURE = 0.7;
 const FISH_NARRATION_TOP_P = 0.85;
+const FISH_PITCH_RATIO = 2 ** (0.5 / 12);
+const FISH_TEMPO = 1.11;
+const FISH_SILENCE_THRESHOLD = 32768 * 10 ** (-42 / 20);
+const FISH_SILENCE_MIN_SECONDS = 0.65;
+const FISH_SILENCE_KEEP_SECONDS = 0.45;
 const TTS_CONCURRENCY = 3;
 const OPENAI_REQUEST_TIMEOUT_MS = 45_000;
 const FISH_REQUEST_TIMEOUT_MS = 120_000;
@@ -180,7 +185,7 @@ export function getWavDurationSeconds(wavBuffer: Buffer) {
     return chunk.pcmData.byteLength / chunk.byteRate;
 }
 
-export async function transcodeWavToMp3(wavBuffer: Buffer) {
+async function runFfmpeg(wavBuffer: Buffer, outputArgs: string[], operation: string) {
     return await new Promise<Buffer>((resolve, reject) => {
         const child = spawn(
             process.env.NODE_ENV !== "production" && process.env.FFMPEG_BIN?.trim()
@@ -196,18 +201,7 @@ export async function transcodeWavToMp3(wavBuffer: Buffer) {
                 "wav",
                 "-i",
                 "pipe:0",
-                "-vn",
-                "-codec:a",
-                "libmp3lame",
-                "-b:a",
-                "64k",
-                "-ac",
-                "1",
-                "-ar",
-                "24000",
-                "-f",
-                "mp3",
-                "pipe:1",
+                ...outputArgs,
             ],
             {
                 stdio: ["pipe", "pipe", "pipe"],
@@ -223,7 +217,7 @@ export async function transcodeWavToMp3(wavBuffer: Buffer) {
                 code: "FFMPEG_TIMEOUT",
                 status: 504,
                 userMessage: "AI narration timed out while finalizing audio. Please try again.",
-                message: "Timed out while transcoding narration WAV to MP3.",
+                message: `Timed out while ${operation}.`,
             }));
         }, FFMPEG_TRANSCODE_TIMEOUT_MS);
 
@@ -241,7 +235,7 @@ export async function transcodeWavToMp3(wavBuffer: Buffer) {
                 code: "FFMPEG_EXECUTION_FAILED",
                 status: 500,
                 userMessage: "AI narration could not finalize the audio file right now.",
-                message: "Failed to start ffmpeg for narration transcoding.",
+                message: `Failed to start ffmpeg while ${operation}.`,
                 cause: error,
             }));
         });
@@ -254,7 +248,7 @@ export async function transcodeWavToMp3(wavBuffer: Buffer) {
                     code: "FFMPEG_TRANSCODE_FAILED",
                     status: 502,
                     userMessage: "AI narration could not finalize the audio file right now.",
-                    message: `ffmpeg failed to transcode narration WAV to MP3: ${Buffer.concat(stderrChunks).toString("utf8").trim() || `exit code ${code}`}`,
+                    message: `ffmpeg failed while ${operation}: ${Buffer.concat(stderrChunks).toString("utf8").trim() || `exit code ${code}`}`,
                 }));
                 return;
             }
@@ -265,7 +259,7 @@ export async function transcodeWavToMp3(wavBuffer: Buffer) {
                     code: "FFMPEG_EMPTY_OUTPUT",
                     status: 502,
                     userMessage: "AI narration could not finalize the audio file right now.",
-                    message: "ffmpeg produced an empty MP3 output.",
+                    message: `ffmpeg produced empty output while ${operation}.`,
                 }));
                 return;
             }
@@ -279,6 +273,94 @@ export async function transcodeWavToMp3(wavBuffer: Buffer) {
 
         child.stdin.end(wavBuffer);
     });
+}
+
+function shortenLongSilences(wavBuffer: Buffer) {
+    const chunk = parseWavChunk(wavBuffer);
+    if (chunk.audioFormat !== 1 || chunk.channels !== 1 || chunk.bitsPerSample !== 16 || chunk.sampleRate !== 24_000) {
+        throw new NarrationError({
+            code: "INVALID_AUDIO_CHUNK",
+            status: 502,
+            userMessage: "The generated audio file could not be processed safely. Please try again.",
+            message: "Fish narration processing requires 24 kHz mono 16-bit PCM.",
+        });
+    }
+
+    const windowFrames = Math.round(chunk.sampleRate * 0.02);
+    const minSilentFrames = Math.round(chunk.sampleRate * FISH_SILENCE_MIN_SECONDS);
+    const keepFrames = Math.round(chunk.sampleRate * FISH_SILENCE_KEEP_SECONDS);
+    const totalFrames = Math.floor(chunk.pcmData.byteLength / 2);
+    const cuts: Array<{ start: number; end: number }> = [];
+    let silenceStart: number | null = null;
+
+    function finishSilence(endFrame: number) {
+        if (silenceStart === null) return;
+        const silentFrames = endFrame - silenceStart;
+        if (silentFrames >= minSilentFrames) {
+            const cutFrames = silentFrames - keepFrames;
+            const cutStart = silenceStart + Math.floor((silentFrames - cutFrames) / 2);
+            cuts.push({ start: cutStart, end: cutStart + cutFrames });
+        }
+        silenceStart = null;
+    }
+
+    for (let frame = 0; frame < totalFrames; frame += windowFrames) {
+        const endFrame = Math.min(totalFrames, frame + windowFrames);
+        let sumSquares = 0;
+        for (let sample = frame; sample < endFrame; sample += 1) {
+            const amplitude = chunk.pcmData.readInt16LE(sample * 2);
+            sumSquares += amplitude * amplitude;
+        }
+        const quiet = Math.sqrt(sumSquares / (endFrame - frame)) < FISH_SILENCE_THRESHOLD;
+        if (quiet && silenceStart === null) silenceStart = frame;
+        if (!quiet) finishSilence(frame);
+    }
+    finishSilence(totalFrames);
+
+    if (cuts.length === 0) return createWavBuffer(chunk, chunk.pcmData);
+
+    const parts: Buffer[] = [];
+    let cursor = 0;
+    for (const cut of cuts) {
+        parts.push(chunk.pcmData.subarray(cursor * 2, cut.start * 2));
+        cursor = cut.end;
+    }
+    parts.push(chunk.pcmData.subarray(cursor * 2));
+    return createWavBuffer(chunk, Buffer.concat(parts));
+}
+
+export async function processFishNarrationWav(wavBuffer: Buffer) {
+    const adjusted = await runFfmpeg(wavBuffer, [
+        "-af",
+        `asetrate=24000*${FISH_PITCH_RATIO},aresample=24000,atempo=${FISH_TEMPO / FISH_PITCH_RATIO}`,
+        "-ac",
+        "1",
+        "-ar",
+        "24000",
+        "-c:a",
+        "pcm_s16le",
+        "-f",
+        "wav",
+        "pipe:1",
+    ], "adjusting Fish narration delivery");
+    return shortenLongSilences(adjusted);
+}
+
+export async function transcodeWavToMp3(wavBuffer: Buffer) {
+    return runFfmpeg(wavBuffer, [
+        "-vn",
+        "-codec:a",
+        "libmp3lame",
+        "-b:a",
+        "128k",
+        "-ac",
+        "1",
+        "-ar",
+        "24000",
+        "-f",
+        "mp3",
+        "pipe:1",
+    ], "transcoding narration WAV to MP3");
 }
 
 async function extractOpenAiError(response: Response) {
@@ -648,7 +730,10 @@ export async function generateNarrationAudio(
             async (chunk, _index, signal) => synthesizeNarrationChunkWav(chunk, signal)
         );
 
-        const segmentWavBuffer = concatenateWavBuffers(wavChunks);
+        const rawSegmentWavBuffer = concatenateWavBuffers(wavChunks);
+        const segmentWavBuffer = getNarrationProvider() === "fish"
+            ? await processFishNarrationWav(rawSegmentWavBuffer)
+            : rawSegmentWavBuffer;
         const segmentDurationSeconds = getWavDurationSeconds(segmentWavBuffer);
         const exactEndSeconds = cumulativeSeconds + segmentDurationSeconds;
         const storedStartSeconds = previousStoredEndSeconds;
