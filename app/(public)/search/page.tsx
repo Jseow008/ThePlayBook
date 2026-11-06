@@ -122,6 +122,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ])).sort((a, b) => a.localeCompare(b));
     const selectedTopicLabel = selectedTopic?.label;
     const selectedTopicValues = selectedTopic?.rawValues ?? [];
+    const allTopicOptions = Array.from(new Set([
+        ...curatedTopicItems.map((item) => item.label),
+        ...dropdownOptions,
+        ...(selectedTopicLabel ? [selectedTopicLabel] : []),
+    ]));
     return (
         <div className="min-h-screen bg-background pb-5 md:pb-6 lg:pb-16">
             <div className="max-w-7xl mx-auto px-6 lg:px-16 py-5 md:py-8">
@@ -181,7 +186,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
                             Topics
                         </p>
-                        <div className="flex flex-wrap justify-start gap-2">
+                        <div className="sm:hidden">
+                            <SearchTopicSelect
+                                query={query}
+                                type={selectedTypeParam}
+                                sort={selectedSort}
+                                value={selectedTopicLabel ?? ""}
+                                options={allTopicOptions}
+                                variant="all-topics"
+                            />
+                        </div>
+                        <div className="hidden flex-wrap justify-start gap-2 sm:flex">
                             <SearchFilterLink
                                 filterParam="category"
                                 href={buildSearchHref({

@@ -108,6 +108,14 @@ families retain their own title treatment. Explicit `showMoreTitleLines={false}`
 keeps the legacy three-line rendering.
 
 
+### 3.5 Search Topics
+
+Below the existing `sm` breakpoint (640px), Search uses one full-width, 44px
+Topics select containing all curated and additional canonical topics. It shows
+All topics or the current selection. From `sm` upward, the existing topic
+shortcuts and More topics select remain. Type filters, sort, results and recovery
+actions retain their existing presentation and navigation behavior.
+
 ## 4. Reader Experience
 
 ### 4.1 Current Reader Layout
