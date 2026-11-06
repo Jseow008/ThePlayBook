@@ -5120,3 +5120,14 @@ tests outside verified coverage. Existing earlier no-op/service-error findings
 are untouched. Next: ready PR + PR-scope gate + protected squash auto-merge.
 
 Separate final npm run typecheck also passed. Working candidate ready for PR.
+
+Publication checkpoint: PR https://github.com/Jseow008/ThePlayBook/pull/327,
+branch codex/fit-card-author-credits, implementation commit d3c55864. GitHub file
+list verified: exactly card,CSS,test,DESIGN and this checkpoint. Working tree
+clean before this documentation-only update.119 focused tests, lint, build and
+separate typecheck passed. Current PR gates are pending; no merge/deployment
+claim. Next action is final PR-scope check and repeated local commit/file-scope
+inspection, followed by protected squash auto-merge only after scope passes.
+Required validate and Security Validation still gate release. No post-merge
+monitoring requested; do not create an automation. Own browser/server/fixture
+cleanup is complete. Full signed-in route/device/phone/Safari coverage excluded.
