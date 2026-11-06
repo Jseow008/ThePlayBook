@@ -16,6 +16,7 @@ interface LibraryToolbarProps {
     newestLabel?: string;
     oldestLabel?: string;
     className?: string;
+    compact?: boolean;
 }
 
 export function LibraryToolbar({
@@ -31,11 +32,12 @@ export function LibraryToolbar({
     newestLabel = "Newest",
     oldestLabel = "Oldest",
     className,
+    compact = false,
 }: LibraryToolbarProps) {
     const filters = ["all", "book", "podcast", "article", "video"] as const;
 
     return (
-        <div className={cn("flex flex-col gap-2.5 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-3", className)}>
+        <div className={cn("flex flex-col gap-2.5 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-3", compact && "py-0", className)}>
             {/* Search */}
             {showSearch && <div className="relative w-full lg:w-64 group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground group-focus-within:text-foreground transition-colors" />
@@ -56,23 +58,24 @@ export function LibraryToolbar({
                 {/* Filter */}
                 <div
                     data-testid="library-toolbar-filters"
-                    className="flex flex-wrap gap-2 lg:items-center lg:rounded-full lg:border lg:border-border/60 lg:bg-secondary/25 lg:p-1"
+                    className={cn("flex flex-wrap gap-2 lg:items-center lg:rounded-full lg:border lg:border-border/60 lg:bg-secondary/25 lg:p-1", compact && "max-lg:contents")}
                 >
                     {filters.map((filter) => (
-                        <button
-                            key={filter}
-                            type="button"
-                            aria-pressed={activeFilter === filter}
-                            onClick={() => onFilterChange(filter)}
-                            className={cn(
-                                "touch-target-44 inline-flex h-8 items-center justify-center rounded-full border px-3 text-xs font-medium capitalize transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-3.5 lg:h-8 lg:border-transparent lg:px-4",
-                                activeFilter === filter
-                                    ? "border-border/70 bg-secondary/50 text-foreground shadow-sm lg:bg-background"
-                                    : "border-border/60 bg-transparent text-muted-foreground hover:border-border/80 hover:text-foreground hover:bg-secondary/30 lg:hover:bg-secondary/50"
-                            )}
-                        >
-                            {filter}
-                        </button>
+                        <div key={filter} className={compact ? "flex h-11 items-center lg:contents" : "contents"}>
+                            <button
+                                type="button"
+                                aria-pressed={activeFilter === filter}
+                                onClick={() => onFilterChange(filter)}
+                                className={cn(
+                                    "touch-target-44 inline-flex h-8 items-center justify-center rounded-full border px-3 text-xs font-medium capitalize transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-3.5 lg:h-8 lg:border-transparent lg:px-4",
+                                    activeFilter === filter
+                                        ? "border-border/70 bg-secondary/50 text-foreground shadow-sm lg:bg-background"
+                                        : "border-border/60 bg-transparent text-muted-foreground hover:border-border/80 hover:text-foreground hover:bg-secondary/30 lg:hover:bg-secondary/50"
+                                )}
+                            >
+                                {filter}
+                            </button>
+                        </div>
                     ))}
                 </div>
 

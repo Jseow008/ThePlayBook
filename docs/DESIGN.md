@@ -120,6 +120,19 @@ All topics or the current selection. From `sm` upward, the existing topic
 shortcuts and More topics select remain. Type filters, sort, results and recovery
 actions retain their existing presentation and navigation behavior.
 
+### 3.6 Completed Library Header
+
+Completed keeps its result count beside the heading, including on narrow screens.
+Filtering or unavailable records use “shown of total” wording so the completed
+history total is not confused with displayed cards. Pending data uses a small
+placeholder; a failed empty request does not claim zero results. The separate
+count row below the toolbar is removed. Completed opts into a compact toolbar:
+on narrow screens Type buttons and Sort wrap together, retaining all choices
+and their visible dimensions with 44px vertical slots for touch targets. Desktop
+keeps the grouped Type buttons and Sort. Other Library toolbar layouts, global
+Library search, card styling and card actions remain independent and unchanged.
+
+
 ## 4. Reader Experience
 
 ### 4.1 Current Reader Layout

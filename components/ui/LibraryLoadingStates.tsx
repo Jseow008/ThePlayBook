@@ -29,21 +29,22 @@ export function LibraryStatBadge({
     );
 }
 
-export function LibraryToolbarSkeleton({ className, showSearch = true }: { className?: string; showSearch?: boolean }) {
+export function LibraryToolbarSkeleton({ className, showSearch = true, compact = false }: { className?: string; showSearch?: boolean; compact?: boolean }) {
     return (
         <div
             aria-hidden="true"
-            className={cn("flex flex-col gap-2.5 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-3", className)}
+            className={cn("flex flex-col gap-2.5 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-3", compact && "py-0", className)}
         >
             {showSearch && <div className="h-10 w-full animate-pulse rounded-full border border-border/60 bg-secondary/40 lg:w-64" />}
             <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap lg:gap-3">
-                <div className="flex flex-wrap gap-2 lg:rounded-full lg:border lg:border-border/60 lg:bg-secondary/25 lg:p-1">
+                <div className={cn("flex flex-wrap gap-2 lg:rounded-full lg:border lg:border-border/60 lg:bg-secondary/25 lg:p-1", compact && "max-lg:contents")}>
                     {LIBRARY_FILTER_SKELETON_WIDTHS.map((width, index) => (
-                        <div
-                            key={`${width}-${index}`}
-                            data-testid="library-filter-skeleton"
-                            className={cn("h-8 animate-pulse rounded-full border border-border/60 bg-secondary/25", width)}
-                        />
+                        <div key={`${width}-${index}`} className={compact ? "flex h-11 items-center lg:contents" : "contents"}>
+                            <div
+                                data-testid="library-filter-skeleton"
+                                className={cn("h-8 animate-pulse rounded-full border border-border/60 bg-secondary/25", width)}
+                            />
+                        </div>
                     ))}
                 </div>
                 <div className="flex h-11 w-28 shrink-0 items-center lg:h-9">
