@@ -3,7 +3,7 @@ import { Buffer } from "node:buffer";
 
 export const OPENAI_TTS_MODEL = process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts";
 export const OPENAI_TTS_VOICE = process.env.OPENAI_TTS_VOICE || "alloy";
-export const FISH_AUDIO_VOICE_ID = process.env.FISH_AUDIO_VOICE_ID || "e3cd384158934cc9a01029cd7d278634";
+export const FISH_AUDIO_VOICE_ID = process.env.FISH_AUDIO_VOICE_ID || "bf322df2096a46f18c579d0baa36f41d";
 
 export function getNarrationProvider() {
     const provider = process.env.NARRATION_PROVIDER?.trim().toLowerCase() || "openai";
