@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { AskClientPage } from "@/app/(public)/ask/client-page";
 import { useChat } from "@ai-sdk/react";
+import { clearLibraryChatSessions } from "@/lib/library-chat-session";
 import { vi } from "vitest";
 import type { LibrarySnapshot } from "@/lib/server/library-snapshot";
 import { createNotesChatScope, serializeNotesChatScope } from "@/lib/notes-chat-scope";
@@ -85,6 +86,7 @@ describe("AskClientPage", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        clearLibraryChatSessions();
         scopeQuery.value = "";
         notesAskPanelMock.mockClear();
         Object.defineProperty(window, "matchMedia", {
@@ -331,7 +333,7 @@ describe("AskClientPage", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "What have I completed in my library?" }));
 
-        expect(mockSendMessage).toHaveBeenCalledWith({ text: "What have I completed in my library?" });
+        expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({ role: "user", parts: [{ type: "text", text: "What have I completed in my library?" }] }));
     });
 
     it("shows the transcript after chat starts instead of the intro panel", () => {
@@ -491,9 +493,7 @@ describe("AskClientPage", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Summarize the overlap" }));
 
-        expect(mockSendMessage).toHaveBeenCalledWith({
-            text: "Summarize the shared idea across the sources behind your last answer.",
-        });
+        expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({ role: "user", parts: [{ type: "text", text: "Summarize the shared idea across the sources behind your last answer." }] }));
     });
 
     it("hides follow-up actions while a response is streaming", () => {
