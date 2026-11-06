@@ -5047,6 +5047,95 @@ PR scope, enable protected squash auto-merge only after scope passes; validate
 and Security Validation remain mandatory gates. No deployment/live claim and
 no post-merge monitoring or timer requested.
 
+## 2026-11-06 — Narrow Search Topics implementation
+
+Owner authorized the reviewed narrow-only dropdown, retaining desktop, Type,
+sort, cards, recovery actions and all topic choices. Independent worktree
+`/Users/j/.codex/workspaces/netflux-search-topics-dropdown`, branch
+`codex/narrow-search-topics`, freshly based on origin/main4cc07bd3 (#325).
+Earlier review/release notes remain untouched in the prior Library worktree.
+
+Below existing sm640px, Search renders a single full-width44px Topics select.
+It reuses SearchTopicSelect's existing router/pending/measurement behavior with
+an all-topics presentation variant, unique control ID, Topics accessible name
+and All topics option. Options combine every available curated and additional
+canonical topic, de-duplicated, including the current selected topic if absent
+from stats. Formatting-only book_summary remains excluded as before. At640+
+original shortcuts and More topics appear with their original styling/36px size.
+No change to Type, sort, input, card or recovery source/behavior. No fetching,
+ranking, taxonomy, API, database, account, dependency or workflow changes.
+
+53 focused SearchPage/SearchInput tests pass on the final source. Six new
+regressions compare the complete narrow option set with the union of desktop
+choices (no duplicates), verify curated/non-curated/absent-stat selections,
+unique IDs and44px/36px variants, query+type retention on topic change/clear,
+and Popular+Book retention with no query. Existing tests continue to cover
+canonicalization, aliases, duplicate raw category variants, category/type queries,
+search drafts/pending filter intent, recovery and sorting. Unit tests do not
+establish CSS visibility; that was checked in-browser.
+
+Local CUA browser exercised the actual /search page, SearchInput, Type links,
+SearchTopicSelect and unchanged result/recovery components using a temporary
+server catalog fixture. Only catalog imports in page/search-components were
+redirected to deterministic synthetic functions for the rehearsal, with inert
+localhost configuration. Candidate source copies were archived first; original
+imports restored byte-for-byte afterward, fixture removed and server stopped
+before all final lint/build/tests/type checks. No production data/account/provider
+interaction. Search-components has no final diff.
+
+Browser results:
+- At320,390,639px: exactly the narrow Topics control is visible, height44px,
+  desktop More topics hidden. At640/1440px: narrow control hidden and original
+  shortcuts/More topics visible; More topics36px. No document horizontal overflow.
+- Business (curated) selection retainsfocus query and Book; Technology & the Future
+  (additional) is selected after reload. All topics on the settled page removes
+  only category, retainingfocus/Book and restoring the intended synthetic result.
+- Without query, choosing Religion & Spirituality and returning to All topics
+  retain Book and Popular. Existing input/Type links remain functional.
+- focus + Article + Business gives0 results. Existing Clear all filters remains
+  at y611.5–657.5, above navy760–832 at390, retainsfocus and restores both synthetic
+  results. Request this summary was not invoked or changed.
+- A long selected Psychology, Philosophy & Intellectual History label at320 fits
+  a272px-wide,44px-high select without document overflow.
+
+Retained unsuccessful attempts: initial local navigation timed out while compiling;
+rebinding that same tab showed the ready page. One select-All attempt immediately
+after document reload changed the native selection but did not produce the
+expected URL before the wait expired; not counted as a pass. On the settled page,
+reselecting the topic then All topics navigated correctly with query/type intact.
+The first attempt's cause was not conclusively established; no broader activation
+or readiness fix was added. Native readiness/physical-browser timing is not proven
+by component tests. All other completed bounded checks above passed.
+
+Evidence: thread search-topics-dropdown-implementation/browser.json,
+narrow-390.png, narrow-long-320.png, desktop-1440.png, archived candidate and
+fixture sources. These are local synthetic catalog checks, not deployed/backend
+verification. Physical phones, mobile Safari and skipped tests remain outside
+verified coverage. Viewport reset, own tab closed, fixture removed; no accounts,
+paid resources, notes, highlights or progress edited. One implementer, no subagents;
+no application model calls, exact Codex usage unavailable.
+
+Final local gates: full lint/ratchets, production build (Sharp traces/critical CSS),
+standalone typecheck, all53 focused tests and diff check passed. React self-review:
+no new effects/timers/fetches, existing unconditional router/transition hooks,
+unique labels/IDs, CSS-only breakpoint switch, existing focus and pending states.
+Intended PR scope: Search page, SearchTopicSelect, SearchPage tests, DESIGN and
+this checkpoint only. Next: verify own history/files, publish ready PR, verify
+GitHub scope, then protected squash auto-merge after PR scope passes. Required
+CI/security remain merge gates; no deployment monitoring requested here.
+
+Publication follow-up: ready PR #326 initially headd498d241. Before auto-merge,
+inspection found the existing rapid-two-filter browser regression assumed topic
+links were visible at every viewport. Updated that same test to use the native
+Topics select on narrow screens and preserve the original link assertions on
+larger screens, retaining the existing hydration readiness guard and simultaneous
+Book/topic intent. This is an affected test adaptation, not another product
+change. Final scope is six files including tests/e2e/search.spec.ts. Targeted
+ESLint and standalone typecheck pass after that adaptation; application build and
+53 focused tests remain applicable because their inputs/product source did not
+change. The updated browser test awaits hosted CI execution; not claimed as a
+local browser-suite pass. Fresh final gates must cover the new head before merge.
+
 
 ## Author-credit fitting — approved implementation
 
@@ -5131,3 +5220,21 @@ inspection, followed by protected squash auto-merge only after scope passes.
 Required validate and Security Validation still gate release. No post-merge
 monitoring requested; do not create an automation. Own browser/server/fixture
 cleanup is complete. Full signed-in route/device/phone/Safari coverage excluded.
+
+
+## PR327 release follow-up — 2026-11-06
+
+Owner requests production deployment identity and live320/390/desktop verification.
+At follow-up start327 was OPEN, security passed and CI browser checks pending.
+326 merged as05c3375e meanwhile, causing only an append conflict in this shared
+checkpoint. Refreshed327 by merging secured origin/main; retained both complete
+investigation sections and auto-merged DESIGN. No card/CSS/test logic conflict.
+Local previous terminal handoff preserved outside the repo; all implementation
+and browser evidence still applies to the unchanged author renderer. Final
+integration focused checks below, then push refreshed head and wait for its
+required gates. Never bypass gates or manually cancel slow downloads. No live
+claim yet, no new product scope, accounts, paid resources or data writes.
+
+Refreshed integration: all125 focused tests across10 files pass (six additional
+Search cases came from326). Only documentation conflict resolution was required.
+Next: push merge refresh, verify clean five-file PR scope and let final gates run.

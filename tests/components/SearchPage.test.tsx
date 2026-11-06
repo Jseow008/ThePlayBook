@@ -686,6 +686,59 @@ describe("SearchPage", () => {
         expect(optionLabels).toEqual(["More topics", "Religion & Spirituality"]);
     });
 
+    it("retains every desktop topic in the narrow dropdown without duplicate choices", async () => {
+        await renderSearchPage({});
+
+        const narrow = screen.getByRole("combobox", { name: "Topics" });
+        const more = screen.getByRole("combobox", { name: "More topics" });
+        const desktopTopics = screen.getAllByRole("link")
+            .filter((link) => link.getAttribute("href")?.includes("category="))
+            .map((link) => link.textContent);
+        const extraTopics = Array.from(more.querySelectorAll("option"))
+            .filter((option) => option.value)
+            .map((option) => option.textContent);
+        const narrowTopics = Array.from(narrow.querySelectorAll("option"));
+        expect(narrowTopics[0]).toHaveTextContent("All topics");
+        expect(narrowTopics[0]).toHaveValue("");
+        expect(narrowTopics.slice(1).map((option) => option.textContent).sort())
+            .toEqual([...desktopTopics, ...extraTopics].sort());
+        expect(new Set(narrowTopics.map((option) => option.value)).size).toBe(narrowTopics.length);
+        expect(narrow.id).not.toBe(more.id);
+        expect(narrow).toHaveClass("h-11");
+        expect(more).toHaveClass("h-9");
+    });
+
+    it.each(["Business", "Religion & Spirituality", "Selected topic absent from stats"])(
+        "shows the selected %s topic on narrow screens",
+        async (category) => {
+            await renderSearchPage({ category });
+            expect(screen.getByRole("combobox", { name: "Topics" })).toHaveValue(category);
+        },
+    );
+
+    it("preserves query and type when the narrow selector changes or clears the topic", async () => {
+        window.history.replaceState(null, "", "/search?q=focus&type=podcast&category=Business");
+        await renderSearchPage({ q: "focus", type: "podcast", category: "Business" });
+
+        fireEvent.change(screen.getByRole("combobox", { name: "Topics" }), {
+            target: { value: "Religion & Spirituality" },
+        });
+        expect(routerPushMock).toHaveBeenLastCalledWith("/search?q=focus&category=Religion+%26+Spirituality&type=podcast");
+        fireEvent.change(screen.getByRole("combobox", { name: "Topics" }), {
+            target: { value: "" },
+        });
+        expect(routerPushMock).toHaveBeenLastCalledWith("/search?q=focus&type=podcast");
+    });
+
+    it("keeps Popular and the type filter when choosing All topics without a query", async () => {
+        window.history.replaceState(null, "", "/search?category=Business&type=book&sort=popular");
+        await renderSearchPage({ category: "Business", type: "book", sort: "popular" });
+        fireEvent.change(screen.getByRole("combobox", { name: "Topics" }), {
+            target: { value: "" },
+        });
+        expect(routerPushMock).toHaveBeenLastCalledWith("/search?type=book&sort=popular");
+    });
+
     it("groups reported topic variants without exposing the content-format category", async () => {
         const categories = [
             { category: "Self-help", count: 2 }, { category: "Self-Help", count: 1 },

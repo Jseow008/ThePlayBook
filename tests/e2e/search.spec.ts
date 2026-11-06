@@ -70,21 +70,35 @@ test.describe('/search', () => {
 
     test('preserves two filter choices made before the first navigation settles', async ({ page }) => {
         await page.goto('/search?type=podcast');
-        await expect(page.locator('a[href*="category="]').first()).toBeVisible();
-        // Server-rendered links can be visible before their client navigation
+        const compactTopics = page.getByRole('combobox', { name: 'Topics', exact: true });
+        const useCompactTopics = await compactTopics.isVisible();
+        if (useCompactTopics) await expect(compactTopics).toBeVisible();
+        else await expect(page.locator('a[href*="category="]').first()).toBeVisible();
+        // Server-rendered controls can be visible before their client navigation
         // handlers hydrate. Exercise rapid in-app clicks only after both do.
-        await page.waitForFunction(() => {
+        await page.waitForFunction((compact) => {
             const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href^="/search"]'));
             const book = links.find((link) => link.textContent?.trim() === 'Book');
-            const topic = links.find((link) => new URL(link.href).searchParams.has('category'));
+            const topic = compact
+                ? document.getElementById('search-topic-select-all')
+                : links.find((link) => new URL(link.href).searchParams.has('category'));
             return [book, topic].every((link) =>
                 link && Object.keys(link).some((key) => key.startsWith('__reactProps$')),
             );
-        });
+        }, useCompactTopics);
 
-        const topic = await page.evaluate(() => {
+        const topic = await page.evaluate((compact) => {
             const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href^="/search"]'));
             const book = links.find((link) => link.textContent?.trim() === 'Book');
+            if (compact) {
+                const select = document.querySelector<HTMLSelectElement>('#search-topic-select-all');
+                const option = select?.options[1];
+                if (!book || !select || !option?.value) throw new Error('Search filters did not render');
+                book.click();
+                select.value = option.value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                return { category: option.value, label: option.textContent?.trim() ?? option.value };
+            }
             const topicLink = links.find((link) => new URL(link.href).searchParams.has('category'));
             if (!book || !topicLink) throw new Error('Search filters did not render');
             const category = new URL(topicLink.href).searchParams.get('category');
@@ -93,7 +107,7 @@ test.describe('/search', () => {
             book.click();
             topicLink.click();
             return { category, label };
-        });
+        }, useCompactTopics);
 
         await expect(page).toHaveURL((url) =>
             url.pathname === '/search'
@@ -101,7 +115,8 @@ test.describe('/search', () => {
             && url.searchParams.get('type') === 'book',
         );
         await expect(page.getByRole('link', { name: 'Book', exact: true })).toHaveClass(/bg-primary/);
-        await expect(page.getByRole('link', { name: topic.label, exact: true })).toHaveClass(/bg-primary/);
+        if (useCompactTopics) await expect(compactTopics).toHaveValue(topic.category);
+        else await expect(page.getByRole('link', { name: topic.label, exact: true })).toHaveClass(/bg-primary/);
     });
 
     test('keeps a newly typed query when its type filter is changed immediately', async ({ page }) => {
