@@ -5367,3 +5367,101 @@ Own local server/tab closed and viewport reset. Earlier short-screen scrolling
 evidence remains applicable (same layout with less heading content); no phone,
 virtual keyboard, Safari or completed-authentication claim. Fresh required hosted
 CI/security must pass for the revised head before merging.
+
+## 2026-11-07 — Request late-response draft protection and completed title
+
+User approved fixing the confirmed late-response text loss and showing the
+completed request's title, preserving newer edits unsaved and existing failure
+recovery. Independent branch codex/request-draft-confirmation in
+/Users/j/.codex/workspaces/netflux-request-draft-confirmation, freshly based on
+maineefed48c38453185ae654bb2d78892ce58f19344. Inspected #331 metadata and all16 files:
+Library Ask follow-ups only; no RequestBoard, request API, auth hook, shared CSS,
+dependency or schema overlap. No dependency on331, no stacking or wait required.
+
+Prior controlled review (thread request-submission-review) imported the unchanged
+329 RequestBoard, recorded10 synthetic HTTP receipts, and confirmed that late201
+and duplicate200 erase newer B fields while sending only A. Failure422/503/reset
+preserved text; ordinary confirmations worked but omitted request identity. No
+production data, real auth/database or provider was involved in that review.
+
+Localized implementation: capture the submitted payload and current edit revision;
+advance revision on every user edit, clear title/Creator after success only if
+no intervening edits occurred. Preserve the whole newer form if any field changed.
+Store confirmation kind/title together, using the returned request title with
+submitted-text fallback; never derive it from later current fields. Add the title
+to the existing inline confirmation with wrapping/min-width protection. Existing
+Book/Video formats, Please Select, fields, dimensions, layout, toasts, failure
+handling, sign-in recovery and request-storage lifecycle stay unchanged. No newer
+text is automatically submitted, saved as a request or newly persisted as a draft.
+
+Initial41 focused tests pass (request component, request validation, shell policy),
+including normal/duplicate clear vs preserve, canonical returned title, any one
+changed field, disabled pending submission, exact A payload, failed422/503/network
+retention and explicit B retry. Targeted ESLint/diff check passed. Normal production
+build, full lint, final typecheck and controlled browser sequences pending.
+No API/database/model/account/dependency change. Exact next step: complete build,
+repeat both late201/duplicate200 and failure/retry on desktop/narrow in isolated
+controlled component harness; inspect three-file scope, publish ready PR and enable
+normal protected squash auto-merge only after its PR-scope check passes. Required
+CI/security remain gates. No paid resources, production writes or timer needed.
+
+Final local verification:41 focused tests, full lint/ratchets, standalone typecheck
+and production build pass. Final build includes five Sharp trace checks and
+critical CSS. Synthetic localhost-only credentials cause the existing unrelated
+catalog/sitemap fallback JWT logs; no production credentials or data loaded.
+
+Actual changed RequestBoard + real Button/MobileBottomNav/toaster offset/compiled
+product Inter CSS in the same isolated controlled harness as the review. Auth,
+navigation links/counts and local HTTP endpoint are fixtures; this is component/
+client integration evidence, not real database/auth/email persistence evidence.
+Thread request-draft-confirmation-verification/receipts.jsonl:11 receipts,
+10 controlled responses and1 socket reset. Pending extra Enter has one receipt;
+all first five attempts send only A/Book. B appears only after explicit user clicks.
+Server-failure and reset retry pairs have exactly equal payloads. No automatic B
+submission or second pending request. Raw traces and assertions saved separately.
+
+Desktop1440: held201 and duplicate200 preserve exact B title/Creator/Video, and
+confirmation shows A's title. Final201 repeats after the toast correction below.
+Final explicit B network failure retains B; explicit duplicate retry sends exactly
+B once, clears unchanged submitted fields and names B in confirmation.
+Narrow390: held201 with long A title retains B; title wraps within confirmation.
+Final390201 with a long unbroken example URL also wraps without horizontal overflow;
+action bottom693 above nav top760. Format/fields unchanged except normal success
+clearing. Narrow320: held duplicate200 preserves B and names A, final repeat passes
+with one announced inline status and no success toast; action y623..667 above nav
+y696..768. Explicit B503 preserves B/Video, action re-enables; explicit unchanged
+B201 retry clears B only after success and correctly names B. Unit tests also
+repeat unchanged201/200, each single edited field and validation422 failure.
+
+One correction during verification: the taller titled confirmation plus existing
+redundant success toast covered Submit at320 while the toast was visible. Removed
+only duplicate success/duplicate toasts and gave the persistent inline confirmation
+role=status for polite announcement. Failure toast messages/retention/retry remain
+unchanged. Repeated affected tests, full lint/build and final desktop/narrow output
+checks after this correction. An earlier failure toast may still finish its existing
+lifetime during an immediate successful retry; no new failure-notification policy
+or global toaster change introduced. Earlier pre-correction screenshots remain
+recorded, not final screenshots. No other failed product check was suppressed.
+
+Final evidence: browser-checks.json, receipt-summary.json and *-final.png under
+thread request-draft-confirmation-verification. Header/sidebar context is a minimal
+replica; actual form/button/bottom nav and product fonts/styles are used. This does
+not claim real Next authentication/routing, production submission, email, reload/
+navigation draft persistence, physical phones, virtual keyboards or Safari.
+No full local unit-suite claim; required hosted CI/security will cover final head.
+No API, database, model, schema, dependency, saved data or production changes.
+Own tab/server closed and viewport reset. One implementer, no agents/timer; initial
+review evidence reused only for unchanged behavior. Next: inspect three-file scope,
+publish ready PR and enable protected squash auto-merge after its scope check.
+
+Before first publication331 merged as2cdd70fc. Fast-forwarded this independent
+branch to that latest main without conflicts, preserving the three intended
+uncommitted files. No request-form dependency was introduced;331's16-file scope
+does not change form, CSS, navigation, dependencies or auth. Reusing bounded browser
+evidence for unchanged RequestBoard and its inputs; repeating focused tests/full
+lint/production build on the combined application tree before opening the PR.
+
+Combined331 integration passes all41 focused tests, full lint/ratchets and normal
+production build/typecheck (five Sharp traces and critical CSS). No application
+changes after that candidate beyond removing one blank line and this checkpoint.
+Ready to publish only RequestBoard.tsx, its component tests and this record.
