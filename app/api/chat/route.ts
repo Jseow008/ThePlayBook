@@ -8,7 +8,9 @@ import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSess
 import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { smoothStream, streamText } from "ai";
+import { Output, streamText } from "ai";
+import { LIBRARY_CLARIFICATION_FOLLOWUPS, LIBRARY_NO_EVIDENCE_FOLLOWUPS } from "@/lib/library-followups";
+import { LibraryAnswerOutputSchema, LIBRARY_FOLLOWUP_INSTRUCTIONS, libraryAnswerStreamResponse } from "@/lib/server/library-followup-output";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
@@ -221,7 +223,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         }
 
         const questionContext = contextualizeUserQuestion(messages);
-        if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, "ui");
+        if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, "ui", [], false, LIBRARY_CLARIFICATION_FOLLOWUPS);
         const provider = process.env.AI_PROVIDER || "anthropic";
         const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
         const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
@@ -341,7 +343,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
                 });
                 const rankedSources = await rankLibrarySourceSpans({ sources, userId: user.id, queryEmbedding, signal });
                 const selected = await selectLibraryEvidence({ personal, sources: rankedSources, question: userQuery,
-                    semanticQuestion: questionContext.semanticQuestion, signal });
+                    semanticQuestion: questionContext.semanticQuestion, signal, includeFollowups: true });
                 // Embedding and selection may be slow: revalidate both classes at the final delivery boundary.
                 await recheckPersonalEvidenceCandidates({ supabase, userId: user.id, scope: ALL_PERSONAL_EVIDENCE,
                     candidates: selected.personal.items.map((item) => item.evidence), signal });
@@ -355,10 +357,10 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
                 signal.throwIfAborted();
                 if (authError || currentUser?.id !== user.id) throw new Error("RETRIEVAL_AUTH_CHANGED");
                 if (selected.exactQuote !== null && !selected.quotedEvidenceId) throw new Error("Quoted evidence identity missing");
-                if (selected.exactQuote !== null) return retrievalTextResponse(selected.exactQuote, "ui", issueEvidenceCitations({ userId: user.id, personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.quotedEvidenceId ? [selected.quotedEvidenceId] : [], exactQuote: true }), true);
-                if (selected.quoteTooLarge) return retrievalTextResponse("The matching stored passage is too long to quote completely here. Open the source to read its full text.", "ui");
+                if (selected.exactQuote !== null) return retrievalTextResponse(selected.exactQuote, "ui", issueEvidenceCitations({ userId: user.id, personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.quotedEvidenceId ? [selected.quotedEvidenceId] : [], exactQuote: true }), true, selected.selection?.followUpQuestions ?? []);
+                if (selected.quoteTooLarge) return retrievalTextResponse("The matching stored passage is too long to quote completely here. Open the source to read its full text.", "ui", [], false, []);
                 if (selected.evidenceIds.length === 0) {
-                    if (intent !== "reading_advisor") return retrievalTextResponse(LIBRARY_NO_EVIDENCE, "ui");
+                    if (intent !== "reading_advisor") return retrievalTextResponse(LIBRARY_NO_EVIDENCE, "ui", [], false, LIBRARY_NO_EVIDENCE_FOLLOWUPS);
                     retrievalStatus = "no_match";
                 } else {
                     const text = renderEvidenceExtracts({
@@ -370,7 +372,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
                             properties: { source: "ask_library", route: "/api/chat", chat_scope: "library", user_state: "authenticated" },
                         }));
                     }
-                    return retrievalTextResponse(text, "ui", issueEvidenceCitations({ userId: user.id, personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.evidenceIds }));
+                    return retrievalTextResponse(text, "ui", issueEvidenceCitations({ userId: user.id, personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.evidenceIds }), false, selected.selection?.followUpQuestions ?? []);
                 }
             } catch (error) {
                 const spendingFailure = aiSpendingFailureResponse(error);
@@ -421,11 +423,11 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         const result = streamText({
             maxRetries: 0,
             model: aiModel,
-            system: systemPrompt,
+            system: `${systemPrompt}\n\nReturn JSON with answer as the FIRST field, then followUpQuestions. Complete the answer before writing any questions.\n${LIBRARY_FOLLOWUP_INSTRUCTIONS}`,
+            output: Output.object({ schema: LibraryAnswerOutputSchema }),
             messages: [{ role: "user", content: questionContext.semanticQuestion }],
             abortSignal: signal,
             maxOutputTokens: getOutputTokenCap(intent),
-            experimental_transform: smoothStream({ delayInMs: 6 }),
             onFinish: async ({ usage }) => {
                 await reservation.record(usage);
                 if (messages.filter((message) => message.role === "user").length === 1) {
@@ -444,7 +446,8 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             },
         });
 
-        return result.toUIMessageStreamResponse({
+        return libraryAnswerStreamResponse(result, {
+            signal,
             onError: (error) => {
                 logApiError({ requestId, route: "/api/chat", message: "AI generation stream failed", error });
                 return CHAT_STREAM_ERROR_MESSAGE;

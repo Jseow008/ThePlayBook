@@ -16,7 +16,7 @@ const valid = () => ({ requestedFacets: ["Synthetic action"], assessments: [{ id
 const privateText = "PRIVATE synthetic output that must not survive an exception";
 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.clearAllMocks(); });
-function providerTransport(provider: string, text: string) {
+function providerTransport(provider: string, text: string, limited = false) {
     vi.stubEnv("ANTHROPIC_API_KEY", "synthetic-test-key"); vi.stubEnv("OPENAI_API_KEY", "synthetic-test-key");
     vi.stubEnv("AI_PROVIDER", provider === "anthropic" ? "anthropic" : "openai");
     vi.stubEnv("PERSONAL_EVIDENCE_SELECTOR_MODEL", provider === "luna" ? PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.model : "");
@@ -27,11 +27,11 @@ function providerTransport(provider: string, text: string) {
         bodies.push(JSON.parse(String(options?.body)) as Record<string, unknown>);
         const body = provider === "anthropic" ? {
             id: "msg_fixture", type: "message", role: "assistant", model: "claude-haiku-4-5-20251001",
-            content: [{ type: "text", text }], stop_reason: "end_turn", stop_sequence: null,
+            content: [{ type: "text", text }], stop_reason: limited ? "max_tokens" : "end_turn", stop_sequence: null,
             usage: { input_tokens: 10, output_tokens: 20 },
         } : {
-            id: "resp_fixture", object: "response", created_at: 1, model: "synthetic", status: "completed",
-            error: null, incomplete_details: null, output: [{ type: "message", id: "m1", role: "assistant", status: "completed",
+            id: "resp_fixture", object: "response", created_at: 1, model: "synthetic", status: limited ? "incomplete" : "completed",
+            error: null, incomplete_details: limited ? { reason: 'max_output_tokens' } : null, output: [{ type: "message", id: "m1", role: "assistant", status: limited ? "incomplete" : "completed",
                 ...(provider === "luna" ? { phase: "final_answer" } : {}),
                 content: [{ type: "output_text", text, annotations: [], logprobs: [] }] }],
             usage: { input_tokens: 10, output_tokens: 20, total_tokens: 30 },
@@ -80,4 +80,36 @@ describe("Zod 4 through the real AI SDK schema and provider boundary", () => {
             expect(transport).toHaveBeenCalledTimes(1);
         });
     }
+});
+
+describe('Library follow-ups through the existing selector provider call', () => {
+    const questions = ['What else have I saved about making a routine easier to start?', 'What have I saved about keeping a routine consistent?'];
+    for (const provider of ['openai', 'anthropic', 'luna']) {
+        it(`${provider}: returns selected evidence and questions in one billed call`, async () => {
+            const { transport } = providerTransport(provider, JSON.stringify({ selection: valid(), followUpQuestions: questions }));
+            const result = await selectPersonalEvidence({ question: 'Find the synthetic action', candidates, includeFollowups: true });
+            expect(result.ids).toEqual(['A']); expect(result.followUpQuestions).toEqual(questions);
+            expect(transport).toHaveBeenCalledOnce(); expect(mocks.record).toHaveBeenCalledOnce();
+        });
+        it.each(['missing', 'wrong-shape', 'truncated', 'limited'])(`${provider}: keeps evidence for %s optional questions without retry`, async kind => {
+            const text = kind === 'missing' ? JSON.stringify({ selection: valid() })
+                : kind === 'wrong-shape' ? JSON.stringify({ selection: valid(), followUpQuestions: 42 })
+                : `{"selection":${JSON.stringify(valid())},"followUpQuestions":["unfinished`;
+            const { transport } = providerTransport(provider, text, kind === 'limited');
+            const result = await selectPersonalEvidence({ question: 'Find the synthetic action', candidates, includeFollowups: true });
+            expect(result.ids).toEqual(['A']); expect(result.followUpQuestions).toEqual([]);
+            expect(transport).toHaveBeenCalledOnce(); expect(mocks.record).toHaveBeenCalledOnce();
+        });
+        it(`${provider}: still fails closed for invented evidence even if questions are valid`, async () => {
+            const wrong = { ...valid(), assessments: [{ ...valid().assessments[0], id: 'PRIVATE invented ID' }] };
+            const { transport } = providerTransport(provider, JSON.stringify({ selection: wrong, followUpQuestions: questions }));
+            await expect(selectPersonalEvidence({ question: 'Find the synthetic action', candidates, includeFollowups: true })).rejects.toBeInstanceOf(PersonalEvidenceSelectionError);
+            expect(transport).toHaveBeenCalledOnce();
+        });
+    }
+    it('does not expose questions derived from an empty direct-support selection', async () => {
+        const result = await selectPersonalEvidence({ question: 'Find the synthetic action', candidates, includeFollowups: true,
+            generate: async () => ({ output: { ...valid(), assessments: [] }, followUpQuestions: questions }) });
+        expect(result.ids).toEqual([]); expect(result.followUpQuestions).toEqual([]);
+    });
 });

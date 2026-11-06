@@ -22,11 +22,13 @@ function responseStream() {
     return new Response(new ReadableStream<Uint8Array>({ start(value) { controller = value; } }),
         { headers: { 'content-type': 'text/event-stream', 'x-vercel-ai-ui-message-stream': 'v1' } });
 }
-async function finish(reason = 'stop') {
+async function finish(reason = 'stop', questions?: unknown) {
     await act(async () => {
         for (const chunk of [{ type: 'start', messageId: 'answer' }, { type: 'text-start', id: 'text' },
             { type: 'text-delta', id: 'text', delta: 'Synthetic completed Library answer.' },
-            { type: 'text-end', id: 'text' }, { type: 'finish', finishReason: reason }]) {
+            { type: 'text-end', id: 'text' },
+            ...(questions !== undefined ? [{ type: 'data-library-followups', id: 'library-followups', data: { status: 'ready', questions } }] : []),
+            { type: 'finish', finishReason: reason }]) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
         }
         controller.enqueue(encoder.encode('data: [DONE]\n\n')); controller.close();
@@ -35,6 +37,77 @@ async function finish(reason = 'stop') {
 beforeAll(() => {
     Object.defineProperty(HTMLElement.prototype, 'scrollTo', { configurable: true, value: vi.fn() });
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() });
+});
+
+it('recovers AI questions with the answer and sends the selected full question without changing newer typing', async () => {
+    let view = render(<AskClientPage />);
+    fireEvent.change(composer(), { target: { value: 'What did I save about habits?' } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledOnce());
+    fireEvent.change(composer(), { target: { value: exact } });
+    const questions = ['What else have I saved about making habits easier to start?', 'What have I saved about arranging my environment?'];
+    await finish('stop', questions);
+    await screen.findByRole('button', { name: questions[0] });
+    expect(screen.queryByRole('button', { name: 'Summarize the overlap' })).not.toBeInTheDocument();
+    expect(composer()).toHaveValue(exact);
+    view.unmount(); view = render(<AskClientPage />);
+    expect(streamFetch).toHaveBeenCalledOnce();
+    expect(screen.getByRole('button', { name: questions[1] })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: questions[0] }));
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledTimes(2));
+    const payload = JSON.parse(String(streamFetch.mock.calls[1][1]?.body));
+    expect(payload.messages.at(-1).parts).toEqual([{ type: 'text', text: questions[0] }]);
+    expect(composer()).toHaveValue(exact); await finish('stop', []); view.unmount();
+});
+
+it('keeps the answer visible while suggestions are pending, then shows only completed questions', async () => {
+    const view = render(<AskClientPage />);
+    fireEvent.change(composer(), { target: { value: 'Question about routines' } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledOnce());
+    await act(async () => {
+        for (const chunk of [{ type: 'start', messageId: 'answer' },
+            { type: 'data-library-followups', id: 'library-followups', data: { status: 'pending', questions: [] } },
+            { type: 'text-start', id: 'text' }, { type: 'text-delta', id: 'text', delta: 'The complete answer is readable now.' }]) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+        }
+    });
+    expect(await screen.findByText('The complete answer is readable now.')).toBeInTheDocument();
+    expect(screen.getByText('Preparing suggestions…')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Summarize the overlap' })).not.toBeInTheDocument();
+    await act(async () => {
+        for (const chunk of [{ type: 'text-end', id: 'text' },
+            { type: 'data-library-followups', id: 'library-followups', data: { status: 'ready', questions: ['What else have I saved about routines?'] } },
+            { type: 'finish', finishReason: 'stop' }]) controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+        controller.enqueue(encoder.encode('data: [DONE]\n\n')); controller.close();
+    });
+    expect(await screen.findByRole('button', { name: 'What else have I saved about routines?' })).toBeInTheDocument();
+    expect(screen.queryByText('Preparing suggestions…')).not.toBeInTheDocument();
+    expect(streamFetch).toHaveBeenCalledOnce(); view.unmount();
+});
+
+it.each([[], 42])('retains the completed answer with no suggestions or automatic retry when questions are %j', async questions => {
+    const view = render(<AskClientPage />);
+    fireEvent.change(composer(), { target: { value: 'Question about routines' } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledOnce()); await finish('stop', questions);
+    expect(await screen.findByText('Synthetic completed Library answer.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Summarize the overlap' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+    expect(streamFetch).toHaveBeenCalledOnce(); view.unmount(); render(<AskClientPage />);
+    expect(screen.getByText('Synthetic completed Library answer.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Summarize the overlap' })).not.toBeInTheDocument();
+    expect(streamFetch).toHaveBeenCalledOnce();
+});
+
+it('does not expose old-account answer suggestions or drafts after switching owners', async () => {
+    const view = render(<AskClientPage />);
+    fireEvent.change(composer(), { target: { value: 'Account A question' } }); send();
+    await waitFor(() => expect(streamFetch).toHaveBeenCalledOnce());
+    await finish('stop', ['What else did I save about my account-A topic?']);
+    await screen.findByRole('button', { name: 'What else did I save about my account-A topic?' });
+    fireEvent.change(composer(), { target: { value: exact } });
+    identity.owner = JSON.stringify(['account-b', 'session-two']); view.rerender(<AskClientPage />);
+    expect(screen.queryByText('Synthetic completed Library answer.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'What else did I save about my account-A topic?' })).not.toBeInTheDocument();
+    expect(composer()).toHaveValue(''); expect(streamFetch).toHaveBeenCalledOnce();
 });
 beforeEach(() => {
     vi.restoreAllMocks(); clearLibraryChatSessions(); window.sessionStorage.clear();

@@ -128,3 +128,26 @@ for that head, then normal protected merge. Verify production READY + www alias
 for the actual merge SHA before live read-only320/390/1280 checks. Never bypass
 gates or manually cancel slow downloads. No automation, paid resources, account
 creation or saved-content/history edits are authorized or needed here.
+
+
+Refresh published at7fddd2955699dddfac9a548fb7b409dcb5d4979b. GitHub six-file
+list matches scope, own history has onlyed521814 plus refresh;329 is in base.
+PR scope passed; auto-merge persists. Final PR CI42266430247 and Security42266430232
+are running. Watch processes44051/11720 write /tmp/netflux-completed-header-pr-
+{ci,security}-watch.log. Initial stages are passing. Do not bypass gates or repeat
+unaffected local renderer tests. Once both finish, inspect any failures; if all
+required gates pass and auto-merge has not completed, normal protected squash
+merge is authorized. Then capture actual merge SHA, require READY production
+build and www alias identity plus merge-commit push gates per OPS before live
+checks. No live claim yet. Browser work has not started in this follow-up.
+
+
+Second freshness advance: final PR CI42266430247 and Security42266430232 passed,
+but331 merged as2cdd70fc while they ran. A normal match-head protected merge
+was refused because the branch was behind; no bypass attempted. Reassessed
+rather than retrying that unchanged merge: inspected main's16 changed files,
+all Library Ask follow-up code/tests/docs, with no Completed/Toolbar/search/card
+change or migration. Refreshed by a clean merge. Existing UI/39 focused evidence
+still applies to identical renderer; main331's evidence stays separate. Required
+checks must cover this new combined head. User notified of the repeat freshness
+hold. No accounting/provider/scope changes introduced by this task; no paid tests.
