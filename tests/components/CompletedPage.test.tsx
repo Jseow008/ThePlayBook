@@ -170,7 +170,7 @@ describe("CompletedPage", () => {
         render(<CompletedPage />);
 
         expect(screen.getByText("completed:app-compact:quick-actions:Atomic Habits")).toBeInTheDocument();
-        expect(screen.getByText("Completed Item")).toBeInTheDocument();
+        expect(screen.getByRole("status", { name: "Showing 1 of 1 completed item" })).toHaveTextContent("1 item");
         expect(mockContentCard).toHaveBeenCalledWith(
             expect.objectContaining({
                 item,
@@ -185,6 +185,45 @@ describe("CompletedPage", () => {
                 onReflectionClick: expect.any(Function),
             })
         );
+    });
+
+    it("keeps shown and total counts clear through filtering, no matches and clearing", () => {
+        const podcast = { ...item, id: "podcast-1", title: "Different perspectives", type: "podcast" as const };
+        const progress = mockUseReadingProgress();
+        mockUseReadingProgress.mockReturnValue({ ...progress, completedIds: [item.id, podcast.id] });
+        mockUseBatchContentItems.mockReturnValue({ data: [item, podcast], isError: false, isLoading: false, refetch: vi.fn() });
+        render(<CompletedPage />);
+
+        expect(screen.getByRole("status", { name: "Showing 2 of 2 completed items" })).toHaveTextContent("2 items");
+        fireEvent.click(screen.getByRole("button", { name: "podcast" }));
+        expect(screen.getByRole("status", { name: "Showing 1 of 2 completed items" })).toHaveTextContent("1 of 2 shown");
+        expect(screen.queryByText("completed:app-compact:quick-actions:Atomic Habits")).not.toBeInTheDocument();
+        expect(screen.getByText("completed:app-compact:quick-actions:Different perspectives")).toBeInTheDocument();
+        fireEvent.change(screen.getByRole("combobox", { name: "Sort library items" }), { target: { value: "oldest" } });
+        expect(screen.getByRole("status", { name: "Showing 1 of 2 completed items" })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "video" }));
+        expect(screen.getByRole("status", { name: "Showing 0 of 2 completed items" })).toHaveTextContent("0 of 2 shown");
+        expect(screen.getByText("No items match this filter.")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+        expect(screen.getByRole("status", { name: "Showing 2 of 2 completed items" })).toHaveTextContent("2 items");
+        expect(screen.getByRole("combobox", { name: "Sort library items" })).toHaveValue("oldest");
+    });
+
+    it("does not count unavailable completed records as displayed cards", () => {
+        const progress = mockUseReadingProgress();
+        mockUseReadingProgress.mockReturnValue({ ...progress, completedIds: [item.id, "unavailable-1"] });
+        render(<CompletedPage />);
+        expect(screen.getByRole("status", { name: "Showing 1 of 2 completed items" })).toHaveTextContent("1 of 2 shown");
+    });
+
+    it("does not present a failed load as zero results", () => {
+        const refetch = vi.fn();
+        mockUseBatchContentItems.mockReturnValue({ data: [], isError: true, isLoading: false, refetch });
+        render(<CompletedPage />);
+        expect(screen.queryByRole("status", { name: /Showing/ })).not.toBeInTheDocument();
+        expect(screen.getByText("Your completion history is still saved. Try again in a moment.")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+        expect(refetch).toHaveBeenCalledOnce();
     });
 
     it("opens the reflection composer from a completed card and supplies any saved reflection", () => {
@@ -335,6 +374,7 @@ describe("CompletedPage", () => {
         const { container } = render(<CompletedPage />);
 
         expect(screen.queryByText("No completed content yet")).not.toBeInTheDocument();
+        expect(screen.queryByRole("status", { name: /Showing/ })).not.toBeInTheDocument();
         expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
     });
 

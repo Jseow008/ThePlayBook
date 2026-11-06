@@ -7,6 +7,7 @@ import {
     generateNarrationAudio,
     getWavDurationSeconds,
     mapWithConcurrency,
+    processFishNarrationWav,
     splitNarrationIntoChunks,
     synthesizeNarrationChunkWav,
     transcodeWavToMp3,
@@ -62,6 +63,19 @@ describe("AI narration helpers", () => {
         wav.write("data", 36, "ascii");
         wav.writeUInt32LE(pcmByteLength, 40);
 
+        return wav;
+    };
+
+    const makeToneWav = (durationSeconds: number, silenceStart?: number, silenceEnd?: number) => {
+        const wav = makeDurationWav(durationSeconds);
+        const frames = (wav.byteLength - 44) / 2;
+        for (let frame = 0; frame < frames; frame += 1) {
+            const seconds = frame / 24_000;
+            if (silenceStart !== undefined && silenceEnd !== undefined && seconds >= silenceStart && seconds < silenceEnd) {
+                continue;
+            }
+            wav.writeInt16LE(Math.round(8_000 * Math.sin(2 * Math.PI * 440 * seconds)), 44 + frame * 2);
+        }
         return wav;
     };
 
@@ -160,7 +174,7 @@ describe("AI narration helpers", () => {
         expect(estimate.estimatedCostUsd).toBe(0);
     });
 
-    it("sends Fish narration to the selected model and Laura voice", async () => {
+    it("sends Fish narration to the selected model and Adrian voice", async () => {
         vi.stubEnv("NARRATION_PROVIDER", "fish");
         vi.stubEnv("FISH_AUDIO_MODEL", "s2.1-pro-free");
         vi.stubEnv("FISH_AUDIO_API_KEY", "test-fish-key");
@@ -179,8 +193,8 @@ describe("AI narration helpers", () => {
         expect(url).toBe("https://api.fish.audio/v1/tts");
         expect(options.headers.model).toBe("s2.1-pro-free");
         const body = JSON.parse(options.body);
-        expect(body.reference_id).toBe("e3cd384158934cc9a01029cd7d278634");
-        expect(body.text).toBe("[clear, natural book narration] A brief test passage.");
+        expect(body.reference_id).toBe("bf322df2096a46f18c579d0baa36f41d");
+        expect(body.text).toBe("[speak in a calm, grounded conversational tone, with natural pauses and understated emphasis] A brief test passage.");
         expect(body.temperature).toBe(0.7);
         expect(body.top_p).toBe(0.85);
         expect(body.format).toBe("wav");
@@ -235,6 +249,26 @@ describe("AI narration helpers", () => {
         const hasId3Header = mp3[0] === 0x49 && mp3[1] === 0x44 && mp3[2] === 0x33;
         const hasMpegFrameHeader = mp3[0] === 0xff && (mp3[1] & 0xe0) === 0xe0;
         expect(hasId3Header || hasMpegFrameHeader).toBe(true);
+    });
+
+    it("keeps Adrian's pitch and pace adjustment while shortening only long pauses", async () => {
+        const source = makeToneWav(3, 1, 2);
+        const adjusted = await processFishNarrationWav(source);
+
+        expect(adjusted.toString("ascii", 0, 4)).toBe("RIFF");
+        expect(getWavDurationSeconds(adjusted)).toBeGreaterThan(2.1);
+        expect(getWavDurationSeconds(adjusted)).toBeLessThan(2.4);
+    });
+
+    it("preserves shorter pauses in Adrian narration", async () => {
+        const adjusted = await processFishNarrationWav(makeToneWav(3, 1.3, 1.7));
+        expect(getWavDurationSeconds(adjusted)).toBeGreaterThan(2.6);
+        expect(getWavDurationSeconds(adjusted)).toBeLessThan(2.8);
+    });
+
+    it("encodes narration at 128 kbps", async () => {
+        const mp3 = await transcodeWavToMp3(makeToneWav(2));
+        expect(mp3.byteLength).toBeGreaterThan(30_000);
     });
 
     it("returns WAV output when narration compression is disabled", async () => {
@@ -399,6 +433,35 @@ describe("AI narration helpers", () => {
                 end_time_sec: 6,
             },
         ]);
+    });
+
+    it("stores Fish segment timings after the delivery adjustment", async () => {
+        vi.stubEnv("NARRATION_PROVIDER", "fish");
+        vi.stubEnv("FISH_AUDIO_API_KEY", "test-fish-key");
+        vi.stubEnv("NARRATION_OUTPUT_FORMAT", "wav");
+
+        const wav = makeToneWav(3);
+        const arrayBuffer = wav.buffer.slice(wav.byteOffset, wav.byteOffset + wav.byteLength);
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            arrayBuffer: async () => arrayBuffer,
+        }) as any;
+
+        const result = await generateNarrationAudio({
+            title: "Deep Work",
+            author: "Cal Newport",
+            segments: [
+                { id: "one", title: "First", markdown_body: "Make time to focus." },
+                { id: "two", title: "Second", markdown_body: "Keep returning to it." },
+            ],
+        });
+
+        expect(result.segmentTimings).toEqual([
+            { id: "one", order_index: 1, start_time_sec: 0, end_time_sec: 3 },
+            { id: "two", order_index: 2, start_time_sec: 3, end_time_sec: 5 },
+        ]);
+        expect(getWavDurationSeconds(result.audioBuffer)).toBeGreaterThan(5.3);
+        expect(getWavDurationSeconds(result.audioBuffer)).toBeLessThan(5.5);
     });
 
     it("retries temporary OpenAI failures before succeeding", async () => {
