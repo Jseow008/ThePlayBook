@@ -2,9 +2,9 @@
 
 import { EvidenceCitations } from "@/components/evidence/EvidenceCitations";
 import { getMessageCitations, isExactQuotation, type CitationLink } from "@/lib/evidence-citation";
-import { useMemo, useRef, useEffect, useState, type FormEvent } from "react";
+import { useMemo, useRef, useEffect, type FormEvent } from "react";
 import { useReliableChat as useChat } from "@/hooks/useReliableChat";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, generateId, type UIMessage } from "ai";
 import { Bot, User, Send, Loader2, ArrowLeft } from "lucide-react";
 import { BooksIcon, NotebookIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,7 @@ import { createNotesChatScope, serializeNotesChatScope } from "@/lib/notes-chat-
 import { useVerifiedChatSession } from "@/hooks/useVerifiedChatSession";
 import { ChatSessionStatus } from "@/components/ai/ChatSessionStatus";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
+import { useLibraryChatRecovery } from "@/hooks/useLibraryChatRecovery";
 
 const chatTransport = new DefaultChatTransport({ api: "/api/chat" });
 
@@ -141,18 +142,37 @@ function VerifiedAskClientPage({
     ownerKey,
     isCurrent,
 }: AskClientPageProps & { ownerKey: string; isCurrent: (key: string) => boolean }) {
+    const recovery = useLibraryChatRecovery(ownerKey, isCurrent);
+    const pendingQuestion = useRef<string | null>(null);
+    const activeChat = useRef(true);
+    useEffect(() => { activeChat.current = true; return () => { activeChat.current = false; }; }, []);
     const {
         messages,
+        completedMessages,
         sendMessage,
         status,
         error,
         regenerate,
     } = useChat({
+        id: recovery.session.chatId,
+        messages: recovery.session.messages,
         transport: chatTransport,
+        onError: (failure) => {
+            if (activeChat.current && pendingQuestion.current) recovery.fail(pendingQuestion.current, getDisplayErrorMessage(failure));
+        },
+        onFinish: (result) => {
+            const question = result.messages.findLast(message => message.role === "user");
+            if (!activeChat.current || !question || question.id !== pendingQuestion.current) return;
+            if (!result.isAbort && !result.isDisconnect && !result.isError && result.finishReason === "stop"
+                && result.message.parts.some(part => part.type === "text" && part.text.trim())) {
+                recovery.complete(question.id, result.messages);
+            } else recovery.fail(question.id, "The answer could not be completed. Please try again.");
+        },
     });
 
     const notesFilters = useSearchParams()?.get("notesFilters") ?? null;
-    const [input, setInput] = useState("");
+    const input = recovery.session.draft;
+    const setInput = recovery.changeDraft;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     // Full Ask layout follows lg app chrome behavior, not generic content desktop.
     const isAskFullLayout = useMediaQuery(VIEWPORT_QUERIES.askFullLayout);
@@ -167,25 +187,43 @@ function VerifiedAskClientPage({
     }, [input]);
 
     const isStreaming = status === "streaming" || status === "submitted";
-    const displayErrorMessage = getDisplayErrorMessage(error);
+    const displayErrorMessage = error ? getDisplayErrorMessage(error)
+        : recovery.session.failure?.message ?? FALLBACK_CHAT_ERROR;
+    const hasError = Boolean(error || recovery.session.failure);
 
     const sendPrompt = async (text: string) => {
         const trimmed = text.trim();
-        if (!trimmed || isStreaming || !isCurrent(ownerKey)) return;
-        setInput("");
-        if (textareaRef.current) textareaRef.current.style.height = "auto";
+        if (!trimmed || pendingQuestion.current || isStreaming || !isCurrent(ownerKey)) return;
+        const question: UIMessage = { id: generateId(), role: "user", parts: [{ type: "text", text: trimmed }] };
+        pendingQuestion.current = question.id;
+        recovery.begin([...completedMessages, question], question.id, text);
+        if (text === input && textareaRef.current) textareaRef.current.style.height = "auto";
         scrollToBottom();
-        await sendMessage({ text: trimmed });
+        try { await sendMessage(question); }
+        catch (failure) { if (activeChat.current) recovery.fail(question.id, getDisplayErrorMessage(failure)); }
+        finally { if (pendingQuestion.current === question.id) pendingQuestion.current = null; }
     };
 
     const retry = async () => {
-        if (isStreaming || !isCurrent(ownerKey)) return;
-        await regenerate();
+        if (pendingQuestion.current || isStreaming || !isCurrent(ownerKey)) return;
+        const question = completedMessages.findLast(message => message.role === "user");
+        if (!question) return;
+        pendingQuestion.current = question.id;
+        recovery.begin(completedMessages, question.id);
+        try { await regenerate(); }
+        catch (failure) { if (activeChat.current) recovery.fail(question.id, getDisplayErrorMessage(failure)); }
+        finally { if (pendingQuestion.current === question.id) pendingQuestion.current = null; }
     };
 
     const onSubmit = async (e?: FormEvent) => {
         e?.preventDefault();
         await sendPrompt(input);
+    };
+
+    const startNewChat = () => {
+        if (pendingQuestion.current || isStreaming || !isCurrent(ownerKey)) return;
+        if (input && !window.confirm("Start a new chat and discard your unfinished question?")) return;
+        recovery.reset();
     };
 
     const displayMessages: Array<{ id: string; role: string; content: string; citations: CitationLink[]; exactQuotation: boolean }> = messages
@@ -262,9 +300,15 @@ function VerifiedAskClientPage({
             assistantLabel="Ask My Library"
             scopeSummary={libraryComposerLabel}
             messages={displayMessages}
-            disabled={isStreaming || Boolean(error)}
+            disabled={isStreaming || hasError}
         />
     ) : null;
+    const renderNewChatButton = () => (
+        <button type="button" onClick={startNewChat} disabled={isStreaming}
+            className="rounded-full border border-border/70 bg-card/60 px-3 py-2 text-xs font-medium text-foreground/88 disabled:opacity-50">
+            Start new chat
+        </button>
+    );
 
     return (
         <div className="flex h-[100dvh] flex-col bg-background">
@@ -287,7 +331,8 @@ function VerifiedAskClientPage({
                         </div>
                     </div>
                     {!isEmptyState && isLibraryScope && (
-                        <div className="hidden sm:block">
+                        <div className="hidden items-center gap-2 sm:flex">
+                            {renderNewChatButton()}
                             {renderLibraryExportButton()}
                         </div>
                     )}
@@ -368,7 +413,7 @@ function VerifiedAskClientPage({
                                             )}
 
                                             {displayMessages.map((message) => {
-                                                const showFollowUpActions = !isStreaming && !error && message.role === "assistant" && message.id === latestAssistantMessageId;
+                                                const showFollowUpActions = !isStreaming && !hasError && message.role === "assistant" && message.id === latestAssistantMessageId;
 
                                                 return (
                                                     <div key={message.id} className="space-y-3">
@@ -446,7 +491,7 @@ function VerifiedAskClientPage({
                                                 </div>
                                             )}
 
-                                            {error && (
+                                            {hasError && (
                                                 <div className="flex w-full gap-3 animate-in fade-in">
                                                     <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-destructive/20">
                                                         <Bot className="size-4 text-destructive" />
@@ -475,7 +520,8 @@ function VerifiedAskClientPage({
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <div className="sm:hidden">
+                                            <div className="flex items-center gap-2 sm:hidden">
+                                                {!isEmptyState && renderNewChatButton()}
                                                 {renderLibraryExportButton()}
                                             </div>
                                             <span className="hidden text-[0.65rem] text-muted-foreground/75 sm:inline">
@@ -521,6 +567,11 @@ function VerifiedAskClientPage({
                                     <p className="mt-2 text-center text-[0.6rem] text-muted-foreground opacity-60">
                                         Library-scoped assistant · Grounded in your library metadata, reading history, and saved passages when relevant.
                                     </p>
+                                    {!recovery.durable && (input || messages.length > 0) && (
+                                        <p role="status" className="mt-2 text-xs text-muted-foreground">
+                                            Reload recovery is unavailable. Keep this tab open to retain your chat.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </section>

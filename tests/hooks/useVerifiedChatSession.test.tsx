@@ -1,6 +1,7 @@
 import { AuthRetryableFetchError } from '@supabase/supabase-js';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
+import { newLibraryChatSession, readLibraryChatSession, writeLibraryChatSession } from '@/lib/library-chat-session';
 import { useVerifiedChatSession } from '@/hooks/useVerifiedChatSession';
 import { createNotesChatScope } from '@/lib/notes-chat-scope';
 import { readNotesChatSession, writeNotesChatSession } from '@/lib/notes-chat-session';
@@ -16,10 +17,12 @@ it('preserves identity and stored chat through ordinary verified token refresh',
     const owner = result.current.ownerKey!;
     const scope = createNotesChatScope({ version: 1, itemType: 'reflection' });
     writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    writeLibraryChatSession(owner, { ...newLibraryChatSession(), draft: 'Private Library draft' });
     await emit('TOKEN_REFRESHED', session('a', 'two'));
     expect(result.current.ownerKey).toBe(owner);
     expect(result.current.isCurrent(owner)).toBe(true);
     expect(readNotesChatSession(owner, scope.signature)).not.toBeNull();
+    expect(readLibraryChatSession(owner)?.draft).toBe('Private Library draft');
 });
 it('rejects late claims after logout and clears the prior owner cache', async () => {
     const { result } = renderHook(() => useVerifiedChatSession());
@@ -27,6 +30,7 @@ it('rejects late claims after logout and clears the prior owner cache', async ()
     const owner = result.current.ownerKey!;
     const scope = createNotesChatScope({ version: 1, itemType: 'all' });
     writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    writeLibraryChatSession(owner, { ...newLibraryChatSession(), draft: 'Private Library draft' });
     let complete!: (value: ReturnType<typeof claims>) => void;
     auth.getClaims.mockImplementationOnce(() => new Promise((resolve) => { complete = resolve; }));
     await emit('TOKEN_REFRESHED', session());
@@ -35,6 +39,7 @@ it('rejects late claims after logout and clears the prior owner cache', async ()
     expect(result.current.ownerKey).toBeNull();
     expect(result.current.isCurrent(owner)).toBe(false);
     expect(readNotesChatSession(owner, scope.signature)).toBeNull();
+    expect(readLibraryChatSession(owner)).toBeNull();
 });
 it('discards reversed initial claims and accepts only the newer account session', async () => {
     let complete!: (value: ReturnType<typeof claims>) => void;
@@ -62,6 +67,7 @@ it('preserves a chat when SIGNED_IN reconfirms the same verified session', async
     const owner = result.current.ownerKey!;
     const scope = createNotesChatScope({ version: 1, itemType: 'all' });
     writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    writeLibraryChatSession(owner, { ...newLibraryChatSession(), draft: 'Private Library draft' });
     let finish!: (value: ReturnType<typeof claims>) => void;
     auth.getClaims.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
     await emit('SIGNED_IN', session());
@@ -71,12 +77,14 @@ it('preserves a chat when SIGNED_IN reconfirms the same verified session', async
     expect(result.current.ownerKey).toBe(owner);
     expect(result.current.isCurrent(owner)).toBe(true);
     expect(readNotesChatSession(owner, scope.signature)).not.toBeNull();
+    expect(readLibraryChatSession(owner)?.draft).toBe('Private Library draft');
 });
 
 it('does not restore a cached transcript when local claims pass but remote authentication is revoked', async () => {
     const owner = JSON.stringify(['a', 'session-one']);
     const scope = createNotesChatScope({ version: 1, itemType: 'all' });
     writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    writeLibraryChatSession(owner, { ...newLibraryChatSession(), draft: 'Private Library draft' });
     auth.getUser.mockResolvedValue({ data: { user: null }, error: new Error('revoked session') });
     const { result } = renderHook(() => useVerifiedChatSession());
     await waitFor(() => expect(result.current.resolved).toBe(true));
@@ -158,6 +166,7 @@ it('retains only the unverified owner on service failure and explicitly rechecks
     const owner = result.current.ownerKey!;
     const scope = createNotesChatScope({ version: 1, itemType: 'all' });
     writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    writeLibraryChatSession(owner, { ...newLibraryChatSession(), draft: 'Private Library draft' });
     auth.rpc.mockResolvedValueOnce({ data: null, error: { code: '503', message: 'Unavailable' } });
     await emit('TOKEN_REFRESHED', session());
     expect(result.current.verificationState).toBe('failed'); expect(result.current.ownerKey).toBe(owner);
@@ -172,6 +181,7 @@ it('hides and clears the old account before recovery verifies a changed account'
     const owner = result.current.ownerKey!;
     const scope = createNotesChatScope({ version: 1, itemType: 'all' });
     writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    writeLibraryChatSession(owner, { ...newLibraryChatSession(), draft: 'Private Library draft' });
     auth.rpc.mockResolvedValueOnce({ data: null, error: { code: '503' } }); await emit('SIGNED_IN', session());
     let finish!: (value: ReturnType<typeof claims>) => void;
     auth.getSession.mockResolvedValueOnce({ data: { session: session('b') }, error: null });
@@ -209,6 +219,7 @@ it('retains the original unverified identity on retryable auth transport failure
     const owner = result.current.ownerKey!;
     const scope = createNotesChatScope({ version: 1, itemType: 'all' });
     writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    writeLibraryChatSession(owner, { ...newLibraryChatSession(), draft: 'Private Library draft' });
     auth.getUser.mockResolvedValueOnce({ data: { user: null }, error: new AuthRetryableFetchError('Synthetic offline', 0) });
     await emit('TOKEN_REFRESHED', session());
     expect(result.current.verificationState).toBe('failed'); expect(result.current.ownerKey).toBe(owner);
@@ -217,6 +228,7 @@ it('retains the original unverified identity on retryable auth transport failure
     await act(async () => { result.current.retryVerification(); });
     expect(result.current.ownerKey).toBeNull(); expect(result.current.verificationState).toBe('signed-out');
     expect(readNotesChatSession(owner, scope.signature)).toBeNull();
+    expect(readLibraryChatSession(owner)).toBeNull();
 });
 
 
@@ -226,6 +238,7 @@ it('preserves default consumers’ prior cache-clearing behavior on completed se
     const owner = result.current.ownerKey!;
     const scope = createNotesChatScope({ version: 1, itemType: 'all' });
     writeNotesChatSession(owner, { activeScope: scope, messages: [], updatedAt: 1 });
+    writeLibraryChatSession(owner, { ...newLibraryChatSession(), draft: 'Private Library draft' });
     auth.rpc.mockResolvedValueOnce({ data: null, error: { code: '503' } }); await emit('SIGNED_IN', session());
     expect(result.current.ownerKey).toBeNull(); expect(result.current.verificationState).toBe('failed');
     expect(result.current.isCurrent(owner)).toBe(false); expect(readNotesChatSession(owner, scope.signature)).toBeNull();

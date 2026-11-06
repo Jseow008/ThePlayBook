@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
+import { newLibraryChatSession, readLibraryChatSession, writeLibraryChatSession } from '@/lib/library-chat-session';
 import { AuthUserProvider, useAuthSessionIdentity } from '@/hooks/useAuthUser';
 import { createNotesChatScope } from '@/lib/notes-chat-scope';
 import { getNotesChatStorageKey, writeNotesChatSession } from '@/lib/notes-chat-session';
@@ -33,6 +34,8 @@ function seedStorage() {
     const payload = { activeScope: scope, messages: [{ id: 'private-question', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Private saved question' }] }], updatedAt: 1 };
     writeNotesChatSession(owner, payload);
     writeNotesChatSession(oldOwner, payload);
+    writeLibraryChatSession(owner, { ...newLibraryChatSession(), draft: 'Dormant Library draft' });
+    writeLibraryChatSession(oldOwner, { ...newLibraryChatSession(), draft: 'Other Library draft' });
     window.sessionStorage.setItem(legacyKey, 'Legacy private transcript');
     window.sessionStorage.setItem(unrelatedKey, 'preserved');
 }
@@ -54,6 +57,8 @@ it('synchronously clears every dormant Notes transcript on sign-out without a No
         expect(window.sessionStorage.getItem(getNotesChatStorageKey(owner, scope.signature))).toBeNull();
         expect(window.sessionStorage.getItem(getNotesChatStorageKey(oldOwner, scope.signature))).toBeNull();
         expect(window.sessionStorage.getItem(legacyKey)).toBeNull();
+        expect(readLibraryChatSession(owner)).toBeNull();
+        expect(readLibraryChatSession(oldOwner)).toBeNull();
         expect(window.sessionStorage.getItem(unrelatedKey)).toBe('preserved');
     });
 

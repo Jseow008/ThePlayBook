@@ -4,6 +4,7 @@ import { isAuthRetryableFetchError, type Session, type SupabaseClient } from '@s
 import type { Database } from '@/types/database';
 import { createClient } from '@/lib/supabase/client';
 import { clearLegacyNotesChatSessions, clearNotesChatOwner } from '@/lib/notes-chat-session';
+import { clearLibraryChatSessions } from '@/lib/library-chat-session';
 
 export const CHAT_SESSION_SLOW_MS = 10_000;
 export type ChatSessionVerification = 'checking' | 'slow' | 'failed' | 'verified' | 'signed-out';
@@ -29,7 +30,10 @@ export function useVerifiedChatSession({ retainUnverifiedOwner = false }: { reta
         const current = (ticket: number) => mounted && ticket === generation;
         const update = (state: ChatSessionVerification) => { phase = state; setVerificationState(state); };
         const clearOwner = () => {
-            if (prior.current) clearNotesChatOwner(prior.current);
+            if (prior.current) {
+                clearNotesChatOwner(prior.current);
+                clearLibraryChatSessions(prior.current);
+            }
             prior.current = null; setOwnerKey(null);
         };
         const apply = (key: string | null) => {
