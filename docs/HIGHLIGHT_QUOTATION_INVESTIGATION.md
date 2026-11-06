@@ -4740,3 +4740,80 @@ tests, DESIGN and this checkpoint. Next: protected PR scope then squash auto-mer
 required CI/security remain release gates. Do not wait for full CI or deployment.
 
 Final local checks: full lint/ratchets, clean production build (Sharp traces and critical CSS), standalone typecheck, and all 29 focused Notes/search/copy tests passed. #316 remains open at the tested parent; own four-file diff is presentation, existing-link regression and documentation only. Inert build configuration is not backend-connectivity verification.
+
+## Finish Reading destination refreshed onto current main — 6 November 2026
+
+Owner approved carrying only312's navigation correction onto current main,
+preserving later reader/celebration/audio behavior and fresh required gates.
+Independent local branch codex/finish-reading-return-current, worktree
+/Users/j/.codex/workspaces/netflux-finish-reading-return-current, base189f6a47.
+Existing worktrees and their uncommitted records were left intact. Managed
+worktree creation did not return after a bounded wait; terminated the waiting
+call, confirmed no created checkout, then used an isolated Git worktree.
+
+Only product file ReaderView changes. Finish Reading requests its existing
+completion destination after accordion collapse. Focus uses preventScroll;
+only offscreen destinations scroll. Reduced-motion scroll stays instant but
+waits for the unchanged collapse. Undo retains current celebration cancellation
+and also cancels pending navigation. A manual destination carries existing
+account/content scope identity and expires if that identity changes. No reader
+layout, typography, button styling, progress payload/persistence, recommendation,
+audio synchronization, API/auth/database/CI/dependency change. The old310/311
+stacked commits were not replayed, and current celebration tests retained.
+
+Final focused run142passes in ReaderView, SegmentAccordion, CompletionCard and
+CompletionCelebration. Eight new cases cover desktop/narrow offscreen,
+already-visible, reduced motion, Undo cancellation, account/content switch,
+and a suspending first completion-card load. Current audio, celebration and
+progress tests remain included. Final clean full lint/ratchets, production build
+(including Sharp traces and critical CSS), standalone typecheck and diff check
+passed. Required hosted CI/security remain release gates; local checks do not
+establish deployment or production connectivity.
+
+Real component CUA checks on isolated3364 with synthetic guest progress:
+- Desktop1280x720 long section: completion visible/focused after collapse.
+-390x844 short and long: completion top300px, focused, no overflow.
+- Desktop short already-visible: focused after timer, scrollY511before/after.
+- Desktop/narrow completed reload: progress retained, completion not refocused;
+  narrow restored scroll516. Real toast Undo restores unfinished progress on
+  desktop/narrow, including narrow reload.
+- Native8-second synthetic WAV reached ended; fresh fixture progressed to1/1.
+  Earlier audio case correctly stayed0/1 after prior Mark incomplete override;
+  this is preserved policy, not an audio regression or a reason to change it.
+- Synthetic browser storage cleared through origin-local Clear-Site-Data storage
+  response. Fresh fixture then0/1 and no completion card. Viewport reset, own
+  tab closed. No live account, production data, provider call or paid resource.
+
+Retain failed attempts: initial fixture used Next private underscore directory
+and404; corrected route. Initial cover outside existing local image allowlist
+threw; removed synthetic cover rather than weakening image configuration.
+The first completion candidate cleared destination too broadly during a cold
+CompletionCard suspension: scroll0, top747px, no focus. Replaced that reset with
+explicit scope-bound destination; cold browser recheck focused top160px and
+new Suspense regression passes. Do not reuse that failed candidate's evidence.
+Fixture recommendation requests deliberately use inert localhost backend and
+fail/fall back; this is not retrieval/backend-connectivity coverage. One section
+click during auto-resume toggled it closed; observed state then opened normally.
+Full lint during temporary fixture correctly rejected its unregistered public
+route; fixture was removed, no route-policy exception added. Final clean lint
+passed. Installed Git lacked --merge-base; prior read-only conflict inspection
+used supported explicit-base trivial merge. No conflict marker resolution from
+old docs/tests was copied wholesale.
+
+Evidence: thread finish-reading-current-main/{browser-results.json,
+browser-cleanup.json,candidate-files.json,focused-tests.log,fixture-source/,
+synthetic-audio.wav,desktop-completion.png,narrow-completion.png,
+narrow-long-completion.png}. Current product/test hashes bind browser evidence.
+Phones/Safari/native OS reduced-motion remain outside coverage; reduced-motion
+logic has controlled component coverage. Local fixture/dev server removed before
+standard production build. One implementer, no subagents; token usage unknown.
+
+Implementation commit d0d9fcb9de688987df0b45f66b166d9cfb2b299f on
+base189f6a47; this checkpoint is the following documentation commit. Final
+product/test hashes remain the browser-verified candidate.
+Next: inspect scope/history, refresh original312 onto main with an exact
+lease against old3b5da0e6 and retarget, verify new GitHub file list/PR scope, then
+normal squash auto-merge behind required gates. Required checks remain pending
+until GitHub reports their final result; no production/live claim.
+Never merge into the obsolete311 feature branch or bypass a gate. No timer or
+post-merge monitoring requested.
