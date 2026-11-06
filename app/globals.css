@@ -561,6 +561,37 @@ mark[data-highlight-spotlight="true"] {
   }
 }
 
+/* Title limits follow each shared cover card's own width. */
+.content-card-title-container {
+  container-type: inline-size;
+  container-name: content-card;
+}
+
+.content-card-expanded-title {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+@container content-card (min-width: 200px) {
+  .content-card-expanded-title {
+    -webkit-line-clamp: 5;
+  }
+}
+
+@media (min-width: 768px) {
+  .content-card-expanded-title {
+    -webkit-line-clamp: 3;
+  }
+
+  @container content-card (min-width: 240px) {
+    .content-card-expanded-title {
+      -webkit-line-clamp: 4;
+    }
+  }
+}
+
 /* Card hover animation */
 .card-hover {
   @apply transition-transform duration-300 hover:-translate-y-1;

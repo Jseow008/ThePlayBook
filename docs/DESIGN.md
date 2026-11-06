@@ -95,6 +95,19 @@ Content cards use a consistent 2:3 cover/card ratio across public discovery, rea
 
 Implementation source: `components/ui/content-card-standards.ts`, with focus-specific cover widths in `components/focus/focus-feed-layout.ts`.
 
+All shared `ContentCard` cover cards (including Browse, Search, Library views,
+Library search, recommendations and recent activity) use width-aware title caps
+by default. Below the existing `md` screen breakpoint, cards narrower than
+`200px` retain three lines and cards at least that wide allow up to five. From `md`, cards
+narrower than `240px` retain three lines and cards at least that wide allow up to four. CSS
+container queries measure each card, with no resize listeners. These cutoffs
+were checked with short/long titles, long author credits, hooks and Completed
+controls; they do not repair pre-existing long-credit overlap on tiny cards.
+Keep fonts, card sizing, backdrop footprints and actions unchanged. Other card
+families retain their own title treatment. Explicit `showMoreTitleLines={false}`
+keeps the legacy three-line rendering.
+
+
 ## 4. Reader Experience
 
 ### 4.1 Current Reader Layout
