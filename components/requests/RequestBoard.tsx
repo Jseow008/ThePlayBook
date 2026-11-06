@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
     CheckCircle2,
@@ -24,7 +24,7 @@ const TYPE_OPTIONS: Array<{ value: ContentType; label: string }> = [
 ];
 const REQUEST_DRAFT_KEY = "netflux_request_draft:v1";
 
-type SubmissionState = "idle" | "new" | "duplicate";
+type SubmissionState = { kind: "new" | "duplicate"; title: string } | null;
 
 function parseApiError(response: Response) {
     return response.json()
@@ -42,7 +42,8 @@ export function RequestBoard({
     const [author, setAuthor] = useState("");
     const [contentType, setContentType] = useState<ContentType | "">("");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submissionState, setSubmissionState] = useState<SubmissionState>("idle");
+    const [submissionState, setSubmissionState] = useState<SubmissionState>(null);
+    const editRevision = useRef(0);
 
     useEffect(() => {
         try {
@@ -50,6 +51,7 @@ export function RequestBoard({
             if (!raw) return;
             const saved = JSON.parse(raw) as Record<string, unknown>;
             if (saved.returnPath !== `${window.location.pathname}${window.location.search}`) return;
+            editRevision.current += 1;
             if (typeof saved.input === "string") setInput(saved.input);
             if (typeof saved.author === "string") setAuthor(saved.author);
             if (saved.contentType === "book" || saved.contentType === "video") setContentType(saved.contentType);
@@ -90,17 +92,15 @@ export function RequestBoard({
             return;
         }
 
+        const submittedRevision = editRevision.current;
+        const submitted = { input, author: author || null, content_type: contentType };
         setIsSubmitting(true);
 
         try {
             const response = await fetch("/api/content-requests", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    input,
-                    author: author || null,
-                    content_type: contentType,
-                }),
+                body: JSON.stringify(submitted),
             });
 
             if (!response.ok) {
@@ -108,27 +108,22 @@ export function RequestBoard({
             }
 
             const payload = await response.json() as { data: ContentRequestMutationResult };
-            const nextState: SubmissionState = payload.data.duplicate ? "duplicate" : "new";
-            setSubmissionState(nextState);
-            setInput("");
-            setAuthor("");
+            setSubmissionState({
+                kind: payload.data.duplicate ? "duplicate" : "new",
+                title: payload.data.request?.title?.trim() || submitted.input,
+            });
+            // A response completes its submitted request, not any edits made while it waited.
+            if (editRevision.current === submittedRevision) {
+                setInput("");
+                setAuthor("");
+            }
             try {
                 window.sessionStorage.removeItem(REQUEST_DRAFT_KEY);
             } catch {
                 // The submitted request is already saved on the server.
             }
-
-            if (payload.data.duplicate) {
-                toast.success("We already have this request.", {
-                    description: "We noted your interest.",
-                });
-            } else {
-                toast.success("Request received.", {
-                    description: "We will use it to guide upcoming summaries.",
-                });
-            }
         } catch (error) {
-            setSubmissionState("idle");
+            setSubmissionState(null);
             toast.error(error instanceof Error ? error.message : "Could not submit this request.");
         } finally {
             setIsSubmitting(false);
@@ -154,8 +149,9 @@ export function RequestBoard({
                                     value={contentType}
                                     required
                                     onChange={(event) => {
+                                        editRevision.current += 1;
                                         setContentType(event.target.value as ContentType | "");
-                                        setSubmissionState("idle");
+                                        setSubmissionState(null);
                                     }}
                                     className={cn(
                                         "h-11 w-full appearance-none rounded-lg border border-input bg-background px-3 pr-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring",
@@ -180,8 +176,9 @@ export function RequestBoard({
                                 <input
                                     value={input}
                                     onChange={(event) => {
+                                        editRevision.current += 1;
                                         setInput(event.target.value);
-                                        setSubmissionState("idle");
+                                        setSubmissionState(null);
                                     }}
                                     placeholder="Paste a URL or type a title by author"
                                     className="h-11 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -194,22 +191,26 @@ export function RequestBoard({
                             Creator
                             <input
                                 value={author}
-                                onChange={(event) => setAuthor(event.target.value)}
+                                onChange={(event) => {
+                                    editRevision.current += 1;
+                                    setAuthor(event.target.value);
+                                }}
                                 placeholder="Optional"
                                 autoComplete="off"
                                 className="h-11 rounded-lg border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                             />
                         </label>
 
-                        {submissionState !== "idle" ? (
-                            <div className="flex gap-3 rounded-lg border border-emerald-400/25 bg-emerald-400/10 px-3 py-3 text-sm text-emerald-100">
+                        {submissionState ? (
+                            <div role="status" className="flex gap-3 rounded-lg border border-emerald-400/25 bg-emerald-400/10 px-3 py-3 text-sm text-emerald-100">
                                 <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
-                                <div>
+                                <div className="min-w-0">
                                     <p className="font-semibold">
-                                        {submissionState === "duplicate" ? "We already have this request." : "Request received."}
+                                        {submissionState.kind === "duplicate" ? "We already have this request." : "Request received."}
                                     </p>
+                                    <p className="mt-1 [overflow-wrap:anywhere]">{submissionState.title}</p>
                                     <p className="mt-1 text-emerald-100/80">
-                                        {submissionState === "duplicate"
+                                        {submissionState.kind === "duplicate"
                                             ? "We noted your interest."
                                             : "We will use it to guide upcoming summaries."}
                                     </p>
