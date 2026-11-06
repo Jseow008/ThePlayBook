@@ -9,7 +9,7 @@ const BROWSE_LIBRARY_SEED_LIMIT = 20;
 
 export function RecommendationsRow({
     cardTitleDensity = "default",
-    showMoreTitleLines = false,
+    showMoreTitleLines = true,
     reduceDesktopGradient = false,
     showDesktopQuickActions = false,
     showUserCompletionBadge = false,

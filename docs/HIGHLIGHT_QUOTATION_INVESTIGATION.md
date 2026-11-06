@@ -4900,3 +4900,149 @@ records in full. Search product/test diff unchanged byte-for-byte after refresh;
 prior browser/navigation evidence remains applicable. PR GitHub file list is the
 same intended three files. Next: fresh required gates, PR scope pass, protected
 squash auto-merge. No deployment or live verification claim.
+
+## Cover-card title consistency — 6 November 2026
+
+Owner approved standardising the existing Browse title treatment across Search,
+Saved, Continue Reading, Completed and Library search results. Fonts, dimensions,
+backdrops and actions must stay unchanged. No permanent Resume/footer action is
+included. Fresh base63681789 (#324), branch codex/consistent-card-titles,
+worktree /Users/j/.codex/workspaces/netflux-consistent-card-titles.
+Managed helper again did not return within a bounded wait; terminated its call,
+checked no worktree was registered, then created an isolated Git worktree. Do
+not repeat this helper approach without addressing its missing response.
+
+Implementation enables existing showMoreTitleLines at five caller sites; the
+shared card default remains unchanged for unrelated surfaces. Existing Browse
+rendering is reused, not reimplemented. No fetching, navigation, persistence,
+auth, schema, dependency, CI or account-data change. React review: only primitive
+props added; no new effect, state, boundary, subscription or rendering logic.
+Checks and browser evidence pending below. No paid project or production edits
+are needed for a presentation-only prop change.
+
+Evidence and hold: 92 existing focused tests passed across ContentCard, card
+standards, Search, Library search, Continue Reading, Completed and unavailable
+history. No mirror tests added for this low-impact prop change. npm ci passed.
+The first local navigation timed out during compilation; binding that existing
+tab showed the fully loaded route (no repeated visits or production requests).
+
+CUA used the real ContentCard, actual site CSS/fonts and existing Library grid
+at320,390,1280px on isolated localhost3372, with synthetic IDs and public cover
+copies. Backend deliberately inert localhost59499; no account or provider call.
+The user story is card title rendering -> existing shared CSS -> unchanged
+card/actions. No API/database boundary was changed or tested.
+
+A real regression blocks the naive five-prop candidate: at320px the grid card
+is128x192px. Disney title expands51.21 ->85.35px and overlaps its author by
+16.35px; original three-line title does not overlap. Font14.72px/17.0752px and
+card size remain identical. At390px,163x244.5px and1280px,254x381px, the tested
+expanded titles do not overlap. An unusually long multi-author sample already
+overlaps at320px under the original three-line version; that baseline issue
+must not be attributed to this change or silently relabelled as a passing case.
+No horizontal document overflow in these checks. The existing backdrops/actions
+were not rewritten. Computed webkitLineClamp was not exposed by the browser
+snapshot, so class selection and rendered geometry supply that evidence.
+
+Requested a necessary preference through async input: recommend retaining three
+lines for cards narrower than Browse's176px shelf cards, with the four/five cap
+where there is room; alternatively hold for a layout proposal. This is a material
+exception to the previously stated uniform line policy, not implicit approval.
+Do not publish the overlapping candidate, change author treatment/card sizes,
+or implement the conditional fallback until that answer arrives.
+
+Evidence directory: thread consistent-card-titles/{browser-results.json,
+320-original.jpg,320-expanded.jpg,390-expanded.jpg,desktop-expanded.jpg,
+focused-tests.log,fixture-source/}. Temporary route and images removed, dev
+server stopped, viewport reset and own tab closed. No test accounts/paid project
+created; no live data edited. Physical phones/Safari/production unverified.
+
+Current branch remains uncommitted on base63681789; intended files are five
+caller sites, ContentCard's prop comment, DESIGN and this checkpoint. No PR or
+release requested while the fit decision is pending. Full lint/types/build and
+required CI/security have not been run for a final candidate. Next: consume the
+owner's preference, implement only the agreed safe policy, verify the affected
+small-card layout and existing controls, then finish normal local gates and
+protected PR scope/auto-merge. One implementer, no subagents; exact usage unknown.
+
+Follow-up request is findings/visual only, not approval for the fallback.
+No further product code changed. Comparison saved as thread visualization
+netflux-card-title-size-policy.html with current three-line grid and proposed
+size-aware limits. Both320/390grid examples intentionally retain three lines
+under the proposed176px cutoff.176px is a conservative proposal, not a proven
+universal safe boundary; existing390px sample did fit expanded text. The visual
+uses actual public titles/covers plus a labelled illustrative bright cover for
+the very long title. Carousel and inert link checked via CUA, own tab/server
+cleaned. Candidate remains held; no PR, merge, or production change.
+
+## Size-aware shared cover titles — implementation and verification
+
+Owner subsequently authorised validating the cutoff, implementing across all
+shared cover cards, and checking different sizes. This supersedes the hold and
+pending preference above. Implementation commit0ce5bf135225b0ac45e7ae1e468be25d66c4303d,
+base63681789, branch/worktree unchanged. Five page-level opt-ins from the first
+candidate were removed in favour of shared defaults: ContentCard, ContentLane
+and RecommendationsRow all enable the same CSS rule. Recent activity and other
+uses of this shared cover format participate too; Notes, Focus and reader/
+Preview headers are separate components and unchanged.
+
+Validated policy: below768px screen width, cards under200px have3lines and
+cards200px or wider allow5. At/above768px, cards under240px have3lines and
+cards240px or wider allow4. Named inline-size container queries measure each
+card without ResizeObserver, new state, requests or timers. Existing typography,
+2:3 dimensions, backdrops and actions preserved. Browse176px narrow cards now
+use3lines; Browse240px desktop cards keep4. Explicit false retains legacy3line
+rendering. No data-access, API, auth, schema, dependency or CI change; hosted
+DB rehearsal/migration and paid resources are not applicable.
+
+Cutoff evidence uses actual ContentCard/site CSS and fonts, synthetic IDs, the
+public cover copies and a bright synthetic cover on localhost3372 with an inert
+localhost59499 backend. Includes short, long and very long controlled titles,
+long multi-author credits, desktop hooks, compact/default fonts and Completed
+reflection controls.176px failed those broader cases.192px narrow had only
+0.8125px separation in the longest/default-font Completed case;200px had26.3125px.
+Desktop224px introduced4px overlap in long-credit cases;240px gave36.5px clearance
+for the controlled maximum-length title. These are bounded sample findings,
+not a proof for arbitrary/unbounded author text.
+
+Final browser checks:199/200/201px cards on narrow screens resolved3/5/5;
+239/240/241px desktop cards3/4/4. All five sampled cards at each boundary had
+no author/title overlap, unchanged font/card geometry. Real grid checks at
+320,390,480,640,767,768,1024,1280px resolved card widths128,163,208,186.66,229,
+162,190,254px and caps3,3,5,3,5,3,3,4 respectively. No horizontal document overflow
+or new/increased overlap against the same3line baseline. Existing long-credit
+collisions in tiny cards (especially Completed with its reflection control)
+remain, including some ordinary/very-long author cases; no claim these are fixed.
+All five surface modes kept identical action labels, link destinations and one
+accessible heading per card. Keyboard Tab from Save focused the visible Resume
+reading control (settled opacity1). Backdrop bounds/gradient matched baseline
+in the desktop comparison. At fixed200px card width, resizing screen767->768
+changed5->3 as required by the existing larger desktop typography breakpoint.
+
+Final118existing focused tests across10files passed; full lint/ratchets, clean
+production build (Sharp5route traces and critical CSS), standalone typecheck
+and diff check passed. No new mirror tests. Existing hook test now permits the
+invisible sizing duplicate introduced by the already-existing expanded-title
+renderer; accessible title uniqueness and link assertions retained.
+Retain failures: an early CSS prototype set line-clamp without its required
+box/orientation/overflow rules, exposed by the controlled very-long-title case.
+Added the complete clamp declarations; initial prototype geometry is excluded
+from final cutoff evidence. Earlier focused run117pass/1failure was the hook
+query seeing that invisible duplicate, not a routing failure; corrected query
+then118passed. Cleanup's broad rm-style command was automatically rejected;
+no cleanup ran from that command. Safely moved exact fixture files into evidence
+and parked the generated dev cache in /tmp, then ran a clean production build.
+
+Evidence: thread consistent-card-titles/final/{browser-results.json,
+backdrop-comparison.json,candidate-files.json,focused-tests.log,fixture-page.tsx,
+desktop-focus.jpg,reading-320.jpg,reading-390.jpg,reading-480.jpg}. Initial
+prototype and corrected cutoff captures are separately labelled inside the JSON.
+Fixture/assets moved out of app/public before clean checks, dev server stopped,
+viewport reset and own tab closed. No account, saved progress or production data
+was edited; no AI calls or paid resources. Native phones/Safari and production
+remain unverified; skipped tests outside verified coverage. One implementer,
+no subagents; exact Codex usage/elapsed time unavailable.
+
+Next: publish this isolated seven-file candidate, verify GitHub file list and
+PR scope, enable protected squash auto-merge only after scope passes; validate
+and Security Validation remain mandatory gates. No deployment/live claim and
+no post-merge monitoring or timer requested.

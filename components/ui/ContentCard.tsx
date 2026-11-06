@@ -43,7 +43,7 @@ interface ContentCardProps {
     enableUserState?: boolean;
     navigationMode?: "preview" | "resume";
     titleDensity?: "default" | "app-compact";
-    /** Browse titles: four lines on desktop, five below the existing md breakpoint. */
+    /** Size-aware title limits, enabled for shared cover cards by default. */
     showMoreTitleLines?: boolean;
     /** Shortens only the desktop title backdrop; leaves narrow screens unchanged. */
     reduceDesktopGradient?: boolean;
@@ -176,7 +176,7 @@ function BaseContentCard({
     onToggleBookmark,
     href = `/preview/${item.id}`,
     titleDensity = "default",
-    showMoreTitleLines = false,
+    showMoreTitleLines = true,
     reduceDesktopGradient = false,
     priority = false,
     imageSizes = CONTENT_CARD_IMAGE_SIZES,
@@ -247,14 +247,14 @@ function BaseContentCard({
         </p>
     ) : null;
     const titleHeading = (
-        <h3 className={cn(titleTypography, showMoreTitleLines ? "line-clamp-5 md:line-clamp-4" : "line-clamp-3")}>
+        <h3 className={cn(titleTypography, showMoreTitleLines ? "content-card-expanded-title" : "line-clamp-3")}>
             {item.title}
         </h3>
     );
 
     return (
         <div onMouseEnter={() => setPrefetchOnIntent(true)} onFocus={() => setPrefetchOnIntent(true)} className={cn(
-            "content-card-motion-surface group relative block w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 max-md:active:scale-[0.98] max-md:active:ring-white/30 max-md:active:shadow-[0_8px_20px_rgba(0,0,0,0.38)] max-md:duration-150 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)] motion-reduce:active:scale-100 motion-reduce:transition-none",
+            "content-card-title-container content-card-motion-surface group relative block w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 max-md:active:scale-[0.98] max-md:active:ring-white/30 max-md:active:shadow-[0_8px_20px_rgba(0,0,0,0.38)] max-md:duration-150 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)] motion-reduce:active:scale-100 motion-reduce:transition-none",
             CONTENT_CARD_ASPECT_CLASS
         )}>
             <Link prefetch={prefetchOnIntent ? null : false} href={href} className="absolute inset-0 z-10 rounded-md focus-ring">

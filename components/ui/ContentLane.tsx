@@ -29,7 +29,7 @@ export function ContentLane({
     viewAllHref,
     cardNavigationMode = "preview",
     cardTitleDensity = "default",
-    showMoreCardTitleLines = false,
+    showMoreCardTitleLines = true,
     reduceCardDesktopGradient = false,
     enableCardUserState = true,
     showCardDesktopQuickActions = false,
