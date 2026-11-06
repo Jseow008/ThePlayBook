@@ -286,7 +286,8 @@ export function SegmentAccordion({
         if (!el) return false;
 
         const y = el.getBoundingClientRect().top + window.scrollY - 100;
-        window.scrollTo({ top: y, behavior: "smooth" });
+        const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        window.scrollTo({ top: y, behavior: reducedMotion ? "auto" : "smooth" });
         return true;
     }, []);
 
@@ -294,18 +295,6 @@ export function SegmentAccordion({
         cancelPendingScroll();
 
         const contentEl = contentRefs.current.get(segmentId);
-        if (!contentEl) {
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    const didScroll = scrollSegmentIntoView(segmentId, initialScrollY, options?.explicitFollow);
-                    if (didScroll && options?.focusAfterScroll) {
-                        itemRefs.current.get(segmentId)?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
-                    }
-                });
-            });
-            return;
-        }
-
         const cancelForInput = () => cancelPendingScroll();
         const cancelForKey = (event: KeyboardEvent) => {
             if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "Tab"].includes(event.key)) cancelPendingScroll();
@@ -322,6 +311,7 @@ export function SegmentAccordion({
         }
         let didScroll = false;
         let fallbackTimeoutId: number | null = null;
+        let frameId: number | null = null;
 
         function handleTransitionEnd(event: TransitionEvent) {
             if (event.target !== event.currentTarget) return;
@@ -335,7 +325,7 @@ export function SegmentAccordion({
                 window.clearTimeout(fallbackTimeoutId);
                 fallbackTimeoutId = null;
             }
-            contentEl.removeEventListener("transitionend", handleTransitionEnd);
+            contentEl?.removeEventListener("transitionend", handleTransitionEnd);
             removeInputListeners();
             pendingScrollCleanupRef.current = null;
             const didScrollIntoView = scrollSegmentIntoView(segmentId, initialScrollY, options?.explicitFollow);
@@ -344,15 +334,23 @@ export function SegmentAccordion({
             }
         };
 
-        contentEl.addEventListener("transitionend", handleTransitionEnd);
-        fallbackTimeoutId = window.setTimeout(runScroll, 400);
+        if (!contentEl || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+            // Wait for React's expanded layout, not an animation that is disabled.
+            frameId = requestAnimationFrame(() => {
+                frameId = requestAnimationFrame(runScroll);
+            });
+        } else {
+            contentEl.addEventListener("transitionend", handleTransitionEnd);
+            fallbackTimeoutId = window.setTimeout(runScroll, 400);
+        }
 
         pendingScrollCleanupRef.current = () => {
             didScroll = true;
             if (fallbackTimeoutId !== null) {
                 window.clearTimeout(fallbackTimeoutId);
             }
-            contentEl.removeEventListener("transitionend", handleTransitionEnd);
+            if (frameId !== null) cancelAnimationFrame(frameId);
+            contentEl?.removeEventListener("transitionend", handleTransitionEnd);
             removeInputListeners();
         };
     }, [cancelPendingScroll, scrollSegmentIntoView]);
@@ -549,7 +547,7 @@ export function SegmentAccordion({
                         <button
                             onClick={() => handleToggle(segment, index)}
                             className={cn(
-                                "focus-ring w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left",
+                                "focus-ring w-full flex items-center gap-4 p-4 rounded-xl transition-all motion-reduce:transition-none text-left",
                                 "md:hover:bg-accent/40 active:scale-[0.99] active:bg-accent/60",
                                 isExpanded
                                     ? "bg-accent/50 border border-border"
@@ -611,7 +609,7 @@ export function SegmentAccordion({
 
                             <ChevronRight
                                 className={cn(
-                                    "size-4 text-muted-foreground transition-transform duration-300 flex-shrink-0",
+                                    "size-4 text-muted-foreground transition-transform motion-reduce:transition-none duration-300 flex-shrink-0",
                                     isExpanded && "rotate-90"
                                 )}
                             />
@@ -629,7 +627,7 @@ export function SegmentAccordion({
                                 }
                             }}
                             className={cn(
-                                "grid transition-all duration-300 ease-in-out",
+                                "grid transition-all motion-reduce:transition-none duration-300 ease-in-out",
                                 isExpanded
                                     ? "grid-rows-[1fr] opacity-100"
                                     : "grid-rows-[0fr] opacity-0"
@@ -643,7 +641,7 @@ export function SegmentAccordion({
                                             onMouseLeave={isReaderInteractionDesktop ? endHighlightPreview : undefined}
                                             onClick={activateHighlight}
                                             className={cn(
-                                            "reading-copy reading-copy-prose reading-copy-strong prose max-w-none relative -ml-[3.25rem] w-[calc(100%_+_3.25rem)] transition-all duration-300 sm:ml-0 sm:w-auto",
+                                            "reading-copy reading-copy-prose reading-copy-strong prose max-w-none relative -ml-[3.25rem] w-[calc(100%_+_3.25rem)] transition-all motion-reduce:transition-none duration-300 sm:ml-0 sm:w-auto",
                                             `reader-size-${fontSize}`,
                                             `reader-font-${fontFamily}`,
                                             `reader-spacing-${lineHeight}`,

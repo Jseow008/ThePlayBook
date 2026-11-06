@@ -134,3 +134,54 @@ test.describe('reduced motion browser behavior', () => {
         guard.assertNoCriticalErrors();
     });
 });
+
+test.describe('reader section motion and keyboard navigation', () => {
+    for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+        test(`Continue preserves its destination and focus with ${reducedMotion}`, async ({ page }, testInfo) => {
+            test.setTimeout(60_000);
+            await completeGuestOnboarding(page);
+            await page.emulateMedia({ reducedMotion });
+            const readPath = await resolvePublicReadPath(page);
+            if (!readPath) {
+                test.skip(true, 'No readable fixture; set RESPONSIVE_READ_PATH.');
+                return;
+            }
+            await page.goto(readPath, { waitUntil: 'domcontentloaded' });
+            const sections = page.locator('[data-reader-segment-id]');
+            await expect(sections.first()).toBeVisible({ timeout: 20_000 });
+            if (await sections.count() < 2) {
+                test.skip(true, 'Keyboard Continue needs a fixture with two sections.');
+                return;
+            }
+            const first = sections.nth(0);
+            const second = sections.nth(1);
+            const firstHeading = first.locator('button[aria-expanded]').first();
+            if (await firstHeading.getAttribute('aria-expanded') !== 'true') await firstHeading.click();
+            const panel = first.locator('[data-reader-segment-panel]');
+            const transition = await panel.evaluate(element => ({
+                property: getComputedStyle(element).transitionProperty,
+                duration: getComputedStyle(element).transitionDuration,
+                animations: element.getAnimations().length,
+            }));
+            if (reducedMotion === 'reduce') {
+                expect(transition.property).toBe('none');
+                expect(transition.animations).toBe(0);
+            } else expect(transition.duration).toContain('0.3s');
+
+            const continueButton = first.getByRole('button', { name: /^(Continue|Mark complete and continue)$/ });
+            await continueButton.focus();
+            await continueButton.press('Enter');
+            const nextHeading = second.locator('button[aria-expanded]').first();
+            await expect(nextHeading).toHaveAttribute('aria-expanded', 'true');
+            await expect(nextHeading).toBeFocused();
+            await expect.poll(() => second.evaluate(element => {
+                const top = element.getBoundingClientRect().top + window.scrollY;
+                const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+                const destination = Math.min(Math.max(0, top - 100), maxScroll);
+                return Math.abs(window.scrollY - destination);
+            })).toBeLessThan(3);
+            await expectNoDocumentHorizontalScroll(page);
+            await testInfo.attach(`reader-${reducedMotion}`, { body: await page.screenshot(), contentType: 'image/png' });
+        });
+    }
+});

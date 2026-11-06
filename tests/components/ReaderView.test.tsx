@@ -1287,6 +1287,33 @@ describe('ReaderView', () => {
         expect(screen.queryByRole('button', { name: 'Retry saved passage' })).not.toBeInTheDocument();
     });
 
+    it.each([
+        { desktop: true, reducedMotion: true }, { desktop: false, reducedMotion: true },
+        { desktop: true, reducedMotion: false }, { desktop: false, reducedMotion: false },
+    ])('keeps the highlight target and only skips animation waits in reduced mode ($desktop/$reducedMotion)', async ({ desktop, reducedMotion }) => {
+        try {
+            vi.mocked(useMediaQuery).mockReturnValue(desktop);
+            vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: reducedMotion }));
+            vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 400 } as DOMRect);
+            highlightsState.value = [{ id: 'motion-target', user_id: 'owner', content_item_id: mockContent.id,
+                segment_id: 'seg-1', highlighted_text: 'Body 1', note_body: 'Unchanged thought', color: 'yellow',
+                anchor_start: 0, anchor_end: 6, created_at: '2026-11-07T00:00:00Z', updated_at: null,
+                content_item: null, segment: null }];
+            const { container } = render(<ReaderView content={mockContent} />);
+            await waitFor(() => expect(notesDrawerSpy).toHaveBeenCalled());
+            vi.useFakeTimers();
+            act(() => { void notesDrawerSpy.mock.lastCall?.[0]?.onHighlightJump('motion-target'); });
+            await act(async () => { await vi.advanceTimersByTimeAsync(130); });
+            if (!reducedMotion) {
+                expect(window.scrollTo).not.toHaveBeenCalled();
+                fireEvent.transitionEnd(container.querySelector('[data-reader-segment-panel]')!);
+                await act(async () => { await vi.advanceTimersByTimeAsync(35); });
+            }
+            expect(window.scrollTo).toHaveBeenCalledWith({ top: desktop ? 300 : 280, behavior: reducedMotion ? 'auto' : 'smooth' });
+            expect(container.querySelector('mark[data-id="motion-target"]')).toHaveAttribute('data-highlight-spotlight', 'true');
+        } finally { vi.useRealTimers(); }
+    });
+
     it.each([{ desktop: false, expectedTop: 200 }, { desktop: true, expectedTop: 360 }])('waits for expansion and keeps the intended drawer target on desktop=$desktop', async ({ desktop, expectedTop }) => {
         vi.mocked(useMediaQuery).mockReturnValue(desktop);
         highlightsState.value = [
