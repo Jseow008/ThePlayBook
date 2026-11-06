@@ -5465,3 +5465,63 @@ Combined331 integration passes all41 focused tests, full lint/ratchets and norma
 production build/typecheck (five Sharp traces and critical CSS). No application
 changes after that candidate beyond removing one blank line and this checkpoint.
 Ready to publish only RequestBoard.tsx, its component tests and this record.
+
+Published ready PR333, headf5a470e12e0b039a2a5209633e1161213bf25a0c on
+main2cdd70fcac24f1c263c0eb78056f6ee862c93629 (includes331). Local log contains
+one intended commit and GitHub file list exactly matches the three intended files.
+Required hosted checks pending. Await only PR scope before protected squash
+auto-merge, then hand off CI/security; no deployment monitoring requested.
+This terminal release checkpoint remains uncommitted to avoid restarting CI.
+
+PR scope42270316418 passed for the final head. Re-inspected own log/local and
+GitHub three-file scope, then enabled protected squash auto-merge. GitHub confirms
+auto-merge onf5a470e1; required validate42270316442 and Security Validation
+42270317252 are still running. No bypass, deployment claim or background timer.
+
+## 2026-11-07 —333 status-only check, stopped as requested
+
+Owner requested production verification only if live; otherwise exit. GitHub333
+is still open/unmerged atf5a470e1. Public-domain deployment lookup reports READY
+dpl_C1jfGZXVVK6VucAz5c91qmMA55cW, gitfcf54a27 (#332), not333. No production
+success/duplicate checks performed. No branch refresh, gate retry, deployment,
+waiting or automation; exit as requested. Prior local evidence remains local.
+
+Repeated owner status check Nov7:333 remains open/unmerged atf5a470e1.
+www.netflux.blog now resolves READY dpl_9TC1omdUvPXnSAaZPT8k3MZDMzc6,
+gitb4be6fa1 (#330), with the public alias explicitly attached. Still not333.
+Stopped per the same conditional instruction; no browser checks, refresh, merge,
+deployment, gate retry, waiting or automation performed.
+
+## 2026-11-07 — Recent PR/read-only release audit
+
+Owner requested a review so multiple PRs are not left behind. Inspected latest18
+PRs316..333 and all four open PRs, main history and current public deployment.
+Public www alias READY dpl_9TC1omdUvPXnSAaZPT8k3MZDMzc6 / b4be6fa1 (#330).
+Main history includes #324..332, plus actual323 squash189f6a47. No branch refresh,
+merge, close, deployment or product change during audit.
+
+333: required validate42270316442, security42270317252 and scope pass; auto-merge
+enabled. Actual blocker BEHIND main, not pending/failed CI. Needs refresh onto main
+including332/330 and fresh required gates. Production journey checks remain open.
+323: GitHub OPEN/null mergedAt contradicts its documented squash release; verified
+189f6a47a40c4b3661970ba171754db0a4f6d2e5 is an ancestor of current main. Its PR body
+documents a502 after merge and deployed release. Do not re-merge; reconcile tracking.
+322: intentionally closed/superseded by consolidated321, not dropped work.
+264: old mobile resume-spacing PR open, historical Security Validation failed,
+auto-merge enabled. Its old target layout was subsequently rewritten by298; cannot
+blindly apply old mt-4 change or assume it is still wanted. Reassess/supersede.
+257: reduced-motion PR open with merge conflict, old passing checks and auto-merge.
+Current ContentLane still uses unconditional smooth arrow scrolling, and current
+ReaderView retains smooth section/highlight paths targeted by this PR. At least
+that intended work has not been fully incorporated. Needs refresh/review and fresh
+checks rather than assuming later reader changes superseded it.
+
+This audit proves repository/release status, not new functional production tests.
+331/328 committed records describe local verification; do not infer every live
+journey was exercised merely because code is deployed. No cleanup/closure or
+implementation performed without the owner's next instruction.
+
+Repeated owner status check:333 remains open/unmerged atf5a470e1. Public alias now
+serves READY dpl_9TC1omdUvPXnSAaZPT8k3MZDMzc6, gitb4be6fa1 (#330), not333.
+Stopped again as explicitly requested; no browser test, branch/gate/deployment
+action, waiting or automation. Production verification remains outstanding.
