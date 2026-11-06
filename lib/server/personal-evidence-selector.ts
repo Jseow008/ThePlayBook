@@ -6,7 +6,9 @@ import { selectionFailureDiagnostics, type SelectionFailureDiagnostics } from "@
 import { AiSpendingError, reserveAiProviderCall } from "@/lib/server/ai-spending";
 
 import { createHash } from "node:crypto";
-import { generateText, Output, type LanguageModelUsage } from "ai";
+import { generateText, NoObjectGeneratedError, Output, type LanguageModelUsage } from "ai";
+import { normalizeLibraryFollowups } from "@/lib/library-followups";
+import { LIBRARY_FOLLOWUP_INSTRUCTIONS, readCompleteLeadingField, withCompleteLibrarySelectionCore } from "@/lib/server/library-followup-output";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
@@ -55,6 +57,7 @@ export type PersonalEvidenceSelectionRequest = {
     schema: z.ZodType<PersonalEvidenceSelectionOutput>;
     signal: AbortSignal;
     maxOutputTokens: number;
+    includeFollowups?: boolean;
 };
 export const PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG = Object.freeze({
     version: "personal-evidence-selector-model-v2",
@@ -85,10 +88,11 @@ export type CanonicalPersonalEvidenceSelectionRequest = {
     system: string;
     prompt: string;
     maxOutputTokens: number;
-    outputSchema: ReturnType<typeof selectionOutputContract>;
+    outputSchema: Omit<ReturnType<typeof selectionOutputContract>, 'version'> & { version: string };
 };
 export type PersonalEvidenceSelectionGenerator = (request: PersonalEvidenceSelectionRequest) => Promise<{
     output: unknown;
+    followUpQuestions?: unknown;
     usage?: Partial<LanguageModelUsage>;
     model?: string;
     provider?: string;
@@ -153,25 +157,54 @@ export const generatePersonalEvidenceSelection: PersonalEvidenceSelectionGenerat
     const transportTiming = createSelectionProviderTiming();
     const baseModel = useAnthropic ? createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY, fetch: transportTiming.fetch })(modelId)
         : createOpenAI({ apiKey: process.env.OPENAI_API_KEY, fetch: transportTiming.fetch })(modelId);
-    const model = useLuna ? withLunaFinalPhase(baseModel) : baseModel;
+    const model = useLuna ? withLunaFinalPhase(request.includeFollowups
+        ? withCompleteLibrarySelectionCore(baseModel, text => request.schema.safeParse(readCompleteLeadingField(text, 'selection')).success) : baseModel) : baseModel;
     const reservation = await measureAskNotesPhase("selection_reserve", () => reserveAiProviderCall({ provider, model: modelId, maxOutputTokens: request.maxOutputTokens, signal: request.signal }));
     request.signal?.throwIfAborted();
-    const result = await measureAskNotesPhase("selection_provider", () => transportTiming.run(() => generateText({
-        model,
-        system: request.system,
-        prompt: request.prompt,
-        output: Output.object({ schema: request.schema }),
-        maxOutputTokens: request.maxOutputTokens,
-        maxRetries: 0,
-        ...(useLuna ? { providerOptions: { openai: {
-            reasoningEffort: PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.reasoningEffort,
-            forceReasoning: PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.forceReasoning,
-            store: PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.store,
-        } } } : {}),
-        abortSignal: request.signal,
-    })));
-    await measureAskNotesPhase("selection_settle", () => reservation.record(result.usage));
-    return { output: result.output, usage: result.usage, model: result.response.modelId, provider };
+    const schema = request.includeFollowups
+        ? z.object({ selection: request.schema, followUpQuestions: z.array(z.string()) }) : request.schema;
+    let output: unknown;
+    let followUpQuestions: unknown;
+    let usage: Partial<LanguageModelUsage> | undefined;
+    let actualModel: string;
+    try {
+        const result = await measureAskNotesPhase("selection_provider", () => transportTiming.run(() => generateText({
+            model,
+            system: request.system,
+            prompt: request.prompt,
+            output: Output.object<unknown>({ schema }),
+            maxOutputTokens: request.maxOutputTokens,
+            maxRetries: 0,
+            ...(useLuna ? { providerOptions: { openai: {
+                reasoningEffort: PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.reasoningEffort,
+                forceReasoning: PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.forceReasoning,
+                store: PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.store,
+            } } } : {}),
+            abortSignal: request.signal,
+        })));
+        usage = result.usage;
+        actualModel = result.response.modelId;
+        if (request.includeFollowups && result.finishReason === 'length') {
+            const selection = request.schema.safeParse(readCompleteLeadingField(result.text, 'selection'));
+            if (!selection.success) throw new PersonalEvidenceSelectionError('INVALID_SELECTION');
+            output = selection.data;
+        } else output = result.output;
+        if (request.includeFollowups && output && typeof output === 'object' && 'selection' in output) {
+            followUpQuestions = 'followUpQuestions' in output ? output.followUpQuestions : undefined;
+            output = output.selection;
+        }
+    } catch (error) {
+        // Recover only a complete critical selection; optional questions never repair evidence.
+        if (!request.includeFollowups || !NoObjectGeneratedError.isInstance(error)
+            || (error.finishReason !== 'stop' && error.finishReason !== 'length')) throw error;
+        const selection = request.schema.safeParse(readCompleteLeadingField(error.text ?? '', 'selection'));
+        if (!selection.success) throw error;
+        output = selection.data;
+        usage = error.usage;
+        actualModel = error.response?.modelId ?? modelId;
+    }
+    await measureAskNotesPhase("selection_settle", () => reservation.record(usage ?? {}));
+    return { output, ...(request.includeFollowups ? { followUpQuestions: normalizeLibraryFollowups(followUpQuestions) } : {}), usage, model: actualModel, provider };
 };
 
 function validFields(candidate: PersonalEvidenceSelectionCandidate): boolean {
@@ -213,9 +246,11 @@ export function buildPersonalEvidenceSelectionRequest(options: {
     question: string;
     candidates: readonly PersonalEvidenceSelectionCandidate[];
     exactQuote?: boolean;
+    includeFollowups?: boolean;
 }) {
     if (typeof options.question !== "string" || !options.question.trim() || options.question.length > PERSONAL_EVIDENCE_SELECTOR_LIMITS.questionCharacters
-        || !Array.isArray(options.candidates) || (options.exactQuote !== undefined && typeof options.exactQuote !== "boolean")) throw new PersonalEvidenceSelectionError("INVALID_INPUT");
+        || !Array.isArray(options.candidates) || (options.exactQuote !== undefined && typeof options.exactQuote !== "boolean")
+        || (options.includeFollowups !== undefined && typeof options.includeFollowups !== 'boolean')) throw new PersonalEvidenceSelectionError("INVALID_INPUT");
     if (options.candidates.length > PERSONAL_EVIDENCE_SELECTOR_LIMITS.candidates) throw new PersonalEvidenceSelectionError("CANDIDATE_LIMIT");
     const parsed = z.array(candidateSchema).safeParse(options.candidates);
     if (!parsed.success || parsed.data.some((candidate) => !validFields(candidate))) throw new PersonalEvidenceSelectionError("INVALID_INPUT");
@@ -236,17 +271,22 @@ export function buildPersonalEvidenceSelectionRequest(options: {
             verdict: z.enum(selectionVerdicts),
         }).strict()).max(maximum),
     }).strict();
-    const prompt = JSON.stringify({ question: options.question, exactQuote: options.exactQuote ?? false, maximumSelected: maximum, candidates });
-    const request = { system: SYSTEM, prompt, schema, maxOutputTokens: PERSONAL_EVIDENCE_SELECTOR_LIMITS.maxOutputTokens };
+    const prompt = JSON.stringify({ question: options.question, exactQuote: options.exactQuote ?? false, maximumSelected: maximum, candidates,
+        ...(options.includeFollowups ? { includeFollowups: true } : {}) });
+    const system = options.includeFollowups ? `${SYSTEM}\n\nLibrary response envelope: return the complete original assessment as the FIRST field, selection. Only after completing selection, add followUpQuestions. Selection rules, relevance verdicts, and evidence IDs remain exactly as specified above.\n${LIBRARY_FOLLOWUP_INSTRUCTIONS}\nFor these questions, use ONLY the fields of direct-verdict candidates retained in selection. Do not use internal assessment prose as evidence. With directly supported evidence, suggest one or two useful next searches when feasible. If selection has no direct verdict, return an empty followUpQuestions array. Optional questions are lower priority than completing the evidence selection.` : SYSTEM;
+    const request = { system, prompt, schema, maxOutputTokens: PERSONAL_EVIDENCE_SELECTOR_LIMITS.maxOutputTokens,
+        ...(options.includeFollowups ? { includeFollowups: true } : {}) };
+    const coreContract = selectionOutputContract(candidateIds, maximum);
     const canonical: CanonicalPersonalEvidenceSelectionRequest = {
-        promptVersion: PERSONAL_EVIDENCE_SELECTOR_PROMPT_VERSION, system: SYSTEM, prompt,
-        maxOutputTokens: request.maxOutputTokens, outputSchema: selectionOutputContract(candidateIds, maximum),
+        promptVersion: PERSONAL_EVIDENCE_SELECTOR_PROMPT_VERSION, system, prompt,
+        maxOutputTokens: request.maxOutputTokens, outputSchema: options.includeFollowups
+            ? { ...coreContract, version: `${coreContract.version}+library-followups-v1` } : coreContract,
     };
     return { request, canonical, candidateBytes, candidates };
 }
 export function canonicalPersonalEvidenceSelectionRequest(request: Pick<PersonalEvidenceSelectionRequest, "system" | "prompt" | "maxOutputTokens">
     & Partial<Pick<CanonicalPersonalEvidenceSelectionRequest, "promptVersion" | "outputSchema">>): CanonicalPersonalEvidenceSelectionRequest {
-    let input: { question: string; candidates: PersonalEvidenceSelectionCandidate[]; exactQuote?: boolean };
+    let input: { question: string; candidates: PersonalEvidenceSelectionCandidate[]; exactQuote?: boolean; includeFollowups?: boolean };
     try { input = JSON.parse(request.prompt) as typeof input; } catch { throw new PersonalEvidenceSelectionError("INVALID_INPUT"); }
     if (!input || typeof input !== "object") throw new PersonalEvidenceSelectionError("INVALID_INPUT");
     const rebuilt = buildPersonalEvidenceSelectionRequest(input).canonical;
@@ -294,8 +334,10 @@ export async function selectPersonalEvidence(options: {
     signal?: AbortSignal;
     deadlineAt?: number;
     generate?: PersonalEvidenceSelectionGenerator;
+    includeFollowups?: boolean;
 }): Promise<{
     ids: string[];
+    followUpQuestions?: string[];
     usage: PersonalEvidenceSelectionUsage;
     model: string | null;
     provider: string | null;
@@ -331,8 +373,8 @@ export async function selectPersonalEvidence(options: {
         const ids = derivePersonalEvidenceSelectionIds(result.output, prepared.request);
         const model = typeof result.model === "string" && result.model.length <= 200 ? result.model : null;
         const provider = typeof result.provider === "string" && result.provider.length <= 40 ? result.provider : null;
-        return { ids, usage: safeUsage(result.usage), model, provider, promptVersion: PERSONAL_EVIDENCE_SELECTOR_PROMPT_VERSION,
-            stats: { candidateCount: candidates.length, candidateBytes, promptBytes: Buffer.byteLength(SYSTEM + prompt, "utf8"), selectedCount: ids.length,
+        return { ids, ...(options.includeFollowups ? { followUpQuestions: ids.length ? normalizeLibraryFollowups(result.followUpQuestions) : [] } : {}), usage: safeUsage(result.usage), model, provider, promptVersion: PERSONAL_EVIDENCE_SELECTOR_PROMPT_VERSION,
+            stats: { candidateCount: candidates.length, candidateBytes, promptBytes: Buffer.byteLength(prepared.request.system + prompt, "utf8"), selectedCount: ids.length,
                 durationMs: performance.now() - startedAt, modelCalled: true, exactQuote: options.exactQuote ?? false } };
     } catch (error) {
         if (error instanceof AiSpendingError) throw error;

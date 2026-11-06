@@ -17,12 +17,8 @@ import { recordAiRouteAbuse } from '@/lib/server/security-telemetry';
 import { admitAiUsage } from '@/lib/server/ai-usage-quota';
 import { streamText } from 'ai';
 
-const { anthropicMock, toUIMessageStreamResponseMock } = vi.hoisted(() => ({
+const { anthropicMock } = vi.hoisted(() => ({
     anthropicMock: vi.fn().mockReturnValue('mock-anthropic-model'),
-    toUIMessageStreamResponseMock: vi.fn((options?: { onError?: (error: unknown) => string }) => {
-        void options;
-        return new Response('mocked-stream');
-    }),
 }));
 
 vi.mock('@/lib/server/after-response', () => ({ afterResponse: (callback: () => unknown) => callback() }));
@@ -60,7 +56,9 @@ vi.mock('ai', async (importOriginal) => ({
     ...await importOriginal<typeof import("ai")>(),
     smoothStream: vi.fn().mockReturnValue('mock-smooth-transform'),
     streamText: vi.fn().mockImplementation(() => ({
-        toUIMessageStreamResponse: toUIMessageStreamResponseMock,
+        partialOutputStream: (async function* () { yield { answer: 'Synthetic metadata answer.' }; })(),
+        text: Promise.resolve(JSON.stringify({ answer: 'Synthetic metadata answer.', followUpQuestions: ['Which saved titles are in progress?'] })),
+        finishReason: Promise.resolve('stop'),
     })),
 }));
 
@@ -479,6 +477,10 @@ describe('Chat API', () => {
     });
 
     it('uses the UI message stream protocol and returns a safe provider error', async () => {
+        vi.mocked(streamText).mockImplementationOnce(() => ({
+            partialOutputStream: (async function* () { throw new Error('provider details'); })(),
+            text: Promise.resolve(''), finishReason: Promise.resolve('error'),
+        } as unknown as ReturnType<typeof streamText>));
         const req = new NextRequest(new URL('http://localhost/api/chat'), {
             method: 'POST',
             body: JSON.stringify({
@@ -487,13 +489,11 @@ describe('Chat API', () => {
         });
 
         const res = await POST(req);
-        const streamOptions = toUIMessageStreamResponseMock.mock.calls.at(-1)?.[0];
-        const onError = streamOptions?.onError;
-
         expect(res.status).toBe(200);
-        expect(onError).toEqual(expect.any(Function));
-        if (!onError) throw new Error('Expected UI stream error handler');
-        expect(onError(new Error('provider details'))).toBe('Something went wrong. Please try asking again.');
+        expect(res.headers.get('x-vercel-ai-ui-message-stream')).toBe('v1');
+        const payload = await res.text();
+        expect(payload).toContain('Something went wrong. Please try asking again.');
+        expect(payload).not.toContain('provider details');
     });
 
     it('uses reading advisor mode for next-read recommendations from completed items', async () => {

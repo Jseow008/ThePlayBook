@@ -22,6 +22,7 @@ import { useVerifiedChatSession } from "@/hooks/useVerifiedChatSession";
 import { ChatSessionStatus } from "@/components/ai/ChatSessionStatus";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { useLibraryChatRecovery } from "@/hooks/useLibraryChatRecovery";
+import { getLibraryFollowups, type LibraryFollowups } from "@/lib/library-followups";
 
 const chatTransport = new DefaultChatTransport({ api: "/api/chat" });
 
@@ -226,12 +227,13 @@ function VerifiedAskClientPage({
         recovery.reset();
     };
 
-    const displayMessages: Array<{ id: string; role: string; content: string; citations: CitationLink[]; exactQuotation: boolean }> = messages
+    const displayMessages: Array<{ id: string; role: string; content: string; citations: CitationLink[]; exactQuotation: boolean; followups: LibraryFollowups | null }> = messages
         .map((message) => ({
             id: message.id,
             role: message.role,
             citations: getMessageCitations(message),
             exactQuotation: isExactQuotation(message),
+            followups: getLibraryFollowups(message),
             content: getMessageText(message as { parts?: Array<{ type: string; text?: string }>; content?: unknown }),
         }))
         .filter((message) => message.role === "user" || message.content.trim().length > 0);
@@ -413,7 +415,11 @@ function VerifiedAskClientPage({
                                             )}
 
                                             {displayMessages.map((message) => {
-                                                const showFollowUpActions = !isStreaming && !hasError && message.role === "assistant" && message.id === latestAssistantMessageId;
+                                                const followUpActions = message.followups === null ? FOLLOW_UP_ACTIONS
+                                                    : message.followups.questions.map(question => ({ label: question, prompt: question }));
+                                                const isLatestAnswer = message.role === "assistant" && message.id === latestAssistantMessageId;
+                                                const showFollowUpActions = !isStreaming && !hasError && isLatestAnswer
+                                                    && message.followups?.status !== 'pending' && followUpActions.length > 0;
 
                                                 return (
                                                     <div key={message.id} className="space-y-3">
@@ -462,16 +468,19 @@ function VerifiedAskClientPage({
 
                                                         {showFollowUpActions && (
                                                             <div className="ml-11 flex flex-wrap gap-2">
-                                                                {FOLLOW_UP_ACTIONS.map((action) => (
+                                                                {followUpActions.map((action) => (
                                                                     <button
                                                                         key={action.label}
                                                                         onClick={() => void sendPrompt(action.prompt)}
-                                                                        className="rounded-full border border-border/65 bg-background/80 px-3 py-1.5 text-[0.7rem] font-medium text-muted-foreground transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground sm:text-[0.72rem]"
+                                                                        className="max-w-full whitespace-normal rounded-full border border-border/65 bg-background/80 px-3 py-1.5 text-left text-[0.7rem] font-medium text-muted-foreground [overflow-wrap:anywhere] transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground sm:text-[0.72rem]"
                                                                     >
                                                                         {action.label}
                                                                     </button>
                                                                 ))}
                                                             </div>
+                                                        )}
+                                                        {isStreaming && !hasError && isLatestAnswer && message.followups?.status === 'pending' && (
+                                                            <p className="ml-11 text-xs text-muted-foreground" role="status">Preparing suggestions…</p>
                                                         )}
                                                     </div>
                                                 );
