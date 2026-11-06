@@ -151,3 +151,23 @@ change or migration. Refreshed by a clean merge. Existing UI/39 focused evidence
 still applies to identical renderer; main331's evidence stays separate. Required
 checks must cover this new combined head. User notified of the repeat freshness
 hold. No accounting/provider/scope changes introduced by this task; no paid tests.
+
+
+Head50f06f48cf50ed91d7ead6cff122320f61ea290a published; PR scope passed and
+six-file GitHub scope clean. CI42270180315 and Security42270180744 running.
+Read-only queue reassessment found332 open with auto-merge, current-main base,
+and its own CI42269145554 several minutes ahead. Watch that existing run without
+altering its merge settings or code: if it actually merges, promptly refresh330
+rather than waiting for a known-stale330 run to finish. If it fails/holds,330 can
+continue on unchanged main. Never merge unapproved332 code into330's branch.
+Only merged main updates are integrated. No CI cancellation or gate bypass.
+
+
+Known-ahead332 has now merged as fcf54a27a672f8d9e07a113df6c69526972d870c.
+Integrated merged main promptly, before330 head50f06f48's CI finished, to avoid
+another completed-but-stale attempt. Its security42270180744 had passed; CI42270180315
+will be superseded by normal workflow concurrency after this refresh. No manual
+cancel or bypass.332 affects narration defaults/tests/docs, not the Completed UI;
+merged cleanly, with no local UI changes. Prior count/layout/search/action evidence
+remains applicable; final required gates must cover the new combined head. No
+provider/audio-generation rehearsal belongs to this UI release scope.
