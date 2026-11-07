@@ -86,7 +86,7 @@ export function NetfluxSidebar() {
         setIsExpanded(false);
     };
 
-    const { inProgressCount, completedCount, myListCount, isLoaded } = useReadingProgress();
+    const { inProgressCount, completedCount, myListCount, totalLibraryItems, isLoaded } = useReadingProgress();
     const avatarSrc =
         user?.user_metadata?.avatar_icon
             ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
@@ -105,7 +105,7 @@ export function NetfluxSidebar() {
         }
     }, [isExpanded]);
 
-    const totalLibraryItems = inProgressCount + completedCount + myListCount;
+    const showLibraryBadge = hasMounted && isLoaded && totalLibraryItems > 0;
     const isLibrarySectionActive = pathname.startsWith("/library");
     const isFullPageNotesAskActive = pathname === "/ask" && searchParams.get("scope") === "notes";
     const isInlineNotesAskActive = pathname === notesItem.href && searchParams.get("ask") === "1";
@@ -242,6 +242,9 @@ export function NetfluxSidebar() {
                         <Link
                             href="/library/reading"
                             title="Library"
+                            aria-label={showLibraryBadge
+                                ? `Library, ${totalLibraryItems} ${totalLibraryItems === 1 ? "item" : "items"}`
+                                : "Library"}
                             className={cn(
                                 "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50 justify-center",
                                 isLibrarySectionActive && "text-foreground bg-accent border-l-4 border-primary"
@@ -250,8 +253,8 @@ export function NetfluxSidebar() {
                             <div className="relative flex-shrink-0">
                                 <BooksIcon className="size-5" weight="duotone" />
                                 {/* Badge for total items when collapsed */}
-                                {hasMounted && isLoaded && totalLibraryItems > 0 && (
-                                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1">
+                                {showLibraryBadge && (
+                                    <span aria-hidden="true" className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1">
                                         {totalLibraryItems > 9 ? "9+" : totalLibraryItems}
                                     </span>
                                 )}

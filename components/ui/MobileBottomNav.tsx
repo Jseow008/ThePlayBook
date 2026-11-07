@@ -40,6 +40,7 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
     // Check if current path is in library section
     const isLibraryActive = pathname.startsWith("/library");
     const isFocusActive = pathname === "/focus";
+    const showLibraryBadge = hasMounted && isLoaded && totalLibraryItems > 0;
 
     return (
         <nav
@@ -71,6 +72,9 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                                 key={item.href}
                                 href={item.href}
                                 aria-current={isActive ? "page" : undefined}
+                                aria-label={isLibrary && showLibraryBadge
+                                    ? `Library, ${totalLibraryItems} ${totalLibraryItems === 1 ? "item" : "items"}`
+                                    : undefined}
                                 className={cn(
                                     "focus-ring relative flex h-full min-w-0 flex-col items-center justify-center gap-1 rounded-full px-1 transition-[background-color,color,box-shadow] duration-200",
                                     isActive
@@ -81,8 +85,8 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                                 <div className="relative">
                                     <item.icon className="size-6" weight={isActive ? "fill" : "regular"} />
                                     {/* Badge for library items */}
-                                    {isLibrary && hasMounted && isLoaded && totalLibraryItems > 0 && (
-                                        <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                                    {isLibrary && showLibraryBadge && (
+                                        <span aria-hidden="true" className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                                             {totalLibraryItems > 9 ? "9+" : totalLibraryItems}
                                         </span>
                                     )}

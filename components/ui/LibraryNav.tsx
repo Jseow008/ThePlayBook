@@ -15,7 +15,7 @@ export function LibraryNav() {
 
     return (
         <div className="lg:hidden sticky top-0 z-40 bg-background border-b border-border/70 overflow-x-auto scrollbar-hide">
-            <div className="flex items-center px-4 h-12 gap-2 min-w-max">
+            <div className="flex items-center px-4 h-12 gap-2 min-w-max max-[360px]:gap-1.5 max-[360px]:px-3">
                 {libraryNavItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
@@ -23,7 +23,7 @@ export function LibraryNav() {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "touch-target-44 px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                "touch-target-44 px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap max-[360px]:px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                                 isActive
                                     ? "bg-primary text-primary-foreground shadow-sm"
                                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"

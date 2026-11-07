@@ -115,6 +115,20 @@ describe("app navigation", () => {
         expect(screen.getByRole("link", { name: /^focus$/i })).toHaveAttribute("href", "/focus");
     });
 
+    it.each([NetfluxSidebar, MobileBottomNav])("labels the Library shortcut with its shared distinct count", (Navigation) => {
+        readingProgressState.value = {
+            totalLibraryItems: 2,
+            inProgressCount: 0,
+            completedCount: 2,
+            myListCount: 1,
+            isLoaded: true,
+        };
+
+        render(<Navigation />);
+
+        expect(screen.getByRole("link", { name: "Library, 2 items" })).toHaveTextContent("2");
+    });
+
     it("adds an Ask section to the desktop sidebar with global and notes entry points", async () => {
         pathnameState.value = "/ask";
         vi.useFakeTimers();

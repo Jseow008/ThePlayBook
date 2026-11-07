@@ -1286,7 +1286,10 @@ function useReadingProgressController(initialUser?: User | null) {
         if (hydrationStatus !== "ready") return "pending" as const;
         return "saved" as const;
     }, [hydrationStatus, recovery, user]);
-    const totalLibraryItems = inProgressIds.length + completedIds.length + myListIds.length;
+    const totalLibraryItems = useMemo(
+        () => new Set([...inProgressIds, ...completedIds, ...myListIds]).size,
+        [inProgressIds, completedIds, myListIds],
+    );
 
     const refresh = useCallback(() => loadProgress(scopeRef.current), [loadProgress]);
     const retryHydration = useCallback(() => void hydrateForUser(userRef.current, true), [hydrateForUser]);
