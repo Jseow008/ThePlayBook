@@ -238,7 +238,7 @@
   border-color: hsl(var(--border));
 }
 
-/* Reader hero controls override the unlayered default border without changing pills. */
+/* Reader and Preview actions use softer borders than metadata pills. */
 .reader-header-control {
   border-color: hsl(var(--border) / 0.6);
 }
