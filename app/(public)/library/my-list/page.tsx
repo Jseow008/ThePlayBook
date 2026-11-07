@@ -86,7 +86,7 @@ export default function MyListPage() {
                         {shouldShowLibraryControls && (
                             <LibraryStatBadge
                                 count={myListIds.length}
-                                label={allItems.length === 1 ? "Saved Item" : "Saved Items"}
+                                label={myListIds.length === 1 ? "Saved Item" : "Saved Items"}
                                 isLoading={isPageLoading}
                             />
                         )}

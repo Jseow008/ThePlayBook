@@ -201,6 +201,25 @@ describe("useReadingProgress", () => {
         expect(localStorage.getItem(myListKey(GUEST_STORAGE_SCOPE))).toBe(JSON.stringify(["item-3"]));
     });
 
+    it("counts bookmarked reading and completed summaries only once in the Library total", async () => {
+        const lastReadAt = new Date().toISOString();
+        localStorage.setItem(progressKey(GUEST_STORAGE_SCOPE, "reading"), JSON.stringify({
+            itemId: "reading", completed: ["segment-1"], lastSegmentIndex: 0, lastReadAt, isCompleted: false,
+        }));
+        localStorage.setItem(progressKey(GUEST_STORAGE_SCOPE, "finished"), JSON.stringify({
+            itemId: "finished", completed: ["segment-1"], lastSegmentIndex: 0, lastReadAt, isCompleted: true,
+        }));
+        localStorage.setItem(myListKey(GUEST_STORAGE_SCOPE), JSON.stringify(["reading", "finished", "saved-only"]));
+
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+        expect(result.current.inProgressCount).toBe(1);
+        expect(result.current.completedCount).toBe(1);
+        expect(result.current.myListCount).toBe(3);
+        expect(result.current.totalLibraryItems).toBe(3);
+    });
+
     it("saves new guest reading progress under the scoped guest key", async () => {
         const { result } = renderHook(() => useReadingProgress(), { wrapper });
 
