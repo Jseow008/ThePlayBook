@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { AlertCircle, Plus } from "lucide-react";
+import { AlertCircle, Bookmark } from "lucide-react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { UnavailableLibraryItems } from "@/components/ui/UnavailableLibraryItems";
 import { ContentCard } from "@/components/ui/ContentCard";
@@ -153,19 +153,19 @@ export default function MyListPage() {
                     ) : allItems.length === 0 && myListIds.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-2 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5 sm:py-20">
                             <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-4 border border-border/70 sm:mb-6">
-                                <Plus className="size-10 text-muted-foreground" />
+                                <Bookmark className="size-10 text-muted-foreground" aria-hidden="true" />
                             </div>
                             <h2 className="text-xl font-semibold text-foreground mb-2">
-                                Your library is empty
+                                No saved items yet
                             </h2>
                             <p className="text-muted-foreground mb-3 max-w-sm sm:mb-8">
-                                Save books, podcasts, articles, and videos to your library so you can easily find them later.
+                                Bookmark a summary to find it here later.
                             </p>
                             <Link
                                 href="/browse"
                                 className="inline-flex items-center h-11 px-6 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                             >
-                                Browse Library
+                                Browse summaries
                             </Link>
                         </div>
                     ) : allItems.length === 0 ? null : filteredItems.length === 0 ? (
