@@ -294,11 +294,10 @@ export function ReaderSettingsMenu({ surface = "reader" }: { surface?: "reader" 
                 ref={triggerButtonRef}
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-secondary p-0 text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground sm:h-10 sm:w-10",
-                    !isPreview && "reader-header-control",
+                    "reader-header-control inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-secondary p-0 text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground sm:h-10 sm:w-10",
                     isOpen && "bg-secondary/80 text-foreground ring-2 ring-ring"
                 )}
-                aria-label={isPreview ? "Appearance" : "Display Settings"}
+                aria-label="Appearance"
                 aria-controls={`${settingsId}-panel`}
                 aria-haspopup="dialog"
                 aria-expanded={isOpen}
@@ -333,14 +332,14 @@ export function ReaderSettingsMenu({ surface = "reader" }: { surface?: "reader" 
                         >
                             <div className="-mt-1 mb-4 flex items-center justify-between border-b border-border/50 pb-3">
                                 <h2 id={sheetTitleId} className="text-base font-semibold text-foreground">
-                                    {isPreview ? "Appearance" : "Reader settings"}
+                                    Appearance
                                 </h2>
                                 <button
                                     ref={closeButtonRef}
                                     type="button"
                                     onClick={() => setIsOpen(false)}
                                     className="focus-ring -mr-2 inline-flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                                    aria-label={isPreview ? "Close Appearance" : "Close reader settings"}
+                                    aria-label="Close Appearance"
                                 >
                                     <X className="size-5" aria-hidden="true" />
                                 </button>
@@ -370,7 +369,7 @@ export function ReaderSettingsMenu({ surface = "reader" }: { surface?: "reader" 
                         id={`${settingsId}-panel`}
                         role="dialog"
                         aria-modal="true"
-                        aria-label="Reader Settings"
+                        aria-label="Appearance"
                         tabIndex={-1}
                         className={cn(
                             "absolute right-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-2xl p-4 animate-fade-in origin-top-right",

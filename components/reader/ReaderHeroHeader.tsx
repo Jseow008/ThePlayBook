@@ -9,6 +9,8 @@ import { ReaderSettingsMenu } from "./ReaderSettingsMenu";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 import { SaveToLibraryButton } from "@/components/ui/SaveToLibraryButton";
 import {
+    CONTENT_ICON_ACTION_CLASS,
+    CONTENT_ICON_ACTION_IDLE_CLASS,
     COMPACT_READER_HERO_CLASS,
     COMPACT_READER_COVER_FRAME_CLASS,
     COMPACT_READER_COVER_IMAGE_SIZES,
@@ -149,7 +151,7 @@ export function ReaderHeroHeader({
                         </div>
 
                         <div className="flex shrink-0 flex-wrap items-center justify-start gap-1 sm:flex-nowrap sm:gap-2.5">
-                            {/* Display Settings */}
+                            {/* Appearance */}
                             <ReaderSettingsMenu />
 
                             {/* Save Button */}
@@ -157,10 +159,10 @@ export function ReaderHeroHeader({
                                 <SaveToLibraryButton
                                     contentId={contentId}
                                     contentTitle={title}
-                                    className="reader-header-control focus-ring inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors disabled:cursor-wait sm:h-10 sm:w-10"
+                                    className={`${CONTENT_ICON_ACTION_CLASS} disabled:cursor-wait`}
                                     loadingClassName="border-border/35 bg-secondary/25 text-muted-foreground/60"
                                     savedClassName="border-primary/35 bg-primary/10 text-primary"
-                                    unsavedClassName="border-border/45 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                    unsavedClassName={CONTENT_ICON_ACTION_IDLE_CLASS}
                                     iconClassName="size-5"
                                 />
                             )}
@@ -173,7 +175,7 @@ export function ReaderHeroHeader({
                                 source="reader_header"
                                 contentId={contentId}
                                 contentType={type}
-                                className="reader-header-control focus-ring h-11 w-11 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground sm:h-10 sm:w-10"
+                                className={`${CONTENT_ICON_ACTION_CLASS} ${CONTENT_ICON_ACTION_IDLE_CLASS}`}
                             />
                         </div>
                     </div>

@@ -37,9 +37,9 @@ describe("ReaderSettingsMenu", () => {
         // Browser behavior is covered by the reduced-motion Playwright spec.
         render(<ReaderSettingsMenu />);
 
-        fireEvent.click(screen.getByRole("button", { name: /display settings/i }));
+        fireEvent.click(screen.getByRole("button", { name: "Appearance" }));
 
-        const sheet = await screen.findByRole("dialog", { name: /reader settings/i });
+        const sheet = await screen.findByRole("dialog", { name: "Appearance" });
         expect(sheet).toHaveClass("reader-settings-motion-sheet");
         expect(sheet).toHaveClass("motion-reduce:animate-none");
         expect(sheet).toHaveClass("motion-reduce:transition-none");
@@ -48,23 +48,23 @@ describe("ReaderSettingsMenu", () => {
     it("labels and dismisses the compact sheet with a visible close action", async () => {
         render(<ReaderSettingsMenu />);
 
-        fireEvent.click(screen.getByRole("button", { name: /display settings/i }));
+        fireEvent.click(screen.getByRole("button", { name: "Appearance" }));
 
-        expect(await screen.findByRole("heading", { name: "Reader settings" })).toBeInTheDocument();
-        const closeButton = screen.getByRole("button", { name: "Close reader settings" });
+        expect(await screen.findByRole("heading", { name: "Appearance" })).toBeInTheDocument();
+        const closeButton = screen.getByRole("button", { name: "Close Appearance" });
         expect(closeButton).toHaveClass("size-11");
 
         fireEvent.click(closeButton);
 
-        expect(screen.queryByRole("dialog", { name: /reader settings/i })).not.toBeInTheDocument();
-        expect(screen.getByRole("button", { name: /display settings/i })).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByRole("dialog", { name: "Appearance" })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Appearance" })).toHaveAttribute("aria-expanded", "false");
     });
 
     it("exposes grouped setting labels and the selected choices", async () => {
         render(<ReaderSettingsMenu />);
 
-        fireEvent.click(screen.getByRole("button", { name: /display settings/i }));
-        await screen.findByRole("dialog", { name: /reader settings/i });
+        fireEvent.click(screen.getByRole("button", { name: "Appearance" }));
+        await screen.findByRole("dialog", { name: "Appearance" });
 
         expect(screen.getByRole("group", { name: "Theme" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Dark" })).toHaveAttribute("aria-pressed", "true");
@@ -84,11 +84,11 @@ describe("ReaderSettingsMenu", () => {
     it("provides mobile-sized touch targets without enlarging desktop controls", async () => {
         render(<ReaderSettingsMenu />);
 
-        const trigger = screen.getByRole("button", { name: /display settings/i });
+        const trigger = screen.getByRole("button", { name: "Appearance" });
         expect(trigger).toHaveClass("h-11", "w-11", "sm:h-10", "sm:w-10");
 
         fireEvent.click(trigger);
-        await screen.findByRole("dialog", { name: /reader settings/i });
+        await screen.findByRole("dialog", { name: "Appearance" });
 
         expect(screen.getByRole("button", { name: "Sans" })).toHaveClass("min-h-11", "sm:min-h-0");
         expect(screen.getByRole("button", { name: "Decrease font size" })).toHaveClass("min-h-11", "min-w-11");

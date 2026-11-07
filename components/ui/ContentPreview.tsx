@@ -18,6 +18,8 @@ import { PreviewAppearanceMenu } from "@/components/ui/PreviewAppearanceMenu";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import {
+    CONTENT_ICON_ACTION_CLASS,
+    CONTENT_ICON_ACTION_IDLE_CLASS,
     PREVIEW_COVER_FRAME_CLASS,
     PREVIEW_COVER_IMAGE_SIZES,
     READER_COVER_WRAPPER_CLASS,
@@ -304,19 +306,19 @@ export function ContentPreview({
                                 <Link
                                     href={readCtaHref}
                                     onClick={handleReadCta}
-                                    className="inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-2.5 rounded-xl bg-primary text-primary-foreground text-base font-bold hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/15"
+                                    className="inline-flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2.5 rounded-xl bg-primary px-2 text-center text-base font-bold leading-tight text-primary-foreground hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/15"
                                 >
-                                    <BookOpen className="size-5" />
-                                    <span className="truncate">{readCtaLabel}</span>
+                                    <BookOpen className="size-5 shrink-0" />
+                                    <span className="min-w-0 wrap-anywhere">{readCtaLabel}</span>
                                 </Link>
                                 <PreviewAppearanceMenu />
                                 <SaveToLibraryButton
                                     contentId={item.id}
                                     contentTitle={item.title}
-                                    className="focus-ring inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:cursor-wait"
+                                    className={`${CONTENT_ICON_ACTION_CLASS} disabled:cursor-wait`}
                                     loadingClassName="border-border/35 bg-secondary/25 text-muted-foreground/60"
                                     savedClassName="border-primary/35 bg-primary/10 text-primary"
-                                    unsavedClassName="border-border/40 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                    unsavedClassName={CONTENT_ICON_ACTION_IDLE_CLASS}
                                     iconClassName="size-5"
                                 />
                                 <ShareButton
@@ -327,7 +329,7 @@ export function ContentPreview({
                                     source="content_preview"
                                     contentId={item.id}
                                     contentType={item.type}
-                                    className="focus-ring h-12 w-12 shrink-0 rounded-xl border border-border/40 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                    className={`${CONTENT_ICON_ACTION_CLASS} ${CONTENT_ICON_ACTION_IDLE_CLASS}`}
                                 />
                             </div>
 
@@ -452,14 +454,14 @@ export function ContentPreview({
                 className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex h-20 items-end px-3 safe-area-pb-sm sm:hidden"
             >
                 <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background via-background/70 to-transparent" />
-                <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl gap-2 rounded-2xl border border-border/45 bg-background/75 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.32)] backdrop-blur-xl">
+                <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl items-center gap-2 rounded-2xl border border-border/45 bg-background/75 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.32)] backdrop-blur-xl">
                     <Link
                         href={readCtaHref}
                         onClick={handleReadCta}
-                        className="focus-ring inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95"
+                        className="focus-ring inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-1 text-center text-base font-semibold leading-tight text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95"
                     >
                         <BookOpen className="size-4 shrink-0" />
-                        <span className="truncate">{readCtaLabel}</span>
+                        <span className="min-w-0 wrap-anywhere">{readCtaLabel}</span>
                     </Link>
 
                     <PreviewAppearanceMenu />
@@ -467,10 +469,10 @@ export function ContentPreview({
                     <SaveToLibraryButton
                         contentId={item.id}
                         contentTitle={item.title}
-                        className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors active:scale-95 disabled:cursor-wait disabled:active:scale-100"
-                        loadingClassName="bg-secondary/25 border-border/35 text-muted-foreground/60"
-                        savedClassName="bg-secondary/55 border-primary/45 text-primary"
-                        unsavedClassName="bg-secondary/30 border-border/40 text-muted-foreground hover:text-foreground"
+                        className={`${CONTENT_ICON_ACTION_CLASS} disabled:cursor-wait`}
+                        loadingClassName="border-border/35 bg-secondary/25 text-muted-foreground/60"
+                        savedClassName="border-primary/35 bg-primary/10 text-primary"
+                        unsavedClassName={CONTENT_ICON_ACTION_IDLE_CLASS}
                         iconClassName="size-5"
                     />
 
@@ -483,7 +485,7 @@ export function ContentPreview({
                         source="content_preview_mobile"
                         contentId={item.id}
                         contentType={item.type}
-                        className="focus-ring h-11 w-11 shrink-0 rounded-xl border border-border/40 bg-secondary/30"
+                        className={`${CONTENT_ICON_ACTION_CLASS} ${CONTENT_ICON_ACTION_IDLE_CLASS}`}
                     />
 
                     {onSpinAgain && (
