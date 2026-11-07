@@ -43,15 +43,15 @@ describe("Preview Appearance", () => {
 
     it("uses the same theme state as Read in both directions", async () => {
         render(<><PreviewAppearanceMenu /><ReaderSettingsMenu /></>);
-        fireEvent.click(screen.getByRole("button", { name: "Appearance" }));
+        fireEvent.click(screen.getAllByRole("button", { name: "Appearance" })[0]);
         fireEvent.click(screen.getByRole("button", { name: "Dark" }));
         expect(settings.getTheme()).toBe("dark");
         fireEvent.click(screen.getByRole("button", { name: "Close Appearance" }));
-        fireEvent.click(screen.getByRole("button", { name: "Display Settings" }));
+        fireEvent.click(screen.getAllByRole("button", { name: "Appearance" })[1]);
         expect(await screen.findByRole("button", { name: "Dark" })).toHaveAttribute("aria-pressed", "true");
         fireEvent.click(screen.getByRole("button", { name: "Light" }));
         fireEvent.keyDown(document, { key: "Escape" });
-        fireEvent.click(screen.getByRole("button", { name: "Appearance" }));
+        fireEvent.click(screen.getAllByRole("button", { name: "Appearance" })[0]);
         expect(screen.getByRole("button", { name: "Light" })).toHaveAttribute("aria-pressed", "true");
     });
 
@@ -79,7 +79,7 @@ describe("Preview Appearance", () => {
 
     it("shares font, size boundaries and spacing with the reader", async () => {
         render(<><PreviewAppearanceMenu /><ReaderSettingsMenu /></>);
-        fireEvent.click(screen.getByRole("button", { name: "Appearance" }));
+        fireEvent.click(screen.getAllByRole("button", { name: "Appearance" })[0]);
         await screen.findByRole("dialog", { name: "Appearance" });
         fireEvent.click(screen.getByRole("button", { name: "Sans" }));
         fireEvent.click(screen.getByRole("button", { name: "Decrease font size" }));
@@ -89,8 +89,8 @@ describe("Preview Appearance", () => {
         expect(screen.getByRole("button", { name: "Increase font size" })).toBeDisabled();
         fireEvent.click(screen.getByRole("button", { name: "Relaxed line spacing" }));
         fireEvent.click(screen.getByRole("button", { name: "Close Appearance" }));
-        fireEvent.click(screen.getByRole("button", { name: "Display Settings" }));
-        await screen.findByRole("dialog", { name: "Reader Settings" });
+        fireEvent.click(screen.getAllByRole("button", { name: "Appearance" })[1]);
+        await screen.findByRole("dialog", { name: "Appearance" });
         expect(screen.getByRole("button", { name: "Sans" })).toHaveAttribute("aria-pressed", "true");
         expect(screen.getByRole("button", { name: "Relaxed line spacing" })).toHaveAttribute("aria-pressed", "true");
         expect(screen.getByRole("group", { name: "Size" })).toHaveTextContent("large");

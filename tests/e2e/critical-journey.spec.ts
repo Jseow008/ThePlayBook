@@ -60,7 +60,7 @@ test.describe('Critical User Journey', () => {
 
         // Ensure the settings menu or highlight tools are rendered
         // E.g., looking for the Ask/Chat functionality or Settings trigger
-        const settingsTrigger = page.locator('button[aria-label="Display Settings"]').first();
+        const settingsTrigger = page.getByRole("button", { name: "Appearance", exact: true }).first();
         await expect(settingsTrigger).toBeVisible();
     });
 });

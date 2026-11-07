@@ -34,3 +34,9 @@ export const COMPACT_READER_COVER_IMAGE_SIZES = "(max-width: 639px) 64px, 112px"
 export const PREVIEW_COVER_FRAME_CLASS = "aspect-[2/3] w-[96px] sm:w-full";
 export const PREVIEW_COVER_IMAGE_SIZES =
     "(max-width: 639px) 96px, (max-width: 767px) 192px, 224px";
+
+// Preview and Read share these styles while keeping their own Share actions.
+export const CONTENT_ICON_ACTION_CLASS =
+    "reader-header-control focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full border p-0 transition-colors sm:size-10";
+export const CONTENT_ICON_ACTION_IDLE_CLASS =
+    "border-border/45 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground";
