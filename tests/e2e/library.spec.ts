@@ -1,5 +1,28 @@
 import { test, expect } from '@playwright/test';
 
+test('the narrow Library shortcut opens Saved from Browse and preserves the current Library tab', async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 1024) >= 1024, 'The bottom navigation is only shown on narrow screens');
+    await page.goto('/browse');
+    const library = page.getByTestId('mobile-bottom-nav').getByRole('link', { name: /^Library\b/i });
+
+    await library.click();
+    await expect(page).toHaveURL(/\/library\/my-list$/);
+
+    for (const [tab, path] of [['Continue Reading', 'reading'], ['Completed', 'completed']]) {
+        const tabLink = page.getByRole('link', { name: tab, exact: true });
+        await tabLink.click();
+        await expect(tabLink).toHaveAttribute('aria-current', 'page');
+        await expect(library).toHaveAttribute('aria-current', 'location');
+        await expect(library).toHaveAttribute('href', `/library/${path}`);
+        await library.click();
+        await expect(page).toHaveURL(new RegExp(`/library/${path}$`));
+        await expect(page.getByRole('heading', { name: tab, level: 1 })).toBeVisible();
+    }
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/library\/reading$/);
+});
+
 test.describe('Library Flows', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
