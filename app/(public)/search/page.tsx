@@ -21,12 +21,14 @@ import {
 } from "@/lib/content-categories";
 import {
     buildSearchHref,
+    formatTypeLabel,
     normalizeCatalogSort,
     normalizePage,
     normalizeType,
     PopularCatalog,
     RecentCatalog,
     ResultsSkeleton,
+    SEARCHABLE_TYPES,
     SearchResults,
 } from "./search-components";
 
@@ -96,7 +98,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     void preloadedPopular?.catch(() => undefined);
 
     const categoryStats = await categoryStatsPromise;
-    const contentTypes = ["All", "Book", "Podcast", "Article"];
     const normalizedTopics = buildNormalizedTopics(categoryStats);
     // This catalog classification describes the content format, not a topic.
     const searchableTopics = normalizedTopics.filter((topic) => !NON_TOPIC_CATEGORIES.has(topic.label));
@@ -152,30 +153,30 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
                         Type
                     </p>
-                    <div className="flex flex-wrap justify-start gap-2">
-                        {contentTypes.map((t) => {
-                            const isActive = t === "All"
-                                ? !selectedType
-                                : selectedType === t.toLowerCase();
+                    <div className="flex flex-wrap justify-start gap-x-2 sm:gap-y-2">
+                        {[undefined, ...SEARCHABLE_TYPES].map((choice) => {
+                            const isActive = selectedType === choice;
 
                             return (
-                                <SearchFilterLink
-                                    key={t}
-                                    filterParam="type"
-                                    filterValue={t === "All" ? undefined : t.toLowerCase()}
-                                    href={buildSearchHref({
-                                        query,
-                                        category: selectedTopicLabel,
-                                        type: t === "All" ? undefined : t.toLowerCase(),
-                                        sort: selectedSort,
-                                    })}
-                                    className={`px-3.5 md:px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
-                                        ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50 hover:text-foreground"
-                                        }`}
-                                >
-                                    {t}
-                                </SearchFilterLink>
+                                <div key={choice ?? "all"} className="flex min-h-11 items-center sm:contents">
+                                    <SearchFilterLink
+                                        filterParam="type"
+                                        filterValue={choice}
+                                        aria-current={isActive ? "true" : undefined}
+                                        href={buildSearchHref({
+                                            query,
+                                            category: selectedTopicLabel,
+                                            type: choice,
+                                            sort: selectedSort,
+                                        })}
+                                        className={`touch-target-44 px-3.5 md:px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
+                                            ? "bg-primary text-primary-foreground border-primary"
+                                            : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50 hover:text-foreground"
+                                            }`}
+                                    >
+                                        {choice ? formatTypeLabel(choice) : "All"}
+                                    </SearchFilterLink>
+                                </div>
                             );
                         })}
                     </div>
