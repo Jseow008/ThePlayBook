@@ -161,7 +161,7 @@ export function ReflectionComposer({
             }
             const returnUrl = new URL(window.location.href);
             returnUrl.searchParams.set(REFLECTION_RESUME_PARAM, "1");
-            const returnTo = `${returnUrl.pathname}${returnUrl.search}`;
+            const returnTo = `${returnUrl.pathname}${returnUrl.search}${returnUrl.hash}`;
             window.location.assign(buildLoginHref(returnTo));
             return;
         }

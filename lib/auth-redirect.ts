@@ -1,6 +1,10 @@
 export const DEFAULT_LOGIN_REDIRECT_PATH = "/browse";
 export const REFLECTION_RESUME_PARAM = "resumeReflection";
 
+export function isPublicSummaryPath(pathname: string) {
+    return /^\/(?:read\/[^/]+(?:\/[^/]+)?|preview\/[^/]+)\/?$/.test(pathname);
+}
+
 function normalizePath(
     candidate: string | null | undefined,
     fallback: string
@@ -66,4 +70,16 @@ export function buildLoginHref(nextPath: string | null | undefined) {
     });
 
     return `/login?${searchParams.toString()}`;
+}
+
+export function getLoginBackPath(nextPath: string) {
+    const url = new URL(normalizeLoginNextPath(nextPath), "http://localhost");
+    if (!isPublicSummaryPath(url.pathname)) {
+        return DEFAULT_LOGIN_REDIRECT_PATH;
+    }
+
+    if (url.searchParams.has(REFLECTION_RESUME_PARAM)) {
+        url.searchParams.delete(REFLECTION_RESUME_PARAM);
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
 }
