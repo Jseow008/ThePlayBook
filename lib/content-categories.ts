@@ -15,61 +15,55 @@ export const CONTENT_CATEGORY_ALIASES = {
 } as const;
 
 export const CANONICAL_CONTENT_CATEGORIES = [
+    "Biography & Memoir",
     "Business",
-    "Entrepreneurship",
-    "Management & Leadership",
-    "Career & Success",
-    "Marketing & Sales",
-    "Communication Skills",
-    "Corporate Culture",
+    "Careers & Work",
+    "Christianity",
     "Economics",
-    "Money & Investments",
-    "Productivity",
-    "Personal Development",
-    "Motivation & Inspiration",
-    "Psychology",
-    "Philosophy",
-    "Religion & Spirituality",
-    "Relationships",
-    "Parenting",
-    "Health & Nutrition",
-    "Fitness",
-    "Science",
-    "Technology & the Future",
-    "Education",
-    "Society & Culture",
-    "Politics",
+    "Health & Fitness",
     "History",
-    "Nature & the Environment",
-    "Lifestyle",
+    "Learning & Creativity",
+    "Management & Leadership",
+    "Money & Investments",
+    "Personal Development",
+    "Philosophy",
+    "Politics & Society",
+    "Productivity",
+    "Psychology",
+    "Relationships & Communication",
+    "Science & Environment",
+    "Technology & the Future",
 ] as const;
 
-export const CURATED_SEARCH_TOPICS = [
+type ContentCategory = typeof CANONICAL_CONTENT_CATEGORIES[number];
+
+export function isContentCategory(value: string): value is ContentCategory {
+    return CANONICAL_CONTENT_CATEGORIES.some((category) => category === value);
+}
+
+export const CURATED_SEARCH_TOPICS: readonly ContentCategory[] = [
     "Business",
     "Money & Investments",
     "Personal Development",
     "Productivity",
-    "Health & Nutrition",
-    "Parenting",
+    "Health & Fitness",
     "Psychology",
-] as const;
+];
 
-export const CURATED_LANDING_CATEGORY_ORDER = [
+export const CURATED_LANDING_CATEGORY_ORDER: readonly ContentCategory[] = [
     "Personal Development",
-    "Health & Nutrition",
-    "Parenting",
+    "Health & Fitness",
     "Money & Investments",
     "Productivity",
     "Philosophy",
     "Business",
-    "Science",
+    "Science & Environment",
     "Psychology",
-    "Religion & Spirituality",
-    "Relationships",
+    "Christianity",
+    "Relationships & Communication",
     "Technology & the Future",
-    "Politics",
-    "Lifestyle",
-] as const;
+    "Politics & Society",
+];
 
 export function normalizeContentCategoryLabel(category?: string | null) {
     const trimmed = category?.trim() ?? "";
