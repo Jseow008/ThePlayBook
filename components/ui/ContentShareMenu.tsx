@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Copy, Instagram, Loader2, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
@@ -17,6 +17,8 @@ interface ContentShareMenuProps {
     url?: string;
     path?: string;
     title: string;
+    destination: "Preview" | "Read";
+    themeClassName?: string;
     text?: string;
     className?: string;
     source?: string;
@@ -32,11 +34,21 @@ function buildResolvedUrl(url?: string, path?: string) {
     return path ?? "";
 }
 
+function canSendLink(data: ShareData) {
+    try {
+        return typeof navigator.share === "function" && navigator.canShare?.(data) === true;
+    } catch {
+        return false;
+    }
+}
+
 export function ContentShareMenu({
     contentId,
     url,
     path,
     title,
+    destination,
+    themeClassName,
     text,
     className,
     source = "share_menu",
@@ -46,20 +58,56 @@ export function ContentShareMenu({
     const [isBusy, setIsBusy] = useState(false);
     const [completedAction, setCompletedAction] = useState<"link" | "copy" | "story" | null>(null);
     const [mounted, setMounted] = useState(false);
+    const [position, setPosition] = useState({ top: 16, left: 16 });
+    const destinationId = useId();
     const menuRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const triggerButtonRef = useRef<HTMLButtonElement>(null);
     const isCompactReaderControls = useMediaQuery(VIEWPORT_QUERIES.compactReaderControls);
     const resolvedUrl = buildResolvedUrl(url, path);
+    const shareData = { title, text: text ?? title, url: resolvedUrl };
+    const showSendLink = isOpen && mounted && canSendLink(shareData);
+    const imageContentId = destination === "Read" ? contentId : undefined;
     const {
         status: imagePreparationStatus,
         prepare: prepareShareImage,
         getPreparedImage,
-    } = usePreparedShareImage(contentId, title);
+    } = usePreparedShareImage(imageContentId, title);
 
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    useLayoutEffect(() => {
+        if (!isOpen || !mounted || isCompactReaderControls) return;
+
+        // Focus cards clip overflow. Anchor the portaled menu to the trigger.
+        function placeMenu() {
+            const trigger = triggerButtonRef.current?.getBoundingClientRect();
+            const panel = panelRef.current?.getBoundingClientRect();
+            if (!trigger || !panel) return;
+            if (trigger.bottom < 0 || trigger.top > window.innerHeight) {
+                setIsOpen(false);
+                return;
+            }
+
+            const below = trigger.bottom + 8;
+            const above = trigger.top - panel.height - 8;
+            const maxTop = window.innerHeight - panel.height - 16;
+            setPosition({
+                top: Math.max(16, Math.min(below <= maxTop ? below : above, maxTop)),
+                left: Math.max(16, Math.min(trigger.right - panel.width, window.innerWidth - panel.width - 16)),
+            });
+        }
+
+        placeMenu();
+        window.addEventListener("resize", placeMenu);
+        window.addEventListener("scroll", placeMenu, true);
+        return () => {
+            window.removeEventListener("resize", placeMenu);
+            window.removeEventListener("scroll", placeMenu, true);
+        };
+    }, [isOpen, mounted, isCompactReaderControls, showSendLink]);
 
     useOverlayInteractions({
         enabled: isOpen && mounted,
@@ -67,6 +115,8 @@ export function ContentShareMenu({
         restoreFocusRef: triggerButtonRef,
         onEscape: () => setIsOpen(false),
         scrollLock: isCompactReaderControls,
+        preventInitialFocusScroll: true,
+        preventRestoreFocusScroll: true,
     });
 
     useEffect(() => {
@@ -92,10 +142,10 @@ export function ContentShareMenu({
     }, [isOpen]);
 
     useEffect(() => {
-        if (isOpen && contentId && imagePreparationStatus === "idle") {
+        if (isOpen && imageContentId && imagePreparationStatus === "idle") {
             void prepareShareImage();
         }
-    }, [contentId, imagePreparationStatus, isOpen, prepareShareImage]);
+    }, [imageContentId, imagePreparationStatus, isOpen, prepareShareImage]);
 
     function markCompleted(action: "link" | "copy" | "story") {
         setCompletedAction(action);
@@ -103,27 +153,21 @@ export function ContentShareMenu({
     }
 
     async function handleSendLink() {
-        const shareData = { title, text: text ?? title, url: resolvedUrl };
-
-        if (navigator.share && navigator.canShare?.(shareData)) {
-            try {
-                await navigator.share(shareData);
-                captureAnalyticsEvent("share_clicked", {
-                    source,
-                    content_id: contentId,
-                    content_type: contentType,
-                    share_method: "native",
-                    share_target: "content_link",
-                });
-                setIsOpen(false);
-                markCompleted("link");
-                return;
-            } catch (err) {
-                if ((err as Error).name === "AbortError") return;
-            }
+        try {
+            await navigator.share(shareData);
+            captureAnalyticsEvent("share_clicked", {
+                source,
+                content_id: contentId,
+                content_type: contentType,
+                share_method: "native",
+                share_target: "content_link",
+            });
+            setIsOpen(false);
+            markCompleted("link");
+        } catch (error) {
+            if ((error as Error).name === "AbortError") return;
+            toast.error("Could not send link");
         }
-
-        await handleCopyLink();
     }
 
     async function handleCopyLink() {
@@ -145,7 +189,7 @@ export function ContentShareMenu({
     }
 
     async function handleShareImage() {
-        if (!contentId || isBusy) return;
+        if (!imageContentId || isBusy) return;
 
         const preparedImage = getPreparedImage();
         if (!preparedImage) return;
@@ -185,35 +229,41 @@ export function ContentShareMenu({
         }
     }
 
+    const optionClass = "flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus:bg-secondary/70 focus:text-foreground focus:outline-none sm:min-h-0";
     const menuItems = (
         <div className="space-y-1">
-            <button
-                type="button"
-                role="menuitem"
-                onClick={handleSendLink}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus:bg-secondary/70 focus:text-foreground focus:outline-none"
-            >
-                <Send className="size-4 shrink-0" />
-                <span className="font-medium">Send link</span>
-                {completedAction === "link" && <Check className="ml-auto size-4 text-primary" />}
-            </button>
+            <p id={destinationId} className="px-3 py-1 text-xs text-muted-foreground">
+                Link opens {destination}
+            </p>
+            {showSendLink && (
+                <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleSendLink}
+                    className={optionClass}
+                >
+                    <Send className="size-4 shrink-0" />
+                    <span className="font-medium">Send link</span>
+                    {completedAction === "link" && <Check className="ml-auto size-4 text-primary" />}
+                </button>
+            )}
             <button
                 type="button"
                 role="menuitem"
                 onClick={handleCopyLink}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus:bg-secondary/70 focus:text-foreground focus:outline-none"
+                className={optionClass}
             >
                 <Copy className="size-4 shrink-0" />
                 <span className="font-medium">Copy link</span>
                 {completedAction === "copy" && <Check className="ml-auto size-4 text-primary" />}
             </button>
-            {contentId && (
+            {imageContentId && (
                 <button
                     type="button"
                     role="menuitem"
                     onClick={imagePreparationStatus === "failed" ? () => void prepareShareImage() : handleShareImage}
                     disabled={isBusy || imagePreparationStatus === "idle" || imagePreparationStatus === "preparing"}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus:bg-secondary/70 focus:text-foreground focus:outline-none disabled:cursor-wait disabled:opacity-70"
+                    className={cn(optionClass, "disabled:cursor-wait disabled:opacity-70")}
                 >
                     {isBusy || imagePreparationStatus === "idle" || imagePreparationStatus === "preparing" ? (
                         <Loader2 className="size-4 shrink-0 animate-spin" />
@@ -256,44 +306,38 @@ export function ContentShareMenu({
                 )}
             </button>
 
-            {isOpen && mounted && (
-                isCompactReaderControls ? createPortal(
-                    <>
+            {isOpen && mounted && createPortal(
+                <>
+                    {isCompactReaderControls && (
                         <div
                             className={cn(
+                                themeClassName,
                                 "fixed inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in motion-reduce:animate-none",
                                 OVERLAY_LAYER_CLASS.popover
                             )}
                             onClick={() => setIsOpen(false)}
                         />
-                        <div
-                            ref={panelRef}
-                            role="menu"
-                            aria-label="Share"
-                            tabIndex={-1}
-                            className={cn(
-                                "fixed inset-x-0 bottom-0 w-full rounded-t-2xl border-t border-border bg-card px-3 pb-[calc(3.75rem+var(--safe-area-bottom))] pt-3 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300 motion-reduce:animate-none motion-reduce:transition-none",
-                                OVERLAY_LAYER_CLASS.sheetRaised
-                            )}
-                        >
-                            {menuItems}
-                        </div>
-                    </>,
-                    document.body
-                ) : (
+                    )}
                     <div
                         ref={panelRef}
                         role="menu"
                         aria-label="Share"
+                        aria-describedby={destinationId}
                         tabIndex={-1}
+                        style={isCompactReaderControls ? undefined : position}
                         className={cn(
-                            "absolute right-0 mt-2 w-52 rounded-xl border border-border bg-card p-1.5 shadow-2xl animate-fade-in origin-top-right",
-                            OVERLAY_LAYER_CLASS.drawer
+                            themeClassName,
+                            "fixed overflow-y-auto bg-card text-foreground",
+                            isCompactReaderControls
+                                ? "inset-x-0 bottom-0 max-h-[90dvh] w-full rounded-t-2xl border-t border-border px-3 pb-[calc(3.75rem+var(--safe-area-bottom))] pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300 motion-reduce:animate-none motion-reduce:transition-none"
+                                : "max-h-[calc(100dvh-2rem)] w-52 rounded-xl border border-border p-1.5 shadow-2xl animate-fade-in origin-top-right",
+                            isCompactReaderControls ? OVERLAY_LAYER_CLASS.sheetRaised : OVERLAY_LAYER_CLASS.popover
                         )}
                     >
                         {menuItems}
                     </div>
-                )
+                </>,
+                document.body
             )}
         </div>
     );
