@@ -406,7 +406,7 @@ describe("SearchPage", () => {
         expect(screen.queryByRole("heading", { name: "Recently Added" })).not.toBeInTheDocument();
     });
 
-    it("loads type-filtered popular items when Popular is selected", async () => {
+    it.each([["book", "Books"], ["video", "Videos"]])("loads %s items when Popular is selected", async (type, label) => {
         rpcMock.mockImplementation((fn: string) => {
             if (fn === "get_category_stats") {
                 return Promise.resolve({
@@ -429,18 +429,18 @@ describe("SearchPage", () => {
             throw new Error(`Unexpected RPC: ${fn}`);
         });
 
-        await renderSearchPage({ type: "book", sort: "popular" });
+        await renderSearchPage({ type, sort: "popular" });
         await act(async () => {
-            render(await runPopularCatalogFromPage({ type: "book", sort: "popular" }));
+            render(await runPopularCatalogFromPage({ type, sort: "popular" }));
         });
 
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
             p_limit: 20,
-            p_type: "book",
+            p_type: type,
             p_categories: undefined,
         });
-        expect(screen.getByText("Popular Books")).toBeInTheDocument();
+        expect(screen.getByText(`Popular ${label}`)).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Personal Development" })).toBeInTheDocument();
         expect(fromMock).toHaveBeenCalledWith("content_item");
         expect(getLatestQueryBuilder()?.select).toHaveBeenCalledWith("id, audio_url");
@@ -467,17 +467,35 @@ describe("SearchPage", () => {
         resolvePopular({ data: [] });
     });
 
-    it("uses the indexed search service for text search and applies the type filter", async () => {
-        await runSearchResultsFromPage({ q: "focus", type: "podcast" });
+    it.each(["podcast", "video"])("uses indexed text search with the %s filter", async (type) => {
+        await runSearchResultsFromPage({ q: "focus", type });
 
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).not.toHaveBeenCalledWith("get_trending_content", expect.anything());
         expect(searchCatalogMock).toHaveBeenCalledWith({
             query: "focus",
             categories: [],
-            type: "podcast",
+            type,
             cursor: null,
         });
+    });
+
+    it("selects Video from the URL and keeps the search context in filter links", async () => {
+        await renderSearchPage({ q: "design", category: "Business", type: "video", cursor: "previous-page" });
+
+        const video = screen.getByRole("link", { name: "Video" });
+        expect(video).toHaveAttribute("aria-current", "true");
+        expect(video).toHaveAttribute("href", "/search?q=design&category=Business&type=video");
+        expect(video).toHaveClass("touch-target-44");
+        expect(screen.getByRole("link", { name: "All" })).not.toHaveAttribute("aria-current");
+    });
+
+    it("shows a Video-specific empty state and keeps the query for recovery", async () => {
+        searchCatalogMock.mockResolvedValueOnce({ outcome: "no_results", results: [], pageInfo: { nextCursor: null, previousCursor: null, page: 1 } });
+        render(await runSearchResultsFromPage({ q: "design", type: "video" }));
+
+        expect(screen.getByRole("heading", { name: "No videos match your search" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Clear all filters" })).toHaveAttribute("href", "/search?q=design");
     });
 
     it("offers Listen only on search results with audio", async () => {
@@ -586,14 +604,14 @@ describe("SearchPage", () => {
         expect(captureAnalyticsEventMock).not.toHaveBeenCalledWith("search_performed", expect.any(Object));
     });
 
-    it("uses the recent catalog query for category pages and still applies the type filter", async () => {
-        await runRecentCatalogFromPage({ category: "Productivity", type: "article" });
+    it.each(["article", "video"])("uses the recent catalog query with topic and %s filters", async (type) => {
+        await runRecentCatalogFromPage({ category: "Productivity", type });
 
         const queryBuilder = getLatestQueryBuilder();
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).not.toHaveBeenCalledWith("get_trending_content", expect.anything());
         expect(queryBuilder?.eq).toHaveBeenCalledWith("category", "Productivity");
-        expect(queryBuilder?.eq).toHaveBeenCalledWith("type", "article");
+        expect(queryBuilder?.eq).toHaveBeenCalledWith("type", type);
     });
 
     it("queries across duplicate raw variants for normalized topics", async () => {
