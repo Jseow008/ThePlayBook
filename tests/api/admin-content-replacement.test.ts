@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const mocks = vi.hoisted(() => ({ admin: vi.fn(), db: vi.fn(), rpc: vi.fn(), from: vi.fn(), rate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ admin: vi.fn(), db: vi.fn(), rpc: vi.fn(), from: vi.fn(), rate: vi.fn(), queue: vi.fn(), process: vi.fn(), after: vi.fn() }));
+vi.mock("next/server", async () => ({ ...await vi.importActual<typeof import("next/server")>("next/server"), after: mocks.after }));
 vi.mock("@/lib/admin/auth", () => ({ verifyAdminSession: mocks.admin }));
 vi.mock("@/lib/supabase/admin", () => ({ getAdminClient: mocks.db }));
 vi.mock("@/lib/server/rate-limit", () => ({ rateLimit: mocks.rate }));
+vi.mock("@/lib/server/narration-queue", () => ({ queueNarrationJobIfEligible: mocks.queue }));
+vi.mock("@/lib/server/narration-processor", () => ({ processNextNarrationJob: mocks.process }));
 vi.mock("@/lib/server/revalidation", () => ({
     getSeriesSlugsByIds: vi.fn().mockResolvedValue([]), revalidateContentDeleted: vi.fn(),
     revalidateContentUpdated: vi.fn(), revalidateReplacementRoutes: vi.fn(),
@@ -24,13 +27,18 @@ function request(body = input) {
 describe("admin replacement API", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.stubEnv("AUTO_GENERATE_NARRATION_ON_PUBLISH", "false");
         mocks.admin.mockResolvedValue(true);
         mocks.rate.mockResolvedValue({ success: true });
+        mocks.queue.mockResolvedValue({ queued: true });
         mocks.rpc.mockResolvedValue({ data: { preserved_library_records: 2 }, error: null });
         mocks.from.mockReturnValue({ select: () => ({ in: () => Promise.resolve({ data: [
             { id: source, title: "Original", series_id: null }, { id: kept, title: "Kept", series_id: null },
         ], error: null }) }) });
         mocks.db.mockReturnValue({ rpc: mocks.rpc, from: mocks.from });
+    });
+    afterEach(() => {
+        vi.unstubAllEnvs();
     });
     it("rejects an ordinary session before reading records", async () => {
         mocks.admin.mockResolvedValue(false);
@@ -51,6 +59,23 @@ describe("admin replacement API", () => {
             p_source_updated_at: input.sourceUpdatedAt, p_replacement_updated_at: input.replacementUpdatedAt,
         });
         expect(mocks.from.mock.calls.every(([table]) => table === "content_item")).toBe(true);
+        expect(mocks.queue).not.toHaveBeenCalled();
+    });
+    it("queues narration when an updated draft becomes verified", async () => {
+        vi.stubEnv("AUTO_GENERATE_NARRATION_ON_PUBLISH", "true");
+        mocks.from.mockReturnValue({ select: () => ({ in: () => Promise.resolve({ data: [
+            { id: source, title: "Original", series_id: null, status: "verified" },
+            { id: kept, title: "Updated version", series_id: null, status: "draft", audio_url: null, narration_status: "idle" },
+        ], error: null }) }) });
+
+        const response = await POST(request(), context);
+
+        expect(response.status).toBe(200);
+        expect(mocks.queue).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+            contentId: kept,
+            row: expect.objectContaining({ status: "draft", audio_url: null }),
+        }));
+        expect(mocks.after).toHaveBeenCalledTimes(1);
     });
     it("requires a fresh preview after a concurrent content edit", async () => {
         mocks.rpc.mockResolvedValue({ data: null, error: { code: "40001" } });
