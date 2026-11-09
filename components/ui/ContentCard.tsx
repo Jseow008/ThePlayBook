@@ -146,7 +146,7 @@ function InteractiveContentCard(props: ContentCardProps) {
     const href = getContentCardHref(item, navigationMode, hasUsableProgress(progress));
     const handleToggleBookmark = useCallback(async () => {
         if (!await toggleMyList(item.id)) return;
-        toast.success(isBookmarked ? "Removed from Library" : "Saved to Library");
+        toast.success(isBookmarked ? "Removed from Saved" : "Saved to Library");
     }, [isBookmarked, item.id, toggleMyList]);
 
     const percentage =

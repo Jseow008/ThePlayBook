@@ -36,11 +36,11 @@ export function LibrarySaveButton({
     stopPropagation = false,
     loadingLabel = "Loading Library state",
 }: LibrarySaveButtonProps) {
-    const actionTitle = isSaved ? "Remove from Library" : "Save to Library";
+    const actionTitle = isSaved ? "Remove from Saved" : "Save to Library";
     const ariaLabel = isLoading
         ? loadingLabel
         : isSaved
-            ? `Remove ${contentTitle} from Library`
+            ? `Remove ${contentTitle} from Saved`
             : `Save ${contentTitle} to Library`;
 
     const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
