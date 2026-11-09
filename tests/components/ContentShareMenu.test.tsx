@@ -36,13 +36,15 @@ function mockSuccessfulImageFetch() {
     return fetchMock;
 }
 
-function renderMenu() {
+function renderMenu(destination: "Preview" | "Read" = "Read") {
     render(
         <ContentShareMenu
             contentId={contentId}
             title="Can't Hurt Me"
             text="Read Can't Hurt Me on Netflux"
-            url="https://netflux.test/read/cant-hurt-me"
+            destination={destination}
+            url={destination === "Read" ? "https://netflux.test/read/cant-hurt-me" : undefined}
+            path={destination === "Preview" ? `/preview/${contentId}` : undefined}
         />
     );
 
@@ -60,6 +62,8 @@ async function renderPreparedMenu() {
 describe("ContentShareMenu", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        Object.defineProperty(navigator, "share", { configurable: true, value: undefined });
+        Object.defineProperty(navigator, "canShare", { configurable: true, value: undefined });
         mockSuccessfulImageFetch();
     });
 
@@ -70,12 +74,45 @@ describe("ContentShareMenu", () => {
     it("prepares the image when the share menu opens", async () => {
         renderMenu();
 
-        expect(screen.getByRole("menu", { name: "Share" })).toBeInTheDocument();
-        expect(screen.getByRole("menuitem", { name: /Send link/ })).toBeInTheDocument();
+        expect(screen.getByRole("menu", { name: "Share" })).toHaveAccessibleDescription("Link opens Read");
+        expect(screen.queryByRole("menuitem", { name: /Send link/ })).not.toBeInTheDocument();
         expect(screen.getByRole("menuitem", { name: /Copy link/ })).toBeInTheDocument();
         expect(screen.getByRole("menuitem", { name: "Preparing image..." })).toBeDisabled();
 
         await screen.findByRole("menuitem", { name: "Share image" });
+    });
+
+    it("labels and copies a Preview link without preparing an image", async () => {
+        const writeText = mockClipboard();
+        const fetchMock = mockSuccessfulImageFetch();
+        const share = vi.fn();
+        Object.defineProperty(navigator, "share", { configurable: true, value: share });
+        Object.defineProperty(navigator, "canShare", { configurable: true, value: () => false });
+
+        renderMenu("Preview");
+
+        expect(screen.getByRole("menu", { name: "Share" })).toHaveAccessibleDescription("Link opens Preview");
+        expect(screen.getAllByRole("menuitem")).toHaveLength(1);
+        expect(writeText).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("menuitem", { name: "Copy link" }));
+
+        await waitFor(() => expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/preview/${contentId}`));
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(share).not.toHaveBeenCalled();
+    });
+
+    it("leaves Copy link available after system sharing fails", async () => {
+        const writeText = mockClipboard();
+        const share = vi.fn().mockRejectedValue(new Error("Share failed"));
+        Object.defineProperty(navigator, "share", { configurable: true, value: share });
+        Object.defineProperty(navigator, "canShare", { configurable: true, value: () => true });
+
+        renderMenu("Preview");
+        fireEvent.click(screen.getByRole("menuitem", { name: "Send link" }));
+
+        await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+        expect(screen.getByRole("menuitem", { name: "Copy link" })).toBeInTheDocument();
+        expect(writeText).not.toHaveBeenCalled();
     });
 
     it("uses native sharing for the send link action", async () => {
