@@ -41,6 +41,7 @@ export function NetfluxSidebar() {
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [isAskOpen, setIsAskOpen] = useState(false);
     const sidebarRef = useRef<HTMLElement | null>(null);
+    const libraryWasOpenOnPressRef = useRef(false);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isPointerInsideRef = useRef(false);
     const user = useAuthUser();
@@ -210,57 +211,53 @@ export function NetfluxSidebar() {
 
                 {/* Library Section */}
                 <div className="space-y-1">
-                    {isExpanded ? (
-                        <button
-                            onClick={() => setIsLibraryOpen(!isLibraryOpen)}
-                            aria-expanded={isLibraryOpen}
-                            aria-controls="sidebar-library-subnav"
-                            className={cn(
-                                "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50",
-                                "justify-start gap-3",
-                                isLibrarySectionActive && "text-foreground bg-accent border-l-4 border-primary"
+                    <button
+                        type="button"
+                        title={!isExpanded ? "Library" : undefined}
+                        aria-label={!isExpanded && showLibraryBadge
+                            ? `Library, ${totalLibraryItems} ${totalLibraryItems === 1 ? "item" : "items"}`
+                            : "Library"}
+                        aria-expanded={isExpanded && isLibraryOpen}
+                        aria-controls="sidebar-library-subnav"
+                        onPointerDown={() => {
+                            libraryWasOpenOnPressRef.current = isExpanded && isLibraryOpen;
+                        }}
+                        onClick={(event) => {
+                            // Focus can auto-open the active Library section during a pointer press.
+                            const wasOpen = event.detail > 0
+                                ? libraryWasOpenOnPressRef.current
+                                : isExpanded && isLibraryOpen;
+                            setIsExpanded(true);
+                            setIsLibraryOpen(!wasOpen);
+                        }}
+                        className={cn(
+                            "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                            isExpanded ? "justify-start gap-3" : "justify-center",
+                            isLibrarySectionActive && "text-foreground bg-accent border-l-4 border-primary"
+                        )}
+                    >
+                        <div className="pointer-events-none relative flex-shrink-0">
+                            <BooksIcon className="size-5" weight="duotone" />
+                            {!isExpanded && showLibraryBadge && (
+                                <span aria-hidden="true" className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1">
+                                    {totalLibraryItems > 9 ? "9+" : totalLibraryItems}
+                                </span>
                             )}
-                        >
-                            <div className="relative flex-shrink-0">
-                                <BooksIcon className="size-5" weight="duotone" />
-                            </div>
-                            <span
-                                className={cn(
-                                    "text-sm font-medium transition-opacity whitespace-nowrap flex-1 text-left opacity-100"
-                                )}
-                            >
-                                Library
-                            </span>
-                            <ChevronDown
-                                className={cn(
-                                    "size-4 transition-transform",
-                                    isLibraryOpen && "rotate-180"
-                                )}
-                            />
-                        </button>
-                    ) : (
-                        <Link
-                            href="/library/reading"
-                            title="Library"
-                            aria-label={showLibraryBadge
-                                ? `Library, ${totalLibraryItems} ${totalLibraryItems === 1 ? "item" : "items"}`
-                                : "Library"}
-                            className={cn(
-                                "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50 justify-center",
-                                isLibrarySectionActive && "text-foreground bg-accent border-l-4 border-primary"
-                            )}
-                        >
-                            <div className="relative flex-shrink-0">
-                                <BooksIcon className="size-5" weight="duotone" />
-                                {/* Badge for total items when collapsed */}
-                                {showLibraryBadge && (
-                                    <span aria-hidden="true" className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1">
-                                        {totalLibraryItems > 9 ? "9+" : totalLibraryItems}
-                                    </span>
-                                )}
-                            </div>
-                        </Link>
-                    )}
+                        </div>
+                        {isExpanded && (
+                            <>
+                                <span className="text-sm font-medium transition-opacity whitespace-nowrap flex-1 text-left opacity-100">
+                                    Library
+                                </span>
+                                <ChevronDown
+                                    className={cn(
+                                        "size-4 transition-transform",
+                                        isLibraryOpen && "rotate-180"
+                                    )}
+                                />
+                            </>
+                        )}
+                    </button>
 
                     {/* Library Sub-items (only when expanded and open) */}
                     {isExpanded && isLibraryOpen && (

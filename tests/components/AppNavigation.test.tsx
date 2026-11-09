@@ -109,13 +109,16 @@ describe("app navigation", () => {
         expect(screen.getByRole("link", { name: /browse/i })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: /search/i })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: /^focus$/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /library/i })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute("href", "/library/my-list");
         expect(screen.queryByText("Categories")).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: /^ask$/i })).not.toBeInTheDocument();
         expect(screen.getByRole("link", { name: /^focus$/i })).toHaveAttribute("href", "/focus");
     });
 
-    it.each([NetfluxSidebar, MobileBottomNav])("labels the Library shortcut with its shared distinct count", (Navigation) => {
+    it.each([
+        [NetfluxSidebar, "button"],
+        [MobileBottomNav, "link"],
+    ] as const)("labels the Library shortcut with its shared distinct count", (Navigation, role) => {
         readingProgressState.value = {
             totalLibraryItems: 2,
             inProgressCount: 0,
@@ -126,7 +129,7 @@ describe("app navigation", () => {
 
         render(<Navigation />);
 
-        expect(screen.getByRole("link", { name: "Library, 2 items" })).toHaveTextContent("2");
+        expect(screen.getByRole(role, { name: "Library, 2 items" })).toHaveTextContent("2");
     });
 
     it("adds an Ask section to the desktop sidebar with global and notes entry points", async () => {
@@ -180,6 +183,26 @@ describe("app navigation", () => {
         const libraryButton = screen.getByRole("button", { name: /^library$/i });
         expect(libraryButton).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /ask/i })).toBeInTheDocument();
+    });
+
+    it.each(["/browse", "/library/reading"])("keeps a collapsed Library press working on %s when focus expands the sidebar", (pathname) => {
+        pathnameState.value = pathname;
+        render(<NetfluxSidebar />);
+
+        const trigger = screen.getByRole("button", { name: "Library, 6 items" });
+        expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+        fireEvent.pointerDown(trigger);
+        fireEvent.focus(trigger);
+        expect(screen.getByRole("button", { name: "Library" })).toBe(trigger);
+
+        fireEvent.click(trigger, { detail: 1 });
+        expect(trigger).toHaveAttribute("aria-expanded", "true");
+        expect(screen.getByRole("link", { name: /continue reading/i })).toHaveAttribute("href", "/library/reading");
+
+        fireEvent.pointerDown(trigger);
+        fireEvent.click(trigger, { detail: 1 });
+        expect(trigger).toHaveAttribute("aria-expanded", "false");
     });
 
     it("opens the Library submenu even before reading progress finishes loading", async () => {
