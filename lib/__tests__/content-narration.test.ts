@@ -174,7 +174,7 @@ describe("AI narration helpers", () => {
         expect(estimate.estimatedCostUsd).toBe(0);
     });
 
-    it("sends Fish narration to the selected model and Adrian voice", async () => {
+    it("sends Fish narration to the selected model and P Explainer voice", async () => {
         vi.stubEnv("NARRATION_PROVIDER", "fish");
         vi.stubEnv("FISH_AUDIO_MODEL", "s2.1-pro-free");
         vi.stubEnv("FISH_AUDIO_API_KEY", "test-fish-key");
@@ -193,7 +193,7 @@ describe("AI narration helpers", () => {
         expect(url).toBe("https://api.fish.audio/v1/tts");
         expect(options.headers.model).toBe("s2.1-pro-free");
         const body = JSON.parse(options.body);
-        expect(body.reference_id).toBe("bf322df2096a46f18c579d0baa36f41d");
+        expect(body.reference_id).toBe("328baa0bc2934199bccfe3fd2ddc19ff");
         expect(body.text).toBe("[speak in a calm, grounded conversational tone, with natural pauses and understated emphasis] A brief test passage.");
         expect(body.temperature).toBe(0.7);
         expect(body.top_p).toBe(0.85);
@@ -251,19 +251,12 @@ describe("AI narration helpers", () => {
         expect(hasId3Header || hasMpegFrameHeader).toBe(true);
     });
 
-    it("keeps Adrian's pitch and pace adjustment while shortening only long pauses", async () => {
+    it("keeps P Explainer's generated pitch, pace, and pauses", async () => {
         const source = makeToneWav(3, 1, 2);
         const adjusted = await processFishNarrationWav(source);
 
-        expect(adjusted.toString("ascii", 0, 4)).toBe("RIFF");
-        expect(getWavDurationSeconds(adjusted)).toBeGreaterThan(2.1);
-        expect(getWavDurationSeconds(adjusted)).toBeLessThan(2.4);
-    });
-
-    it("preserves shorter pauses in Adrian narration", async () => {
-        const adjusted = await processFishNarrationWav(makeToneWav(3, 1.3, 1.7));
-        expect(getWavDurationSeconds(adjusted)).toBeGreaterThan(2.6);
-        expect(getWavDurationSeconds(adjusted)).toBeLessThan(2.8);
+        expect(adjusted).toEqual(source);
+        expect(getWavDurationSeconds(adjusted)).toBe(3);
     });
 
     it("encodes narration at 128 kbps", async () => {
@@ -435,7 +428,7 @@ describe("AI narration helpers", () => {
         ]);
     });
 
-    it("stores Fish segment timings after the delivery adjustment", async () => {
+    it("stores Fish segment timings without changing the generated delivery", async () => {
         vi.stubEnv("NARRATION_PROVIDER", "fish");
         vi.stubEnv("FISH_AUDIO_API_KEY", "test-fish-key");
         vi.stubEnv("NARRATION_OUTPUT_FORMAT", "wav");
@@ -458,10 +451,9 @@ describe("AI narration helpers", () => {
 
         expect(result.segmentTimings).toEqual([
             { id: "one", order_index: 1, start_time_sec: 0, end_time_sec: 3 },
-            { id: "two", order_index: 2, start_time_sec: 3, end_time_sec: 5 },
+            { id: "two", order_index: 2, start_time_sec: 3, end_time_sec: 6 },
         ]);
-        expect(getWavDurationSeconds(result.audioBuffer)).toBeGreaterThan(5.3);
-        expect(getWavDurationSeconds(result.audioBuffer)).toBeLessThan(5.5);
+        expect(getWavDurationSeconds(result.audioBuffer)).toBe(6);
     });
 
     it("retries temporary OpenAI failures before succeeding", async () => {

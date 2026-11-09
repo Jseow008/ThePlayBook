@@ -1,10 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { isAutomaticNarrationOnPublishEnabled } from "@/lib/server/narration-policy";
+import { processNextNarrationJob } from "@/lib/server/narration-processor";
+import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
 import { getSeriesSlugsByIds, revalidateContentDeleted, revalidateContentUpdated, revalidateReplacementRoutes } from "@/lib/server/revalidation";
+
+export const maxDuration = 300;
 
 const IdSchema = z.guid();
 const ReplaceSchema = z.object({
@@ -72,8 +77,9 @@ export async function POST(request: NextRequest, { params }: Context) {
     try {
         const db = getAdminClient();
         const { data: items, error: itemsError } = await db.from("content_item")
-            .select("id, title, series_id").in("id", [id, input.replacementId]);
+            .select("id, title, series_id, status, audio_url, narration_status").in("id", [id, input.replacementId]);
         if (itemsError) throw itemsError;
+        const targetBeforePublish = items?.find((item) => item.id === input.replacementId);
         const { data, error } = await db.rpc("admin_replace_content", {
             p_source_id: id, p_replacement_id: input.replacementId,
             p_source_updated_at: input.sourceUpdatedAt, p_replacement_updated_at: input.replacementUpdatedAt,
@@ -92,7 +98,40 @@ export async function POST(request: NextRequest, { params }: Context) {
         }
         // This also expires any flattened incoming notice, including old slugs.
         revalidateReplacementRoutes();
-        return NextResponse.json({ success: true, data }, { headers: { "Cache-Control": "no-store" } });
+
+        let narrationWarning: string | null = null;
+        if (targetBeforePublish?.status === "draft" && isAutomaticNarrationOnPublishEnabled()) {
+            try {
+                const { queued } = await queueNarrationJobIfEligible({
+                    supabase: db,
+                    contentId: input.replacementId,
+                    row: targetBeforePublish,
+                });
+                if (queued) {
+                    after(async () => {
+                        try {
+                            await processNextNarrationJob(`${requestId}:background`);
+                        } catch (backgroundError) {
+                            logApiError({
+                                requestId,
+                                route: "/api/admin/content/[id]/replacement",
+                                message: "Background AI narration processor failed after publishing updated version",
+                                error: backgroundError,
+                            });
+                        }
+                    });
+                }
+            } catch (queueError) {
+                narrationWarning = "Updated version was published, but AI narration could not be queued automatically.";
+                logApiError({
+                    requestId,
+                    route: "/api/admin/content/[id]/replacement",
+                    message: "Failed to auto-queue AI narration after publishing updated version",
+                    error: queueError,
+                });
+            }
+        }
+        return NextResponse.json({ success: true, data, narrationWarning }, { headers: { "Cache-Control": "no-store" } });
     } catch (error) {
         logApiError({ requestId, route: "/api/admin/content/[id]/replacement", message: "Replacement failed", error });
         return apiError("INTERNAL_ERROR", "Could not replace summary", 500, requestId);

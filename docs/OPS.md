@@ -422,8 +422,9 @@ AI narration now runs as a queued background job.
 Narration provider configuration:
 
 - `NARRATION_PROVIDER=openai` is the default; set `NARRATION_PROVIDER=fish` to use Fish Audio.
-- Fish requires server-only `FISH_AUDIO_API_KEY`. The default voice is Adrian (`bf322df2096a46f18c579d0baa36f41d`); set any Production `FISH_AUDIO_VOICE_ID` override to this ID when releasing the new default.
-- Fish narration uses temperature `0.7`, `top_p` `0.85`, and the direction `[speak in a calm, grounded conversational tone, with natural pauses and understated emphasis]`. After synthesis, each segment is raised half a semitone, played 11% faster, and gaps of at least `0.65` seconds are shortened to about `0.45` seconds. Final MP3 output is 128 kbps mono at 24 kHz.
+- Fish requires server-only `FISH_AUDIO_API_KEY`. The default voice is P Explainer (`328baa0bc2934199bccfe3fd2ddc19ff`); set any Production `FISH_AUDIO_VOICE_ID` override to this ID when releasing the new default.
+- Fish narration uses temperature `0.7`, `top_p` `0.85`, normal speed and pitch, and the direction `[speak in a calm, grounded conversational tone, with natural pauses and understated emphasis]`. The generated pauses are retained. Final MP3 output is 128 kbps mono at 24 kHz.
+- With `AUTO_GENERATE_NARRATION_ON_PUBLISH=true`, narration queues when a draft is published, including an updated version, or when new content is created as verified, provided it has no audio. Set the Production variable to `true` to enable this without changing Preview or Development. Manual narration remains available independently.
 - `FISH_AUDIO_MODEL` accepts only `s2.1-pro-free` (default) or `s2.1-pro`. Unsupported names fail before calling Fish, because Fish otherwise falls back to a paid model.
 - Confirm production-use rights before selecting the free model for a commercial deployment. Fish currently describes the free offer as time-limited and best-effort. A live deployment also needs these variables in the hosting environment; `.env.local` applies only to the local checkout.
 
