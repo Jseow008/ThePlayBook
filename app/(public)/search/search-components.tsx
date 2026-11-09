@@ -7,19 +7,15 @@ import type { ContentItem, ContentType } from "@/types/database";
 import { ArrowLeft, ArrowRight, Clock3, Search, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
-const SEARCHABLE_TYPES: ContentType[] = ["book", "podcast", "article"];
+export const SEARCHABLE_TYPES = ["book", "podcast", "article", "video"] as const satisfies readonly ContentType[];
 type CatalogSort = "recent" | "popular";
 
 export function normalizeType(type?: string): ContentType | undefined {
-    if (!type || type.toLowerCase() === "all") {
-        return undefined;
-    }
-
-    const normalized = type.toLowerCase() as ContentType;
-    return SEARCHABLE_TYPES.includes(normalized) ? normalized : undefined;
+    const normalized = type?.toLowerCase();
+    return SEARCHABLE_TYPES.find((choice) => choice === normalized);
 }
 
-function formatTypeLabel(type: ContentType) {
+export function formatTypeLabel(type: ContentType) {
     return type.charAt(0).toUpperCase() + type.slice(1);
 }
 
@@ -135,7 +131,9 @@ export async function RecentCatalog({
                 </>
             ) : (
                 <div className="py-12 text-center text-muted-foreground">
-                    <p>No content matches these filters.</p>
+                    <p>{type === "video"
+                        ? categoryLabel ? "No videos match these filters." : "No video summaries yet."
+                        : "No content matches these filters."}</p>
                     {(categoryLabel || type) ? (
                         <Link href="/search" className="focus-ring mt-4 inline-flex rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium transition-colors hover:bg-secondary/50 hover:text-foreground">
                             Clear all filters
@@ -187,7 +185,7 @@ export async function PopularCatalog({
                 </div>
             ) : (
                 <div className="py-12 text-center text-muted-foreground">
-                    <p>No popular content matches these filters yet.</p>
+                    <p>{type === "video" ? "No popular videos match these filters yet." : "No popular content matches these filters yet."}</p>
                     {(categoryLabel || type) ? (
                         <Link href={buildSearchHref({ sort: "popular" })} className="focus-ring mt-4 inline-flex rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium transition-colors hover:bg-secondary/50 hover:text-foreground">
                             Clear all filters
@@ -436,7 +434,7 @@ function renderSearchResults({
                         <Search className="size-9 md:size-10 text-muted-foreground" />
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-1 md:mb-2">
-                        {outcome === "input_empty" ? "Try a more specific search" : "No results found"}
+                        {outcome === "input_empty" ? "Try a more specific search" : normalizedType === "video" ? "No videos match your search" : "No results found"}
                     </h3>
                     <p className="text-sm md:text-base text-muted-foreground max-w-sm mx-auto mb-3 md:mb-6">
                         {outcome === "input_empty"
