@@ -37,9 +37,7 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
         setHasMounted(true);
     }, []);
 
-    // Check if current path is in library section
-    const isLibraryActive = pathname.startsWith("/library");
-    const isFocusActive = pathname === "/focus";
+    const isLibraryActive = pathname === "/library" || pathname.startsWith("/library/");
     const showLibraryBadge = hasMounted && isLoaded && totalLibraryItems > 0;
 
     return (
@@ -60,18 +58,17 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                     compact ? "h-16" : "h-[4.25rem]"
                 )}>
                     {navItems.map((item) => {
-                        const isActive = item.href === "/library/my-list"
-                            ? isLibraryActive
-                            : item.href === "/focus"
-                                ? isFocusActive
-                                : pathname === item.href;
                         const isLibrary = item.href === "/library/my-list";
+                        const isCurrentLibrary = isLibrary && isLibraryActive;
+                        const isActive = isCurrentLibrary || pathname === item.href;
 
                         return (
                             <Link
                                 key={item.href}
-                                href={item.href}
-                                aria-current={isActive ? "page" : undefined}
+                                href={isCurrentLibrary ? pathname : item.href}
+                                // Stay on the current Library view without changing its URL or scroll.
+                                onNavigate={isCurrentLibrary ? (event) => event.preventDefault() : undefined}
+                                aria-current={isCurrentLibrary ? "location" : isActive ? "page" : undefined}
                                 aria-label={isLibrary && showLibraryBadge
                                     ? `Library, ${totalLibraryItems} ${totalLibraryItems === 1 ? "item" : "items"}`
                                     : undefined}
