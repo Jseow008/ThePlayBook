@@ -668,7 +668,7 @@ export function FocusFeed() {
             myListIdSetRef.current.add(card.id);
         }
         if (await acknowledgement) {
-            toast.success(wasSaved ? "Removed from Library" : "Saved to Library");
+            toast.success(wasSaved ? "Removed from Saved" : "Saved to Library");
             if (!wasSaved) {
                 engagedIdsRef.current.add(card.id);
                 const context = getActionContext(card.id);

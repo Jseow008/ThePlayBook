@@ -1262,7 +1262,7 @@ describe("FocusFeed", () => {
         expect(toggleMyListMock).toHaveBeenNthCalledWith(1, focusItems[0]!.id);
         expect(toggleMyListMock).toHaveBeenNthCalledWith(2, focusItems[0]!.id);
         await waitFor(() => expect(toastSuccessMock).toHaveBeenNthCalledWith(1, "Saved to Library"));
-        expect(toastSuccessMock).toHaveBeenNthCalledWith(2, "Removed from Library");
+        expect(toastSuccessMock).toHaveBeenNthCalledWith(2, "Removed from Saved");
     });
 
     it("opens a simplified mobile takeaways sheet with the full takeaway list and closes back to the same feed", async () => {

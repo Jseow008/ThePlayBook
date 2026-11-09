@@ -24,7 +24,7 @@ export function SaveToLibraryButton({
             onToggle={async () => {
                 const wasSaved = isInMyList(contentId);
                 if (!await toggleMyList(contentId)) return;
-                toast.success(wasSaved ? "Removed from Library" : "Saved to Library");
+                toast.success(wasSaved ? "Removed from Saved" : "Saved to Library");
             }}
         />
     );
