@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { completeGuestOnboarding } from './helpers/responsive';
 
 test('the narrow Library shortcut opens Saved from Browse and preserves the current Library tab', async ({ page }) => {
     test.skip((page.viewportSize()?.width ?? 1024) >= 1024, 'The bottom navigation is only shown on narrow screens');
+    await completeGuestOnboarding(page);
     await page.goto('/browse');
     const library = page.getByTestId('mobile-bottom-nav').getByRole('link', { name: /^Library\b/i });
 
