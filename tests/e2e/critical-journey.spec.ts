@@ -53,9 +53,8 @@ test.describe('Critical User Journey', () => {
         const readerContent = page.locator('main').first();
         await expect(readerContent).toBeVisible();
 
-        // Verify a segment or title is rendered
-        // The reader layout accordion buttons have role="button" and segment titles
-        const firstSegmentToggle = page.locator('button[aria-expanded]').first();
+        // Verify a reader section is rendered rather than a shell control.
+        const firstSegmentToggle = readerContent.locator('[data-reader-segment-id] button[aria-expanded]').first();
         await expect(firstSegmentToggle).toBeVisible();
 
         // Ensure the settings menu or highlight tools are rendered
