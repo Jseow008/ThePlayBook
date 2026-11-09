@@ -169,6 +169,8 @@ export function ReaderHeroHeader({
 
                             {/* Share Menu */}
                             <ContentShareMenu
+                                destination="Read"
+                                themeClassName={`reader-${readerTheme}`}
                                 url={shareUrl}
                                 title={title}
                                 text={`Read "${title}" on ${APP_NAME}`}
