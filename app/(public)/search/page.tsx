@@ -14,10 +14,10 @@ import { Suspense } from "react";
 import { SearchTopicSelect } from "@/components/ui/SearchTopicSelect";
 import {
     buildCanonicalCategoryStats,
+    CANONICAL_CONTENT_CATEGORIES,
     CURATED_SEARCH_TOPICS,
-    getCanonicalContentCategory,
+    isContentCategory,
     normalizeContentCategoryLabel,
-    resolveContentCategoryAlias,
 } from "@/lib/content-categories";
 import {
     buildSearchHref,
@@ -36,28 +36,7 @@ interface SearchPageProps {
     searchParams: Promise<{ q?: string; category?: string; type?: string; sort?: string; page?: string; cursor?: string }>;
 }
 
-interface CategoryStat {
-    category: string;
-    count: number;
-}
-
-interface NormalizedTopic {
-    label: string;
-    count: number;
-    rawValues: string[];
-}
-
-const NON_TOPIC_CATEGORIES = new Set(["book_summary"]);
-
-function buildNormalizedTopics(categoryStats: CategoryStat[]) {
-    return buildCanonicalCategoryStats(categoryStats)
-        .map((item) => ({
-            label: item.category,
-            count: item.count,
-            rawValues: item.rawValues,
-        }))
-        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
-}
+const MORE_SEARCH_TOPICS = CANONICAL_CONTENT_CATEGORIES.filter((topic) => !CURATED_SEARCH_TOPICS.includes(topic));
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const { q: query, category, type, sort, page, cursor } = await searchParams;
@@ -65,69 +44,39 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const selectedTypeParam = selectedType ?? undefined;
     const selectedSort = normalizeCatalogSort(sort);
     const selectedPage = normalizePage(page);
-    const normalizedCategory = normalizeContentCategoryLabel(category);
-    const aliasCategory = resolveContentCategoryAlias(normalizedCategory);
-    const canonicalCategory = aliasCategory ?? getCanonicalContentCategory(normalizedCategory);
+    const normalizedCategory = normalizeContentCategoryLabel(typeof category === "string" ? category : undefined);
+    const selectedTopicLabel = isContentCategory(normalizedCategory) ? normalizedCategory : undefined;
 
-    if (aliasCategory) {
-        redirect(buildSearchHref({ query, category: aliasCategory, type: selectedTypeParam, sort: selectedSort, page: selectedPage, cursor }));
-    }
-    if (NON_TOPIC_CATEGORIES.has(canonicalCategory)) {
+    if (category && !selectedTopicLabel) {
         redirect(buildSearchHref({ query, type: selectedTypeParam, sort: selectedSort }));
     }
 
     const hasContentSearch = (query?.trim().length ?? 0) > 0;
 
-    // Unfiltered results do not depend on the topic list, so start both reads together.
-    // Category-filtered results still use the raw values returned by category stats.
-    const categoryStatsPromise = getSearchCategoryStats().catch((error): CategoryStat[] => {
-        console.error("Search topic stats read failed", error);
-        return [];
-    });
-    const preloadedSearchResponse = hasContentSearch && !canonicalCategory
+    const preloadedSearchResponse = hasContentSearch && !selectedTopicLabel
         ? searchCatalog({ query: query?.trim() ?? "", categories: [], type: selectedType ?? null, cursor: cursor ?? null })
         : undefined;
-    const preloadedRecentPage = !hasContentSearch && selectedSort === "recent" && !canonicalCategory
+    const preloadedRecentPage = !hasContentSearch && selectedSort === "recent" && !selectedTopicLabel
         ? getRecentCatalogPage({ categoryValues: [], type: selectedType, page: selectedPage })
         : undefined;
-    const preloadedPopular = !hasContentSearch && selectedSort === "popular" && !canonicalCategory
+    const preloadedPopular = !hasContentSearch && selectedSort === "popular" && !selectedTopicLabel
         ? getPopularCatalogItems({ categoryValues: [], type: selectedType })
         : undefined;
     void preloadedSearchResponse?.catch(() => undefined);
     void preloadedRecentPage?.catch(() => undefined);
     void preloadedPopular?.catch(() => undefined);
 
-    const categoryStats = await categoryStatsPromise;
-    const normalizedTopics = buildNormalizedTopics(categoryStats);
-    // This catalog classification describes the content format, not a topic.
-    const searchableTopics = normalizedTopics.filter((topic) => !NON_TOPIC_CATEGORIES.has(topic.label));
-    const topicsByLabel = new Map(searchableTopics.map((topic) => [topic.label, topic]));
-    const selectedTopic = canonicalCategory
-        ? topicsByLabel.get(canonicalCategory) ?? {
-            label: canonicalCategory,
-            count: 0,
-            rawValues: canonicalCategory ? [canonicalCategory] : [],
-        }
-        : null;
-    const curatedTopicItems = CURATED_SEARCH_TOPICS.map((label) => topicsByLabel.get(label)).filter(
-        (item): item is NormalizedTopic => Boolean(item)
-    );
-    const dropdownLabels = searchableTopics
-        .map((item) => item.label)
-        .filter((label) => !CURATED_SEARCH_TOPICS.includes(label as typeof CURATED_SEARCH_TOPICS[number]));
-    const dropdownOptions = Array.from(new Set([
-        ...dropdownLabels,
-        ...(selectedTopic && !CURATED_SEARCH_TOPICS.includes(selectedTopic.label as typeof CURATED_SEARCH_TOPICS[number])
-            ? [selectedTopic.label]
-            : []),
-    ])).sort((a, b) => a.localeCompare(b));
-    const selectedTopicLabel = selectedTopic?.label;
-    const selectedTopicValues = selectedTopic?.rawValues ?? [];
-    const allTopicOptions = Array.from(new Set([
-        ...curatedTopicItems.map((item) => item.label),
-        ...dropdownOptions,
-        ...(selectedTopicLabel ? [selectedTopicLabel] : []),
-    ]));
+    let selectedTopicValues: string[] = [];
+    if (selectedTopicLabel) {
+        // Keep matching stored variants of approved topics without exposing them in the picker.
+        const categoryStats = await getSearchCategoryStats().catch((error) => {
+            console.error("Search topic stats read failed", error);
+            return [];
+        });
+        const selectedTopic = buildCanonicalCategoryStats(categoryStats).find(({ category }) => category === selectedTopicLabel);
+        selectedTopicValues = selectedTopic?.rawValues ?? [selectedTopicLabel];
+    }
+
     return (
         <div className="min-h-screen bg-background pb-5 md:pb-6 lg:pb-16">
             <div className="max-w-7xl mx-auto px-6 lg:px-16 py-5 md:py-8">
@@ -182,73 +131,73 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     </div>
                 </div>
 
-                {curatedTopicItems.length > 0 || dropdownOptions.length > 0 ? (
-                    <div className="mb-6 md:mb-8 lg:mb-5">
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
-                            Topics
-                        </p>
-                        <div className="sm:hidden">
-                            <SearchTopicSelect
-                                query={query}
-                                type={selectedTypeParam}
-                                sort={selectedSort}
-                                value={selectedTopicLabel ?? ""}
-                                options={allTopicOptions}
-                                variant="all-topics"
-                            />
-                        </div>
-                        <div className="hidden flex-wrap justify-start gap-2 sm:flex">
-                            <SearchFilterLink
-                                filterParam="category"
-                                href={buildSearchHref({
-                                    query,
-                                    type: selectedTypeParam,
-                                    sort: selectedSort,
-                                })}
-                                className={`px-3.5 md:px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${!selectedTopicLabel
-                                    ? "bg-primary text-primary-foreground border-primary"
-                                    : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50 hover:text-foreground"
-                                    }`}
-                            >
-                                All topics
-                            </SearchFilterLink>
-
-                            {curatedTopicItems.map((item) => {
-                                const isActive = selectedTopicLabel === item.label;
-
-                                return (
-                                    <SearchFilterLink
-                                        key={item.label}
-                                        filterParam="category"
-                                        filterValue={item.label}
-                                        href={buildSearchHref({
-                                            query,
-                                            category: item.label,
-                                            type: selectedTypeParam,
-                                            sort: selectedSort,
-                                        })}
-                                        className={`px-3.5 md:px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
-                                            ? "bg-primary text-primary-foreground border-primary"
-                                            : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50 hover:text-foreground"
-                                            }`}
-                                    >
-                                        {item.label}
-                                    </SearchFilterLink>
-                                );
-                            })}
-
-                            <SearchTopicSelect
-                                query={query}
-                                type={selectedTypeParam}
-                                sort={selectedSort}
-                                value={selectedTopicLabel && !CURATED_SEARCH_TOPICS.includes(selectedTopicLabel as typeof CURATED_SEARCH_TOPICS[number])
-                                    ? selectedTopicLabel
-                                    : ""}
-                                options={dropdownOptions}
-                            />
-                        </div>
+                <div className="mb-6 md:mb-8 lg:mb-5">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
+                        Topics
+                    </p>
+                    <div className="sm:hidden">
+                        <SearchTopicSelect
+                            query={query}
+                            type={selectedTypeParam}
+                            sort={selectedSort}
+                            value={selectedTopicLabel ?? ""}
+                            options={[...CANONICAL_CONTENT_CATEGORIES]}
+                            variant="all-topics"
+                        />
                     </div>
-                ) : null}
+                    <div className="hidden flex-wrap justify-start gap-2 sm:flex">
+                        <SearchFilterLink
+                            filterParam="category"
+                            aria-current={!selectedTopicLabel ? "true" : undefined}
+                            href={buildSearchHref({
+                                query,
+                                type: selectedTypeParam,
+                                sort: selectedSort,
+                            })}
+                            className={`px-3.5 md:px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${!selectedTopicLabel
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50 hover:text-foreground"
+                                }`}
+                        >
+                            All topics
+                        </SearchFilterLink>
+
+                        {CURATED_SEARCH_TOPICS.map((topic) => {
+                            const isActive = selectedTopicLabel === topic;
+
+                            return (
+                                <SearchFilterLink
+                                    key={topic}
+                                    filterParam="category"
+                                    filterValue={topic}
+                                    aria-current={isActive ? "true" : undefined}
+                                    href={buildSearchHref({
+                                        query,
+                                        category: topic,
+                                        type: selectedTypeParam,
+                                        sort: selectedSort,
+                                    })}
+                                    className={`px-3.5 md:px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50 hover:text-foreground"
+                                        }`}
+                                >
+                                    {topic}
+                                </SearchFilterLink>
+                            );
+                        })}
+
+                        <SearchTopicSelect
+                            query={query}
+                            type={selectedTypeParam}
+                            sort={selectedSort}
+                            value={selectedTopicLabel && !CURATED_SEARCH_TOPICS.includes(selectedTopicLabel)
+                                ? selectedTopicLabel
+                                : ""}
+                            options={MORE_SEARCH_TOPICS}
+                        />
+                    </div>
+                </div>
 
                 {!hasContentSearch ? (
                     <div className="mb-6 border-b border-border pb-3 md:mb-8 lg:mb-5">

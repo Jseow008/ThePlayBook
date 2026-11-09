@@ -51,14 +51,41 @@ test.describe('/search', () => {
     });
 
     test('offers a reset when filters alone return no content', async ({ page }) => {
-        await page.goto('/search?category=NoSuchTopic&type=podcast');
+        await page.goto('/search?category=Christianity&type=article');
         await expect(page.getByText('No content matches these filters.')).toBeVisible();
         await page.getByRole('link', { name: 'Clear all filters' }).click();
         await expect(page).toHaveURL((url) => url.pathname === '/search' && !url.search);
     });
 
+    test('shows the approved topics and preserves selection across reload and Back', async ({ page }) => {
+        await page.goto('/search?q=faith&type=book&category=Religion+%26+Spirituality');
+        await expect(page).toHaveURL((url) => url.pathname === '/search'
+            && url.searchParams.get('q') === 'faith'
+            && url.searchParams.get('type') === 'book'
+            && !url.searchParams.has('category'));
+
+        const narrow = page.getByRole('combobox', { name: 'Topics', exact: true });
+        const isNarrow = await narrow.isVisible();
+        const picker = isNarrow ? narrow : page.getByRole('combobox', { name: 'More topics' });
+        await expect(picker.locator('option')).toHaveCount(isNarrow ? 19 : 13);
+        await expect(picker.locator('option', { hasText: 'Religion & Spirituality' })).toHaveCount(0);
+        if (isNarrow) {
+            expect((await picker.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+        }
+
+        await picker.selectOption('Christianity');
+        await expect(page).toHaveURL((url) => url.searchParams.get('category') === 'Christianity'
+            && url.searchParams.get('q') === 'faith'
+            && url.searchParams.get('type') === 'book');
+        await expect(picker).toHaveValue('Christianity');
+        await page.reload();
+        await expect(picker).toHaveValue('Christianity');
+        await page.goBack();
+        await expect(picker).toHaveValue('');
+    });
+
     test('preserves category when switching type filters', async ({ page }) => {
-        await page.goto('/search?category=Finance');
+        await page.goto('/search?category=Money+%26+Investments');
 
         await expect(page.getByRole('heading', { name: 'Money & Investments Content' })).toBeVisible();
 

@@ -1,31 +1,17 @@
 # Category Taxonomy
 
-Status: Phase 1 migration active.
+Status: The 18-topic taxonomy is the current catalog model.
 
 Netflux uses canonical category labels for content rows, admin publishing, search, and landing-page topic links. Categories are intentionally broad because the product promise is knowledge without limits or rigid domain boundaries. Categories are still stored as text in `content_item.category`; the app-level canonical source is `lib/content-categories.ts`.
 
-## Canonical Renames
+## Search and publishing
 
-- `Mindset` -> `Personal Development`
-- `Finance` + `Wealth` + `Money & Finance` -> `Money & Investments`
-- `Technology` -> `Technology & the Future`
-- `Health` -> `Health & Nutrition`
-- `Parenthood` + `Pregnancy` -> `Parenting`
-- `Christian` -> `Religion & Spirituality`
-- `Science & Learning` -> `Science`
-- `Psychology` remains `Psychology`
+The topic list in `lib/content-categories.ts` supplies all 18 Search options and the admin publishing form. Search shows six shortcuts plus **More topics** on desktop and the complete alphabetical list on narrow screens.
 
-## Phase 1 Compatibility
+Retired category URLs return to **All topics**, preserving the search text, type and applicable sort. Search resets the result page and cursor when it drops the retired filter. Preview and Read links use the summary identity and are unaffected.
 
-The migration `20260509090000_update_content_categories_phase_one.sql` updates Supabase content rows and category-based homepage section filters to canonical labels.
+## Production data
 
-Temporary search aliases remain in `CONTENT_CATEGORY_ALIASES` so old public URLs such as `/search?category=Mindset` and `/search?category=Christian` redirect to their canonical equivalents.
+The production category-only update reclassified 343 records in place, preserving publication and deletion status. Read-only checks after the update found 507 published summaries across 18 topics, including 21 under Christianity. The superseded edition of *Endure* retains its historical Science category and is excluded from the public catalog.
 
-## Phase 2 Cleanup
-
-After a few weeks, or once analytics/logs show no meaningful traffic to old category URLs:
-
-1. Remove `CONTENT_CATEGORY_ALIASES` and alias resolution helpers from `lib/content-categories.ts`.
-2. Remove the alias redirect branch from `app/(public)/search/page.tsx`.
-3. Remove alias-specific search tests.
-4. Keep only canonical labels in docs, admin options, landing topics, and search topics.
+The earlier Phase 1 migration remains part of the migration history. Legacy normalization for historical rows used by existing catalog helpers does not add choices to Search.

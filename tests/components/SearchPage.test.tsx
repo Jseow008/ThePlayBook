@@ -324,32 +324,9 @@ describe("SearchPage", () => {
     });
 
     it("defaults the full catalog to newest-first when no query or category is present", async () => {
-        rpcMock.mockImplementation((fn: string) => {
-            if (fn === "get_category_stats") {
-                return Promise.resolve({
-                    data: [
-                        { category: "Business", count: 6 },
-                        { category: "'Business'", count: 2 },
-                        { category: "Productivity", count: 5 },
-                        { category: "Pregnancy", count: 3 },
-                        { category: "Parenthood", count: 2 },
-                        { category: "Psychology", count: 2 },
-                    ],
-                });
-            }
-
-            if (fn === "get_trending_content") {
-                return Promise.resolve({
-                    data: [{ id: "trending-item", title: "Trending Item" }],
-                });
-            }
-
-            throw new Error(`Unexpected RPC: ${fn}`);
-        });
-
         await renderSearchPage({});
 
-        expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
+        expect(rpcMock).not.toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).not.toHaveBeenCalledWith("get_trending_content", expect.anything());
         expect(screen.getByText("Sort by")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Newest" })).toHaveAttribute("aria-current", "page");
@@ -357,42 +334,12 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "All topics" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Business" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Productivity" })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Parenting" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Health & Fitness" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Psychology" })).toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "Pregnancy" })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "Parenthood" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("combobox", { name: "More topics" })).not.toBeInTheDocument();
+        expect(screen.getByRole("combobox", { name: "More topics" })).toBeInTheDocument();
         expect(fromMock).toHaveBeenCalledWith("content_item");
-    });
-
-    it("starts the unfiltered catalog read while category stats are pending", async () => {
-        let resolveStats!: (value: { data: Array<{ category: string; count: number }> }) => void;
-        rpcMock.mockImplementation((fn: string) => {
-            if (fn === "get_category_stats") {
-                return new Promise((resolve) => { resolveStats = resolve; });
-            }
-            throw new Error(`Unexpected RPC: ${fn}`);
-        });
-
-        const pendingPage = loadSearchPage({});
-        await waitFor(() => expect(fromMock).toHaveBeenCalledWith("content_item"));
-        resolveStats({ data: [] });
-        await pendingPage;
-    });
-
-    it("starts text search while category stats are pending", async () => {
-        let resolveStats!: (value: { data: Array<{ category: string; count: number }> }) => void;
-        rpcMock.mockImplementation((fn: string) => {
-            if (fn === "get_category_stats") {
-                return new Promise((resolve) => { resolveStats = resolve; });
-            }
-            throw new Error(`Unexpected RPC: ${fn}`);
-        });
-
-        const pendingPage = loadSearchPage({ q: "focus" });
-        await waitFor(() => expect(searchCatalogMock).toHaveBeenCalledWith(expect.objectContaining({ query: "focus", categories: [] })));
-        resolveStats({ data: [] });
-        await pendingPage;
     });
 
     it("labels the newest-first result grid as the full catalog", async () => {
@@ -434,7 +381,7 @@ describe("SearchPage", () => {
             render(await runPopularCatalogFromPage({ type, sort: "popular" }));
         });
 
-        expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
+        expect(rpcMock).not.toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
             p_limit: 20,
             p_type: type,
@@ -470,7 +417,7 @@ describe("SearchPage", () => {
     it.each(["podcast", "video"])("uses indexed text search with the %s filter", async (type) => {
         await runSearchResultsFromPage({ q: "focus", type });
 
-        expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
+        expect(rpcMock).not.toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).not.toHaveBeenCalledWith("get_trending_content", expect.anything());
         expect(searchCatalogMock).toHaveBeenCalledWith({
             query: "focus",
@@ -642,13 +589,19 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "Business" })).toHaveClass("bg-primary");
     });
 
-    it("redirects old category aliases to canonical search URLs", async () => {
-        await expect(renderSearchPage({ category: "Mindset", type: "book" })).rejects.toThrow(
-            "NEXT_REDIRECT:/search?category=Personal+Development&type=book"
-        );
+    it.each(["Mindset", "Christian", "Religion & Spirituality", "book_summary", "NoSuchTopic"])(
+        "clears the retired or unknown category %s without losing search text or type",
+        async (category) => {
+            await expect(loadSearchPage({ q: "faith", category, type: "book", cursor: "old-cursor" }))
+                .rejects.toThrow("NEXT_REDIRECT:/search?q=faith&type=book");
 
-        expect(redirectMock).toHaveBeenCalledWith("/search?category=Personal+Development&type=book");
-        expect(fromMock).not.toHaveBeenCalled();
+            expect(fromMock).not.toHaveBeenCalled();
+        },
+    );
+
+    it("preserves Popular but resets pagination when clearing a retired topic", async () => {
+        await expect(loadSearchPage({ category: "Lifestyle", sort: "popular", type: "podcast", page: "3" }))
+            .rejects.toThrow("NEXT_REDIRECT:/search?type=podcast&sort=popular");
     });
 
     it("preserves query and type when selecting a category chip", async () => {
@@ -695,13 +648,24 @@ describe("SearchPage", () => {
         });
     });
 
-    it("renders remaining normalized topics in the dropdown", async () => {
+    it("shows the six desktop shortcuts and the twelve remaining topics", async () => {
         await renderSearchPage({});
+
+        const shortcuts = screen.getAllByRole("link")
+            .filter((link) => link.getAttribute("href")?.includes("category="))
+            .map((link) => link.textContent);
+        expect(shortcuts).toEqual([
+            "Business", "Money & Investments", "Personal Development",
+            "Productivity", "Health & Fitness", "Psychology",
+        ]);
 
         const select = screen.getByRole("combobox", { name: "More topics" });
         const optionLabels = Array.from(select.querySelectorAll("option")).map((option) => option.textContent);
-
-        expect(optionLabels).toEqual(["More topics", "Religion & Spirituality"]);
+        expect(optionLabels).toEqual([
+            "More topics", "Biography & Memoir", "Careers & Work", "Christianity", "Economics", "History",
+            "Learning & Creativity", "Management & Leadership", "Philosophy", "Politics & Society",
+            "Relationships & Communication", "Science & Environment", "Technology & the Future",
+        ]);
     });
 
     it("retains every desktop topic in the narrow dropdown without duplicate choices", async () => {
@@ -726,7 +690,7 @@ describe("SearchPage", () => {
         expect(more).toHaveClass("h-9");
     });
 
-    it.each(["Business", "Religion & Spirituality", "Selected topic absent from stats"])(
+    it.each(["Business", "Christianity"])(
         "shows the selected %s topic on narrow screens",
         async (category) => {
             await renderSearchPage({ category });
@@ -739,9 +703,9 @@ describe("SearchPage", () => {
         await renderSearchPage({ q: "focus", type: "podcast", category: "Business" });
 
         fireEvent.change(screen.getByRole("combobox", { name: "Topics" }), {
-            target: { value: "Religion & Spirituality" },
+            target: { value: "Christianity" },
         });
-        expect(routerPushMock).toHaveBeenLastCalledWith("/search?q=focus&category=Religion+%26+Spirituality&type=podcast");
+        expect(routerPushMock).toHaveBeenLastCalledWith("/search?q=focus&category=Christianity&type=podcast");
         fireEvent.change(screen.getByRole("combobox", { name: "Topics" }), {
             target: { value: "" },
         });
@@ -757,55 +721,20 @@ describe("SearchPage", () => {
         expect(routerPushMock).toHaveBeenLastCalledWith("/search?type=book&sort=popular");
     });
 
-    it("groups reported topic variants without exposing the content-format category", async () => {
-        const categories = [
-            { category: "Self-help", count: 2 }, { category: "Self-Help", count: 1 },
-            { category: "Decision Making", count: 1 }, { category: "Decision-Making", count: 1 },
-            { category: "Science & Technology", count: 1 }, { category: "Science and Technology", count: 1 },
-            { category: "book_summary", count: 1 },
-        ];
-        rpcMock.mockImplementation((fn: string) => {
-            if (fn === "get_category_stats") return Promise.resolve({ data: categories });
-            throw new Error(`Unexpected RPC: ${fn}`);
+    it("queries a topic even when it is absent from the catalog stats", async () => {
+        await runSearchResultsFromPage({ q: "faith", category: "Christianity" });
+        expect(searchCatalogMock).toHaveBeenCalledWith({
+            query: "faith",
+            categories: ["Christianity"],
+            type: null,
+            cursor: null,
         });
-
-        await renderSearchPage({});
-        const labels = Array.from(screen.getByRole("combobox", { name: "More topics" }).querySelectorAll("option"))
-            .map((option) => option.textContent);
-        for (const label of ["Self-Help", "Decision-Making", "Science & Technology"]) {
-            expect(labels.filter((option) => option === label)).toHaveLength(1);
-        }
-        for (const label of ["Self-help", "Decision Making", "Science and Technology", "book_summary"]) {
-            expect(labels).not.toContain(label);
-        }
-
-        for (const [label, rawValues] of [
-            ["Self-Help", ["Self-help", "Self-Help"]],
-            ["Decision-Making", ["Decision Making", "Decision-Making"]],
-            ["Science & Technology", ["Science & Technology", "Science and Technology"]],
-        ] as const) {
-            await runSearchResultsFromPage({ q: "focus", category: label });
-            const actual = searchCatalogMock.mock.lastCall?.[0].categories as string[];
-            expect(actual).toHaveLength(2);
-            expect(actual).toEqual(expect.arrayContaining([...rawValues]));
-        }
-
-        await runRecentCatalogFromPage({ category: "Self-Help" });
-        expect(getLatestQueryBuilder()?.in).toHaveBeenCalledWith("category", expect.arrayContaining(["Self-help", "Self-Help"]));
-    });
-
-    it("redirects old topic spellings and the internal content-format category", async () => {
-        await expect(loadSearchPage({ q: "focus", category: "Self-help" })).rejects.toThrow("NEXT_REDIRECT");
-        expect(redirectMock).toHaveBeenCalledWith("/search?q=focus&category=Self-Help");
-
-        await expect(loadSearchPage({ q: "focus", category: "book_summary", type: "book", cursor: "old-cursor" })).rejects.toThrow("NEXT_REDIRECT");
-        expect(redirectMock).toHaveBeenCalledWith("/search?q=focus&type=book");
     });
 
     it("reflects a selected non-curated topic in the dropdown", async () => {
-        await renderSearchPage({ category: "Religion & Spirituality" });
+        await renderSearchPage({ category: "Christianity" });
 
-        expect(screen.getByRole("combobox", { name: "More topics" })).toHaveValue("Religion & Spirituality");
+        expect(screen.getByRole("combobox", { name: "More topics" })).toHaveValue("Christianity");
     });
 
     it("preserves query and type when selecting a dropdown topic", async () => {
@@ -813,10 +742,10 @@ describe("SearchPage", () => {
         await renderSearchPage({ q: "focus", type: "podcast" });
 
         fireEvent.change(screen.getByRole("combobox", { name: "More topics" }), {
-            target: { value: "Religion & Spirituality" },
+            target: { value: "Christianity" },
         });
 
-        expect(routerPushMock).toHaveBeenCalledWith("/search?q=focus&category=Religion+%26+Spirituality&type=podcast");
+        expect(routerPushMock).toHaveBeenCalledWith("/search?q=focus&category=Christianity&type=podcast");
     });
 
     it("treats invalid type params as the default All state", async () => {
