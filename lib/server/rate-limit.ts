@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { trustedNetworkIdentifier } from "@/lib/server/rate-limit-identity";
 import { recordSecuritySignal, type SecurityTelemetryCategory } from "@/lib/server/security-telemetry";
 
 interface RateLimitOptions {
@@ -45,41 +46,18 @@ interface StrictRateLimitResult extends RateLimitResult {
 }
 
 const RATE_LIMIT_UNAVAILABLE_RETRY_AFTER_MS = 60_000;
-const IP_V4_REGEX = /^(?:\d{1,3}\.){3}\d{1,3}$/;
-const IP_V6_REGEX = /^[a-fA-F0-9:]+$/;
-
-function isValidIp(value: string): boolean {
-    if (!value || value.length > 64) return false;
-    return IP_V4_REGEX.test(value) || IP_V6_REGEX.test(value);
-}
-
-function getClientIdentifier(req: NextRequest): string {
-    const candidates = [
-        req.headers.get("cf-connecting-ip"),
-        req.headers.get("x-real-ip"),
-        req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
-    ];
-
-    for (const candidate of candidates) {
-        if (candidate && isValidIp(candidate)) {
-            return candidate;
-        }
-    }
-
-    return "anonymous";
-}
 
 function getRateLimitKey(req: NextRequest, options: RateLimitOptions): string {
-    const identity = options.identifier ?? getClientIdentifier(req);
+    // Keep a single bounded bucket if a trusted network address is unavailable.
+    const identity = options.identifier ?? trustedNetworkIdentifier(req) ?? "anonymous";
     return `${options.scope ?? req.nextUrl.pathname}::${options.key ?? "global"}::${identity}`;
 }
 
 // Module-level fallback store
 const store = new Map<string, number[]>();
 
-function fallbackRateLimit(req: NextRequest, options: RateLimitOptions): RateLimitResult {
+function fallbackRateLimit(rateKey: string, options: RateLimitOptions): RateLimitResult {
     const { limit, windowMs } = options;
-    const rateKey = getRateLimitKey(req, options);
     const now = Date.now();
     const windowStart = now - windowMs;
 
@@ -131,7 +109,7 @@ export async function rateLimit(req: NextRequest, options: RateLimitOptions): Pr
             );
         }
 
-        return fallbackRateLimit(req, options);
+        return fallbackRateLimit(rateKey, options);
     }
 
     try {
@@ -178,7 +156,7 @@ export async function rateLimit(req: NextRequest, options: RateLimitOptions): Pr
         }
 
         console.warn("Failed to use Upstash rate limiter, falling back to in-memory", e);
-        return fallbackRateLimit(req, options);
+        return fallbackRateLimit(rateKey, options);
     }
 }
 
