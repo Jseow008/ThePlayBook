@@ -55,7 +55,7 @@ type ColorFilter = "all" | "yellow" | "blue" | "green" | "red" | "purple";
 
 interface BrainClientPageProps {
     initialPage: HighlightsPage;
-    initialReflections?: ReflectionWithContent[];
+    initialReflections?: ReflectionWithContent[] | null;
     initialAskOpen?: boolean;
 }
 
@@ -100,6 +100,7 @@ const VIRTUAL_ROW_ESTIMATE = 224;
 const VIRTUAL_ROW_GAP = 12;
 const VIRTUAL_OVERSCAN_PX = 720;
 const NO_HIGHLIGHTS: HighlightWithContent[] = [];
+const NO_REFLECTIONS: ReflectionWithContent[] = [];
 const NOTE_EDITOR_COLORS: HighlightColor[] = ["yellow", "blue", "green", "red", "purple"];
 const TYPE_FILTER_OPTIONS: Array<{ value: ItemTypeFilter; label: string }> = [
     { value: "all", label: "All" },
@@ -870,7 +871,7 @@ function ReflectionEditorOverlay({
     );
 }
 
-export function BrainClientPage({ initialPage, initialReflections = [], initialAskOpen = false }: BrainClientPageProps) {
+export function BrainClientPage({ initialPage, initialReflections, initialAskOpen = false }: BrainClientPageProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -906,6 +907,11 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     const updateHighlight = useUpdateHighlight();
     const deleteReflection = useDeleteReflection();
     const updateReflection = useUpdateReflection();
+    const showHighlights = selectedType !== "reflection";
+    const hasReflectionCompatibleFilters = !searchQuery.trim()
+        && selectedColor === DEFAULT_SELECTED_COLOR
+        && sortBy === DEFAULT_SORT;
+    const showReflections = hasReflectionCompatibleFilters && (selectedType === "all" || selectedType === "reflection");
     const highlightItemType = selectedType === "note" || selectedType === "highlight" ? selectedType : undefined;
     const highlightColor = selectedType === "reflection" || selectedColor === "all" ? undefined : selectedColor;
     const highlightSearchIsDefault = !debouncedSearchQuery.trim()
@@ -918,25 +924,44 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-        isLoading,
-        isError,
+        isLoading: highlightsLoading,
+        isError: highlightsError,
+        isPending: highlightsPending,
+        fetchStatus: highlightsFetchStatus,
+        errorUpdatedAt: highlightsErrorUpdatedAt,
         refetch: retryHighlights,
     } = useInfiniteHighlights(selectedItem === DEFAULT_SELECTED_ITEM ? undefined : selectedItem, {
         initialPage: highlightSearchIsDefault && initialPage.data.length > 0 ? initialPage : undefined,
-        enabled: selectedType !== "reflection",
+        enabled: showHighlights,
         query: debouncedSearchQuery,
         itemType: highlightItemType,
         color: highlightColor,
         sort: sortBy,
     });
     const {
-        data: reflections = [],
+        data: reflections = NO_REFLECTIONS,
         isLoading: reflectionsLoading,
+        isPending: reflectionsPending,
         isError: reflectionsError,
+        fetchStatus: reflectionsFetchStatus,
+        errorUpdatedAt: reflectionsErrorUpdatedAt,
+        refetch: retryReflections,
     } = useReflections(
         selectedItem === DEFAULT_SELECTED_ITEM ? undefined : selectedItem,
-        selectedItem === DEFAULT_SELECTED_ITEM ? initialReflections : undefined,
+        selectedItem === DEFAULT_SELECTED_ITEM ? initialReflections ?? undefined : undefined,
     );
+
+    const highlightsFailed = showHighlights && highlightsError;
+    const reflectionsFailed = showReflections && reflectionsError;
+    // Retrying a query without data temporarily resets its error status to pending.
+    const highlightsRetrying = showHighlights && highlightsFetchStatus !== "idle" && highlightsErrorUpdatedAt > 0
+        && (highlightsPending || highlightsError);
+    const reflectionsRetrying = showReflections && reflectionsFetchStatus !== "idle" && reflectionsErrorUpdatedAt > 0
+        && (reflectionsPending || reflectionsError);
+    const retryingNotes = highlightsRetrying || reflectionsRetrying;
+    const notesLoading = (showHighlights && highlightsLoading) || (showReflections && (
+        reflectionsLoading || (initialReflections === null && selectedItem === DEFAULT_SELECTED_ITEM && reflectionsPending)
+    ));
 
     const highlights = useMemo(
         () => data?.pages.flatMap((page) => page.data) ?? (highlightSearchIsDefault ? initialPage.data : []),
@@ -1081,14 +1106,10 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     // Highlights may remain in React Query's cache when its query is disabled.
     // Reflections use their own account/content scope; never render cached
     // highlights under the Reflections filter.
-    const filteredHighlights = selectedType === "reflection" ? NO_HIGHLIGHTS : highlights;
+    const filteredHighlights = showHighlights ? highlights : NO_HIGHLIGHTS;
 
     const filteredReflections = useMemo(() => {
-        const canShowScopedReflections = !searchQuery.trim()
-            && selectedColor === DEFAULT_SELECTED_COLOR
-            && sortBy === DEFAULT_SORT
-            && (selectedType === "all" || selectedType === "reflection");
-        if (!canShowScopedReflections) return [];
+        if (!showReflections) return NO_REFLECTIONS;
 
         const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -1106,9 +1127,8 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                 const rightDate = new Date(right.created_at).getTime();
                 return sortBy === "newest" ? rightDate - leftDate : leftDate - rightDate;
             });
-    }, [reflections, searchQuery, selectedItem, selectedType, selectedColor, sortBy]);
-    const reflectionSearchUnavailable = selectedType === "reflection"
-        && (Boolean(searchQuery.trim()) || selectedColor !== DEFAULT_SELECTED_COLOR || sortBy !== DEFAULT_SORT);
+    }, [reflections, searchQuery, selectedItem, selectedType, showReflections, sortBy]);
+    const reflectionSearchUnavailable = selectedType === "reflection" && !hasReflectionCompatibleFilters;
 
     const shouldVirtualize = filteredHighlights.length >= VIRTUALIZATION_MIN_ITEMS;
 
@@ -1811,21 +1831,29 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                         </div>
                         </div>
 
-                        {isLoading || reflectionsLoading ? (
-                            <div className="space-y-3">
+                        {notesLoading && !retryingNotes ? (
+                            <div role="status" aria-label="Loading notes" className="space-y-3">
                                 {[1, 2, 3].map((item) => (
                                     <div key={item} className="h-28 rounded-2xl bg-card/40 animate-pulse" />
                                 ))}
                             </div>
-                        ) : isError || reflectionsError ? (
+                        ) : highlightsFailed || reflectionsFailed || retryingNotes ? (
                             <div className="rounded-2xl border border-white/10 bg-card/20 px-6 py-16 text-center text-muted-foreground">
-                                <p>Failed to load notes. Your filters are still applied.</p>
+                                <p>
+                                    {(reflectionsFailed || reflectionsRetrying) && !(highlightsFailed || highlightsRetrying)
+                                        ? "Couldn’t load reflections. Your filters are still applied."
+                                        : "Failed to load notes. Your filters are still applied."}
+                                </p>
                                 <button
                                     type="button"
-                                    onClick={() => { void retryHighlights(); }}
-                                    className="mt-4 inline-flex rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-foreground/85 transition-colors hover:bg-card/50 hover:text-foreground"
+                                    disabled={retryingNotes}
+                                    onClick={() => {
+                                        if (highlightsFailed) void retryHighlights({ cancelRefetch: false });
+                                        if (reflectionsFailed) void retryReflections({ cancelRefetch: false });
+                                    }}
+                                    className="mt-4 inline-flex min-h-11 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-foreground/85 transition-colors hover:bg-card/50 hover:text-foreground disabled:opacity-60"
                                 >
-                                    Try again
+                                    {retryingNotes ? "Retrying…" : "Try again"}
                                 </button>
                             </div>
                         ) : reflectionSearchUnavailable ? (

@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { BrainClientPage } from "@/app/(public)/notes/client-page";
+import type { FetchStatus } from "@tanstack/react-query";
 import type { HighlightsPage } from "@/hooks/useHighlights";
 import { vi } from "vitest";
 
@@ -8,6 +9,8 @@ const {
     updateHighlightMock,
     deleteReflectionMock,
     updateReflectionMock,
+    retryHighlightsMock,
+    retryReflectionsMock,
     fetchNextPageMock,
     useInfiniteHighlightsMock,
     toastSuccessMock,
@@ -21,6 +24,8 @@ const {
     updateHighlightMock: vi.fn(),
     deleteReflectionMock: vi.fn(),
     updateReflectionMock: vi.fn(),
+    retryHighlightsMock: vi.fn(),
+    retryReflectionsMock: vi.fn(),
     fetchNextPageMock: vi.fn(),
     useInfiniteHighlightsMock: vi.fn(),
     toastSuccessMock: vi.fn(),
@@ -38,6 +43,9 @@ const {
             isFetchingNextPage: false,
             isLoading: false,
             isError: false,
+            isPending: false,
+            fetchStatus: "idle" as FetchStatus,
+            errorUpdatedAt: 0,
         },
     },
     searchParamsState: {
@@ -50,6 +58,11 @@ const {
     },
     reflectionsState: {
         value: [] as Array<Record<string, unknown>>,
+        isLoading: false,
+        isError: false,
+        isPending: false,
+        fetchStatus: "idle" as FetchStatus,
+        errorUpdatedAt: 0,
     },
 }));
 
@@ -60,7 +73,7 @@ const routerPushMock = vi.fn();
 vi.mock("@/hooks/useHighlights", () => ({
     useInfiniteHighlights: (...args: unknown[]) => {
         useInfiniteHighlightsMock(...args);
-        return infiniteHighlightsState.value;
+        return { ...infiniteHighlightsState.value, refetch: retryHighlightsMock };
     },
     useDeleteHighlight: () => ({
         mutateAsync: deleteHighlightMock,
@@ -74,9 +87,9 @@ vi.mock("@/hooks/useHighlights", () => ({
 
 vi.mock("@/hooks/useReflections", () => ({
     useReflections: () => ({
+        ...reflectionsState,
         data: reflectionsState.value,
-        isLoading: false,
-        isError: false,
+        refetch: retryReflectionsMock,
     }),
     useDeleteReflection: () => ({
         mutateAsync: deleteReflectionMock,
@@ -200,7 +213,9 @@ describe("BrainClientPage", () => {
         mediaQueryState.value = {
             isNotesAskSidebarAvailable: true,
         };
-        reflectionsState.value = [];
+        Object.assign(reflectionsState, {
+            value: [], isLoading: false, isError: false, isPending: false, fetchStatus: "idle", errorUpdatedAt: 0,
+        });
         document.body.style.overflow = "";
         window.history.replaceState(null, "", "/notes");
         fetchNextPageMock.mockResolvedValue(undefined);
@@ -214,7 +229,63 @@ describe("BrainClientPage", () => {
             isFetchingNextPage: false,
             isLoading: false,
             isError: false,
+            isPending: false,
+            fetchStatus: "idle",
+            errorUpdatedAt: 0,
         };
+    });
+
+    it.each([
+        { type: "all", highlightError: false, reflectionError: true, highlightRetries: 0, reflectionRetries: 1 },
+        { type: "all", highlightError: true, reflectionError: false, highlightRetries: 1, reflectionRetries: 0 },
+        { type: "all", highlightError: true, reflectionError: true, highlightRetries: 1, reflectionRetries: 1 },
+        { type: "note", highlightError: false, reflectionError: true, highlightRetries: 0, reflectionRetries: 0 },
+        { type: "reflection", highlightError: true, reflectionError: true, highlightRetries: 0, reflectionRetries: 1 },
+    ])("retries only failed queries in scope for $type ($highlightError/$reflectionError)", ({
+        type, highlightError, reflectionError, highlightRetries, reflectionRetries,
+    }) => {
+        searchParamsState.value = `item=content-1&type=${type}`;
+        infiniteHighlightsState.value.isError = highlightError;
+        reflectionsState.isError = reflectionError;
+        render(<BrainClientPage initialPage={initialPage} />);
+
+        if (highlightRetries || reflectionRetries) {
+            fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+        } else {
+            expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+            expect(screen.getByRole("link", { name: /note from introduction/i })).toBeInTheDocument();
+        }
+        expect(retryHighlightsMock).toHaveBeenCalledTimes(highlightRetries);
+        expect(retryReflectionsMock).toHaveBeenCalledTimes(reflectionRetries);
+    });
+
+    it("distinguishes failed initial reflection loading from a successful empty response", () => {
+        searchParamsState.value = "type=reflection";
+        reflectionsState.isPending = true;
+        const { rerender } = render(<BrainClientPage initialPage={initialPage} initialReflections={null} />);
+        expect(screen.getByRole("status", { name: "Loading notes" })).toBeInTheDocument();
+        expect(screen.queryByText("No notes found")).not.toBeInTheDocument();
+
+        reflectionsState.isPending = false;
+        reflectionsState.isError = true;
+        reflectionsState.errorUpdatedAt = 1;
+        rerender(<BrainClientPage initialPage={initialPage} initialReflections={null} />);
+        expect(screen.getByText(/couldn’t load reflections/i)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+        expect(retryReflectionsMock).toHaveBeenCalledTimes(1);
+
+        reflectionsState.isError = false;
+        reflectionsState.isPending = true;
+        reflectionsState.isLoading = true;
+        reflectionsState.fetchStatus = "fetching";
+        rerender(<BrainClientPage initialPage={initialPage} initialReflections={null} />);
+        expect(screen.getByRole("button", { name: "Retrying…" })).toBeDisabled();
+
+        reflectionsState.isPending = false;
+        reflectionsState.isLoading = false;
+        reflectionsState.fetchStatus = "idle";
+        rerender(<BrainClientPage initialPage={initialPage} initialReflections={null} />);
+        expect(screen.getByText("No notes found")).toBeInTheDocument();
     });
 
     it("renders list rows with note hierarchy and jump links", () => {
