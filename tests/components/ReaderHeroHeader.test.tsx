@@ -3,6 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { ReaderHeroHeader } from '@/components/reader/ReaderHeroHeader';
 import { COMPACT_READER_COVER_IMAGE_SIZES } from '@/components/ui/content-card-standards';
 
+vi.hoisted(() => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://storage.example.com/');
+});
+
 vi.mock('@/components/reader/AudioPlayer', () => ({
     AudioPlayer: () => <div data-testid="mock-audio-player" />,
 }));
@@ -16,8 +20,8 @@ vi.mock('@/components/ui/ContentShareMenu', () => ({
 }));
 
 vi.mock('@/components/ui/ResilientImage', () => ({
-    ResilientImage: ({ alt, sizes }: { alt: string; sizes?: string }) => (
-        <img alt={alt} data-testid="mock-cover-image" sizes={sizes} />
+    ResilientImage: ({ alt, sizes, unoptimized }: { alt: string; sizes?: string; unoptimized?: boolean }) => (
+        <img alt={alt} data-testid="mock-cover-image" sizes={sizes} data-unoptimized={String(unoptimized)} />
     ),
 }));
 
@@ -79,6 +83,24 @@ describe('ReaderHeroHeader', () => {
         );
 
         expect(screen.getByTestId('mock-cover-image')).toHaveAttribute('sizes', COMPACT_READER_COVER_IMAGE_SIZES);
+        expect(screen.getByTestId('mock-cover-image')).toHaveAttribute('data-unoptimized', 'false');
+    });
+
+    it('loads public storage covers directly', () => {
+        render(
+            <ReaderHeroHeader
+                title="Test Title"
+                author={null}
+                type="article"
+                coverImageUrl="https://storage.example.com/storage/v1/object/public/media/covers/test.jpg"
+                audioUrl={null}
+                durationSeconds={null}
+                segmentsTotal={4}
+                segmentsCompleted={0}
+            />
+        );
+
+        expect(screen.getByTestId('mock-cover-image')).toHaveAttribute('data-unoptimized', 'true');
     });
 
     it('provides a destination for Listen links when audio is available', () => {

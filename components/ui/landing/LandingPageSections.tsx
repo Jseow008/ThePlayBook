@@ -28,7 +28,7 @@ const STORYBOARD_SLIDES = [
     eyebrow: "Before you commit",
     heading: "See the argument before you invest the hours.",
     body: "Start with a clear map of the central argument and key takeaways before deciding what deserves more of your time.",
-    image: "/images/netflux-workflow-distill-square.png",
+    image: "/images/netflux-workflow-distill-square",
   },
   {
     label: "Capture",
@@ -36,7 +36,7 @@ const STORYBOARD_SLIDES = [
     eyebrow: "Keep the ideas that matter",
     heading: "Keep the insights and context that matter to you.",
     body: "Save summaries, highlights, and notes in one organized library instead of scattering useful ideas across bookmarks and apps.",
-    image: "/images/netflux-workflow-library-square.png",
+    image: "/images/netflux-workflow-library-square",
   },
   {
     label: "Retrieve",
@@ -44,9 +44,31 @@ const STORYBOARD_SLIDES = [
     eyebrow: "When it becomes useful",
     heading: "Find the exact idea when it becomes useful again.",
     body: "Search your saved knowledge or ask questions grounded in the summaries, highlights, and notes you chose to keep.",
-    image: "/images/netflux-workflow-ask-square.png",
+    image: "/images/netflux-workflow-ask-square",
   },
 ] as const;
+
+function StoryboardImage({ image, alt, sizes, eager = false }: {
+  image: string;
+  alt: string;
+  sizes: string;
+  eager?: boolean;
+}) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- These WebP variants are resized ahead of time.
+    <img
+      src={`${image}-720.webp`}
+      srcSet={`${image}-720.webp 720w, ${image}-1254.webp 1254w`}
+      sizes={sizes}
+      alt={alt}
+      width={1254}
+      height={1254}
+      loading={eager ? "eager" : "lazy"}
+      decoding="async"
+      className="absolute inset-0 size-full object-contain"
+    />
+  );
+}
 
 const FEATURED_READS_DRAG_THRESHOLD_PX = 6;
 const FEATURED_READS_MIN_LOOP_ITEMS = 8;
@@ -1044,12 +1066,10 @@ export function CorePlatformFeaturesSection() {
                           : "pointer-events-none opacity-0 scale-[1.012]"
                       )}
                     >
-                      <Image
-                        src={slide.image}
+                      <StoryboardImage
+                        image={slide.image}
                         alt={`Netflux storyboard: ${slide.title}`}
-                        fill
                         sizes="(max-width: 1024px) calc(100vw - 4rem), 544px"
-                        className="object-contain"
                       />
                     </div>
                   ))}
@@ -1138,13 +1158,11 @@ export function CorePlatformFeaturesSection() {
                 >
                   {STORYBOARD_SLIDES.map((slide, slideIndex) => (
                     <div key={`lightbox-${slide.title}`} className="relative h-full w-full shrink-0">
-                      <Image
-                        src={slide.image}
+                      <StoryboardImage
+                        image={slide.image}
                         alt={`Expanded Netflux storyboard: ${slide.title}`}
-                        fill
-                        sizes="94vw"
-                        className="object-contain"
-                        priority={slideIndex === activeStoryboardSlide}
+                        sizes="(min-width: 1362px) 1280px, 94vw"
+                        eager={slideIndex === activeStoryboardSlide}
                       />
                     </div>
                   ))}
