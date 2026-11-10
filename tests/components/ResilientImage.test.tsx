@@ -112,6 +112,27 @@ describe("ResilientImage", () => {
         });
     });
 
+    it("shows the fallback immediately if an opted-out source fails", () => {
+        render(
+            <ResilientImage
+                alt="Direct cover"
+                fallback={<div data-testid="image-fallback">Fallback</div>}
+                height={320}
+                src="https://example.com/covers/direct.jpg"
+                surface="reader-hero"
+                unoptimized
+                width={240}
+            />
+        );
+
+        const image = screen.getByAltText("Direct cover");
+        expect(image).toHaveAttribute("data-unoptimized", "true");
+        fireEvent.error(image);
+
+        expect(screen.getByTestId("image-fallback")).toBeInTheDocument();
+        expect(screen.queryByAltText("Direct cover")).not.toBeInTheDocument();
+    });
+
     it("resets to optimized mode when the source changes", () => {
         const { rerender } = render(
             <ResilientImage

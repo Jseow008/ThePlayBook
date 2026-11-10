@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -14,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { ResilientImage } from "@/components/ui/ResilientImage";
 import { APP_NAME } from "@/lib/brand";
 export { getCuratedCategories } from "@/components/ui/landing/landingCategories";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,7 @@ const STORYBOARD_SLIDES = [
     eyebrow: "Before you commit",
     heading: "See the argument before you invest the hours.",
     body: "Start with a clear map of the central argument and key takeaways before deciding what deserves more of your time.",
-    image: "/images/netflux-workflow-distill-square.png",
+    image: "/images/netflux-workflow-distill-square",
   },
   {
     label: "Capture",
@@ -36,7 +36,7 @@ const STORYBOARD_SLIDES = [
     eyebrow: "Keep the ideas that matter",
     heading: "Keep the insights and context that matter to you.",
     body: "Save summaries, highlights, and notes in one organized library instead of scattering useful ideas across bookmarks and apps.",
-    image: "/images/netflux-workflow-library-square.png",
+    image: "/images/netflux-workflow-library-square",
   },
   {
     label: "Retrieve",
@@ -44,9 +44,31 @@ const STORYBOARD_SLIDES = [
     eyebrow: "When it becomes useful",
     heading: "Find the exact idea when it becomes useful again.",
     body: "Search your saved knowledge or ask questions grounded in the summaries, highlights, and notes you chose to keep.",
-    image: "/images/netflux-workflow-ask-square.png",
+    image: "/images/netflux-workflow-ask-square",
   },
 ] as const;
+
+function StoryboardImage({ image, alt, sizes, eager = false }: {
+  image: string;
+  alt: string;
+  sizes: string;
+  eager?: boolean;
+}) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- These WebP variants are resized ahead of time.
+    <img
+      src={`${image}-720.webp`}
+      srcSet={`${image}-720.webp 720w, ${image}-1254.webp 1254w`}
+      sizes={sizes}
+      alt={alt}
+      width={1254}
+      height={1254}
+      loading={eager ? "eager" : "lazy"}
+      decoding="async"
+      className="absolute inset-0 size-full object-contain"
+    />
+  );
+}
 
 const FEATURED_READS_DRAG_THRESHOLD_PX = 6;
 const FEATURED_READS_MIN_LOOP_ITEMS = 8;
@@ -177,6 +199,11 @@ function FeaturedReadCard({
 }) {
   const durationLabel = formatFeaturedReadDuration(item.duration_seconds);
   const hasAudioSummary = Boolean(item.audio_url?.trim());
+  const coverFallback = (
+    <div className="absolute inset-0 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted via-card to-background">
+      <BookOpen className="size-12 text-muted-foreground" />
+    </div>
+  );
 
   return (
     <Link
@@ -187,18 +214,16 @@ function FeaturedReadCard({
       className="focus-ring landing-featured-read-card group relative block h-full w-full overflow-hidden rounded-md bg-card transition-[transform,box-shadow] duration-300 md:hover:z-10 md:hover:-translate-y-1 md:focus-visible:z-10 md:focus-visible:-translate-y-1"
     >
       {item.cover_image_url ? (
-        <Image
+        <ResilientImage
           src={item.cover_image_url}
           alt={item.title}
           fill
           sizes="(max-width: 640px) 180px, (max-width: 768px) 220px, 340px"
+          surface="content-card"
+          fallback={coverFallback}
           className="object-cover transition-transform duration-300 md:group-hover:scale-[1.035] md:group-focus-visible:scale-[1.035]"
         />
-      ) : (
-        <div className="absolute inset-0 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted via-card to-background">
-          <BookOpen className="size-12 text-muted-foreground" />
-        </div>
-      )}
+      ) : coverFallback}
 
       {item.author ? (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center bg-gradient-to-b from-black/80 via-black/35 to-transparent px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-10">
@@ -1044,12 +1069,10 @@ export function CorePlatformFeaturesSection() {
                           : "pointer-events-none opacity-0 scale-[1.012]"
                       )}
                     >
-                      <Image
-                        src={slide.image}
+                      <StoryboardImage
+                        image={slide.image}
                         alt={`Netflux storyboard: ${slide.title}`}
-                        fill
                         sizes="(max-width: 1024px) calc(100vw - 4rem), 544px"
-                        className="object-contain"
                       />
                     </div>
                   ))}
@@ -1138,13 +1161,11 @@ export function CorePlatformFeaturesSection() {
                 >
                   {STORYBOARD_SLIDES.map((slide, slideIndex) => (
                     <div key={`lightbox-${slide.title}`} className="relative h-full w-full shrink-0">
-                      <Image
-                        src={slide.image}
+                      <StoryboardImage
+                        image={slide.image}
                         alt={`Expanded Netflux storyboard: ${slide.title}`}
-                        fill
-                        sizes="94vw"
-                        className="object-contain"
-                        priority={slideIndex === activeStoryboardSlide}
+                        sizes="(min-width: 1362px) 1280px, 94vw"
+                        eager={slideIndex === activeStoryboardSlide}
                       />
                     </div>
                   ))}

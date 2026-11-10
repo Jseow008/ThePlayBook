@@ -8,9 +8,9 @@ import {
     type ImageSurface,
 } from "@/lib/image-fallback";
 
-type ResilientImageMode = "optimized" | "direct" | "failed";
+type ResilientImageMode = "initial" | "direct" | "failed";
 
-export interface ResilientImageProps extends Omit<ImageProps, "onError" | "src" | "unoptimized"> {
+export interface ResilientImageProps extends Omit<ImageProps, "onError" | "src"> {
     enableDirectRetry?: boolean;
     fallback?: ReactNode;
     onError?: (event: SyntheticEvent<HTMLImageElement, Event>) => void;
@@ -25,13 +25,14 @@ export function ResilientImage({
     onError,
     src,
     surface,
+    unoptimized = false,
     ...props
 }: ResilientImageProps) {
-    const [mode, setMode] = useState<ResilientImageMode>("optimized");
+    const [mode, setMode] = useState<ResilientImageMode>("initial");
 
     useEffect(() => {
-        setMode("optimized");
-    }, [src]);
+        setMode("initial");
+    }, [src, unoptimized]);
 
     useEffect(() => {
         if (mode === "direct") {
@@ -54,11 +55,11 @@ export function ResilientImage({
             alt={alt}
             key={`${mode}:${src}`}
             src={src}
-            unoptimized={mode === "direct"}
+            unoptimized={unoptimized || mode === "direct"}
             onError={(event) => {
                 onError?.(event);
 
-                if (mode === "optimized" && enableDirectRetry) {
+                if (mode === "initial" && !unoptimized && enableDirectRetry) {
                     setMode("direct");
                     return;
                 }
