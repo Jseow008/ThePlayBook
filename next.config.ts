@@ -154,6 +154,7 @@ const nextConfig: NextConfig = {
     "/api/admin/content/bulk": contentProcessingTraceIncludes,
     "/api/admin/content/[id]/narration": ffmpegTraceIncludes,
     "/api/admin/narration/process": ffmpegTraceIncludes,
+    "/api/og/content/[id]": sharpTraceIncludes,
     "/api/og/content/[id]/story": sharpTraceIncludes,
     "/api/admin/story-images/process": sharpTraceIncludes,
   },
