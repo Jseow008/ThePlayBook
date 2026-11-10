@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -14,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { ResilientImage } from "@/components/ui/ResilientImage";
 import { APP_NAME } from "@/lib/brand";
 export { getCuratedCategories } from "@/components/ui/landing/landingCategories";
 import { cn } from "@/lib/utils";
@@ -199,6 +199,11 @@ function FeaturedReadCard({
 }) {
   const durationLabel = formatFeaturedReadDuration(item.duration_seconds);
   const hasAudioSummary = Boolean(item.audio_url?.trim());
+  const coverFallback = (
+    <div className="absolute inset-0 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted via-card to-background">
+      <BookOpen className="size-12 text-muted-foreground" />
+    </div>
+  );
 
   return (
     <Link
@@ -209,18 +214,16 @@ function FeaturedReadCard({
       className="focus-ring landing-featured-read-card group relative block h-full w-full overflow-hidden rounded-md bg-card transition-[transform,box-shadow] duration-300 md:hover:z-10 md:hover:-translate-y-1 md:focus-visible:z-10 md:focus-visible:-translate-y-1"
     >
       {item.cover_image_url ? (
-        <Image
+        <ResilientImage
           src={item.cover_image_url}
           alt={item.title}
           fill
           sizes="(max-width: 640px) 180px, (max-width: 768px) 220px, 340px"
+          surface="content-card"
+          fallback={coverFallback}
           className="object-cover transition-transform duration-300 md:group-hover:scale-[1.035] md:group-focus-visible:scale-[1.035]"
         />
-      ) : (
-        <div className="absolute inset-0 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted via-card to-background">
-          <BookOpen className="size-12 text-muted-foreground" />
-        </div>
-      )}
+      ) : coverFallback}
 
       {item.author ? (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center bg-gradient-to-b from-black/80 via-black/35 to-transparent px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-10">
