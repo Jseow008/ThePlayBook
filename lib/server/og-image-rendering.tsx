@@ -12,6 +12,13 @@ export type OgFont = {
 
 export const cacheControl = "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400";
 const ogRouteAssetDir = path.join(process.cwd(), "app/api/og/content/[id]");
+const COVER_PATH = /^\/storage\/v1\/object\/public\/media\/covers\/[a-zA-Z0-9._-]+\.[a-zA-Z0-9]+$/;
+const COVER_DOWNLOAD_LIMIT = 5 * 1024 * 1024;
+const COVER_INPUT_PIXELS = 16_000_000;
+const COVER_RENDER_SIZE = 1200;
+const COVER_DOWNLOAD_TIMEOUT_MS = 5_000;
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const COVER_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
 
 export async function bufferImageResponse(image: Response) {
     const body = await image.arrayBuffer();
@@ -135,19 +142,86 @@ export function buildCoverFallback(title: string, brandFont: string) {
     );
 }
 
+function matchesCoverFormat(image: Buffer, contentType: string) {
+    switch (contentType) {
+        case "image/jpeg":
+            return image[0] === 0xff && image[1] === 0xd8 && image[2] === 0xff;
+        case "image/png":
+            return image.subarray(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE);
+        case "image/webp":
+            return image.toString("latin1", 0, 4) === "RIFF" && image.toString("latin1", 8, 12) === "WEBP";
+        case "image/gif":
+            return ["GIF87a", "GIF89a"].includes(image.toString("latin1", 0, 6));
+        case "image/avif": {
+            if (image.length < 16 || image.toString("latin1", 4, 8) !== "ftyp") return false;
+            const boxSize = image.readUInt32BE(0);
+            if (boxSize < 16 || boxSize > image.length) return false;
+            const isAvifBrand = (offset: number) => ["avif", "avis"].includes(image.toString("latin1", offset, offset + 4));
+            if (isAvifBrand(8)) return true;
+            for (let offset = 16; offset + 4 <= boxSize; offset += 4) {
+                if (isAvifBrand(offset)) return true;
+            }
+            return false;
+        }
+        default:
+            return false;
+    }
+}
+
+async function readCoverBody(body: ReadableStream<Uint8Array>) {
+    const reader = body.getReader();
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) return Buffer.concat(chunks, size);
+            size += value.byteLength;
+            if (size > COVER_DOWNLOAD_LIMIT) {
+                await reader.cancel();
+                return null;
+            }
+            chunks.push(value);
+        }
+    } finally {
+        reader.releaseLock();
+    }
+}
+
 export async function getImageDataUrl(url: string): Promise<string | null> {
     try {
-        const response = await fetch(url, {
-            headers: { Accept: "image/*" },
-            signal: AbortSignal.timeout(5000),
+        const cover = new URL(url);
+        const storageOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin;
+        if (cover.protocol !== "https:" || cover.origin !== storageOrigin || cover.port
+            || cover.username || cover.password || cover.search || cover.hash || !COVER_PATH.test(cover.pathname)) {
+            return null;
+        }
+
+        const response = await fetch(cover, {
+            headers: { Accept: "image/jpeg, image/png, image/webp, image/gif, image/avif" },
+            redirect: "manual",
+            cache: "no-store",
+            signal: AbortSignal.timeout(COVER_DOWNLOAD_TIMEOUT_MS),
         });
-        if (!response.ok) return null;
+        const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
+        if (!response.ok || !contentType || !COVER_MIME_TYPES.has(contentType)
+            || Number(response.headers.get("content-length")) > COVER_DOWNLOAD_LIMIT) {
+            await response.body?.cancel();
+            return null;
+        }
+        if (!response.body) return null;
 
-        const contentType = response.headers.get("content-type");
-        if (!contentType?.startsWith("image/")) return null;
+        const image = await readCoverBody(response.body);
+        if (!image || !matchesCoverFormat(image, contentType)) return null;
 
-        const imageBuffer = Buffer.from(await response.arrayBuffer());
-        return `data:${contentType};base64,${imageBuffer.toString("base64")}`;
+        // Decode a bounded raster before handing it to the share renderer.
+        const png = await sharp(image, { limitInputPixels: COVER_INPUT_PIXELS })
+            .autoOrient()
+            .resize(COVER_RENDER_SIZE, COVER_RENDER_SIZE, { fit: "inside", withoutEnlargement: true })
+            .png()
+            .toBuffer();
+        return `data:image/png;base64,${png.toString("base64")}`;
     } catch {
         return null;
     }
