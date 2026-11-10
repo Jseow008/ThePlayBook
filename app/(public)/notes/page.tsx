@@ -49,7 +49,7 @@ export default async function BrainPage({ searchParams }: BrainPageProps) {
     return (
         <BrainClientPage
             initialPage={initialPage}
-            initialReflections={(reflections || []) as ReflectionWithContent[]}
+            initialReflections={reflectionsError ? null : (reflections ?? []) as ReflectionWithContent[]}
             initialAskOpen={resolvedSearchParams?.ask === "1"}
         />
     );
