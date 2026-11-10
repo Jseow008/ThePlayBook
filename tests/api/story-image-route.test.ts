@@ -18,9 +18,9 @@ vi.mock("@/app/api/og/content/[id]/og-content-image-utils", async (original) => 
 
 vi.mock("@/lib/server/api", () => ({ logApiError: vi.fn() }));
 
-vi.mock("@/lib/server/rate-limit", () => ({
+vi.mock("@/lib/server/rate-limit", async (original) => ({
+    ...await original<typeof import("@/lib/server/rate-limit")>(),
     strictPublicRateLimit: vi.fn(),
-    rateLimitFailureResponse: vi.fn(() => new Response("rate limited", { status: 429 })),
 }));
 
 vi.mock("@/lib/server/story-image-renderer", () => ({
@@ -74,6 +74,48 @@ describe("story image route", () => {
             `https://storage.example.com/story-images/${content.id}/aaaaaaaaaaaaaaaaaaaaaaaa.jpg`
         );
         expect(createStoryImageJpegResponse).not.toHaveBeenCalled();
+    });
+
+    it("enforces the same 30-request limit across titles for one trusted IP", async () => {
+        const { strictPublicRateLimit: realRateLimit } =
+            await vi.importActual<typeof import("@/lib/server/rate-limit")>("@/lib/server/rate-limit");
+        vi.stubEnv("NODE_ENV", "test");
+        vi.stubEnv("VERCEL", "1");
+        vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
+        vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
+        vi.mocked(strictPublicRateLimit).mockImplementation(realRateLimit);
+        vi.mocked(getContent).mockImplementation(async id => ({ ...content, id }));
+        vi.mocked(findCompletedStoryImage).mockImplementation(async ({ contentId }) => ({
+            storage_path: `story-images/${contentId}/aaaaaaaaaaaaaaaaaaaaaaaa.jpg`,
+        }) as never);
+        vi.mocked(storedStoryImageExists).mockResolvedValue(true);
+
+        const firstTitle = content.id;
+        const secondTitle = "22222222-2222-2222-2222-222222222222";
+        const thirdTitle = "33333333-3333-3333-3333-333333333333";
+        const get = (id: string, ip = "192.0.2.31") => GET(
+            new NextRequest(`http://localhost/api/og/content/${id}/story`, {
+                headers: { "x-vercel-forwarded-for": ip },
+            }),
+            { params: Promise.resolve({ id }) },
+        );
+
+        try {
+            for (let i = 0; i < 29; i++) expect((await get(firstTitle)).status).toBe(307);
+            expect((await get(secondTitle)).status).toBe(307);
+
+            const blocked = await get(thirdTitle);
+            expect(blocked.status).toBe(429);
+            expect(Number(blocked.headers.get("retry-after"))).toBeGreaterThan(0);
+            expect(await blocked.json()).toMatchObject({ error: { code: "RATE_LIMITED" } });
+            expect((await get(firstTitle)).status).toBe(429);
+            expect(getContent).toHaveBeenCalledTimes(30);
+            expect(createStoryImageJpegResponse).not.toHaveBeenCalled();
+
+            expect((await get(thirdTitle, "192.0.2.32")).status).toBe(307);
+        } finally {
+            vi.unstubAllEnvs();
+        }
     });
 
     it("renders and stores a write-through fallback when the version is missing", async () => {

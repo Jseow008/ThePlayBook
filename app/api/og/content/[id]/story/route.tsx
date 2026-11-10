@@ -30,6 +30,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const rateLimitResult = await strictPublicRateLimit(request, {
         limit: 30,
         windowMs: 60_000,
+        scope: "/api/og/content/[id]/story",
         routeLabel: "content_story_image",
     });
 
