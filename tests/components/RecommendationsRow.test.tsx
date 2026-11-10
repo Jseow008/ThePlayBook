@@ -92,9 +92,28 @@ describe("RecommendationsRow", () => {
 
         const { container } = render(<RecommendationsRow />);
 
-        expect(screen.getByRole("heading", { name: "Based on your recent reading" })).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Based on your latest completed read" })).toBeInTheDocument();
         expect(screen.getByText("The Comfort Crisis")).toBeInTheDocument();
         expect(container.querySelector(".animate-pulse")).not.toBeInTheDocument();
+    });
+
+    it("labels recommendations based on an in-progress title as recent reading", () => {
+        const inProgressId = "66666666-6666-6666-6666-666666666666";
+        useReadingProgressMock.mockReturnValue({
+            completedIds: [],
+            inProgressIds: [inProgressId],
+            myListIds: [],
+            isLoaded: true,
+        });
+        useBrowseRecommendationsMock.mockReturnValueOnce({
+            data: { recentItems: [recommendation], libraryItems: [] },
+            isLoading: false,
+        });
+
+        render(<RecommendationsRow />);
+
+        expect(screen.getByRole("heading", { name: "Based on your recent reading" })).toBeInTheDocument();
+        expect(useBrowseRecommendationsMock).toHaveBeenCalledWith(expect.objectContaining({ recentSeedId: inProgressId }));
     });
 
     it("passes known user items to the browse recommendations query", () => {
@@ -157,7 +176,7 @@ describe("RecommendationsRow", () => {
 
         render(<RecommendationsRow showUserCompletionBadge />);
 
-        expect(screen.getByRole("heading", { name: "Based on your recent reading" }).closest("section"))
+        expect(screen.getByRole("heading", { name: "Based on your latest completed read" }).closest("section"))
             .toHaveAttribute("data-user-completion-badge", "true");
     });
 
