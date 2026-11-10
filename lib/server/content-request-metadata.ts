@@ -1,4 +1,7 @@
+import type { LookupAddress } from "node:dns";
 import { lookup } from "node:dns/promises";
+import { request as httpRequest, type IncomingMessage } from "node:http";
+import { request as httpsRequest } from "node:https";
 import { isIP } from "node:net";
 import { parseMaybeUrl } from "@/lib/content-requests";
 
@@ -9,7 +12,7 @@ interface RequestMetadata {
 
 const METADATA_TIMEOUT_MS = 3_000;
 const DNS_LOOKUP_TIMEOUT_MS = 1_500;
-const MAX_HTML_BYTES = 250_000;
+const MAX_METADATA_BYTES = 250_000;
 const MAX_REDIRECTS = 3;
 const PRIVATE_HOSTNAMES = new Set(["localhost", "ip6-localhost", "ip6-loopback"]);
 
@@ -20,19 +23,8 @@ class UnsafeMetadataUrlError extends Error {
     }
 }
 
-function parseIPv4(value: string) {
-    const parts = value.split(".").map((part) => Number(part));
-    if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
-        return null;
-    }
-    return parts;
-}
-
 function isBlockedIPv4(value: string) {
-    const parts = parseIPv4(value);
-    if (!parts) return true;
-
-    const [a, b] = parts;
+    const [a, b, c] = value.split(".").map(Number);
     return (
         a === 0
         || a === 10
@@ -40,38 +32,34 @@ function isBlockedIPv4(value: string) {
         || (a === 100 && b >= 64 && b <= 127)
         || (a === 169 && b === 254)
         || (a === 172 && b >= 16 && b <= 31)
-        || (a === 192 && b === 168)
+        || (a === 192 && (b === 168 || (b === 0 && (c === 0 || c === 2)) || (b === 88 && c === 99)))
         || (a === 198 && (b === 18 || b === 19))
+        || (a === 198 && b === 51 && c === 100)
+        || (a === 203 && b === 0 && c === 113)
         || a >= 224
     );
 }
 
-function isBlockedIPv6(value: string) {
-    const normalized = value.toLowerCase();
-    const mappedIPv4 = normalized.match(/(?:::ffff:)(\d{1,3}(?:\.\d{1,3}){3})$/);
+function publicAddress(value: string): string | null {
+    const version = isIP(value);
+    if (version === 4) return isBlockedIPv4(value) ? null : value;
+    if (version !== 6) return null;
 
-    if (mappedIPv4) {
-        return isBlockedIPv4(mappedIPv4[1]);
+    const normalized = new URL(`http://[${value}]`).hostname.slice(1, -1);
+    const mapped = normalized.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+    if (mapped) {
+        const high = Number.parseInt(mapped[1], 16);
+        const low = Number.parseInt(mapped[2], 16);
+        return publicAddress(`${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`);
     }
 
-    return (
-        normalized === "::"
-        || normalized === "::1"
-        || normalized.startsWith("fc")
-        || normalized.startsWith("fd")
-        || normalized.startsWith("fe8")
-        || normalized.startsWith("fe9")
-        || normalized.startsWith("fea")
-        || normalized.startsWith("feb")
-        || normalized.startsWith("ff")
-    );
-}
-
-function isBlockedIpAddress(value: string) {
-    const ipVersion = isIP(value);
-    if (ipVersion === 4) return isBlockedIPv4(value);
-    if (ipVersion === 6) return isBlockedIPv6(value);
-    return false;
+    // Only global unicast, excluding special-use, documentation and 6to4 ranges.
+    const [prefix, subnet] = normalized.split(":", 2);
+    const first = Number.parseInt(prefix, 16);
+    const second = Number.parseInt(subnet || "0", 16);
+    if (!(first >= 0x2000 && first <= 0x3fff) || first === 0x2002 || first === 0x3fff
+        || (first === 0x2001 && (second < 0x200 || second === 0xdb8))) return null;
+    return normalized;
 }
 
 function isBlockedHostname(hostname: string) {
@@ -81,7 +69,8 @@ function isBlockedHostname(hostname: string) {
         || normalized === "";
 }
 
-async function assertPublicHttpUrl(url: URL) {
+async function resolvePublicAddress(url: URL, signal: AbortSignal): Promise<string> {
+    signal.throwIfAborted();
     if (!["http:", "https:"].includes(url.protocol)) {
         throw new UnsafeMetadataUrlError("Only HTTP and HTTPS URLs can be fetched.");
     }
@@ -90,35 +79,27 @@ async function assertPublicHttpUrl(url: URL) {
         throw new UnsafeMetadataUrlError("Credential-bearing URLs cannot be fetched.");
     }
 
-    const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
-    if (isBlockedHostname(hostname) || isBlockedIpAddress(hostname)) {
+    const hostname = url.hostname.replace(/^\[|\]$/g, "");
+    if (isBlockedHostname(hostname)) {
         throw new UnsafeMetadataUrlError("Private or local URLs cannot be fetched.");
     }
 
-    const addresses = await lookupWithTimeout(hostname);
-    if (addresses.length === 0 || addresses.some(({ address }) => isBlockedIpAddress(address))) {
+    const addresses = isIP(hostname) ? [hostname] : (await lookupWithTimeout(hostname, signal)).map(({ address }) => address);
+    const validated = addresses.map(publicAddress);
+    if (validated.length === 0 || !validated.every((address): address is string => address !== null)) {
         throw new UnsafeMetadataUrlError("Private or local URLs cannot be fetched.");
     }
+    return validated.find(address => isIP(address) === 4) ?? validated[0];
 }
 
-async function lookupWithTimeout(hostname: string) {
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-
-    try {
-        return await Promise.race([
-            lookup(hostname, { all: true, verbatim: true }),
-            new Promise<never>((_, reject) => {
-                timeout = setTimeout(
-                    () => reject(new UnsafeMetadataUrlError("DNS lookup timed out.")),
-                    DNS_LOOKUP_TIMEOUT_MS
-                );
-            }),
-        ]);
-    } finally {
-        if (timeout) {
-            clearTimeout(timeout);
-        }
-    }
+function lookupWithTimeout(hostname: string, signal: AbortSignal) {
+    const deadline = AbortSignal.any([signal, AbortSignal.timeout(DNS_LOOKUP_TIMEOUT_MS)]);
+    deadline.throwIfAborted();
+    return new Promise<LookupAddress[]>((resolve, reject) => {
+        const abort = () => reject(deadline.reason);
+        deadline.addEventListener("abort", abort, { once: true });
+        void lookup(hostname, { all: true }).then(resolve, reject).finally(() => deadline.removeEventListener("abort", abort));
+    });
 }
 
 function getMetaContent(html: string, property: string) {
@@ -150,120 +131,104 @@ function getTitle(html: string) {
     return decodeHtmlEntities(titleMatch?.[1] || "");
 }
 
-async function fetchWithTimeout(url: URL, headers?: HeadersInit, redirectsRemaining = MAX_REDIRECTS): Promise<Response> {
-    await assertPublicHttpUrl(url);
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), METADATA_TIMEOUT_MS);
+async function fetchMetadataText(
+    url: URL,
+    headers: Record<string, string>,
+    signal: AbortSignal,
+    redirectsRemaining = MAX_REDIRECTS,
+): Promise<string | null> {
+    const address = await resolvePublicAddress(url, signal);
+    signal.throwIfAborted();
+    const request = url.protocol === "https:" ? httpsRequest : httpRequest;
+    const originalHost = url.hostname.replace(/^\[|\]$/g, "");
+    const response = await new Promise<IncomingMessage>((resolve, reject) => {
+        // Connect to the checked address without a second DNS lookup or a pooled socket.
+        request({
+            hostname: address,
+            port: url.port || undefined,
+            path: url.pathname + url.search,
+            headers: { ...headers, host: url.host, "accept-encoding": "identity" },
+            servername: isIP(originalHost) ? "" : originalHost.replace(/\.$/, ""),
+            rejectUnauthorized: true,
+            agent: false,
+            signal,
+        }, resolve).once("error", reject).end();
+    });
 
     try {
-        const response = await fetch(url, {
-            headers,
-            redirect: "manual",
-            signal: controller.signal,
-            next: { revalidate: 60 * 60 * 24 },
-        });
-
-        if (response.status >= 300 && response.status < 400 && response.headers.has("location")) {
+        const status = response.statusCode ?? 0;
+        if (status >= 300 && status < 400 && response.headers.location) {
             if (redirectsRemaining <= 0) {
                 throw new UnsafeMetadataUrlError("Too many redirects while fetching metadata.");
             }
-
-            const redirectUrl = new URL(response.headers.get("location")!, url);
-            return fetchWithTimeout(redirectUrl, headers, redirectsRemaining - 1);
+            return fetchMetadataText(new URL(response.headers.location, url), headers, signal, redirectsRemaining - 1);
         }
-
-        return response;
+        const encoding = response.headers["content-encoding"]?.trim().toLowerCase();
+        if (status < 200 || status >= 300 || (encoding && encoding !== "identity")) return null;
+        return await readLimitedText(response);
     } finally {
-        clearTimeout(timeout);
+        response.destroy();
     }
 }
 
-async function readLimitedText(response: Response, maxBytes: number) {
-    if (!response.body) {
-        return "";
-    }
-
-    const reader = response.body.getReader();
-    const chunks: Uint8Array[] = [];
+async function readLimitedText(response: IncomingMessage) {
+    const chunks: Buffer[] = [];
     let totalBytes = 0;
-
-    while (totalBytes < maxBytes) {
-        const { done, value } = await reader.read();
-        if (done || !value) break;
-
-        const remainingBytes = maxBytes - totalBytes;
-        const chunk = value.length > remainingBytes ? value.slice(0, remainingBytes) : value;
-        chunks.push(chunk);
-        totalBytes += chunk.length;
-
-        if (value.length > remainingBytes) {
-            await reader.cancel();
-            break;
-        }
+    for await (const chunk of response) {
+        const bounded: Buffer = chunk.subarray(0, MAX_METADATA_BYTES - totalBytes);
+        chunks.push(bounded);
+        totalBytes += bounded.length;
+        if (totalBytes === MAX_METADATA_BYTES) break;
     }
-
-    const merged = new Uint8Array(totalBytes);
-    let offset = 0;
-
-    for (const chunk of chunks) {
-        merged.set(chunk, offset);
-        offset += chunk.length;
-    }
-
-    return new TextDecoder().decode(merged);
+    return Buffer.concat(chunks, totalBytes).toString("utf8");
 }
 
-async function cleanPublicMetadataUrl(value: string | undefined, baseUrl: string) {
+async function cleanPublicMetadataUrl(value: string | undefined, baseUrl: string, signal: AbortSignal) {
     if (!value) return undefined;
 
     try {
         const parsed = new URL(value, baseUrl);
-        await assertPublicHttpUrl(parsed);
+        await resolvePublicAddress(parsed, signal);
         return parsed.toString();
     } catch {
         return undefined;
     }
 }
 
-async function fetchYoutubeMetadata(url: string): Promise<RequestMetadata | null> {
+async function fetchYoutubeMetadata(url: string, signal: AbortSignal): Promise<RequestMetadata | null> {
     const endpoint = new URL("https://www.youtube.com/oembed");
     endpoint.searchParams.set("url", url);
     endpoint.searchParams.set("format", "json");
 
-    const response = await fetchWithTimeout(endpoint, {
+    const body = await fetchMetadataText(endpoint, {
         accept: "application/json",
-    });
+    }, signal);
+    if (!body) return null;
 
-    if (!response.ok) return null;
-
-    const data = await response.json() as {
+    const data = JSON.parse(body) as {
         title?: string;
         thumbnail_url?: string;
     };
 
     return {
         title: data.title?.trim() || undefined,
-        thumbnail_url: await cleanPublicMetadataUrl(data.thumbnail_url?.trim(), url),
+        thumbnail_url: await cleanPublicMetadataUrl(data.thumbnail_url?.trim(), url, signal),
     };
 }
 
-async function fetchOpenGraphMetadata(url: string): Promise<RequestMetadata | null> {
+async function fetchOpenGraphMetadata(url: string, signal: AbortSignal): Promise<RequestMetadata | null> {
     const parsed = new URL(url);
-    const response = await fetchWithTimeout(parsed, {
+    const html = await fetchMetadataText(parsed, {
         accept: "text/html,application/xhtml+xml",
         "user-agent": "NetfluxBot/1.0 (+https://netflux.app)",
-    });
-
-    if (!response.ok) return null;
-
-    const html = await readLimitedText(response, MAX_HTML_BYTES);
+    }, signal);
+    if (!html) return null;
     const title = getTitle(html);
     const thumbnailUrl = getMetaContent(html, "og:image") || getMetaContent(html, "twitter:image");
 
     return {
         title: title || undefined,
-        thumbnail_url: await cleanPublicMetadataUrl(thumbnailUrl, parsed.toString()),
+        thumbnail_url: await cleanPublicMetadataUrl(thumbnailUrl, parsed.toString(), signal),
     };
 }
 
@@ -274,15 +239,16 @@ export async function fetchRequestMetadata(url: string): Promise<RequestMetadata
     }
 
     try {
+        const signal = AbortSignal.timeout(METADATA_TIMEOUT_MS);
         const hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
         if (hostname === "youtube.com" || hostname === "youtu.be") {
-            const youtubeMetadata = await fetchYoutubeMetadata(parsed.toString());
+            const youtubeMetadata = await fetchYoutubeMetadata(parsed.toString(), signal);
             if (youtubeMetadata?.title || youtubeMetadata?.thumbnail_url) {
                 return youtubeMetadata;
             }
         }
 
-        return await fetchOpenGraphMetadata(parsed.toString()) ?? {};
+        return await fetchOpenGraphMetadata(parsed.toString(), signal) ?? {};
     } catch {
         return {};
     }
