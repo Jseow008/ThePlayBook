@@ -64,4 +64,24 @@ describe.each([["Continue Reading", ReadingPage], ["Completed", CompletedPage], 
         expect(screen.queryByRole("region", { name: "Unavailable saved summaries" })).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Retry" })).toBeVisible();
     });
+
+    it.each([true, false])("waits for the current lookup before showing unavailable items (placeholder %s)", (isPlaceholderData) => {
+        const batchState = {
+            data: [], isSuccess: true, isError: false, isLoading: false,
+            isFetching: true, isPlaceholderData, refetch: vi.fn(),
+        };
+        mocks.batch.mockReturnValue(batchState);
+        const { rerender } = render(<Page />);
+
+        expect(screen.getByText("Updating your library…")).toHaveAttribute("role", "status");
+        expect(screen.queryByRole("region", { name: "Unavailable saved summaries" })).not.toBeInTheDocument();
+
+        mocks.batch.mockReturnValue({ ...batchState, isFetching: false, isPlaceholderData: false });
+        rerender(<Page />);
+
+        expect(screen.queryByText("Updating your library…")).not.toBeInTheDocument();
+        expect(screen.getByRole("region", { name: "Unavailable saved summaries" })).toBeVisible();
+        expect(mocks.remove).not.toHaveBeenCalled();
+        expect(mocks.removeSaved).not.toHaveBeenCalled();
+    });
 });

@@ -52,7 +52,7 @@ export function useHighlights(contentItemId?: string, options?: UseHighlightsOpt
     return useQuery({
         queryKey: ["highlights", contentItemId, options?.limit ?? null, user?.id ?? null],
         enabled: Boolean(user),
-        queryFn: async (): Promise<HighlightWithContent[]> => {
+        queryFn: async ({ signal }): Promise<HighlightWithContent[]> => {
             const params = new URLSearchParams();
 
             if (contentItemId) {
@@ -68,7 +68,7 @@ export function useHighlights(contentItemId?: string, options?: UseHighlightsOpt
                 ? `/api/library/highlights?${queryString}`
                 : "/api/library/highlights";
 
-            const res = await fetch(url);
+            const res = await fetch(url, { signal });
             if (!res.ok) {
                 if (res.status === 401) return []; // Not logged in
                 throw new Error("Failed to fetch highlights");

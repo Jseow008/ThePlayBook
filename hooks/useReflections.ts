@@ -16,9 +16,9 @@ export function useReflections(contentItemId?: string, initialData?: ReflectionW
     return useQuery({
         queryKey: ["reflections", contentItemId ?? null, user?.id ?? null],
         enabled: Boolean(user),
-        queryFn: async (): Promise<ReflectionWithContent[]> => {
+        queryFn: async ({ signal }): Promise<ReflectionWithContent[]> => {
             const search = contentItemId ? `?content_item_id=${encodeURIComponent(contentItemId)}` : "";
-            const response = await fetch(`/api/library/reflections${search}`);
+            const response = await fetch(`/api/library/reflections${search}`, { signal });
             if (!response.ok) {
                 if (response.status === 401) return [];
                 throw new Error("Failed to load reflections");

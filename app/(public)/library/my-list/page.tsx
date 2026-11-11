@@ -32,6 +32,8 @@ export default function MyListPage() {
         data: allItems = [],
         isError,
         isLoading,
+        isFetching,
+        isPlaceholderData,
         refetch,
     } = useBatchContentItems(myListIds, { enabled: isLoaded });
     const isPageLoading = !isLoaded || isLoading;
@@ -114,7 +116,11 @@ export default function MyListPage() {
                     </div>
                 )}
 
-                {!isPageLoading && !isError && (
+                {!isPageLoading && isFetching && (
+                    <p role="status" className="mb-4 text-sm text-muted-foreground">Updating your library…</p>
+                )}
+
+                {!isPageLoading && !isError && !isFetching && !isPlaceholderData && (
                     <UnavailableLibraryItems
                         ids={unavailableIds}
                         removeLabel="Remove from Saved"

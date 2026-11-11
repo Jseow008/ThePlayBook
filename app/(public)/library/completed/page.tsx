@@ -59,6 +59,8 @@ export default function CompletedPage() {
         data: allItems = [],
         isError,
         isLoading,
+        isFetching,
+        isPlaceholderData,
         refetch,
     } = useBatchContentItems(completedIds, { enabled: isLoaded });
     const { data: reflections = [] } = useReflections();
@@ -277,7 +279,11 @@ export default function CompletedPage() {
                     </div>
                 )}
 
-                {!isPageLoading && !isError && (
+                {!isPageLoading && isFetching && (
+                    <p role="status" className="mb-4 text-sm text-muted-foreground">Updating your library…</p>
+                )}
+
+                {!isPageLoading && !isError && !isFetching && !isPlaceholderData && (
                     <UnavailableLibraryItems
                         ids={unavailableIds}
                         getProgress={getProgress}

@@ -54,6 +54,8 @@ function ContinueReadingContent() {
         data: allItems = [],
         isError,
         isLoading,
+        isFetching,
+        isPlaceholderData,
         refetch,
     } = useBatchContentItems(inProgressIds, { enabled: isLoaded });
     const isPageLoading = !isLoaded || isLoading;
@@ -134,7 +136,11 @@ function ContinueReadingContent() {
                     </div>
                 )}
 
-                {!isPageLoading && !isError && (
+                {!isPageLoading && isFetching && (
+                    <p role="status" className="mb-4 text-sm text-muted-foreground">Updating your library…</p>
+                )}
+
+                {!isPageLoading && !isError && !isFetching && !isPlaceholderData && (
                     <UnavailableLibraryItems
                         ids={unavailableIds}
                         getProgress={getProgress}
