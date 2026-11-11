@@ -48,10 +48,11 @@ export function useBatchContentItems(ids: string[], options?: { enabled?: boolea
     return useQuery({
         queryKey: ["content-batch", ids],
         enabled: (options?.enabled ?? true) && ids.length > 0,
-        queryFn: async () => {
+        queryFn: async ({ signal }) => {
             const responses = await Promise.all(
                 chunkIds(ids).map(async (chunk) => {
                     const response = await fetch("/api/content/batch", {
+                        signal,
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ ids: chunk }),
@@ -158,8 +159,9 @@ export function useRecommendations(
         enabled: (options?.enabled ?? true) && uniqueSeedIds.length > 0,
         initialData: cachedRecommendations?.items,
         initialDataUpdatedAt: cachedRecommendationsUpdatedAt,
-        queryFn: async () => {
+        queryFn: async ({ signal }) => {
             const response = await fetch("/api/recommendations", {
+                signal,
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -226,8 +228,9 @@ export function useBrowseRecommendations(options: {
             && Boolean(options.recentSeedId || uniqueLibrarySeedIds.length > 0),
         initialData: cachedBrowseRecommendations?.data,
         initialDataUpdatedAt: cachedBrowseRecommendations ? 0 : undefined,
-        queryFn: async () => {
+        queryFn: async ({ signal }) => {
             const response = await fetch("/api/recommendations/browse", {
+                signal,
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

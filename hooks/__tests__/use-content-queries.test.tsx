@@ -348,6 +348,7 @@ describe("useBrowseRecommendations", () => {
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(fetchMock).toHaveBeenCalledWith("/api/recommendations/browse", {
+            signal: expect.any(AbortSignal),
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
