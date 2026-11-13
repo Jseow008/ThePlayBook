@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
     BookOpen,
@@ -134,6 +134,10 @@ export const ContentCard = memo(function ContentCard({
     return <InteractiveContentCard {...props} />;
 });
 
+const subscribeToHydration = () => () => {};
+const getClientHydrationSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
+
 function InteractiveContentCard(props: ContentCardProps) {
     const {
         item,
@@ -141,8 +145,11 @@ function InteractiveContentCard(props: ContentCardProps) {
         navigationMode = "preview",
     } = props;
     const { isInMyList, toggleMyList, getProgress } = useReadingProgress();
-    const isBookmarked = isInMyList(item.id);
-    const progress = getProgress(item.id);
+    // A streamed card may hydrate after the shared library provider has loaded.
+    // Match its server HTML first, then expose current device/account state.
+    const hydrated = useSyncExternalStore(subscribeToHydration, getClientHydrationSnapshot, getServerHydrationSnapshot);
+    const isBookmarked = hydrated && isInMyList(item.id);
+    const progress = hydrated ? getProgress(item.id) : null;
     const href = getContentCardHref(item, navigationMode, hasUsableProgress(progress));
     const handleToggleBookmark = useCallback(async () => {
         if (!await toggleMyList(item.id)) return;

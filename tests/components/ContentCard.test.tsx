@@ -1,4 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ContentCard } from "@/components/ui/ContentCard";
 import {
@@ -105,6 +107,33 @@ describe("ContentCard", () => {
         else fireEvent.focus(links[0]);
         for (const link of links) expect(link).toHaveAttribute("data-prefetch", "null");
         expect(links[0]).toHaveAttribute("href", `/preview/${item.id}`);
+    });
+
+    it.each([false, true])("hydrates streamed cards after saved state loads (completed=%s)", async (isCompleted) => {
+        const container = document.createElement("div");
+        container.innerHTML = renderToString(<ContentCard item={item} navigationMode="resume" />);
+        document.body.appendChild(container);
+        // The shared provider can load the device copy before this streamed card hydrates.
+        mockIsInMyList.mockReturnValue(true);
+        mockGetProgress.mockReturnValue({
+            itemId: item.id, completed: ["0"], totalSegments: 3, lastSegmentIndex: 0,
+            isCompleted, lastReadAt: "2026-11-13T01:00:00Z",
+        });
+        const recoverable: unknown[] = [];
+        let root: ReturnType<typeof hydrateRoot> | undefined;
+        try {
+            await act(async () => {
+                root = hydrateRoot(container, <ContentCard item={item} navigationMode="resume" />, {
+                    onRecoverableError: error => recoverable.push(error),
+                });
+            });
+            expect(recoverable).toEqual([]);
+            expect(screen.getByRole("button", { name: "Remove Deep Work from Saved" })).toBeVisible();
+            expect(screen.queryByRole("img", { name: "Deep Work completed" }) !== null).toBe(isCompleted);
+        } finally {
+            await act(async () => root?.unmount());
+            container.remove();
+        }
     });
 
     it("defaults to the preview page", () => {
