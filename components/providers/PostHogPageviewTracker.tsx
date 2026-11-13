@@ -9,6 +9,7 @@ import {
     type AnalyticsIdentityProperties,
 } from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/client";
+import { getBrowserUser } from "@/lib/supabase/browser-user";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import type { UserRole } from "@/types/database";
 
@@ -61,7 +62,7 @@ export function PostHogPageviewTracker() {
         const supabase = createClient();
         let isMounted = true;
 
-        supabase.auth.getUser().then((result) => {
+        getBrowserUser().then((result) => {
             if (!isMounted) return;
 
             const { user, error } = resolveAuthUserResult(result);

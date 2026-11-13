@@ -27,6 +27,7 @@ if (posthogProjectToken && posthogHost && !posthog.__loaded) {
     capture_pageleave: true,
     autocapture: false,
     disable_session_recording: true,
+    disable_surveys: true,
     __preview_capture_bot_pageviews: captureBotEvents,
   });
 }

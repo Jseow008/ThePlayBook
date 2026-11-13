@@ -135,7 +135,7 @@ export function UserNav() {
                         </p>
                     </div>
 
-                    <Link
+                    <Link prefetch={false}
                         href="/profile"
                         role="menuitem"
                         className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-default w-full focus:bg-accent focus:text-accent-foreground outline-none"
@@ -145,7 +145,7 @@ export function UserNav() {
                         <span>Profile</span>
                     </Link>
 
-                    <Link
+                    <Link prefetch={false}
                         href="/settings"
                         role="menuitem"
                         className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-default w-full focus:bg-accent focus:text-accent-foreground outline-none"

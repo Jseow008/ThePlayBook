@@ -63,11 +63,11 @@ export function MobileHeader({
                 compact ? "mobile-header-compact-height" : "mobile-header-height"
             )}
         >
-            <Link href="/browse" className="touch-target-44 inline-flex">
+            <Link prefetch={false} href="/browse" className="touch-target-44 inline-flex">
                 <Logo width={compact ? 74 : 80} height={compact ? 22 : 24} priority />
             </Link>
             <div className="flex items-center gap-3">
-                <Link
+                <Link prefetch={false}
                     href="/ask"
                     aria-label="Ask AI"
                     title="Ask AI"

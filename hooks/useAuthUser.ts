@@ -3,6 +3,7 @@
 import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { getBrowserUser } from "@/lib/supabase/browser-user";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import { clearAllNotesChatSessions } from "@/lib/notes-chat-session";
 import { clearLibraryChatSessions } from "@/lib/library-chat-session";
@@ -33,7 +34,7 @@ export function AuthUserProvider({
         let isMounted = true;
 
         if (initialUser === undefined) {
-            supabase.auth.getUser().then((result) => {
+            getBrowserUser().then((result) => {
                 if (!isMounted) return;
                 const { user, error } = resolveAuthUserResult(result);
                 if (error) {

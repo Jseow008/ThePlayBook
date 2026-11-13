@@ -363,7 +363,7 @@ export function AudioPlayer({
 
     return (
         <div ref={playerContainerRef} className="relative overflow-hidden rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-xl">
-            <audio ref={audioRef} src={src} preload="metadata" />
+            <audio ref={audioRef} src={src} preload={initialTimeSec > 0 ? "metadata" : "none"} />
 
             {/* Header with label */}
             <div className="flex items-center justify-center gap-2 px-4 py-2 border-b border-border bg-muted/30">

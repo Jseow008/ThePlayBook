@@ -45,6 +45,7 @@ describe("AudioPlayer", () => {
 
         const audio = container.querySelector("audio");
         expect(audio).not.toBeNull();
+        expect(audio).toHaveAttribute("preload", "none");
         if (!audio) {
             return;
         }
@@ -78,6 +79,7 @@ describe("AudioPlayer", () => {
 
         const audio = container.querySelector("audio");
         expect(audio).not.toBeNull();
+        expect(audio).toHaveAttribute("preload", "metadata");
         if (!audio) {
             return;
         }

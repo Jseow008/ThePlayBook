@@ -186,7 +186,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                     fallback={<div className="h-full w-full bg-card" />}
                                 />
                                 {!isPrevious && (
-                                    <Link
+                                    <Link prefetch={false}
                                         href={`/preview/${item.id}`}
                                         aria-label={`Preview ${item.title}`}
                                         tabIndex={-1}
@@ -221,7 +221,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                         fallback={<div className="h-full w-full bg-card" />}
                                     />
                                     {!isPrevious && (
-                                        <Link
+                                        <Link prefetch={false}
                                             href={`/preview/${item.id}`}
                                             aria-label={`Preview ${item.title}`}
                                             tabIndex={-1}
@@ -405,7 +405,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                 contentVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                             )}
                         >
-                            <Link
+                            <Link prefetch={false}
                                 href={buildReadPath(contentItem)}
                                 aria-label="Read Summary"
                                 className="focus-ring pointer-events-auto flex min-h-11 items-center gap-2 rounded-full bg-white px-4.5 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/95 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 md:min-h-0 md:gap-2.5 md:px-6 md:py-2.5 md:text-base lg:px-6 lg:py-2.5"
@@ -414,7 +414,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                 <span className="md:hidden">Read</span>
                                 <span className="hidden md:inline">Read Summary</span>
                             </Link>
-                            <Link
+                            <Link prefetch={false}
                                 href={`/preview/${contentItem.id}`}
                                 aria-label="Preview Takeaways"
                                 className="focus-ring pointer-events-auto flex min-h-11 items-center gap-2 rounded-full border border-white/20 bg-black/20 px-4.5 py-2 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/40 active:scale-95 md:min-h-0 md:gap-2.5 md:px-6 md:py-2.5 md:text-base lg:px-6 lg:py-2.5"
