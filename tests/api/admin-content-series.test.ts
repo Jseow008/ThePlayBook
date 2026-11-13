@@ -2123,6 +2123,54 @@ describe("Admin content series support", () => {
         expect(res.status).toBe(404);
         expect(json.error.code).toBe("NOT_FOUND");
     });
+    it.each(["omitted", "resubmitted", "untrusted metadata"])("saves a cover update with %s quick mode while preserving legacy metadata", async mode => {
+        const quick = { hook: "Hook", big_idea: "Idea", key_takeaways: ["Takeaway"], category: "Investing", notebook_id: "legacy-notebook" };
+        const rpc = vi.fn().mockResolvedValue({ error: null });
+        vi.mocked(getAdminClient).mockReturnValue({
+            from: (table: string) => {
+                if (table === "content_item") return { select: () => ({ eq: () => ({ single: async () => ({ data: {
+                    status: "verified", category: "Business", cover_image_url: "https://example.com/old.jpg",
+                    quick_mode_json: quick, audio_url: null,
+                }, error: null }) }) }) };
+                if (table === "segment") return { select: () => ({ eq: async () => ({ data: [{ order_index: 0, markdown_body: "Original passage" }], error: null }) }) };
+                throw new Error(`Unexpected table ${table}`);
+            },
+            rpc,
+        } as unknown as ReturnType<typeof getAdminClient>);
+        const res = await updateAdminContent(new NextRequest("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000", {
+            method: "PUT", body: JSON.stringify({
+                cover_image_url: "https://example.com/new.jpg", status: "verified",
+                ...(mode === "omitted" ? {} : { quick_mode_json: { ...quick, ...(mode === "untrusted metadata" ? { category: "Overwrite", notebook_id: "Overwrite" } : {}) } }),
+            }),
+        }), { params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }) });
+        expect(res.status).toBe(200);
+        const args = rpc.mock.calls[0][1];
+        expect(args.p_content_patch.cover_image_url).toBe("https://example.com/new.jpg");
+        expect(args.p_segments).toBeNull();
+        if (mode === "omitted") expect(args.p_content_patch).not.toHaveProperty("quick_mode_json");
+        else expect(args.p_content_patch.quick_mode_json).toEqual(quick);
+    });
+
+    it.each(["verified", "draft"])("keeps real summary edits subject to the database version guard when saving as %s", async status => {
+        const quick = { hook: "Hook", big_idea: "Original", key_takeaways: ["Takeaway"], category: "Investing", notebook_id: "legacy-notebook" };
+        const rpc = vi.fn().mockResolvedValue({ error: { code: "P0001", hint: "CONTENT_VERSION_REQUIRED" } });
+        vi.mocked(getAdminClient).mockReturnValue({
+            from: (table: string) => table === "segment"
+                ? { select: () => ({ eq: () => ({ order: async () => ({ data: [], error: null }) }) }) }
+                : { select: () => ({ eq: () => ({ single: async () => ({ data: {
+                    status: "verified", category: "Business", cover_image_url: "https://example.com/old.jpg", quick_mode_json: quick,
+                }, error: null }) }) }) },
+            rpc,
+        } as unknown as ReturnType<typeof getAdminClient>);
+        const res = await updateAdminContent(new NextRequest("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000", {
+            method: "PUT", body: JSON.stringify({ status, quick_mode_json: { ...quick, big_idea: "Rewritten" }, segments: [{ order_index: 0, markdown_body: "Original" }] }),
+        }), { params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }) });
+        expect(res.status).toBe(409);
+        expect((await res.json()).error.message).toContain("Published reading text is protected");
+        expect(rpc.mock.calls[0][1].p_content_patch.quick_mode_json).toEqual({ ...quick, big_idea: "Rewritten" });
+        expect(revalidatePath).not.toHaveBeenCalled();
+    });
+
     it.each(["CONTENT_VERSION_REQUIRED", "CONTENT_VERSION_PUBLISH_REQUIRED"])("returns a recoverable conflict for %s", async hint => {
         const rpc = vi.fn().mockResolvedValue({error:{code:"P0001",hint}});
         vi.mocked(getAdminClient).mockReturnValue({
