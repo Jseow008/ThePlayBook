@@ -32,7 +32,7 @@ function LibrarySearchContent({ children }: { children: ReactNode }) {
         window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
 
-    const { completedIds, inProgressIds, isLoaded, myListIds } = useReadingProgress();
+    const { completedIds, inProgressIds, isLoaded, isCheckingLibrary, hydrationStatus, hydrationIssue, retryHydration, myListIds } = useReadingProgress();
     const normalizedQuery = query.trim().toLowerCase();
     const isSearching = normalizedQuery.length > 0;
     const allIds = useMemo(
@@ -56,6 +56,19 @@ function LibrarySearchContent({ children }: { children: ReactNode }) {
     return (
         <div className="flex min-h-screen flex-col">
             {!isSearching && <LibraryNav />}
+            {isLoaded && isCheckingLibrary && (
+                <p role="status" className="mx-auto w-full max-w-7xl px-6 pt-4 text-sm text-muted-foreground lg:px-16">
+                    Showing your saved library while checking for updates…
+                </p>
+            )}
+            {hydrationStatus === "error" && (
+                <div role="alert" className="mx-auto flex w-full max-w-7xl items-center gap-3 px-6 pt-4 text-sm text-muted-foreground lg:px-16">
+                    <span>{isLoaded ? "Showing your saved library. Updates are temporarily unavailable." : "Could not load your library."}</span>
+                    {hydrationIssue?.kind !== "rate_limited" && (
+                        <button type="button" onClick={retryHydration} className="focus-ring touch-target-44 shrink-0 rounded-sm font-medium text-foreground hover:underline">Retry</button>
+                    )}
+                </div>
+            )}
             <div className="mx-auto w-full max-w-7xl px-6 pt-5 lg:px-16 lg:pt-8">
                 <div className="relative max-w-md">
                     <Search aria-hidden="true" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

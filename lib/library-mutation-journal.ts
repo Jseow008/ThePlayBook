@@ -6,6 +6,7 @@ import type { LibraryBoundary } from "@/lib/user-library-mutation-contract";
 
 export const LIBRARY_JOURNAL_PREFIX = "netflux.library-mutation.v1:";
 const boundaryPrefix = "netflux.library-boundary.v1:";
+const snapshotBoundaryPrefix = "netflux.library-snapshot-boundary.v1:";
 const boundarySchema = z.object({ resetEpoch: z.number().int().nonnegative(), libraryRevision: z.number().int().nonnegative() });
 const progressSchema = z.object({
     itemId: z.string(), completed: z.array(z.string()), lastSegmentIndex: z.number(),
@@ -80,4 +81,17 @@ export function storeLibraryBoundary(storage: Storage, accountId: string, bounda
 }
 export function readLibraryBoundary(storage: Storage, accountId: string): LibraryBoundary | undefined {
     try { return boundarySchema.parse(JSON.parse(storage.getItem(boundaryPrefix + accountId) ?? "null")); } catch { return undefined; }
+}
+
+// This is the complete saved copy's boundary, separate from newer individual
+// mutation acknowledgements that can still be overlaid on that copy.
+export function readLibrarySnapshotBoundary(storage: Storage, accountId: string): LibraryBoundary | undefined {
+    try { return boundarySchema.parse(JSON.parse(storage.getItem(snapshotBoundaryPrefix + accountId) ?? "null")); } catch { return undefined; }
+}
+export function storeLibrarySnapshotBoundary(storage: Storage, accountId: string, boundary: LibraryBoundary) {
+    const next = boundarySchema.parse(boundary);
+    const current = readLibrarySnapshotBoundary(storage, accountId);
+    if (current && (current.resetEpoch > next.resetEpoch
+        || (current.resetEpoch === next.resetEpoch && current.libraryRevision > next.libraryRevision))) return;
+    storage.setItem(snapshotBoundaryPrefix + accountId, JSON.stringify(next));
 }

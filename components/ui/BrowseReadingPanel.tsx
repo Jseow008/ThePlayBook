@@ -116,6 +116,9 @@ export function BrowseReadingPanel() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <p className="line-clamp-2 break-words font-display text-sm font-semibold leading-5 text-foreground lg:text-base lg:leading-normal xl:text-lg" title={resumeItem.title}>{resumeItem.title}</p>
+                                    {hydrationStatus === "hydrating" && (
+                                        <p role="status" className="text-xs text-muted-foreground">Checking latest progress…</p>
+                                    )}
                                     {progressPercent !== null ? (
                                         <>
                                             <div role="progressbar" aria-label={`Reading progress for ${resumeItem.title}`} aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100} className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">

@@ -32,10 +32,11 @@ export function AuthUserProvider({
     useEffect(() => {
         const supabase = createClient();
         let isMounted = true;
+        let bootstrapSuperseded = false;
 
         if (initialUser === undefined) {
             getBrowserUser().then((result) => {
-                if (!isMounted) return;
+                if (!isMounted || bootstrapSuperseded) return;
                 const { user, error } = resolveAuthUserResult(result);
                 if (error) {
                     setUser((current) => current === undefined ? null : current);
@@ -43,7 +44,7 @@ export function AuthUserProvider({
                 }
                 setUser(user);
             }).catch(() => {
-                if (!isMounted) return;
+                if (!isMounted || bootstrapSuperseded) return;
                 setUser((current) => current === undefined ? null : current);
             });
         }
@@ -52,6 +53,10 @@ export function AuthUserProvider({
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (!isMounted) return;
+            // A lookup started before an auth change cannot replace the newer
+            // session, including a completed sign-out. INITIAL_SESSION still
+            // allows the bootstrap lookup to validate the stored identity.
+            if (_event !== "INITIAL_SESSION") bootstrapSuperseded = true;
             if (_event !== "INITIAL_SESSION") resetBrowserUserLookup();
             // This provider stays mounted when Notes is closed, including on Settings.
             if (_event === "SIGNED_OUT") { clearAllNotesChatSessions(); clearLibraryChatSessions(); clearNoteDrafts(); }

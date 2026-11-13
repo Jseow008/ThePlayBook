@@ -91,6 +91,18 @@ describe("BrowseReadingPanel", () => {
         expect(screen.queryByRole("region", { name: "Your reading" })).not.toBeInTheDocument();
     });
 
+    it("keeps the cached resume card visible while checking current progress", () => {
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [resumeId], isLoaded: true, hydrationStatus: "hydrating",
+            retryHydration: mockRetryHydration, user: { id: "reader-1" },
+            getProgress: () => ({ completed: ["one"], totalSegments: 5 }),
+        });
+        render(<BrowseReadingPanel />);
+        expect(screen.getByText("Deep Work")).toBeVisible();
+        expect(screen.getByRole("status")).toHaveTextContent("Checking latest progress");
+        expect(mockUseBatchContentItems).toHaveBeenCalledWith([resumeId], { enabled: true });
+    });
+
     it("does not load personal data for guests, but shows the cards on mobile for signed-in readers", () => {
         mockUseAuthUser.mockReturnValue(null);
         mockUseReadingProgress.mockReturnValue({

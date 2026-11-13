@@ -102,4 +102,42 @@ describe("complete library snapshot hydration", () => {
 
         await expect(fetchCompleteLibrarySnapshot()).rejects.toMatchObject({ code: "SNAPSHOT_INVALID" });
     });
+
+    it("cancels a building wait without polling an obsolete snapshot", async () => {
+        const controller = new AbortController();
+        let building!: () => void;
+        const started = new Promise<void>(resolve => { building = resolve; });
+        const fetchMock = vi.fn().mockResolvedValue(response({ state: "building", snapshotId: manifest.snapshotId }, 202));
+        vi.stubGlobal("fetch", fetchMock);
+        const pending = fetchCompleteLibrarySnapshot("building-test", building, controller.signal);
+        const rejected = expect(pending).rejects.toMatchObject({ name: "AbortError" });
+        await started;
+        controller.abort();
+        await rejected;
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("aborts the in-flight page and never returns a partial snapshot", async () => {
+        const controller = new AbortController();
+        let pageStarted!: () => void;
+        const started = new Promise<void>(resolve => { pageStarted = resolve; });
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(response({ state: "ready", manifest }, 201))
+            .mockResolvedValueOnce(response({
+                data: [{ ordinal: 1, payloadHash: recordHash(firstRecord), ...firstRecord }],
+                manifest, pageInfo: { hasNextPage: true, endCursor: "next" },
+            }))
+            .mockImplementationOnce((_input, options: RequestInit) => new Promise((_resolve, reject) => {
+                expect(options.signal).toBe(controller.signal);
+                options.signal!.addEventListener("abort", () => reject(options.signal!.reason), { once: true });
+                pageStarted();
+            }));
+        vi.stubGlobal("fetch", fetchMock);
+        const pending = fetchCompleteLibrarySnapshot("paging-test", undefined, controller.signal);
+        const rejected = expect(pending).rejects.toMatchObject({ name: "AbortError" });
+        await started;
+        controller.abort();
+        await rejected;
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
 });

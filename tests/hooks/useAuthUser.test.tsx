@@ -4,6 +4,7 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { newLibraryChatSession, readLibraryChatSession, writeLibraryChatSession } from '@/lib/library-chat-session';
 import { AuthUserProvider, useAuthSessionIdentity } from '@/hooks/useAuthUser';
+import { resetBrowserUserLookup } from '@/lib/supabase/browser-user';
 import { createNotesChatScope } from '@/lib/notes-chat-scope';
 import { getNotesChatStorageKey, writeNotesChatSession } from '@/lib/notes-chat-session';
 
@@ -42,8 +43,32 @@ function seedStorage() {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    resetBrowserUserLookup();
     auth.callback = null;
     window.sessionStorage.clear();
+});
+
+it.each(['SIGNED_IN', 'SIGNED_OUT'] as const)('ignores an older bootstrap identity after %s', async (event) => {
+    let resolveBootstrap!: (value: unknown) => void;
+    auth.getUser.mockImplementationOnce(() => new Promise(resolve => { resolveBootstrap = resolve; }));
+    const { result } = renderHook(() => useAuthSessionIdentity(), {
+        wrapper: ({ children }: { children: ReactNode }) => <AuthUserProvider>{children}</AuthUserProvider>,
+    });
+    const nextUser = event === 'SIGNED_IN' ? { ...user, id: 'account-b' } : null;
+    act(() => auth.callback!(event, nextUser ? { user: nextUser } as Session : null));
+    await act(async () => resolveBootstrap({ data: { user }, error: null }));
+    expect(result.current.user?.id ?? null).toBe(nextUser?.id ?? null);
+});
+
+it('still applies bootstrap validation after INITIAL_SESSION', async () => {
+    let resolveBootstrap!: (value: unknown) => void;
+    auth.getUser.mockImplementationOnce(() => new Promise(resolve => { resolveBootstrap = resolve; }));
+    const { result } = renderHook(() => useAuthSessionIdentity(), {
+        wrapper: ({ children }: { children: ReactNode }) => <AuthUserProvider>{children}</AuthUserProvider>,
+    });
+    act(() => auth.callback!('INITIAL_SESSION', { user } as Session));
+    await act(async () => resolveBootstrap({ data: { user: null }, error: null }));
+    expect(result.current.user).toBeNull();
 });
 
 it('synchronously clears every dormant Notes transcript on sign-out without a Notes hook mounted', () => {

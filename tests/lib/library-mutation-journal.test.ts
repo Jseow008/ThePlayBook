@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
-import { readLibraryIntents, writeLibraryIntent, clearLibraryIntents, journalKey, type LibraryJournalEntry } from "@/lib/library-mutation-journal";
+import { readLibraryIntents, writeLibraryIntent, clearLibraryIntents, journalKey, readLibrarySnapshotBoundary, storeLibrarySnapshotBoundary, type LibraryJournalEntry } from "@/lib/library-mutation-journal";
 import { bindGuestSource, consumeGuestSource, guestLibrarySources, releaseGuestBinding } from "@/lib/guest-library-import";
 import { myListKey, progressKey } from "@/lib/local-user-storage";
 
@@ -17,6 +17,16 @@ const storage = {
 };
 beforeEach(() => storage.clear());
 describe("account mutation journal", () => {
+    it("keeps complete snapshot boundaries scoped and monotonic across resets", () => {
+        storeLibrarySnapshotBoundary(storage, "a", { resetEpoch: 0, libraryRevision: 10 });
+        storeLibrarySnapshotBoundary(storage, "b", { resetEpoch: 0, libraryRevision: 2 });
+        storeLibrarySnapshotBoundary(storage, "a", { resetEpoch: 0, libraryRevision: 9 });
+        expect(readLibrarySnapshotBoundary(storage, "a")).toEqual({ resetEpoch: 0, libraryRevision: 10 });
+        storeLibrarySnapshotBoundary(storage, "a", { resetEpoch: 1, libraryRevision: 1 });
+        storeLibrarySnapshotBoundary(storage, "a", { resetEpoch: 0, libraryRevision: 100 });
+        expect(readLibrarySnapshotBoundary(storage, "a")).toEqual({ resetEpoch: 1, libraryRevision: 1 });
+        expect(readLibrarySnapshotBoundary(storage, "b")).toEqual({ resetEpoch: 0, libraryRevision: 2 });
+    });
     it("preserves independently written intents and clears only the selected account", () => {
         const a = entry(), another = entry(), b = entry("account-b");
         writeLibraryIntent(storage, a); writeLibraryIntent(storage, b); writeLibraryIntent(storage, another);

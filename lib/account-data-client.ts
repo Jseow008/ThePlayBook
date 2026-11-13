@@ -65,6 +65,21 @@ async function responsePayload(response: Response) {
     return response.json().catch(() => null) as Promise<unknown>;
 }
 
+function waitForSnapshotRetry(ms: number, signal?: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+        signal?.throwIfAborted();
+        const abort = () => {
+            clearTimeout(timer);
+            reject(signal?.reason ?? new DOMException("Aborted", "AbortError"));
+        };
+        const timer = setTimeout(() => {
+            signal?.removeEventListener("abort", abort);
+            resolve();
+        }, ms);
+        signal?.addEventListener("abort", abort, { once: true });
+    });
+}
+
 async function sha256(value: string) {
     const bytes = new TextEncoder().encode(value);
     const hash = await crypto.subtle.digest("SHA-256", bytes);
@@ -96,12 +111,14 @@ function assertSnapshotPage(value: unknown): asserts value is SnapshotPageRespon
  * validated. Callers must still discard the result when their auth generation
  * changes before installation.
  */
-export async function fetchCompleteLibrarySnapshot(idempotencyKey = crypto.randomUUID(), onBuilding?: () => void): Promise<{
+export async function fetchCompleteLibrarySnapshot(idempotencyKey = crypto.randomUUID(), onBuilding?: () => void, signal?: AbortSignal): Promise<{
     manifest: Manifest;
     records: LibrarySnapshotRecord[];
 }> {
+    signal?.throwIfAborted();
     const creation = await fetch("/api/account-data/snapshots", {
         method: "POST",
+        signal,
         headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
         body: JSON.stringify({ idempotencyKey }),
         cache: "no-store",
@@ -131,9 +148,9 @@ export async function fetchCompleteLibrarySnapshot(idempotencyKey = crypto.rando
         const deadline = Date.now() + 35_000;
         let delay = retryAfterMs(creation) ?? 1000;
         while (Date.now() < deadline) {
-            await new Promise(resolve => setTimeout(resolve, Math.min(delay, Math.max(0, deadline - Date.now()))));
+            await waitForSnapshotRetry(Math.min(delay, Math.max(0, deadline - Date.now())), signal);
             const response = await fetch(`/api/account-data/snapshots/${encodeURIComponent(creationPayload.snapshotId)}`, {
-                cache: "no-store", headers: { "Cache-Control": "no-store" },
+                signal, cache: "no-store", headers: { "Cache-Control": "no-store" },
             });
             const payload = await responsePayload(response) as { state?: string; manifest?: Manifest } | null;
             if (response.status === 202 && payload?.state === "building") {
@@ -153,11 +170,12 @@ export async function fetchCompleteLibrarySnapshot(idempotencyKey = crypto.rando
     let cursor: string | null = null;
 
     do {
+        signal?.throwIfAborted();
         const url = new URL(`/api/account-data/snapshots/${manifest.snapshotId}/user_library`, window.location.origin);
         url.searchParams.set("limit", "200");
         if (cursor) url.searchParams.set("cursor", cursor);
 
-        const response = await fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-store" } });
+        const response = await fetch(url, { signal, cache: "no-store", headers: { "Cache-Control": "no-store" } });
         const payload = await responsePayload(response);
         if (!response.ok) {
             throw new LibrarySnapshotClientError("The complete library snapshot could not be read.", getErrorCode(payload));
@@ -188,6 +206,7 @@ export async function fetchCompleteLibrarySnapshot(idempotencyKey = crypto.rando
         return computed;
     }));
     const manifestHash = await sha256(receivedPayloadHashes.join("\n"));
+    signal?.throwIfAborted();
     if (manifestHash !== manifest.manifestHash) {
         throw new LibrarySnapshotClientError("The library snapshot integrity check failed.", "SNAPSHOT_INVALID");
     }

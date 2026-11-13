@@ -16,7 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { commitUserLibraryMutation } from "@/lib/user-library-mutation-client";
 import { toast } from "sonner";
 import { LibraryMutationConflictError, LibraryMutationReceiptError, type LibraryBoundary, type LibraryMutationAcknowledgement, type LibraryGuestImport } from "@/lib/user-library-mutation-contract";
-import { writeLibraryIntent, readLibraryIntents, removeLibraryIntent, clearLibraryIntents, storeLibraryBoundary, readLibraryBoundary, LIBRARY_JOURNAL_PREFIX, type LibraryJournalEntry } from "@/lib/library-mutation-journal";
+import { writeLibraryIntent, readLibraryIntents, removeLibraryIntent, clearLibraryIntents, storeLibraryBoundary, readLibraryBoundary, readLibrarySnapshotBoundary, storeLibrarySnapshotBoundary, LIBRARY_JOURNAL_PREFIX, type LibraryJournalEntry } from "@/lib/library-mutation-journal";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import {
     clearScopedProgress,
@@ -194,6 +194,7 @@ const terminalSnapshotOutcomeCodes = new Set([
     "SNAPSHOT_ACCOUNT_CAPACITY",
     "SNAPSHOT_CLEANUP_FAILED",
     "SNAPSHOT_EXPIRED",
+    "SNAPSHOT_STALE",
     "INVALIDATED",
     "IDEMPOTENCY_KEY_REUSED",
     "NOT_FOUND",
@@ -212,14 +213,19 @@ function useReadingProgressController(initialUser?: User | null) {
     const [journalError, setJournalError] = useState(false);
     const retryPendingRef = useRef<() => Promise<void>>(async () => {});
     const activeWritesRef = useRef(new Set<AbortController>());
+    const snapshotReadRef = useRef<AbortController | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [hydrationStatus, setHydrationStatus] = useState<"idle" | "hydrating" | "ready" | "error">("idle");
     const [hydrationIssue, setHydrationIssue] = useState<{ kind: "rate_limited" | "preparing" | "configuration" | "service"; code: string; retryAt?: number } | null>(null);
     const [snapshotBuilding, setSnapshotBuilding] = useState(false);
+    const [hasLocalBoundary, setHasLocalBoundary] = useState(false);
     const retryAfterRef = useRef(0);
     const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [user, setUser] = useState<User | null>(initialUser ?? null);
     const [storageScope, setStorageScope] = useState<StorageScope>(getStorageScope(initialUser?.id));
+    const accountMatches = initialUser !== undefined
+        && (user?.id ?? null) === (initialUser?.id ?? null)
+        && storageScope === getStorageScope(initialUser?.id);
     const scopeRef = useRef<StorageScope>(getStorageScope(null));
     const userRef = useRef<User | null>(null);
     const hydrateRunRef = useRef(0);
@@ -379,6 +385,7 @@ function useReadingProgressController(initialUser?: User | null) {
         setMyListIds([]);
         setProgressMap({});
         setIsLoaded(false);
+        setHasLocalBoundary(false);
         isLoadedRef.current = false;
     }, []);
 
@@ -475,6 +482,10 @@ function useReadingProgressController(initialUser?: User | null) {
                     && predecessorBoundary.resetEpoch === mutation.base.resetEpoch
                     && predecessorBoundary.libraryRevision > mutation.base.libraryRevision
                     ? predecessorBoundary : mutation.base;
+                // A returning account can edit its local copy during startup.
+                // Keep that based intent pending until the complete snapshot
+                // establishes whether its original boundary is still usable.
+                if (!snapshotReadyRef.current && base && !mutation.needsAttention) return false;
                 if (!snapshotReadyRef.current || !base) throw new LibrarySyncUnavailableError();
                 if (mutation.needsAttention || (mutation.predecessor?.needsAttention && !mutation.predecessor.acknowledgement)
                     || base.resetEpoch !== mutation.base?.resetEpoch
@@ -626,10 +637,11 @@ function useReadingProgressController(initialUser?: User | null) {
         scope: StorageScope,
         runId: number,
         mutationGeneration: number,
+        signal: AbortSignal,
     ) => {
         const snapshot = await fetchCompleteLibrarySnapshot(getLibrarySnapshotIdempotencyKey(currentUser.id), () => {
             if (runId === hydrateRunRef.current) setSnapshotBuilding(true);
-        });
+        }, signal);
 
         // Do not install a response from an earlier sign-in session or let an
         // older complete snapshot overwrite a local mutation made while it was
@@ -643,6 +655,12 @@ function useReadingProgressController(initialUser?: User | null) {
             return false;
         }
 
+        const savedBoundary = readLibrarySnapshotBoundary(localStorage, currentUser.id);
+        if (savedBoundary && (snapshot.manifest.resetEpoch < savedBoundary.resetEpoch
+            || (snapshot.manifest.resetEpoch === savedBoundary.resetEpoch
+                && snapshot.manifest.boundaryLibraryRevision < savedBoundary.libraryRevision))) {
+            throw new LibrarySnapshotClientError("An older snapshot cannot replace your saved library. Refresh to check the latest version.", "SNAPSHOT_STALE");
+        }
         const installed = installedSnapshotStateRef.current.get(scope);
         if (installed && snapshot.manifest.resetEpoch < installed.resetEpoch) {
             throw new Error("Refusing to install a snapshot from before the local reset epoch.");
@@ -733,6 +751,7 @@ function useReadingProgressController(initialUser?: User | null) {
             boundaryRevision: snapshot.manifest.boundaryLibraryRevision,
         });
         const boundary = { resetEpoch: snapshot.manifest.resetEpoch, libraryRevision: snapshot.manifest.boundaryLibraryRevision };
+        storeLibrarySnapshotBoundary(localStorage, currentUser.id, boundary);
         const confirmed = confirmedBoundaryRef.current;
         if (!confirmed || boundary.resetEpoch > confirmed.resetEpoch
             || (boundary.resetEpoch === confirmed.resetEpoch && boundary.libraryRevision >= confirmed.libraryRevision)) {
@@ -798,6 +817,9 @@ function useReadingProgressController(initialUser?: User | null) {
         if (nextUser && currentUserId === nextUserId && Date.now() < retryAfterRef.current) return;
 
         const runId = ++hydrateRunRef.current;
+        // The server operation remains durable under its idempotency key.
+        // Only this obsolete traversal and its polling wait are cancelled.
+        snapshotReadRef.current?.abort();
         resetState();
         setHydrationIssue(null);
         setSnapshotBuilding(false);
@@ -809,6 +831,12 @@ function useReadingProgressController(initialUser?: User | null) {
 
         if (nextUser) {
             if (!confirmedBoundaryRef.current) confirmedBoundaryRef.current = readLibraryBoundary(localStorage, nextUser.id);
+            if (!readLibrarySnapshotBoundary(localStorage, nextUser.id) && confirmedBoundaryRef.current) {
+                // Conservatively retain existing confirmed data when upgrading
+                // an account cache that predates the complete-snapshot marker.
+                storeLibrarySnapshotBoundary(localStorage, nextUser.id, confirmedBoundaryRef.current);
+            }
+            setHasLocalBoundary(Boolean(confirmedBoundaryRef.current));
             restoreJournal(nextUser.id);
         }
         loadProgress(nextScope);
@@ -819,8 +847,10 @@ function useReadingProgressController(initialUser?: User | null) {
         }
 
         const mutationGeneration = localMutationGenerationRef.current;
+        const snapshotController = new AbortController();
+        snapshotReadRef.current = snapshotController;
         setHydrationStatus("hydrating");
-        void hydrateCloudSnapshot(nextUser, nextScope, runId, mutationGeneration)
+        void hydrateCloudSnapshot(nextUser, nextScope, runId, mutationGeneration, snapshotController.signal)
             .then((syncSucceeded) => {
                 if (runId !== hydrateRunRef.current) return;
 
@@ -845,6 +875,7 @@ function useReadingProgressController(initialUser?: User | null) {
                 }
             })
             .catch((error) => {
+                if (snapshotController.signal.aborted) return;
                 // A terminal operation outcome is durable by design. Retrying
                 // it with the same key would only retrieve that same outcome;
                 // discard the key so an explicit retry starts a fresh request.
@@ -904,6 +935,7 @@ function useReadingProgressController(initialUser?: User | null) {
             // Account changes are invalidated by hydrateForUser; only unmount
             // cancels here. Clear readiness so Strict Mode can restart setup.
             hydrateRunRef.current += 1;
+            snapshotReadRef.current?.abort();
             if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
             isLoadedRef.current = false;
             activeWrites.forEach(controller => controller.abort());
@@ -943,9 +975,13 @@ function useReadingProgressController(initialUser?: User | null) {
             }>).detail;
             if (!detail || detail.scope !== scopeRef.current) return;
 
-            // Cancel any traversal that began before the acknowledged reset.
-            // The next authenticated hydration obtains the new epoch instead.
+            // A complete reset receipt establishes the empty canonical library.
+            // A traversal from before that receipt must never restore its rows.
             hydrateRunRef.current += 1;
+            snapshotReadRef.current?.abort();
+            const hasResetReceipt = typeof detail.resetEpoch === "number" && typeof detail.boundaryRevision === "number";
+            snapshotReadyRef.current = hasResetReceipt;
+            setHasLocalBoundary(hasResetReceipt);
             const prior = installedSnapshotStateRef.current.get(detail.scope);
             installedSnapshotStateRef.current.set(detail.scope, {
                 resetEpoch: detail.resetEpoch ?? (prior?.resetEpoch ?? 0) + 1,
@@ -971,12 +1007,16 @@ function useReadingProgressController(initialUser?: User | null) {
             if (userRef.current) {
                 clearLibraryIntents(localStorage, userRef.current.id);
                 storeLibraryBoundary(localStorage, userRef.current.id, confirmedBoundaryRef.current!);
+                if (hasResetReceipt) storeLibrarySnapshotBoundary(localStorage, userRef.current.id, confirmedBoundaryRef.current!);
             }
             activeWritesRef.current.forEach(controller => controller.abort());
             setJournalVersion(value => value + 1);
             toast.dismiss("library-sync-attention");
             toast.dismiss(LIBRARY_SNAPSHOT_TOAST_ID);
             setHydrationStatus("ready");
+            if (userRef.current && !hasResetReceipt) {
+                window.setTimeout(() => refreshLibraryRef.current(), 0);
+            }
         };
 
         window.addEventListener("netflux_library_reset", handleLibraryReset);
@@ -1273,9 +1313,10 @@ function useReadingProgressController(initialUser?: User | null) {
             })), guestCount, importableGuestCount, storageError: journalError };
     }, [journalVersion, journalError, user, hydrationStatus]);
 
-    const isInMyList = useCallback((itemId: string) => myListIds.includes(itemId), [myListIds]);
-    const getProgress = useCallback((itemId: string) => progressMap[itemId] || null, [progressMap]);
+    const isInMyList = useCallback((itemId: string) => accountMatches && myListIds.includes(itemId), [accountMatches, myListIds]);
+    const getProgress = useCallback((itemId: string) => accountMatches ? progressMap[itemId] || null : null, [accountMatches, progressMap]);
     const getItemSyncStatus = useCallback((itemId: string) => {
+        if (!accountMatches) return "pending" as const;
         if (!user) return "guest" as const;
         if (recovery.storageError) return "storage_error" as const;
         const hasPending = [...localMutationsRef.current.values()].some(mutation => mutation.accountId === user.id
@@ -1285,7 +1326,7 @@ function useReadingProgressController(initialUser?: User | null) {
         if (hydrationStatus === "error") return "unavailable" as const;
         if (hydrationStatus !== "ready") return "pending" as const;
         return "saved" as const;
-    }, [hydrationStatus, recovery, user]);
+    }, [accountMatches, hydrationStatus, recovery, user]);
     const totalLibraryItems = useMemo(
         () => new Set([...inProgressIds, ...completedIds, ...myListIds]).size,
         [inProgressIds, completedIds, myListIds],
@@ -1295,16 +1336,18 @@ function useReadingProgressController(initialUser?: User | null) {
     const retryHydration = useCallback(() => void hydrateForUser(userRef.current, true), [hydrateForUser]);
 
     return useMemo(() => ({
-        inProgressIds,
-        completedIds,
-        inProgressCount: inProgressIds.length,
-        completedCount: completedIds.length,
-        isLoaded: isLoaded && (!user || hydrationStatus !== "hydrating"),
+        inProgressIds: accountMatches ? inProgressIds : [],
+        completedIds: accountMatches ? completedIds : [],
+        inProgressCount: accountMatches ? inProgressIds.length : 0,
+        completedCount: accountMatches ? completedIds.length : 0,
+        isLoaded: accountMatches && isLoaded && (!user || hydrationStatus === "ready" || hasLocalBoundary),
+        isCheckingLibrary: accountMatches && Boolean(user) && hydrationStatus === "hydrating",
         hydrationStatus,
         hydrationIssue,
         snapshotBuilding,
-        syncNeedsAttention,
-        recovery, retryPending, discardIntent, reapplyIntent, importGuestLibrary, retryJournalStorage, discardUnreadableIntents,
+        syncNeedsAttention: accountMatches && syncNeedsAttention,
+        recovery: accountMatches ? recovery : { pending: 0, attention: [], guestCount: 0, importableGuestCount: 0, storageError: false },
+        retryPending, discardIntent, reapplyIntent, importGuestLibrary, retryJournalStorage, discardUnreadableIntents,
         refresh,
         retryHydration,
         archiveFromProgressList,
@@ -1314,19 +1357,19 @@ function useReadingProgressController(initialUser?: User | null) {
         saveReadingProgress,
         getProgress,
         getItemSyncStatus,
-        myListIds,
-        myListCount: myListIds.length,
+        myListIds: accountMatches ? myListIds : [],
+        myListCount: accountMatches ? myListIds.length : 0,
         addToMyList,
         removeFromMyList,
         toggleMyList,
         isInMyList,
-        totalLibraryItems,
-        storageScope,
-        user,
-    }), [inProgressIds, completedIds, isLoaded, hydrationStatus, hydrationIssue, snapshotBuilding, syncNeedsAttention, recovery, retryPending, discardIntent, reapplyIntent, importGuestLibrary, retryJournalStorage, discardUnreadableIntents, refresh, retryHydration, archiveFromProgressList,
+        totalLibraryItems: accountMatches ? totalLibraryItems : 0,
+        storageScope: getStorageScope(initialUser?.id),
+        user: accountMatches ? user : null,
+    }), [accountMatches, hasLocalBoundary, inProgressIds, completedIds, isLoaded, hydrationStatus, hydrationIssue, snapshotBuilding, syncNeedsAttention, recovery, retryPending, discardIntent, reapplyIntent, importGuestLibrary, retryJournalStorage, discardUnreadableIntents, refresh, retryHydration, archiveFromProgressList,
         restoreProgressListArchive, removeFromProgress, removeFromHistory, saveReadingProgress,
         getProgress, getItemSyncStatus, myListIds, addToMyList, removeFromMyList, toggleMyList, isInMyList,
-        totalLibraryItems, storageScope, user]);
+        totalLibraryItems, initialUser?.id, user]);
 }
 
 type ReadingProgressValue = ReturnType<typeof useReadingProgressController>;
