@@ -1,6 +1,6 @@
 import "server-only";
 
-type Phase = "auth" | "admission" | "library";
+type Phase = "auth" | "admission" | "library" | "content";
 
 /** Numeric, request-local diagnostics only: no identifiers, SQL or user content. */
 export function createLibraryRouteTiming() {
