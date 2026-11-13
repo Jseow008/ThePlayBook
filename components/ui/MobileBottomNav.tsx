@@ -63,7 +63,7 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                         const isActive = isCurrentLibrary || pathname === item.href;
 
                         return (
-                            <Link
+                            <Link prefetch={false}
                                 key={item.href}
                                 href={isCurrentLibrary ? pathname : item.href}
                                 // Stay on the current Library view without changing its URL or scroll.

@@ -143,7 +143,7 @@ export function NetfluxSidebar() {
         >
             {/* Logo */}
             {/* Logo */}
-            <Link
+            <Link prefetch={false}
                 href="/browse"
                 className={cn(
                     "flex items-center h-16 px-4 border-b border-border transition-all duration-300",
@@ -174,7 +174,7 @@ export function NetfluxSidebar() {
                         const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
                         return (
                             <li key={item.href}>
-                                <Link
+                                <Link prefetch={false}
                                     href={item.href}
                                     title={!isExpanded ? item.label : undefined}
                                     className={cn(
@@ -263,7 +263,7 @@ export function NetfluxSidebar() {
                     {isExpanded && isLibraryOpen && (
                         <div id="sidebar-library-subnav" className="ml-4 space-y-1">
                             {/* Saved */}
-                            <Link
+                            <Link prefetch={false}
                                 href="/library/my-list"
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
@@ -282,7 +282,7 @@ export function NetfluxSidebar() {
                             </Link>
 
                             {/* Continue Reading */}
-                            <Link
+                            <Link prefetch={false}
                                 href="/library/reading"
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
@@ -301,7 +301,7 @@ export function NetfluxSidebar() {
                             </Link>
 
                             {/* Completed */}
-                            <Link
+                            <Link prefetch={false}
                                 href="/library/completed"
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
@@ -323,7 +323,7 @@ export function NetfluxSidebar() {
                 </div>
 
                 <div className="space-y-1 pt-2">
-                    <Link
+                    <Link prefetch={false}
                         href={notesItem.href}
                         title={!isExpanded ? notesItem.label : undefined}
                         className={cn(
@@ -373,7 +373,7 @@ export function NetfluxSidebar() {
                             />
                         </button>
                     ) : (
-                        <Link
+                        <Link prefetch={false}
                             href="/ask"
                             title="Ask"
                             className={cn(
@@ -387,7 +387,7 @@ export function NetfluxSidebar() {
 
                     {isExpanded && isAskOpen && (
                         <div className="ml-4 space-y-1">
-                            <Link
+                            <Link prefetch={false}
                                 href="/ask"
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
@@ -400,7 +400,7 @@ export function NetfluxSidebar() {
                                 <span className="text-sm whitespace-nowrap flex-1">Library</span>
                             </Link>
 
-                            <Link
+                            <Link prefetch={false}
                                 href="/notes?ask=1"
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
@@ -444,7 +444,7 @@ export function NetfluxSidebar() {
                 </div>
             ) : (
                 <div className="p-4">
-                    <Link
+                    <Link prefetch={false}
                         href="/profile"
                         className={cn(
                             "flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors group",

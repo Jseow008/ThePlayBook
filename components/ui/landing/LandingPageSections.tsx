@@ -206,7 +206,7 @@ function FeaturedReadCard({
   );
 
   return (
-    <Link
+    <Link prefetch={false}
       href={`/preview/${item.id}`}
       aria-label={`Preview ${item.title}${hasAudioSummary ? ". Audio summary available." : ""}`}
       aria-hidden={isFocusable ? undefined : true}
@@ -375,7 +375,7 @@ export function FeaturedReadsSection({
           title="Ideas worth remembering."
           body={popularIdeasCopy}
         />
-        <Link
+        <Link prefetch={false}
           href={browseHref}
           className="focus-ring landing-soft-action group inline-flex w-fit items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-white/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
         >
@@ -465,7 +465,7 @@ export function FeaturedReadsSection({
         {activeCategoryStat && displayedItems.length < FEATURED_READS_MIN_LOOP_ITEMS ? (
           <div className="mx-auto mt-2 flex max-w-7xl items-center justify-between gap-4 px-6 text-xs text-zinc-500">
             <span>Showing the available {activeCategory} reads without repetition.</span>
-            <Link href={browseHref} className="shrink-0 font-semibold text-zinc-300 hover:text-white">
+            <Link prefetch={false} href={browseHref} className="shrink-0 font-semibold text-zinc-300 hover:text-white">
               View domain
             </Link>
           </div>
@@ -1224,7 +1224,7 @@ export function FinalCTASection() {
                 Start building a library of ideas you can understand, keep, and actually use.
               </p>
 
-              <Link
+              <Link prefetch={false}
                 href="/login"
                 className="focus-ring landing-primary-cta group relative mt-10 inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-solar-gold px-8 py-4 text-base font-semibold text-solar-gold-foreground transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5"
               >
@@ -1244,7 +1244,7 @@ export function LandingFooter() {
     <footer className="border-t border-white/[0.04] py-12">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 px-6 text-center sm:flex-row sm:text-left lg:px-8">
         <div className="flex flex-col items-center gap-3 sm:items-start">
-          <Link href="/" className="focus-ring touch-target-44 inline-flex rounded-sm">
+          <Link prefetch={false} href="/" className="focus-ring touch-target-44 inline-flex rounded-sm">
             <Logo
               width={96}
               height={26}
@@ -1258,19 +1258,19 @@ export function LandingFooter() {
         </div>
 
         <nav aria-label="Footer navigation" className="flex items-center gap-6 text-sm text-muted-foreground/60">
-          <Link href="/browse" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
+          <Link prefetch={false} href="/browse" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
             Browse
           </Link>
-          <Link href="/about" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
+          <Link prefetch={false} href="/about" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
             About
           </Link>
-          <Link href="mailto:javierseowww@gmail.com" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
+          <Link prefetch={false} href="mailto:javierseowww@gmail.com" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
             Contact
           </Link>
-          <Link href="/privacy" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
+          <Link prefetch={false} href="/privacy" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
             Privacy
           </Link>
-          <Link href="/terms" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
+          <Link prefetch={false} href="/terms" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
             Terms
           </Link>
         </nav>

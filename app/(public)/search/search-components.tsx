@@ -135,7 +135,7 @@ export async function RecentCatalog({
                         ? categoryLabel ? "No videos match these filters." : "No video summaries yet."
                         : "No content matches these filters."}</p>
                     {(categoryLabel || type) ? (
-                        <Link href="/search" className="focus-ring mt-4 inline-flex rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium transition-colors hover:bg-secondary/50 hover:text-foreground">
+                        <Link prefetch={false} href="/search" className="focus-ring mt-4 inline-flex rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium transition-colors hover:bg-secondary/50 hover:text-foreground">
                             Clear all filters
                         </Link>
                     ) : null}
@@ -187,7 +187,7 @@ export async function PopularCatalog({
                 <div className="py-12 text-center text-muted-foreground">
                     <p>{type === "video" ? "No popular videos match these filters yet." : "No popular content matches these filters yet."}</p>
                     {(categoryLabel || type) ? (
-                        <Link href={buildSearchHref({ sort: "popular" })} className="focus-ring mt-4 inline-flex rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium transition-colors hover:bg-secondary/50 hover:text-foreground">
+                        <Link prefetch={false} href={buildSearchHref({ sort: "popular" })} className="focus-ring mt-4 inline-flex rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium transition-colors hover:bg-secondary/50 hover:text-foreground">
                             Clear all filters
                         </Link>
                     ) : null}
@@ -257,7 +257,7 @@ function CatalogPagination({
 
     return (
         <nav aria-label="Catalog pagination" className="mt-10 flex items-center justify-center gap-4">
-            <Link
+            <Link prefetch={false}
                 href={currentPage > 1 ? buildSearchHref({ query, category, type, page: currentPage - 1 }) : "#"}
                 aria-disabled={currentPage <= 1}
                 className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${
@@ -272,7 +272,7 @@ function CatalogPagination({
             <span className="text-sm text-muted-foreground">
                 Page {currentPage} of {totalPages}
             </span>
-            <Link
+            <Link prefetch={false}
                 href={currentPage < totalPages ? buildSearchHref({ query, category, type, page: currentPage + 1 }) : "#"}
                 aria-disabled={currentPage >= totalPages}
                 className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${
@@ -367,7 +367,7 @@ export async function SearchResults({
                     <h2 className="mt-4 text-lg font-semibold text-foreground">Search needs another try</h2>
                     <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{message}</p>
                     {requestId ? <p className="mt-3 text-xs text-muted-foreground">Reference: {requestId}</p> : null}
-                    <Link
+                    <Link prefetch={false}
                         href={buildSearchHref({ query, category: categoryLabel, type: normalizedType })}
                         className="focus-ring mt-5 inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >
@@ -443,7 +443,7 @@ function renderSearchResults({
                     </p>
                     <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                         {outcome !== "input_empty" && hasQuery ? (
-                            <Link
+                            <Link prefetch={false}
                                 href={buildRequestHref({ query: requestQuery, type: normalizedType })}
                                 className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                             >
@@ -451,7 +451,7 @@ function renderSearchResults({
                                 <ArrowRight className="size-4" />
                             </Link>
                         ) : null}
-                        <Link
+                        <Link prefetch={false}
                             href={filtersCount > 0 ? buildSearchHref({ query }) : "/search"}
                             className="focus-ring inline-flex items-center gap-2 rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
                         >
@@ -479,7 +479,7 @@ function SearchCursorPagination({
 
     return (
         <nav aria-label="Search result pagination" className="mt-10 flex items-center justify-center gap-4">
-            <Link
+            <Link prefetch={false}
                 href={pageInfo.previousCursor ? buildSearchHref({ query, category, type, cursor: pageInfo.previousCursor }) : "#"}
                 aria-disabled={!pageInfo.previousCursor}
                 className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${pageInfo.previousCursor ? "bg-secondary/30 text-foreground hover:bg-secondary/50" : "pointer-events-none text-muted-foreground opacity-40"}`}
@@ -488,7 +488,7 @@ function SearchCursorPagination({
                 Previous
             </Link>
             <span className="text-sm text-muted-foreground">Page {pageInfo.page}</span>
-            <Link
+            <Link prefetch={false}
                 href={pageInfo.nextCursor ? buildSearchHref({ query, category, type, cursor: pageInfo.nextCursor }) : "#"}
                 aria-disabled={!pageInfo.nextCursor}
                 className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${pageInfo.nextCursor ? "bg-secondary/30 text-foreground hover:bg-secondary/50" : "pointer-events-none text-muted-foreground opacity-40"}`}
