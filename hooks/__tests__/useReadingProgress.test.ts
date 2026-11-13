@@ -18,7 +18,7 @@ import {
     myListKey,
     progressKey,
 } from "@/lib/local-user-storage";
-import { readLibraryIntents, writeLibraryIntent, storeLibraryBoundary } from "@/lib/library-mutation-journal";
+import { readLibraryIntents, writeLibraryIntent, storeLibraryBoundary, storeLibrarySnapshotBoundary } from "@/lib/library-mutation-journal";
 import { LibraryMutationConflictError } from "@/lib/user-library-mutation-contract";
 import { clearLibrarySnapshotIdempotencyKey, fetchCompleteLibrarySnapshot, LibrarySnapshotClientError } from "@/lib/account-data-client";
 
@@ -758,6 +758,40 @@ describe("useReadingProgress", () => {
         await act(async () => resolveSnapshot(snapshotAt(11) as never));
         await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
         expect(result.current.myListIds).toEqual([]);
+    });
+
+    it("does not replace a confirmed saved copy with an older resumed snapshot", async () => {
+        currentAuthUser = { id: "user-a" };
+        localStorage.setItem(myListKey(getStorageScope("user-a")), JSON.stringify(["confirmed-item"]));
+        storeLibraryBoundary(localStorage, "user-a", { resetEpoch: 0, libraryRevision: 10 });
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(9) as never);
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => {
+            expect(result.current.user?.id).toBe("user-a");
+            expect(["ready", "error"]).toContain(result.current.hydrationStatus);
+        });
+        expect(result.current.myListIds).toEqual(["confirmed-item"]);
+    });
+
+    it("honors a newer complete copy installed by another tab", async () => {
+        currentAuthUser = { id: "user-a" };
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(10) as never);
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => {
+            expect(result.current.user?.id).toBe("user-a");
+            expect(result.current.hydrationStatus).toBe("ready");
+        });
+        act(() => {
+            localStorage.setItem(myListKey(getStorageScope("user-a")), JSON.stringify(["other-tab-item"]));
+            storeLibraryBoundary(localStorage, "user-a", { resetEpoch: 0, libraryRevision: 20 });
+            storeLibrarySnapshotBoundary(localStorage, "user-a", { resetEpoch: 0, libraryRevision: 20 });
+            window.dispatchEvent(new StorageEvent("storage", { key: myListKey(getStorageScope("user-a")) }));
+        });
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(15) as never);
+        act(() => result.current.retryHydration());
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("error"));
+        expect(result.current.myListIds).toEqual(["other-tab-item"]);
+        expect(clearLibrarySnapshotIdempotencyKey).toHaveBeenCalledWith("user-a");
     });
 
     it("queues a returning account's edit until its complete snapshot is verified", async () => {

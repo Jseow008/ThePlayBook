@@ -16,7 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { commitUserLibraryMutation } from "@/lib/user-library-mutation-client";
 import { toast } from "sonner";
 import { LibraryMutationConflictError, LibraryMutationReceiptError, type LibraryBoundary, type LibraryMutationAcknowledgement, type LibraryGuestImport } from "@/lib/user-library-mutation-contract";
-import { writeLibraryIntent, readLibraryIntents, removeLibraryIntent, clearLibraryIntents, storeLibraryBoundary, readLibraryBoundary, LIBRARY_JOURNAL_PREFIX, type LibraryJournalEntry } from "@/lib/library-mutation-journal";
+import { writeLibraryIntent, readLibraryIntents, removeLibraryIntent, clearLibraryIntents, storeLibraryBoundary, readLibraryBoundary, readLibrarySnapshotBoundary, storeLibrarySnapshotBoundary, LIBRARY_JOURNAL_PREFIX, type LibraryJournalEntry } from "@/lib/library-mutation-journal";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import {
     clearScopedProgress,
@@ -194,6 +194,7 @@ const terminalSnapshotOutcomeCodes = new Set([
     "SNAPSHOT_ACCOUNT_CAPACITY",
     "SNAPSHOT_CLEANUP_FAILED",
     "SNAPSHOT_EXPIRED",
+    "SNAPSHOT_STALE",
     "INVALIDATED",
     "IDEMPOTENCY_KEY_REUSED",
     "NOT_FOUND",
@@ -654,6 +655,12 @@ function useReadingProgressController(initialUser?: User | null) {
             return false;
         }
 
+        const savedBoundary = readLibrarySnapshotBoundary(localStorage, currentUser.id);
+        if (savedBoundary && (snapshot.manifest.resetEpoch < savedBoundary.resetEpoch
+            || (snapshot.manifest.resetEpoch === savedBoundary.resetEpoch
+                && snapshot.manifest.boundaryLibraryRevision < savedBoundary.libraryRevision))) {
+            throw new LibrarySnapshotClientError("An older snapshot cannot replace your saved library. Refresh to check the latest version.", "SNAPSHOT_STALE");
+        }
         const installed = installedSnapshotStateRef.current.get(scope);
         if (installed && snapshot.manifest.resetEpoch < installed.resetEpoch) {
             throw new Error("Refusing to install a snapshot from before the local reset epoch.");
@@ -744,6 +751,7 @@ function useReadingProgressController(initialUser?: User | null) {
             boundaryRevision: snapshot.manifest.boundaryLibraryRevision,
         });
         const boundary = { resetEpoch: snapshot.manifest.resetEpoch, libraryRevision: snapshot.manifest.boundaryLibraryRevision };
+        storeLibrarySnapshotBoundary(localStorage, currentUser.id, boundary);
         const confirmed = confirmedBoundaryRef.current;
         if (!confirmed || boundary.resetEpoch > confirmed.resetEpoch
             || (boundary.resetEpoch === confirmed.resetEpoch && boundary.libraryRevision >= confirmed.libraryRevision)) {
@@ -823,6 +831,11 @@ function useReadingProgressController(initialUser?: User | null) {
 
         if (nextUser) {
             if (!confirmedBoundaryRef.current) confirmedBoundaryRef.current = readLibraryBoundary(localStorage, nextUser.id);
+            if (!readLibrarySnapshotBoundary(localStorage, nextUser.id) && confirmedBoundaryRef.current) {
+                // Conservatively retain existing confirmed data when upgrading
+                // an account cache that predates the complete-snapshot marker.
+                storeLibrarySnapshotBoundary(localStorage, nextUser.id, confirmedBoundaryRef.current);
+            }
             setHasLocalBoundary(Boolean(confirmedBoundaryRef.current));
             restoreJournal(nextUser.id);
         }
@@ -994,6 +1007,7 @@ function useReadingProgressController(initialUser?: User | null) {
             if (userRef.current) {
                 clearLibraryIntents(localStorage, userRef.current.id);
                 storeLibraryBoundary(localStorage, userRef.current.id, confirmedBoundaryRef.current!);
+                if (hasResetReceipt) storeLibrarySnapshotBoundary(localStorage, userRef.current.id, confirmedBoundaryRef.current!);
             }
             activeWritesRef.current.forEach(controller => controller.abort());
             setJournalVersion(value => value + 1);
