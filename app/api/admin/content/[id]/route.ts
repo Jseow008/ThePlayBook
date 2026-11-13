@@ -411,6 +411,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const currentStatus = existingContent?.status === "verified" ? "verified" : "draft";
         const nextStatus = contentData.status ?? currentStatus;
         const existingQuickMode = existingContent?.quick_mode_json as QuickModeValue;
+        // Keep stored metadata that is outside the editable quick-mode schema.
+        // Published text changes still reach the database's version guard.
+        const nextQuickMode = contentData.quick_mode_json
+            ? { ...existingQuickMode, ...contentData.quick_mode_json }
+            : contentData.quick_mode_json;
         const existingAudioUrl = normalizeAudioUrl(existingContent?.audio_url);
         const nextAudioUrl = contentData.audio_url !== undefined ? normalizeAudioUrl(contentData.audio_url) : undefined;
         const isManualAudioOverride = nextAudioUrl !== undefined && nextAudioUrl !== existingAudioUrl;
@@ -518,7 +523,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (contentData.duration_seconds !== undefined) contentPatch.duration_seconds = contentData.duration_seconds;
         if (contentData.status !== undefined) contentPatch.status = contentData.status;
         if (contentData.is_featured !== undefined) contentPatch.is_featured = contentData.is_featured;
-        if (contentData.quick_mode_json !== undefined) contentPatch.quick_mode_json = contentData.quick_mode_json;
+        if (nextQuickMode !== undefined) contentPatch.quick_mode_json = nextQuickMode;
         if (contentData.series_id !== undefined) contentPatch.series_id = contentData.series_id;
         if (contentData.series_order !== undefined) contentPatch.series_order = contentData.series_order;
         if (contentData.series_id === null && contentData.series_order === undefined) {

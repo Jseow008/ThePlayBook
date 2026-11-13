@@ -1,5 +1,17 @@
 # Netflux release and workstream status
 
+## Cover-only admin saves — 13 November 2026
+
+Focused fix on `codex/fix-cover-only-admin-save` in `/Users/j/.codex/worktrees/fix-cover-only-admin-save/Lifebook`, based on freshly fetched `origin/main` at `0c44ccc7`. No production data or schema changes; no migration required. Admin layout/copy, published reading content, and the database version guard remain unchanged.
+
+The Most Important Thing / Howard Marks failed cover-only saves because its stored quick-mode JSON includes category and notebook_id; the API stripped these before the database compared the entire JSON. Earlier SELECT-only production comparisons confirmed this mismatch and found 475 available published items with extra quick-mode keys. The form now omits unchanged quick-mode JSON and segments on edit saves, and advances its saved baseline after successful draft review saves. The API merges validated editable quick-mode fields over stored metadata, so existing metadata survives resubmission and client-supplied unknown fields cannot overwrite it. Actual rewrites still reach the unchanged database guard.
+
+Evidence: full local lint and typecheck passed. The full unit run passed 2,414 tests and skipped 318, with two narration failures caused by installing dependencies without the FFmpeg download; after rebuilding that dependency, the affected narration tests and current focused admin tests all passed (67 tests), and all 34 capacity-harness tests passed. Nine edition database runtime tests passed, including cover saves preserving legacy metadata and atomic rejection of hook, big-idea, takeaway and chapter rewrites. A schema-only local database copy was used with synthetic transaction-rolled-back fixtures and the existing content-replacement/version migrations. Initial database setup encountered pg_cron restrictions, ownership permissions and drift in old migration records; the final disposable copy excluded the scheduler, used its local administrative owner, and applied only the missing content migrations. No production mutation was attempted.
+
+A temporary local browser fixture at 390px and 1440px confirmed unchanged reading fields are omitted from cover requests and a text-rewrite conflict is displayed, without horizontal overflow or uncaught page errors. These browser requests used mocked responses; real database save/rejection behavior was verified separately by the runtime tests. Existing DnD described-by hydration warnings appeared in server output. Temporary fixture files were removed. Screenshots: `/tmp/codex-cover-save-390.png` and `/tmp/codex-cover-save-1440.png` (ephemeral).
+
+One agent; elapsed time and model usage not measured; no application-provider calls. No product decision or implementation blocker remains. Exact next action: publish the focused PR, inspect GitHub scope, and enable squash auto-merge after PR scope passes; required validate and Security Validation checks gate release in the background. Production cover changes have not been performed by this task.
+
 ## PR #275 correction in progress — 22 October 2026
 
 Branch `codex/search-clear-topic-corrections` in

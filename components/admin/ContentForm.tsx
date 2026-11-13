@@ -145,6 +145,11 @@ export function ContentForm({
         };
     });
 
+    const [persistedReadingContent, setPersistedReadingContent] = useState(() => ({
+        quickMode: JSON.stringify(formData.quick_mode_json),
+        segments: JSON.stringify(formData.segments, (key, value) => key === "client_id" ? undefined : value),
+    }));
+
     const [reviewVersion, setReviewVersion] = useState(false);
     useEffect(() => { setReviewVersion(false); }, [formData]);
 
@@ -525,6 +530,20 @@ export function ContentForm({
             series_order: formData.series_id ? formData.series_order : null,
         };
 
+        const submittedReadingContent = {
+            quickMode: JSON.stringify(formData.quick_mode_json),
+            segments: JSON.stringify(segmentsToSubmit),
+        };
+        // Metadata-only saves must leave existing reading content untouched.
+        if (isEditing) {
+            if (submittedReadingContent.quickMode === persistedReadingContent.quickMode) {
+                delete dataToSubmit.quick_mode_json;
+            }
+            if (submittedReadingContent.segments === persistedReadingContent.segments) {
+                delete dataToSubmit.segments;
+            }
+        }
+
         if (didAudioUrlChange) {
             dataToSubmit.audio_url = normalizedAudioUrl || null;
         }
@@ -544,6 +563,7 @@ export function ContentForm({
             const data = await response.json();
 
             if (data.success) {
+                setPersistedReadingContent(submittedReadingContent);
                 if (isVersionDraft && status === "verified") {
                     setReviewVersion(true);
                     return;

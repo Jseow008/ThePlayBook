@@ -46,6 +46,30 @@ suite("updated editions on an explicitly disposable database", () => {
         await expect(db.query(sql,args)).rejects.toMatchObject({ code });
         await db.query("ROLLBACK TO SAVEPOINT reject");
     }
+    it("allows cover-only saves with legacy metadata and rejects published text rewrites atomically", async () => {
+        const storedQuick = { ...quick, category: "Investing", notebook_id: "legacy-notebook" };
+        await db.query("UPDATE public.content_item SET quick_mode_json=$1 WHERE id=$2", [storedQuick, oldId]);
+        const before = await state();
+        const cover = "https://example.invalid/new-cover.png";
+        for (const patch of [{ cover_image_url: cover }, { cover_image_url: cover, quick_mode_json: storedQuick }]) {
+            await db.query("SELECT public.admin_update_content_graph($1,$2,NULL,NULL)", [oldId, patch]);
+            expect((await db.query("SELECT cover_image_url,quick_mode_json FROM public.content_item WHERE id=$1", [oldId])).rows[0])
+                .toEqual({ cover_image_url: cover, quick_mode_json: storedQuick });
+        }
+        for (const edit of [{ hook: "Rewritten" }, { big_idea: "Rewritten" }, { key_takeaways: ["Rewritten"] }]) {
+            await reject("SELECT public.admin_update_content_graph($1,$2,NULL,NULL)", [oldId, {
+                cover_image_url: "https://example.invalid/must-not-save.png", status: "draft",
+                quick_mode_json: { ...storedQuick, ...edit },
+            }], "P0001");
+        }
+        await reject("SELECT public.admin_update_content_graph($1,'{}',$2,NULL)", [oldId, JSON.stringify([
+            { id: sectionId, order_index: 0, title: "Original section", markdown_body: "Rewritten passage" },
+        ])], "P0001");
+        expect((await db.query("SELECT cover_image_url,quick_mode_json,status FROM public.content_item WHERE id=$1", [oldId])).rows[0])
+            .toEqual({ cover_image_url: cover, quick_mode_json: storedQuick, status: "verified" });
+        expect(await state()).toEqual(before);
+    });
+
     it("copies new section IDs without copying personal state, audio, timings or embeddings, and resumes the same draft", async () => {
         const before = await state();
         const id = await create();

@@ -97,6 +97,62 @@ describe("ContentForm", () => {
         global.fetch = vi.fn();
     });
 
+    it("saves a cover change without resubmitting unchanged reading content", async () => {
+        const item = {
+            ...createInitialData(),
+            quick_mode_json: {
+                hook: "Original hook", big_idea: "Original idea", key_takeaways: ["Original takeaway"],
+                category: "Investing", notebook_id: "legacy-notebook",
+            },
+            segments: [{ id: "33333333-3333-4333-8333-333333333333", order_index: 0, title: "Original", markdown_body: "Original passage" }],
+        };
+        vi.mocked(fetch).mockResolvedValue({ json: async () => ({ success: true }) } as Response);
+        render(<ContentForm initialData={item} isEditing />);
+        fireEvent.change(screen.getByPlaceholderText("Or paste image URL directly..."), {
+            target: { value: "https://example.com/new-cover.jpg" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Publish" }));
+        await waitFor(() => expect(routerPushMock).toHaveBeenCalled());
+        const payload = JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body));
+        expect(payload.cover_image_url).toBe("https://example.com/new-cover.jpg");
+        expect(payload).not.toHaveProperty("quick_mode_json");
+        expect(payload).not.toHaveProperty("segments");
+        expect(item.quick_mode_json.notebook_id).toBe("legacy-notebook");
+    });
+
+    it("submits a published text edit and displays the version-protection conflict", async () => {
+        vi.mocked(fetch).mockResolvedValue({ json: async () => ({
+            success: false, error: { message: "Published reading text is protected." },
+        }) } as Response);
+        render(<ContentForm initialData={createInitialData()} isEditing />);
+        fireEvent.change(screen.getByLabelText("Big Idea"), { target: { value: "Rewritten idea" } });
+        fireEvent.click(screen.getByRole("button", { name: "Publish" }));
+        expect(await screen.findByText("Published reading text is protected.")).toBeInTheDocument();
+        const payload = JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body));
+        expect(payload.quick_mode_json.big_idea).toBe("Rewritten idea");
+        expect(routerPushMock).not.toHaveBeenCalled();
+    });
+
+    it("submits a reversion after an updated-version draft was saved for review", async () => {
+        const item = createInitialData();
+        vi.mocked(fetch).mockImplementation(async (url) => ({
+            ok: true,
+            json: async () => String(url).endsWith("/version")
+                ? { source: { id: "old", title: "Old", updated_at: "old-time" }, replacement: { id: item.id, title: "New", updated_at: "new-time" }, preserved: { libraryRecords: 0, highlights: 0, reflections: 0 } }
+                : { success: true },
+        }) as Response);
+        render(<ContentForm initialData={item} isEditing isVersionDraft />);
+        fireEvent.change(screen.getByLabelText("Big Idea"), { target: { value: "Draft rewrite" } });
+        fireEvent.click(screen.getByRole("button", { name: "Save and review updated version" }));
+        await screen.findByRole("button", { name: "Publish updated version" });
+        fireEvent.change(screen.getByLabelText("Big Idea"), { target: { value: item.quick_mode_json.big_idea } });
+        fireEvent.click(screen.getByRole("button", { name: "Save as Draft" }));
+        await waitFor(() => expect(routerPushMock).toHaveBeenCalled());
+        const saves = vi.mocked(fetch).mock.calls.filter(([, options]) => options?.method === "PUT");
+        expect(saves).toHaveLength(2);
+        expect(JSON.parse(String(saves[1][1]?.body)).quick_mode_json.big_idea).toBe(item.quick_mode_json.big_idea);
+    });
+
     it("renders multiline quick mode editors and supports takeaway add/remove", () => {
         render(<ContentForm initialData={createInitialData()} seriesOptions={seriesOptions} />);
 
