@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     AuthUserProvider,
+    useAuthUser,
 } from "@/hooks/useAuthUser";
 import {
     ReadingProgressProvider,
@@ -17,7 +18,7 @@ import {
     myListKey,
     progressKey,
 } from "@/lib/local-user-storage";
-import { readLibraryIntents, writeLibraryIntent } from "@/lib/library-mutation-journal";
+import { readLibraryIntents, writeLibraryIntent, storeLibraryBoundary } from "@/lib/library-mutation-journal";
 import { LibraryMutationConflictError } from "@/lib/user-library-mutation-contract";
 import { clearLibrarySnapshotIdempotencyKey, fetchCompleteLibrarySnapshot, LibrarySnapshotClientError } from "@/lib/account-data-client";
 
@@ -742,10 +743,131 @@ describe("useReadingProgress", () => {
         expect(result.current.myListIds).toEqual(["new-local-item"]);
     });
 
+    it("shows a returning account's saved library while a complete snapshot is pending", async () => {
+        currentAuthUser = { id: "user-a" };
+        const scope = getStorageScope("user-a");
+        localStorage.setItem(myListKey(scope), JSON.stringify(["cached-item"]));
+        storeLibraryBoundary(localStorage, "user-a", { resetEpoch: 0, libraryRevision: 10 });
+        let resolveSnapshot!: (value: Awaited<ReturnType<typeof fetchCompleteLibrarySnapshot>>) => void;
+        vi.mocked(fetchCompleteLibrarySnapshot).mockImplementationOnce(() => new Promise(resolve => { resolveSnapshot = resolve; }));
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("hydrating"));
+        expect(result.current.myListIds).toEqual(["cached-item"]);
+        expect(result.current.isLoaded).toBe(true);
+        expect(commitMutationMock).not.toHaveBeenCalled();
+        await act(async () => resolveSnapshot(snapshotAt(11) as never));
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        expect(result.current.myListIds).toEqual([]);
+    });
+
+    it("queues a returning account's edit until its complete snapshot is verified", async () => {
+        currentAuthUser = { id: "user-a" };
+        storeLibraryBoundary(localStorage, "user-a", { resetEpoch: 0, libraryRevision: 10 });
+        let resolveSnapshot!: (value: Awaited<ReturnType<typeof fetchCompleteLibrarySnapshot>>) => void;
+        vi.mocked(fetchCompleteLibrarySnapshot)
+            .mockImplementationOnce(() => new Promise(resolve => { resolveSnapshot = resolve; }))
+            .mockResolvedValue(snapshotAt(10) as never);
+        commitMutationMock.mockResolvedValue({ resetEpoch: 0, libraryRevision: 11 });
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.isCheckingLibrary).toBe(true));
+        await act(async () => { expect(await result.current.addToMyList("pending-item")).toBe(false); });
+        expect(result.current.myListIds).toEqual(["pending-item"]);
+        expect(result.current.recovery.pending).toBe(1);
+        expect(result.current.recovery.attention).toEqual([]);
+        expect(commitMutationMock).not.toHaveBeenCalled();
+        await act(async () => resolveSnapshot(snapshotAt(10) as never));
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
+        expect(commitMutationMock.mock.calls[0][0]).toMatchObject({
+            expectedAccountId: "user-a", contentId: "pending-item", baseRevision: 10, resetEpoch: 0,
+        });
+        expect(result.current.myListIds).toEqual(["pending-item"]);
+        await waitFor(() => expect(result.current.recovery.pending).toBe(0));
+    });
+
+    it("does not replay a startup edit across a reset discovered during verification", async () => {
+        currentAuthUser = { id: "user-a" };
+        localStorage.setItem(myListKey(getStorageScope("user-a")), JSON.stringify(["old-item"]));
+        storeLibraryBoundary(localStorage, "user-a", { resetEpoch: 0, libraryRevision: 10 });
+        let resolveSnapshot!: (value: Awaited<ReturnType<typeof fetchCompleteLibrarySnapshot>>) => void;
+        vi.mocked(fetchCompleteLibrarySnapshot)
+            .mockImplementationOnce(() => new Promise(resolve => { resolveSnapshot = resolve; }))
+            .mockResolvedValue(snapshotAt(20, false, 1) as never);
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.isCheckingLibrary).toBe(true));
+        await act(async () => { await result.current.addToMyList("startup-edit"); });
+        expect(result.current.myListIds).toContain("startup-edit");
+        await act(async () => resolveSnapshot(snapshotAt(20, false, 1) as never));
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        expect(result.current.myListIds).toEqual([]);
+        expect(result.current.recovery.attention).toHaveLength(1);
+        expect(result.current.recovery.attention[0].itemId).toBe("startup-edit");
+        expect(commitMutationMock).not.toHaveBeenCalled();
+    });
+
+    it("hides the previous account's cached state on every account-switch render", async () => {
+        for (const id of ["user-a", "user-b"]) {
+            localStorage.setItem(myListKey(getStorageScope(id)), JSON.stringify([`${id}-item`]));
+            storeLibraryBoundary(localStorage, id, { resetEpoch: 0, libraryRevision: 10 });
+        }
+        currentAuthUser = { id: "user-a" };
+        let resolveA!: (value: Awaited<ReturnType<typeof fetchCompleteLibrarySnapshot>>) => void;
+        let resolveB!: (value: Awaited<ReturnType<typeof fetchCompleteLibrarySnapshot>>) => void;
+        vi.mocked(fetchCompleteLibrarySnapshot)
+            .mockImplementationOnce(() => new Promise(resolve => { resolveA = resolve; }))
+            .mockImplementationOnce(() => new Promise(resolve => { resolveB = resolve; }));
+        const seen: Array<{ auth: string | undefined; ids: string[]; count: number }> = [];
+        const { result } = renderHook(() => {
+            const value = useReadingProgress();
+            const auth = useAuthUser();
+            seen.push({ auth: auth?.id, ids: value.myListIds, count: value.totalLibraryItems });
+            return value;
+        }, { wrapper });
+        await waitFor(() => expect(result.current.myListIds).toEqual(["user-a-item"]));
+        act(() => {
+            currentAuthUser = { id: "user-b" };
+            authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser });
+        });
+        await waitFor(() => expect(result.current.myListIds).toEqual(["user-b-item"]));
+        expect(vi.mocked(fetchCompleteLibrarySnapshot).mock.calls[0][2]?.aborted).toBe(true);
+        expect(seen.filter(row => row.auth === "user-b").every(row => !row.ids.includes("user-a-item"))).toBe(true);
+        await act(async () => resolveA(snapshotAt(10, true) as never));
+        expect(result.current.myListIds).toEqual(["user-b-item"]);
+        expect(result.current.isCheckingLibrary).toBe(true);
+        await act(async () => resolveB(snapshotAt(11) as never));
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        expect(result.current.myListIds).toEqual([]);
+    });
+
+    it("discards a pre-reset startup snapshot and permits a fresh post-reset edit", async () => {
+        currentAuthUser = { id: "user-a" };
+        const scope = getStorageScope("user-a");
+        localStorage.setItem(myListKey(scope), JSON.stringify(["pre-reset-item"]));
+        storeLibraryBoundary(localStorage, "user-a", { resetEpoch: 0, libraryRevision: 10 });
+        let resolveSnapshot!: (value: Awaited<ReturnType<typeof fetchCompleteLibrarySnapshot>>) => void;
+        vi.mocked(fetchCompleteLibrarySnapshot).mockImplementationOnce(() => new Promise(resolve => { resolveSnapshot = resolve; }));
+        commitMutationMock.mockResolvedValue({ resetEpoch: 1, libraryRevision: 21 });
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.isCheckingLibrary).toBe(true));
+        act(() => {
+            window.dispatchEvent(new CustomEvent("netflux_library_reset", {
+                detail: { scope, resetEpoch: 1, boundaryRevision: 20 },
+            }));
+            localStorage.removeItem(myListKey(scope));
+            result.current.refresh();
+        });
+        expect(vi.mocked(fetchCompleteLibrarySnapshot).mock.calls[0][2]?.aborted).toBe(true);
+        await act(async () => resolveSnapshot(snapshotAt(10, true) as never));
+        expect(result.current.myListIds).toEqual([]);
+        await act(async () => { expect(await result.current.addToMyList("post-reset-item")).toBe(true); });
+        expect(commitMutationMock.mock.calls[0][0]).toMatchObject({ resetEpoch: 1, baseRevision: 20 });
+        expect(result.current.myListIds).toEqual(["post-reset-item"]);
+    });
+
     it("does not submit a cached action before the initial server boundary is known", async () => {
         let resolveSnapshot!: (value: Awaited<ReturnType<typeof fetchCompleteLibrarySnapshot>>) => void;
         vi.mocked(fetchCompleteLibrarySnapshot).mockImplementationOnce(() => new Promise(resolve => { resolveSnapshot = resolve; }));
         currentAuthUser = { id: "user-a" };
+        localStorage.setItem(myListKey(getStorageScope("user-a")), JSON.stringify(["unverified-local-item"]));
         const { result } = renderHook(() => useReadingProgress(), { wrapper });
         await waitFor(() => expect(result.current.hydrationStatus).toBe("hydrating"));
         expect(result.current.isLoaded).toBe(false);
@@ -755,6 +877,14 @@ describe("useReadingProgress", () => {
         await act(async () => resolveSnapshot(snapshotAt(2) as never));
         await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
         expect(result.current.myListIds).toEqual([]);
+    });
+
+    it("does not present a failed initial check as a loaded empty library", async () => {
+        currentAuthUser = { id: "user-a" };
+        vi.mocked(fetchCompleteLibrarySnapshot).mockRejectedValue(new LibrarySnapshotClientError("Unavailable", "CONFIGURATION"));
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("error"));
+        expect(result.current.isLoaded).toBe(false);
     });
 
     it("finishes pending hydration when auth emits a new object for the same user", async () => {

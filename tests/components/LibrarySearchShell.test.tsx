@@ -9,6 +9,10 @@ const mocks = vi.hoisted(() => ({
         completedIds: ["shared", "completed"],
         inProgressIds: ["shared"],
         isLoaded: true,
+        isCheckingLibrary: false,
+        hydrationStatus: "ready",
+        hydrationIssue: null,
+        retryHydration: vi.fn(),
         myListIds: ["shared", "saved"],
         getProgress: () => ({ completed: ["first"], totalSegments: 3 }),
         archiveFromProgressList: vi.fn(),
@@ -30,6 +34,9 @@ vi.mock("@/components/ui/ContentCard", () => ({
 describe("LibrarySearchShell", () => {
     beforeEach(() => {
         window.history.replaceState(null, "", "/library/reading");
+        mocks.library.isCheckingLibrary = false;
+        mocks.library.hydrationStatus = "ready";
+        mocks.library.isLoaded = true;
         mocks.batch.mockReset();
         mocks.batch.mockReturnValue({
             data: [
@@ -49,6 +56,22 @@ describe("LibrarySearchShell", () => {
         expect(screen.getByText("Saved view")).toBeInTheDocument();
         expect(screen.getByText("Library views")).toBeInTheDocument();
         expect(mocks.batch).toHaveBeenCalledWith(["shared", "saved", "completed"], { enabled: false });
+    });
+
+    it("identifies the saved copy while the latest library is checked", () => {
+        mocks.library.isCheckingLibrary = true;
+        render(<LibrarySearchShell><p>Saved view</p></LibrarySearchShell>);
+        expect(screen.getByRole("status")).toHaveTextContent("Showing your saved library while checking for updates");
+        expect(screen.getByText("Saved view")).toBeVisible();
+    });
+
+    it("offers recovery when an initial library check fails", () => {
+        mocks.library.isLoaded = false;
+        mocks.library.hydrationStatus = "error";
+        render(<LibrarySearchShell><p>Loading library</p></LibrarySearchShell>);
+        expect(screen.getByRole("alert")).toHaveTextContent("Could not load your library.");
+        fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+        expect(mocks.library.retryHydration).toHaveBeenCalledTimes(1);
     });
 
     it("finds title or author across views and shows every applicable status", () => {
