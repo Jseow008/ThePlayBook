@@ -76,7 +76,7 @@ describe("Content batch API", () => {
             error: null,
         });
         const response = await POST(createRequest({ ids: ["123e4567-e89b-12d3-a456-426614174000"] }));
-        expect(await response.json()).toEqual([{ id: "content-1", quick_mode_json: { hook: "Hook", big_idea: "Idea" } }]);
+        expect(await response.json()).toEqual([{ id: "content-1", quick_mode_json: { hook: "Hook" } }]);
         expect(response.headers.get("Cache-Control")).toBe("no-store");
         expect(response.headers.get("Server-Timing")).toMatch(/admission;dur=[\d.]+, content;dur=[\d.]+, handler;dur=[\d.]+/);
     });

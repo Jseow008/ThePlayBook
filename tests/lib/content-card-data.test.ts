@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCardQuickMode, toContentCardData } from "@/lib/server/content-card-data";
+import { getCardQuickMode, toContentCardData, toHeroCardData } from "@/lib/server/content-card-data";
 
 describe("content card data", () => {
     it("retains card and hero text without full summaries or source metadata", () => {
@@ -9,8 +9,9 @@ describe("content card data", () => {
         };
         expect(toContentCardData(original)).toEqual({
             id: original.id, title: original.title, audio_url: original.audio_url,
-            quick_mode_json: { hook: "A hook", big_idea: "An idea" },
+            quick_mode_json: { hook: "A hook" },
         });
+        expect(toHeroCardData(original).quick_mode_json).toEqual({ hook: "A hook", big_idea: "An idea" });
         expect(original.quick_mode_json.key_takeaways).toEqual(["Full summary"]);
     });
 
@@ -19,7 +20,7 @@ describe("content card data", () => {
     });
 
     it("keeps only string display fields", () => {
-        expect(getCardQuickMode({ hook: ["bad"], big_idea: "Fallback", key_takeaways: [] })).toEqual({ big_idea: "Fallback" });
+        expect(getCardQuickMode({ hook: ["bad"], big_idea: "Fallback", key_takeaways: [] }, true)).toEqual({ big_idea: "Fallback" });
         expect(getCardQuickMode({ hook: "", big_idea: 42 })).toEqual({ hook: "" });
     });
 });

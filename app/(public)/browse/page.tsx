@@ -14,7 +14,7 @@ import {
     serializeJsonLdGraph,
 } from "@/lib/seo";
 import { BROWSE_LANE_FETCH_LIMIT } from "@/lib/browse-lanes";
-import { toContentCardData } from "@/lib/server/content-card-data";
+import { toContentCardData, toHeroCardData } from "@/lib/server/content-card-data";
 
 /**
  * Browse Page (Content Dashboard)
@@ -191,7 +191,7 @@ async function HomeFeedServer() {
     return (
         <HomeFeed
             items={items.map(toContentCardData)}
-            featuredItems={featuredItems.map(toContentCardData)}
+            featuredItems={featuredItems.map(toHeroCardData)}
             sections={sections}
             sectionItems={sectionItems}
         />
