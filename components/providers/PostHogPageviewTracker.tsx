@@ -9,7 +9,7 @@ import {
     type AnalyticsIdentityProperties,
 } from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/client";
-import { getBrowserUser } from "@/lib/supabase/browser-user";
+import { getBrowserUser, resetBrowserUserLookup } from "@/lib/supabase/browser-user";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import type { UserRole } from "@/types/database";
 
@@ -75,6 +75,7 @@ export function PostHogPageviewTracker() {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (!isMounted) return;
+            if (_event !== "INITIAL_SESSION") resetBrowserUserLookup();
             setUserId(session?.user?.id ?? null);
         });
 

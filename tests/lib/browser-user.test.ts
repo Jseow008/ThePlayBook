@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getBrowserUser } from "@/lib/supabase/browser-user";
+import { getBrowserUser, resetBrowserUserLookup } from "@/lib/supabase/browser-user";
 
 const getUser = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/supabase/client", () => ({
@@ -26,5 +26,21 @@ describe("browser user bootstrap", () => {
         await expect(getBrowserUser()).rejects.toThrow("Network error");
         getUser.mockResolvedValueOnce({ data: { user: null }, error: null });
         await expect(getBrowserUser()).resolves.toEqual({ data: { user: null }, error: null });
+    });
+
+    it("isolates a new session while the previous lookup is still pending", async () => {
+        let resolveOld!: (value: unknown) => void;
+        let resolveNew!: (value: unknown) => void;
+        getUser.mockReturnValueOnce(new Promise(resolve => { resolveOld = resolve; }));
+        const oldSession = getBrowserUser();
+        resetBrowserUserLookup();
+        getUser.mockReturnValueOnce(new Promise(resolve => { resolveNew = resolve; }));
+        const newSession = getBrowserUser();
+        expect(newSession).not.toBe(oldSession);
+        resolveOld({ data: { user: { id: "old-account" } }, error: null });
+        await oldSession;
+        expect(getBrowserUser()).toBe(newSession);
+        resolveNew({ data: { user: { id: "new-account" } }, error: null });
+        await newSession;
     });
 });

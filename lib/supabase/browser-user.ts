@@ -5,9 +5,14 @@ let pending: ReturnType<ReturnType<typeof createClient>["auth"]["getUser"]> | un
 /** Share concurrent bootstrap reads without caching a resolved identity. */
 export function getBrowserUser() {
     if (!pending) {
-        pending = createClient().auth.getUser().finally(() => {
-            pending = undefined;
+        const request = createClient().auth.getUser().finally(() => {
+            if (pending === request) pending = undefined;
         });
+        pending = request;
     }
     return pending;
+}
+
+export function resetBrowserUserLookup() {
+    pending = undefined;
 }

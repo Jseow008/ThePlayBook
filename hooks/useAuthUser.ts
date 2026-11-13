@@ -3,7 +3,7 @@
 import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { getBrowserUser } from "@/lib/supabase/browser-user";
+import { getBrowserUser, resetBrowserUserLookup } from "@/lib/supabase/browser-user";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import { clearAllNotesChatSessions } from "@/lib/notes-chat-session";
 import { clearLibraryChatSessions } from "@/lib/library-chat-session";
@@ -52,6 +52,7 @@ export function AuthUserProvider({
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (!isMounted) return;
+            if (_event !== "INITIAL_SESSION") resetBrowserUserLookup();
             // This provider stays mounted when Notes is closed, including on Settings.
             if (_event === "SIGNED_OUT") { clearAllNotesChatSessions(); clearLibraryChatSessions(); clearNoteDrafts(); }
             setUser(session?.user ?? null);
