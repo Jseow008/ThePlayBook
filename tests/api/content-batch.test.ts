@@ -58,7 +58,7 @@ describe("Content batch API", () => {
         expect(mockEq).toHaveBeenCalledWith("status", "verified");
         expect(mockIs).toHaveBeenCalledWith("deleted_at", null);
         await expect(response.json()).resolves.toEqual([
-            { id, title: "Verified Item" },
+            { id, title: "Verified Item", quick_mode_json: null },
         ]);
     });
 
@@ -68,6 +68,17 @@ describe("Content batch API", () => {
         expect(response.status).toBe(400);
         expect(mockFrom).not.toHaveBeenCalled();
         expect(await response.json()).toMatchObject({ error: "Invalid request", details: [{ path: ["ids", 0] }] });
+    });
+
+    it("returns compact display data with separate admission and content timings", async () => {
+        mockIs.mockResolvedValueOnce({
+            data: [{ id: "content-1", quick_mode_json: { hook: "Hook", big_idea: "Idea", key_takeaways: ["Long summary"] } }],
+            error: null,
+        });
+        const response = await POST(createRequest({ ids: ["123e4567-e89b-12d3-a456-426614174000"] }));
+        expect(await response.json()).toEqual([{ id: "content-1", quick_mode_json: { hook: "Hook", big_idea: "Idea" } }]);
+        expect(response.headers.get("Cache-Control")).toBe("no-store");
+        expect(response.headers.get("Server-Timing")).toMatch(/admission;dur=[\d.]+, content;dur=[\d.]+, handler;dur=[\d.]+/);
     });
     it.each([0, 51, 1000])("rejects %i IDs before creating a database client", async (count) => {
         const response = await POST(createRequest({ ids: Array(count).fill("11111111-1111-1111-1111-111111111111") }));

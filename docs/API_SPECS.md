@@ -262,7 +262,7 @@ Sources: [snapshot creation](../app/api/account-data/snapshots/route.ts), [snaps
 }
 ```
 
-Returns a JSON array of verified content rows.
+Returns verified, non-deleted content metadata. Quick Mode contains only the card hook and hero big idea. The POST response uses `no-store`; browser query caching is managed separately. Numeric `Server-Timing` phases report admission, content lookup and handler durations.
 
 ### 4.2 `/api/focus`
 

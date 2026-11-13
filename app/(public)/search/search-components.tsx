@@ -1,4 +1,5 @@
 import { ContentCard } from "@/components/ui/ContentCard";
+import { toContentCardData } from "@/lib/server/content-card-data";
 import { AudioListenLink } from "@/components/ui/AudioListenLink";
 import { SearchAnalyticsTracker } from "@/app/(public)/search/SearchAnalyticsTracker";
 import { getPopularCatalogItems, getRecentCatalogPage, type RecentCatalogPage } from "@/lib/server/search-catalog";
@@ -225,7 +226,7 @@ export function ContentGrid({ items }: { items: Array<ContentItem | CatalogSearc
                 return (
                     <div key={item.id} data-search-result-position={index + 1} className="min-w-0 space-y-2">
                         <ContentCard
-                            item={item}
+                            item={toContentCardData(item)}
                             titleDensity="app-compact"
                             priority={index === 0}
                         />
