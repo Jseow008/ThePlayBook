@@ -904,8 +904,10 @@ export function BrainClientPage({ initialPage, initialReflections, initialAskOpe
     const scrollFrameRef = useRef<number | null>(null);
     const deleteArmTimeoutRef = useRef<number | null>(null);
     const [notesContextId, setNotesContextId] = useState<string | null>(searchParams.get("notesContext"));
+    const [registeredNotesContext, setRegisteredNotesContext] = useState<string | null>(null);
     const searchDebounceRef = useRef<number | null>(null);
     const previousSearchParamsRef = useRef<string | null>(null);
+    const skipUrlWriteRef = useRef(false);
     const shouldRespectInitialAskOpenRef = useRef(initialAskOpen);
     const deleteHighlight = useDeleteHighlight();
     const updateHighlight = useUpdateHighlight();
@@ -1028,10 +1030,14 @@ export function BrainClientPage({ initialPage, initialReflections, initialAskOpe
 
     useEffect(() => {
         const currentQuery = searchParams.toString();
+        // A native history update may already be ahead of this render's snapshot.
+        if (currentQuery !== new URLSearchParams(window.location.search).toString()) return;
         if (previousSearchParamsRef.current === currentQuery) {
             return;
         }
         previousSearchParamsRef.current = currentQuery;
+        // Apply external navigation to local controls before reflecting them back.
+        skipUrlWriteRef.current = true;
 
         const nextSearchQuery = searchParams.get("q") ?? "";
         const nextSelectedItem = searchParams.get("item") ?? DEFAULT_SELECTED_ITEM;
@@ -1060,21 +1066,24 @@ export function BrainClientPage({ initialPage, initialReflections, initialAskOpe
     }, [searchParams]);
 
     useEffect(() => {
-        const params = notesFilterParams(searchParams.toString(), {
+        if (skipUrlWriteRef.current) {
+            skipUrlWriteRef.current = false;
+            return;
+        }
+        const params = notesFilterParams(window.location.search, {
             searchQuery: debouncedSearchQuery, selectedItem, selectedType, selectedColor, sortBy,
         });
 
         if (notesContextId) params.set("notesContext", notesContextId);
         const nextQuery = params.toString();
-        const currentQuery = searchParams.toString();
+        const currentQuery = new URLSearchParams(window.location.search).toString();
 
         if (nextQuery !== currentQuery) {
-            router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+            window.history.replaceState(null, "", nextQuery ? `${pathname}?${nextQuery}` : pathname);
         }
     }, [
         debouncedSearchQuery,
         pathname,
-        router,
         searchParams,
         selectedColor,
         selectedItem,
@@ -1449,7 +1458,7 @@ export function BrainClientPage({ initialPage, initialReflections, initialAskOpe
         }
 
         const nextAskOpen = !isAskOpen;
-        const params = new URLSearchParams(searchParams.toString());
+        const params = new URLSearchParams(window.location.search);
         if (notesContextId) params.set("notesContext", notesContextId);
 
         if (nextAskOpen) {
@@ -1460,7 +1469,8 @@ export function BrainClientPage({ initialPage, initialReflections, initialAskOpe
         }
 
         const nextQuery = params.toString();
-        router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+        // UI-only query state must be visible before the child registers its context.
+        window.history.replaceState(null, "", nextQuery ? `${pathname}?${nextQuery}` : pathname);
         setIsAskOpen(nextAskOpen);
     };
 
@@ -1982,12 +1992,14 @@ export function BrainClientPage({ initialPage, initialReflections, initialAskOpe
                         <aside className="hidden lg:block lg:self-start">
                             <div className="sticky top-6">
                                 <NotesAskPanel
-                                    key={notesContextId ?? "current"}
+                                    key={notesContextId === registeredNotesContext ? "current" : notesContextId ?? "current"}
                                     currentScope={notesChatScope}
                                     returnTo={notesReturnTo}
                                     contextId={notesContextId}
                                     onContextReady={(id) => {
                                         if (id === notesContextId) return;
+                                        // Giving the current instance its own URL identity must not remount it.
+                                        if (notesContextId === null) setRegisteredNotesContext(id);
                                         // Register the recovery context with the same live query,
                                         // rather than letting its URL write restore a delayed query.
                                         if (searchDebounceRef.current !== null) window.clearTimeout(searchDebounceRef.current);

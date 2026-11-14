@@ -1,3 +1,4 @@
+import { useLayoutEffect } from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { BrainClientPage } from "@/app/(public)/notes/client-page";
 import type { FetchStatus } from "@tanstack/react-query";
@@ -19,7 +20,9 @@ const {
     searchParamsState,
     mediaQueryState,
     reflectionsState,
+    panelLifecycle,
 } = vi.hoisted(() => ({
+    panelLifecycle: { registerOnMount: false, mounts: 0, unmounts: 0, context: "opening-context-0123456789" },
     deleteHighlightMock: vi.fn(),
     updateHighlightMock: vi.fn(),
     deleteReflectionMock: vi.fn(),
@@ -69,6 +72,10 @@ const {
 const notesAskPanelMock = vi.fn();
 const routerReplaceMock = vi.fn();
 const routerPushMock = vi.fn();
+function setQuerySnapshot(value: string) {
+    searchParamsState.value = value;
+    window.history.replaceState(window.history.state, "", value ? `/notes?${value}` : "/notes");
+}
 
 vi.mock("@/hooks/useHighlights", () => ({
     useInfiniteHighlights: (...args: unknown[]) => {
@@ -114,6 +121,14 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/components/notes/NotesAskPanel", () => ({
     NotesAskPanel: (props: any) => {
+        const { contextId, onContextReady } = props;
+        useLayoutEffect(() => {
+            panelLifecycle.mounts++;
+            return () => { panelLifecycle.unmounts++; };
+        }, []);
+        useLayoutEffect(() => {
+            if (panelLifecycle.registerOnMount) onContextReady(contextId ?? panelLifecycle.context);
+        }, [contextId, onContextReady]);
         notesAskPanelMock(props);
         return <div data-testid="notes-ask-panel">Notes AI Panel</div>;
     },
@@ -209,7 +224,8 @@ describe("BrainClientPage", () => {
         notesAskPanelMock.mockClear();
         routerReplaceMock.mockClear();
         routerPushMock.mockClear();
-        searchParamsState.value = "";
+        setQuerySnapshot("");
+        Object.assign(panelLifecycle, { registerOnMount: false, mounts: 0, unmounts: 0 });
         mediaQueryState.value = {
             isNotesAskSidebarAvailable: true,
         };
@@ -268,7 +284,7 @@ describe("BrainClientPage", () => {
     ])("retries only failed queries in scope for $type ($highlightError/$reflectionError)", ({
         type, highlightError, reflectionError, highlightRetries, reflectionRetries,
     }) => {
-        searchParamsState.value = `item=content-1&type=${type}`;
+        setQuerySnapshot(`item=content-1&type=${type}`);
         infiniteHighlightsState.value.isError = highlightError;
         reflectionsState.isError = reflectionError;
         render(<BrainClientPage initialPage={initialPage} />);
@@ -284,7 +300,7 @@ describe("BrainClientPage", () => {
     });
 
     it("distinguishes failed initial reflection loading from a successful empty response", () => {
-        searchParamsState.value = "type=reflection";
+        setQuerySnapshot("type=reflection");
         reflectionsState.isPending = true;
         const { rerender } = render(<BrainClientPage initialPage={initialPage} initialReflections={null} />);
         expect(screen.getByRole("status", { name: "Loading notes" })).toBeInTheDocument();
@@ -389,7 +405,7 @@ describe("BrainClientPage", () => {
     });
 
     it.each(["item=content-1", "item=content-1&type=reflection"])("shows retained original reflections through %s", (query) => {
-        searchParamsState.value = query;
+        setQuerySnapshot(query);
         reflectionsState.value = [
             { id: "old-reflection", user_id: "user-1", content_item_id: "content-1",
                 prompt: "What stayed with you?", reflection_text: "Retained original reflection",
@@ -516,7 +532,7 @@ describe("BrainClientPage", () => {
         // The query's cached page remains populated here even though the
         // selected type disables its request. This is the state reached after
         // changing from a loaded highlights view to Reflections.
-        searchParamsState.value = "type=reflection";
+        setQuerySnapshot("type=reflection");
         render(<BrainClientPage initialPage={initialPage} />);
 
         expect(screen.getByText("A saved reflection remains visible.")).toBeInTheDocument();
@@ -567,19 +583,19 @@ describe("BrainClientPage", () => {
     });
 
     it("does not re-add the ask query when navigation changes from ask-open notes to plain notes", async () => {
-        searchParamsState.value = "ask=1";
+        setQuerySnapshot("ask=1");
         const { rerender } = render(<BrainClientPage initialPage={initialPage} initialAskOpen />);
 
         expect((await screen.findAllByTestId("notes-ask-panel")).length).toBeGreaterThan(0);
         routerReplaceMock.mockClear();
 
-        searchParamsState.value = "";
+        setQuerySnapshot("");
         rerender(<BrainClientPage initialPage={initialPage} initialAskOpen />);
 
         await waitFor(() => {
             expect(screen.queryByTestId("notes-ask-panel")).not.toBeInTheDocument();
         });
-        expect(routerReplaceMock).not.toHaveBeenCalledWith("/notes?ask=1", expect.anything());
+        expect(new URL(window.location.href).searchParams.has("ask")).toBe(false);
     });
 
     it("routes mobile ask entry to the full-screen notes ask page", () => {
@@ -600,7 +616,7 @@ describe("BrainClientPage", () => {
     });
 
     it.each(["", "latest wording"])("captures the live search before the URL debounce when opening Ask: %s", (query) => {
-        searchParamsState.value = "q=older+search";
+        setQuerySnapshot("q=older+search");
         mediaQueryState.value.isNotesAskSidebarAvailable = false;
         window.history.replaceState({ preserved: true }, "", "/notes?q=older+search");
         render(<BrainClientPage initialPage={initialPage} />);
@@ -620,7 +636,7 @@ describe("BrainClientPage", () => {
     });
 
     it("captures rapid query, source, type, color and sort changes for both return paths", () => {
-        searchParamsState.value = "q=old&type=highlight&color=red&sort=oldest&unrelated=keep";
+        setQuerySnapshot("q=old&type=highlight&color=red&sort=oldest&unrelated=keep");
         mediaQueryState.value.isNotesAskSidebarAvailable = false;
         render(<BrainClientPage initialPage={initialPage} />);
         fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], { target: { value: "intermediate" } });
@@ -640,7 +656,7 @@ describe("BrainClientPage", () => {
     });
 
     it("passes live desktop filters and a history snapshot callback without changing the chat scope", () => {
-        searchParamsState.value = "q=older&ask=1";
+        setQuerySnapshot("q=older&ask=1");
         render(<BrainClientPage initialPage={initialPage} initialAskOpen />);
         fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], { target: { value: "latest" } });
         const panel = notesAskPanelMock.mock.calls.at(-1)![0];
@@ -652,18 +668,18 @@ describe("BrainClientPage", () => {
     });
 
     it("registers the draft context without restoring a delayed search and retains it when reopening", () => {
-        searchParamsState.value = "q=older&ask=1";
+        setQuerySnapshot("q=older&ask=1");
         render(<BrainClientPage initialPage={initialPage} initialAskOpen />);
         fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], { target: { value: "latest" } });
         const panel = notesAskPanelMock.mock.calls.at(-1)![0];
         act(() => panel.onContextReady("context-test-0123456789"));
-        expect(routerReplaceMock).toHaveBeenLastCalledWith("/notes?q=latest&ask=1&notesContext=context-test-0123456789", { scroll: false });
+        expect(window.location.pathname + window.location.search).toBe("/notes?q=latest&ask=1&notesContext=context-test-0123456789");
         fireEvent.click(screen.getByRole("button", { name: "Close notes AI" }));
         fireEvent.click(screen.getByRole("button", { name: "Ask these notes" }));
         expect(notesAskPanelMock.mock.calls.at(-1)![0].contextId).toBe("context-test-0123456789");
     });
     it("passes the same context through responsive Ask and its explicit return link", () => {
-        searchParamsState.value = "q=older&notesContext=context-test-0123456789";
+        setQuerySnapshot("q=older&notesContext=context-test-0123456789");
         mediaQueryState.value.isNotesAskSidebarAvailable = false;
         render(<BrainClientPage initialPage={initialPage} />);
         fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], { target: { value: "" } });
@@ -686,6 +702,55 @@ describe("BrainClientPage", () => {
 
         expect(routerPushMock).not.toHaveBeenCalled();
         expect((await screen.findAllByTestId("notes-ask-panel")).length).toBeGreaterThan(0);
+    });
+
+    it("keeps a fresh panel mounted while its context registers before the opening URL snapshot arrives", async () => {
+        panelLifecycle.registerOnMount = true;
+        const { rerender } = render(<BrainClientPage initialPage={initialPage} />);
+        fireEvent.click(screen.getByRole("button", { name: "Ask these notes" }));
+        await screen.findByTestId("notes-ask-panel");
+        expect(Object.fromEntries(new URL(window.location.href).searchParams)).toEqual({
+            ask: "1", notesContext: panelLifecycle.context,
+        });
+        expect(panelLifecycle.mounts).toBe(1);
+        expect(panelLifecycle.unmounts).toBe(0);
+        // Let useSearchParams catch up only after the child has registered.
+        setQuerySnapshot(window.location.search.slice(1));
+        rerender(<BrainClientPage initialPage={initialPage} />);
+        expect(screen.getByTestId("notes-ask-panel")).toBeInTheDocument();
+        expect(panelLifecycle.mounts).toBe(1);
+    });
+
+    it("keeps Close effective before the opening snapshot settles and reopens the same context", async () => {
+        panelLifecycle.registerOnMount = true;
+        const { rerender } = render(<BrainClientPage initialPage={initialPage} />);
+        fireEvent.click(screen.getByRole("button", { name: "Ask these notes" }));
+        await screen.findByTestId("notes-ask-panel");
+        fireEvent.click(screen.getByRole("button", { name: "Close notes AI" }));
+        expect(screen.queryByTestId("notes-ask-panel")).not.toBeInTheDocument();
+        expect(new URL(window.location.href).searchParams.has("ask")).toBe(false);
+        expect(new URL(window.location.href).searchParams.get("notesContext")).toBe(panelLifecycle.context);
+        setQuerySnapshot(window.location.search.slice(1));
+        rerender(<BrainClientPage initialPage={initialPage} />);
+        expect(screen.queryByTestId("notes-ask-panel")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Ask these notes" }));
+        expect(notesAskPanelMock.mock.calls.at(-1)![0].contextId).toBe(panelLifecycle.context);
+    });
+
+    it("accepts external filter/context navigation without restoring the previous open URL", async () => {
+        setQuerySnapshot("ask=1&notesContext=first-context-0123456789");
+        const { rerender } = render(<BrainClientPage initialPage={initialPage} initialAskOpen />);
+        await screen.findByTestId("notes-ask-panel");
+        setQuerySnapshot("q=returned&type=reflection&notesContext=second-context-0123456789");
+        rerender(<BrainClientPage initialPage={initialPage} initialAskOpen />);
+        await waitFor(() => expect(screen.queryByTestId("notes-ask-panel")).not.toBeInTheDocument());
+        expect(screen.getAllByPlaceholderText(/Search notes/i)[0]).toHaveValue("returned");
+        expect(window.location.search).toBe("?q=returned&type=reflection&notesContext=second-context-0123456789");
+        setQuerySnapshot("ask=1&notesContext=first-context-0123456789");
+        rerender(<BrainClientPage initialPage={initialPage} initialAskOpen />);
+        await screen.findByTestId("notes-ask-panel");
+        expect(notesAskPanelMock.mock.calls.at(-1)![0].contextId).toBe("first-context-0123456789");
+        expect(window.location.search).toBe("?ask=1&notesContext=first-context-0123456789");
     });
 
     it("does not lock body scroll for the desktop ask sidebar", async () => {
