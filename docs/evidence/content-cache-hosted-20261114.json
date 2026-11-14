@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-14",
+  "candidate": "441d3dab8e800aaf329e22018125bd441bf7cb48",
+  "project": "bayymbcmehxudbwrvzjm",
+  "parent": "xmuqsgfxuaaophxnwure",
+  "initialCounts": {
+    "users": 0,
+    "content": 0
+  },
+  "migrations": {
+    "count": 117,
+    "latest": "20261105094614"
+  },
+  "migrationDryRun": "up to date",
+  "productionSchemaChanges": "none; production push not applicable",
+  "schemaCategoriesMatched": 14,
+  "publicTypesMatch": true,
+  "permissionChecksPassed": 6,
+  "transactionalHighlightPreservation": true,
+  "productionBuild": true,
+  "smokePassed": 7,
+  "smokeSkipped": 0,
+  "focusedTestsPassed": 44,
+  "lint": true,
+  "typecheck": true,
+  "browser": [
+    {
+      "profile": "mobile",
+      "libraryViews": 3,
+      "revisitViews": 3,
+      "additionalRevisitLookups": 0,
+      "lookups": 1,
+      "returnedRecords": 3,
+      "uniqueRecords": 3,
+      "publicRenderErrors": []
+    },
+    {
+      "profile": "desktop",
+      "libraryViews": 3,
+      "revisitViews": 3,
+      "additionalRevisitLookups": 0,
+      "lookups": 1,
+      "returnedRecords": 3,
+      "uniqueRecords": 3,
+      "publicRenderErrors": []
+    }
+  ],
+  "baseline": {
+    "profiles": [
+      "390px mobile",
+      "1440px desktop"
+    ],
+    "lookups": 3,
+    "returnedRecords": 6,
+    "uniqueRecords": 3,
+    "additionalRevisitLookups": 0
+  },
+  "api": {
+    "project": "bayymbcmehxudbwrvzjm",
+    "cacheMissThenHit": true,
+    "canonicalBatchHit": true,
+    "publicProjection": true,
+    "draftAndDeletedExcluded": true,
+    "publish": true,
+    "metadataUpdate": true,
+    "withdraw": true,
+    "republish": true,
+    "delete": true,
+    "replacement": true,
+    "externalWriteExpiresWithoutStaleResponse": true,
+    "admission30Then429": true
+  },
+  "securityAdvisors": {
+    "sameAsProduction": true,
+    "rls_enabled_no_policy": 12,
+    "level": "INFO",
+    "explanation": "Same twelve intentionally locked private tables"
+  },
+  "performanceAdvisors": {
+    "unused_index": 63,
+    "productionUnusedIndex": 13,
+    "auth_db_connections_absolute": 1,
+    "level": "INFO",
+    "explanation": "Fresh candidate lacks production query history; Auth strategy is also reported in production"
+  },
+  "cleanup": {
+    "branchDeleted": true,
+    "isolatedServicesStopped": true,
+    "privateWorkdirAndCredentialsRemoved": true
+  },
+  "limitations": [
+    "No external AI provider calls; placeholder keys satisfy presence-only readiness",
+    "Actual Redis 7 admission scripts use a local REST transport, not production Upstash availability",
+    "Local ingress forwarding host was corrected after initial smoke redirect attempted HTTPS",
+    "Initial unrelated replacement draft was correctly rejected; harness then corrected the required source timestamp and used actual linked version creation",
+    "Server cache TTL is 60 seconds, browser carries remaining lifetime; existing open tabs do not receive push updates",
+    "Request-count reduction is measured; latency was not a controlled benchmark"
+  ],
+  "ciCorrection": {
+    "initialRun": "43578260585",
+    "result": "2457 passed, 318 skipped; one old test expected a redundant second overlapping lookup",
+    "correction": "Test now asserts reuse; a separate deferred read test retains pending-card filtering coverage",
+    "applicationChanged": false
+  }
+}

@@ -1,15 +1,12 @@
-import { createPublicServerClient } from "@/lib/supabase/public-server";
+import { getCachedContentBatch } from "@/lib/server/content-batch-cache";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimitFailureResponse, strictPublicRateLimit } from "@/lib/server/rate-limit";
 import { createLibraryRouteTiming } from "@/lib/server/library-route-timing";
-import { toContentCardData } from "@/lib/server/content-card-data";
 
 const BatchRequestSchema = z.object({
     ids: z.array(z.guid()).min(1).max(50),
 });
-
-const CONTENT_BATCH_SELECT = "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, created_at";
 
 /**
  * POST /api/content/batch
@@ -36,26 +33,13 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { ids } = BatchRequestSchema.parse(body);
 
-        const supabase = createPublicServerClient();
+        const { items, cache, checkedAt } = await timing.measure("content", () => getCachedContentBatch(ids));
 
-        const { data, error } = await timing.measure("content", () => supabase
-            .from("content_item")
-            .select(CONTENT_BATCH_SELECT)
-            .in("id", ids)
-            .eq("status", "verified")
-            .is("deleted_at", null));
-
-        if (error) {
-            console.error("Batch fetch error:", error);
-            return NextResponse.json(
-                { error: "Failed to fetch content" },
-                { status: 500, headers: { "Cache-Control": "no-store", "Server-Timing": timing.header() } }
-            );
-        }
-
-        return NextResponse.json((data || []).map(toContentCardData), {
+        return NextResponse.json(items, {
             headers: {
                 "Cache-Control": "no-store",
+                "X-Content-Cache": cache,
+                "X-Content-Fresh-For": String(Math.max(0, 60_000 - (Date.now() - checkedAt))),
                 "Server-Timing": timing.header(),
             }
         });

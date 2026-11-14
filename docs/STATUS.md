@@ -2,7 +2,7 @@
 
 ## Luna-only release preparation — 14 November 2026
 
-Ready for review on `codex/luna-full-flow-test`, managed worktree `/Users/j/.codex/worktrees/luna-full-flow-test/Lifebook`, freshly fetched base `0b6a6aad`; application commit `88b9fb5d`. User authorized PR preparation and hosted verification while keeping production unchanged. Library/Notes/Author pin gpt-6-luna, reasoning none and storage off; legacy provider/model overrides are ignored, missing OpenAI credentials fail closed, and there is no escalation/fallback. Prompts, schema, budgets, quotas, citations, replay behavior and UI remain unchanged. Launch/readiness checks, CI environment fixtures and operations guidance require OpenAI. No migrations or production database push are needed; existing production migration parity was verified read-only.
+Published ready-for-review [PR #364](https://github.com/Jseow008/ThePlayBook/pull/364), previous head `403e1ae2`, on `codex/luna-full-flow-test`, managed worktree `/Users/j/.codex/worktrees/luna-full-flow-test/Lifebook`, freshly fetched base `0b6a6aad`; application commit `88b9fb5d`. User authorized PR preparation and hosted verification while keeping production unchanged. Library/Notes/Author pin gpt-6-luna, reasoning none and storage off; legacy provider/model overrides are ignored, missing OpenAI credentials fail closed, and there is no escalation/fallback. Prompts, schema, budgets, quotas, citations, replay behavior and UI remain unchanged. Launch/readiness checks, CI environment fixtures and operations guidance require OpenAI. No migrations or production database push are needed; existing production migration parity was verified read-only.
 
 User chose Jseow008/Mumbai and explicitly accepted the quoted $10/month temporary project charge. Disposable ref `uwchdhayeqhvlpocqqyz` was guarded against production `xmuqsgfxuaaophxnwure`; only isolated workdirs were linked. Full hosted replay/reset, clean candidate dry-run, all 14 schema fingerprint categories, normalized fresh generated type parity, five ACL/RLS/storage checks and DB-002 transactional highlight preservation passed. Advisors show matching expected INFO findings with unused-index differences explained by the empty workload; no warning/error regression. All seven built-application smoke checks passed with zero skipped. Exact candidate-bound evidence: [hosted qualification](evidence/luna-none-hosted-20261114.json), [advisors](evidence/luna-none-hosted-advisors-20261114.json), [provider audit](evidence/luna-none-hosted-provider-audit-20261114.json).
 
@@ -12,7 +12,7 @@ Failures retained: initial candidate spend policy disabled (no Luna request), en
 
 Validation: 137 initial focused tests, 205 security tests, full lint, production build and final typecheck passed. Full unit run had 2,440 passed/318 skipped/one failure from the remaining Anthropic-only readiness fixture; corrected that fixture and the final affected set passed 71 tests across five files, including launch/workflow contracts and fresh hash-bound none provenance. Earlier stale-provider/low-provenance expectations and missing FFmpeg were corrected with affected reruns; original failures remain in local logs. No application code changed after hosted qualification. All 34 capacity-harness tests passed. Nonsecret supplementary logs/screenshots are local under `output/luna-hosted-20261114/`; scratch infrastructure is excluded from the PR.
 
-Cleanup confirmed: fixture accounts/content removed, candidate project deleted and absent from project list, owned test services stopped/removed, temporary credentials/private types/link workdirs deleted. No unrelated services touched. Sixteen observed OpenAI calls across hosted attempts all returned HTTP 200 using Luna none; 20,099 input tokens (3,592 cached), 1,882 output tokens; estimated OpenAI $0.002628, excluding Google/hosting and not an invoice. Actual temporary Supabase billed amount is unconfirmed. One agent; Codex token/precise wall-clock usage unavailable. Exact next action: commit final evidence, inspect/push focused scope, open ready-for-review PR, attach it and verify GitHub file list/PR scope. Do not auto-merge, deploy or change production under the user's standing instruction.
+Cleanup confirmed: fixture accounts/content removed, candidate project deleted and absent from project list, owned test services stopped/removed, temporary credentials/private types/link workdirs deleted. No unrelated services touched. Sixteen observed OpenAI calls across hosted attempts all returned HTTP 200 using Luna none; 20,099 input tokens (3,592 cached), 1,882 output tokens; estimated OpenAI $0.002628, excluding Google/hosting and not an invoice. Actual temporary Supabase billed amount is unconfirmed. One agent; Codex token/precise wall-clock usage unavailable. GitHub file list matches the intended 25 files; PR attached to this task; automatic merging is disabled. Latest recommendation check: PR scope, validate, Catalog Search Evidence and Vercel preview passed. Security Validation failed during dependency installation because the npm registry connection reset while downloading Playwright (ECONNRESET), before completing security verification; no security finding was established by that failure. GitHub reports merge state DIRTY, requiring conflict resolution against current main. No rerun, branch change, merge or deployment was performed during this read-only recommendation check. This publication checkpoint is local/uncommitted to avoid restarting unchanged application checks solely for a status edit. User authorized conflict resolution, security rerun and updated-preview verification, with production unchanged. Merged main `a9ad1c96`; the only conflict was this shared status document, resolved by retaining both workstreams and the latest local checkpoint. Application/chat files and qualification hashes are unchanged; incoming content-cache code was already on main. Exact next action: run affected interaction/provenance checks, push the resolved candidate, wait for its required gates and inspect its exact preview. No new paid benchmark is needed for a documentation-only conflict resolution. Await a new user rollout instruction before auto-merge, deployment or production changes.
 
 ## Luna none reasoning full-flow qualification — 14 November 2026
 
@@ -25,6 +25,61 @@ Provider observer recorded 15 OpenAI requests, all gpt-6-luna with reasoning non
 Failures preserved: two initial pilots stopped before Luna because local NOTES_REPLAY_KEYS was missing; fresh local keys fixed the setup. Third pilot completed all three chats and citation but failed a harness expectation of CSRF 403 instead of actual schema-invalid 400; pilot-review.json accepted only the completed chat evidence without relabeling its failed outcome. Initial fixed acquisition completed Notes then DevTools response.text failed reading Library body. Remaining acquisition used browser fetch clones, but review found an earlier completed stream could be mistaken for a later turn; affected claims rejected. Final stream-confirm acquisition bound capture offsets to each request and passed Library followup and two-turn author assertions. Ordinary Notes extracts were separately confirmed with the corrected recorder. No model/prompt tuning against results, no favorable model-result reruns, and no hidden failures. Scope/evidence provenance and limitations are in `output/luna-full-flow-20261114/summary.json`, per-attempt sanitized records, provider audit, screenshots and readable `report.html`; private infrastructure logs remain `/private/tmp/luna-full-flow-evidence/`.
 
 Cleanup verified: zero disposable fixture users/content; owned local app/bridge stopped; only `netflux-luna-flow-20261114` Supabase services and volumes and `netflux-luna-flow-redis` removed. Copied API credentials in the private environment file and local-key startup log deleted. Other pre-existing Docker services untouched. One agent; Codex token/precise wall-clock usage unavailable. No implementation blocker remains for these targeted local paths. Exact next action: report that Luna none passed local end-to-end checks; any rollout remains a separate action with normal PR/release gates and hosted-environment smoke checks. Do not claim production ingress, hosted latency, full authorization audit or broad semantic coverage from this sample.
+
+## Content lookup caching/reuse — 14 November 2026
+
+In progress on `codex/content-cache-reuse` in `/Users/j/Desktop/Lifebook-content-cache`,
+based on `0b6a6aad`. Original dirty worktree is untouched; one agent, no delegation.
+Production baseline at 390px and 1440px: three Library views made three lookups,
+returning six records for three unique items. Candidate needs one lookup/three
+records on both profiles, with zero additional calls on three revisits and no
+unavailable placeholders, overflow or browser exceptions. Browse and Search render.
+
+Changes add a public server batch cache with canonical IDs, the existing catalog
+invalidation tag and strict 60-second age checks; POST responses remain no-store.
+Browser records are shared across lists, preserve display order and cancellation,
+fence older responses, cache authoritative absence, and propagate refreshed/removal
+results. Server remaining freshness is passed to the browser so lifetimes cannot
+stack. No private reading state or persistent client storage is added.
+
+44 focused tests pass, plus lint, standalone TypeScript and production build.
+Hosted candidate uses synthetic fixtures only in project `bayymbcmehxudbwrvzjm`,
+branch `fc877dbe-3ae5-4aee-8634-d7f42c07c0ba`, parent `xmuqsgfxuaaophxnwure`.
+Prior temporary-branch cost authorization applies ($0.01344/hour rechecked).
+Private credentials are only under the private directory named by
+`/tmp/lifebook-cache-hosted-dir`; never print them. Isolated app on port 3202,
+owned Redis container `lifebook-content-cache-redis`, REST adapter port 8402.
+
+Hosted replay has 117 migrations, latest 20261105094614; isolated guarded dry-run
+is up to date. All 14 schema categories and fresh public types match production.
+Six permission checks and transactional DB-002 preservation pass. Security advisor
+matches the same 12 intentionally locked private tables; candidate unused-index
+counts reflect its lack of query history. All seven application smoke checks pass.
+Initial smoke auth callback needed a local forwarding-host override; initial
+replacement fixture was an unrelated draft, correctly rejected by the existing
+version guard, followed by a missing version-request timestamp in the harness.
+The corrected actual version/replacement routes pass. No application change was
+needed for these fixture/ingress corrections.
+
+Real hosted cache hit, canonical reordered IDs, publish/edit/withdraw/republish/
+delete invalidation and actual linked draft replacement pass. The first expired
+read after an external write returned the new absence with `refresh`, and cached
+hits still hit the admission boundary at 30 then 429. Hosted branch deleted,
+owned services stopped, and private workdir/credentials removed. Sanitized proof:
+[hosted verification](evidence/content-cache-hosted-20261114.json), candidate
+`441d3dab8e800aaf329e22018125bd441bf7cb48`; later commits only change evidence and tests.
+
+PR [#363](https://github.com/Jseow008/ThePlayBook/pull/363) is open. Initial CI
+passed 2,457 tests, skipped 318 and failed one old overlapping-list test expecting
+two requests; corrected it to assert reuse and added genuine pending-card coverage.
+All 44 focused tests now pass; application behavior is unchanged from hosted proof.
+Initial security and Catalog Search checks passed. Auto-merge was disabled while
+correcting tests. Next: push test correction, inspect scope and re-enable squash
+auto-merge only after the new PR scope check passes. Follow exact production alias, verify Library and server-cache
+behavior at both widths, report before another group. No production schema or
+personal data mutation; no push is applicable. Request/record reduction is
+measured; latency is not a controlled benchmark. No commit changes after hosted
+build affect application behavior.
 
 ## Cover-only admin saves — 13 November 2026
 

@@ -258,7 +258,7 @@ describe("useBatchContentItems", () => {
         expect(result.current.data?.map((item) => item.id)).toEqual(ids);
     });
 
-    it("keeps previous batch data filtered to the latest ids while a new batch loads", async () => {
+    it("reuses a fresh overlapping batch without a second lookup", async () => {
         const { useBatchContentItems } = await loadUseRecommendations();
         const wrapper = createWrapper();
         const firstIds = ["item-1", "item-2"];
@@ -291,7 +291,28 @@ describe("useBatchContentItems", () => {
         expect(result.current.data?.map((item) => item.id)).toEqual(nextIds);
         expect(result.current.isLoading).toBe(false);
 
+        expect(result.current.isFetching).toBe(false);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("filters previous cards while genuinely missing records load", async () => {
+        const { useBatchContentItems } = await loadUseRecommendations();
+        const pending = createDeferred<Response>();
+        fetchMock.mockResolvedValueOnce(Response.json([
+            createRecommendationItem("item-1", "First"),
+            createRecommendationItem("item-2", "Second"),
+        ])).mockReturnValueOnce(pending.promise);
+        const { result, rerender } = renderHook(
+            ({ ids }) => useBatchContentItems(ids),
+            { initialProps: { ids: ["item-1", "item-2"] }, wrapper: createWrapper() },
+        );
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+        rerender({ ids: ["item-2", "item-3"] });
         await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+        expect(result.current.data?.map(item => item.id)).toEqual(["item-2"]);
+        expect(result.current.isFetching).toBe(true);
+        pending.resolve(Response.json([createRecommendationItem("item-3", "Third")]));
+        await waitFor(() => expect(result.current.data?.map(item => item.id)).toEqual(["item-2", "item-3"]));
     });
 });
 
