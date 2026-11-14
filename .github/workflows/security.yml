@@ -173,7 +173,7 @@ jobs:
           npm run database:catalog-search-runtime
           npm run database:personal-evidence-runtime
           npm run database:personal-retrieval-quality-runtime
-          PERSONAL_EVIDENCE_SELECTOR_MODEL=gpt-6-luna \
+          PERSONAL_RETRIEVAL_RECORDED_MODEL=luna-low \
             PERSONAL_SELECTION_FIXTURE=tests/fixtures/retrieval/provider-selections-v2-luna-low.json \
             PERSONAL_RETRIEVAL_QUALITY_REPORT="${{ runner.temp }}/personal-retrieval-luna-quality.json" \
             npm run database:personal-retrieval-quality-runtime

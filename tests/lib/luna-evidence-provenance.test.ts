@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { RECORDED_LUNA_LOW_MODEL_CONFIG } from "../fixtures/retrieval/recorded-luna-low-config";
 import { describe, expect, it } from "vitest";
 import { PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG, buildPersonalEvidenceSelectionRequest, derivePersonalEvidenceSelectionIds, personalEvidenceSelectionRequestHash } from "@/lib/server/personal-evidence-selector";
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -24,7 +25,7 @@ describe("Luna recorded decisions remain bound to evaluated requests and adapter
         expect(evaluated.failure).toBeNull();
         expect(evaluated.totals.calls).toBe(168);
         expect(fixture.sourceSha256).toBe(sha(raw));
-        expect(fixture.modelConfig).toMatchObject({ model: "gpt-6-luna", reasoningEffort: "low", version: "personal-evidence-selector-model-v3" });
+        expect(fixture.modelConfig).toEqual(RECORDED_LUNA_LOW_MODEL_CONFIG);
         expect(fixture.modelConfig).not.toEqual(PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG);
         expect(evaluated.adapterSha256).toBe(sha(adapter));
         expect(adapter.slice(adapter.indexOf("import "))).toBe(production.slice(production.indexOf("import ")));

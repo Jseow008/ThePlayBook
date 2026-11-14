@@ -14,7 +14,8 @@ import { buildLibraryMetadataContext, type LibraryItemRow } from "@/lib/server/l
 import { MAX_LIBRARY_CONTEXT_CHARS, getOutputTokenCap, getAnthropicModelName, detectAskIntent, buildRetrievalFallbackText, getNotesOutputTokenCap, getNotesAnthropicModelName, NOTES_NO_EVIDENCE, LIBRARY_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
 import { chunkPersonalEvidenceText, rankSourceEvidenceSpans, PersonalEvidenceVectorCache } from "@/lib/server/personal-evidence-ranking";
 import {
-    PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG, PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG, canonicalPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash,
+    PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG, canonicalPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash,
+    type PersonalEvidenceSelectionModelConfig,
     type CanonicalPersonalEvidenceSelectionRequest,
     type PersonalEvidenceSelectionCandidate, type PersonalEvidenceSelectionGenerator,
 } from "@/lib/server/personal-evidence-selector";
@@ -22,6 +23,7 @@ import {
     readFrozenCorpus, expandedEvidence, readDatabaseVectorFixture, corpusHash, productionRetrievalHashes, databaseGenerationInputHash, fixtureSupportOutcomes, validateRecordedProviderSelectionOutput, QUALITY_CONFIG,
     type FixtureCase, type FixtureEvidence, type VectorBank,
 } from "../../scripts/evaluate-personal-retrieval";
+import { RECORDED_LUNA_LOW_MODEL_CONFIG } from "../fixtures/retrieval/recorded-luna-low-config";
 
 const corpusVersion = process.env.PERSONAL_RETRIEVAL_CORPUS_VERSION ?? "v1";
 const databaseUrl = process.env.DB107_ADMIN_DATABASE_URL;
@@ -32,8 +34,12 @@ const reportPath = resolve(process.env.PERSONAL_RETRIEVAL_QUALITY_REPORT ?? (cor
 const captureSelectionInputs = process.env.CAPTURE_PERSONAL_SELECTION_INPUTS === "1";
 const selectionInputsPath = resolve(process.env.PERSONAL_SELECTION_INPUTS_PATH ?? (corpusVersion === "v1" ? "artifacts/personal-selection-inputs.json" : "artifacts/personal-selection-inputs-v2-selector-v4.json"));
 const selectionFixturePath = resolve(process.env.PERSONAL_SELECTION_FIXTURE ?? (corpusVersion === "v1" ? "tests/fixtures/retrieval/provider-selections-v1.json" : "tests/fixtures/retrieval/provider-selections-v2-selector-v4.json"));
-const selectionModelConfig = process.env.PERSONAL_EVIDENCE_SELECTOR_MODEL === "gpt-6-luna"
-    ? PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG : PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG;
+const recordedModel = process.env.PERSONAL_RETRIEVAL_RECORDED_MODEL;
+if (recordedModel && recordedModel !== "luna-low") throw new Error("Unknown historical selection replay model.");
+// Replay binds historical responses to their original settings; current none
+// qualification is independently checked by luna-evidence-provenance.test.ts.
+const selectionModelConfig = recordedModel === "luna-low"
+    ? RECORDED_LUNA_LOW_MODEL_CONFIG : PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG;
 const configured = Boolean(databaseUrl && apiUrl && anonKey && existsSync(vectorsPath));
 if (process.env.PERSONAL_RETRIEVAL_QUALITY_RUNTIME_REQUIRED === "1" && !configured) {
     throw new Error("Personal retrieval quality requires the disposable DB107 database/API/anon key and recorded real-provider vector fixture.");
@@ -246,6 +252,7 @@ describeDatabase("frozen personal retrieval corpus through real Auth and product
             version: "personal-retrieval-database-quality-v1", corpusSha256: corpusSha256,
             mode: captureSelectionInputs ? "diagnostic-candidate-capture-not-a-quality-pass" : "recorded-provider-selection-replay",
             vectorFixtureSha256, provider: { model: QUALITY_CONFIG.embeddingModel, dimensions: QUALITY_CONFIG.dimensions, taskType: QUALITY_CONFIG.embeddingTaskType },
+            selectionModelConfig, selectionEvidenceScope: "historical response replay, not current model qualification",
             executedCases: results.size, expectedCases: corpus.cases.length * (captureSelectionInputs ? 1 : QUALITY_CONFIG.runs), materializedRecordsBeforeLifecycle: rows.length,
             metrics, productionHashes, selectionFixtureSha256: !captureSelectionInputs && existsSync(selectionFixturePath)
                 ? createHash("sha256").update(readFileSync(selectionFixturePath)).digest("hex") : null,
@@ -293,7 +300,9 @@ describeDatabase("frozen personal retrieval corpus through real Auth and product
             const request = canonicalPersonalEvidenceSelectionRequest(actualRequest);
             const parsed = JSON.parse(request.prompt) as { candidates: PersonalEvidenceSelectionCandidate[] };
             const candidateIds = parsed.candidates.map((candidate) => candidate.id);
-            const inputSha256 = personalEvidenceSelectionRequestHash(request, selectionModelConfig);
+            // The current dispatch type permits none only. Hashing serializes
+            // settings unchanged, including historical low in this offline test.
+            const inputSha256 = personalEvidenceSelectionRequestHash(request, selectionModelConfig as PersonalEvidenceSelectionModelConfig);
             const previous = capturedSelections.get(testCase.id);
             if (previous && previous.inputSha256 !== inputSha256) throw new Error("Production selector input changed across deterministic fixture runs.");
             capturedSelections.set(testCase.id, { caseId: testCase.id, inputSha256, request,
