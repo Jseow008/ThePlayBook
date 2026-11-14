@@ -3,7 +3,7 @@ import { AuthForm } from "@/components/ui/AuthForm";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { DEFAULT_LOGIN_REDIRECT_PATH, normalizeLoginNextPath } from "@/lib/auth-redirect";
+import { getLoginBackPath, normalizeLoginNextPath } from "@/lib/auth-redirect";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import { APP_NAME } from "@/lib/brand";
@@ -39,7 +39,7 @@ export default async function LoginPage({
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
             <Link
-                href={DEFAULT_LOGIN_REDIRECT_PATH}
+                href={getLoginBackPath(next)}
                 className="absolute top-8 left-8 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />

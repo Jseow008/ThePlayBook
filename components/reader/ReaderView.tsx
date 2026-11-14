@@ -15,6 +15,7 @@ import { useReadingProgress, type ReadingProgressData } from "@/hooks/useReading
 import { useReadingTimer } from "@/hooks/useReadingTimer";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
+import { SignInLink } from "@/components/ui/SignInLink";
 
 const CompletionCard = dynamic(() => import("./CompletionCard").then((mod) => mod.CompletionCard));
 import { TextSelectionToolbar } from "./TextSelectionToolbar";
@@ -1222,7 +1223,11 @@ export function ReaderView({ content }: ReaderViewProps) {
                         <Link href="/notes" className="ml-3 underline">Open Notes</Link>
                     </div>
                 )}
-                {destinationId && destination.requiresSignIn && <p role="status" className="mb-4 text-sm">Sign in to open this saved passage. <Link href={`/login?next=${encodeURIComponent(`/read/${content.id}?highlightId=${destinationId}`)}`} className="underline">Sign in</Link></p>}
+                {destinationId && destination.requiresSignIn && (
+                    <p role="status" className="mb-4 text-sm">
+                        Sign in to open this saved passage. <SignInLink className="underline">Sign in</SignInLink>
+                    </p>
+                )}
                 {destinationId && !destination.requiresSignIn && destination.isPending && <p role="status" className="mb-4 text-sm text-muted-foreground">Locating saved passage…</p>}
 
                 {/* Accordion Sections */}
