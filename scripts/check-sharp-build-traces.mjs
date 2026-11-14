@@ -6,6 +6,7 @@ const nextDir = path.join(rootDir, ".next");
 const platformPackage = `@img/sharp-${process.platform}-${process.arch}`;
 const libvipsPackage = `@img/sharp-libvips-${process.platform}-${process.arch}`;
 const routeTraces = [
+  "server/app/api/media/cover/route.js.nft.json",
   "server/app/api/og/content/[id]/route.js.nft.json",
   "server/app/api/og/content/[id]/story/route.js.nft.json",
   "server/app/api/admin/story-images/process/route.js.nft.json",

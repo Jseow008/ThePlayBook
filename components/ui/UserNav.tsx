@@ -70,7 +70,6 @@ export function UserNav() {
         user?.user_metadata?.avatar_icon
             ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
             : user?.user_metadata?.avatar_url;
-    const avatarIsDicebear = typeof avatarSrc === "string" && avatarSrc.includes("api.dicebear.com");
 
     if (!hasMounted || user === undefined) {
         return (
@@ -109,7 +108,7 @@ export function UserNav() {
                             alt={user.user_metadata.full_name || "User"}
                             fill
                             sizes="32px"
-                            unoptimized={avatarIsDicebear}
+                            unoptimized
                             className="object-cover rounded-full"
                         />
                     ) : (

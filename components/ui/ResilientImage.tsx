@@ -3,6 +3,7 @@
 import type { ReactNode, SyntheticEvent } from "react";
 import { useEffect, useState } from "react";
 import Image, { type ImageProps } from "next/image";
+import { coverImageLoader, publicCoverPath } from "@/lib/cover-image";
 import {
     reportImageFallback,
     type ImageSurface,
@@ -25,9 +26,11 @@ export function ResilientImage({
     onError,
     src,
     surface,
-    unoptimized = false,
+    loader,
+    unoptimized,
     ...props
 }: ResilientImageProps) {
+    const directSource = unoptimized ?? (!loader && !publicCoverPath(src));
     const [mode, setMode] = useState<ResilientImageMode>("initial");
 
     useEffect(() => {
@@ -52,14 +55,15 @@ export function ResilientImage({
     return (
         <Image
             {...props}
+            loader={loader ?? (publicCoverPath(src) ? coverImageLoader : undefined)}
             alt={alt}
             key={`${mode}:${src}`}
             src={src}
-            unoptimized={unoptimized || mode === "direct"}
+            unoptimized={directSource || mode === "direct"}
             onError={(event) => {
                 onError?.(event);
 
-                if (mode === "initial" && !unoptimized && enableDirectRetry) {
+                if (mode === "initial" && !directSource && enableDirectRetry) {
                     setMode("direct");
                     return;
                 }

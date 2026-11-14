@@ -28,7 +28,8 @@ export function Logo({
       aria-label={APP_NAME}
     >
       <Image
-        src="/images/netflux-logo.png"
+        src="/images/netflux-logo-small.webp"
+        unoptimized
         alt={`${APP_NAME} logo`}
         fill
         sizes={`${calculatedWidth}px`}

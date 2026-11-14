@@ -8,11 +8,14 @@ vi.mock("next/image", () => ({
         fill,
         priority,
         unoptimized,
+        loader,
+        src,
         ...props
     }: React.ImgHTMLAttributes<HTMLImageElement> & {
         fill?: boolean;
         priority?: boolean;
         unoptimized?: boolean;
+        loader?: (props: { src: string; width: number }) => string;
     }) => {
         void fill;
         void priority;
@@ -21,6 +24,8 @@ vi.mock("next/image", () => ({
         return (
             <img
                 alt={alt}
+                src={src}
+                data-loader={loader && typeof src === "string" ? loader({ src, width: 256 }) : undefined}
                 data-unoptimized={String(Boolean(unoptimized))}
                 {...props}
             />
@@ -33,6 +38,21 @@ describe("ResilientImage", () => {
         vi.restoreAllMocks();
     });
 
+    it("loads third-party and static sources directly by default", () => {
+        render(<ResilientImage src="https://example.com/image.jpg" alt="External image" width={32} height={32} surface="content-card" />);
+        expect(screen.getByAltText("External image")).toHaveAttribute("data-unoptimized", "true");
+    });
+
+    it("requests a resized public cover first and retains direct recovery", () => {
+        vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://test.supabase.co");
+        render(<ResilientImage src="https://test.supabase.co/storage/v1/object/public/media/covers/test.jpg" alt="Owned cover" width={256} height={384} surface="content-card" />);
+        expect(screen.getByAltText("Owned cover")).toHaveAttribute("data-loader", "/api/media/cover?file=test.jpg&w=256");
+        expect(screen.getByAltText("Owned cover")).toHaveAttribute("data-unoptimized", "false");
+        fireEvent.error(screen.getByAltText("Owned cover"));
+        expect(screen.getByAltText("Owned cover")).toHaveAttribute("data-unoptimized", "true");
+        vi.unstubAllEnvs();
+    });
+
     it("switches to a direct retry and strips sensitive URL parts from telemetry", async () => {
         const sendBeacon = vi.fn(() => true);
         Object.defineProperty(window.navigator, "sendBeacon", {
@@ -43,6 +63,7 @@ describe("ResilientImage", () => {
         render(
             <ResilientImage
                 alt="Remote cover"
+                unoptimized={false}
                 height={320}
                 src="https://example.com/covers/test.jpg?token=secret#fragment"
                 surface="content-card"
@@ -82,6 +103,7 @@ describe("ResilientImage", () => {
         render(
             <ResilientImage
                 alt="Remote cover"
+                unoptimized={false}
                 fallback={<div data-testid="image-fallback">Fallback</div>}
                 height={320}
                 src="https://example.com/covers/final-failure.jpg"
@@ -137,6 +159,7 @@ describe("ResilientImage", () => {
         const { rerender } = render(
             <ResilientImage
                 alt="Local cover"
+                unoptimized={false}
                 fallback={<div data-testid="image-fallback">Fallback</div>}
                 height={320}
                 src="/images/hero-section.webp"
@@ -153,6 +176,7 @@ describe("ResilientImage", () => {
         rerender(
             <ResilientImage
                 alt="Local cover"
+                unoptimized={false}
                 fallback={<div data-testid="image-fallback">Fallback</div>}
                 height={320}
                 src="/images/notes.webp"

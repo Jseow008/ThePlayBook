@@ -92,7 +92,6 @@ export function NetfluxSidebar() {
         user?.user_metadata?.avatar_icon
             ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
             : user?.user_metadata?.avatar_url;
-    const avatarIsDicebear = typeof avatarSrc === "string" && avatarSrc.includes("api.dicebear.com");
 
     useEffect(() => {
         setHasMounted(true);
@@ -154,7 +153,8 @@ export function NetfluxSidebar() {
                     <div className="relative h-8 w-32 transition-opacity duration-300 opacity-100">
                         {/* Full Logo when expanded */}
                         <Image
-                            src="/images/netflux-logo.png"
+                            src="/images/netflux-logo-small.webp"
+                            unoptimized
                             alt={APP_NAME}
                             fill
                             sizes="150px"
@@ -458,7 +458,7 @@ export function NetfluxSidebar() {
                                     alt={user.user_metadata.full_name || "User"}
                                     fill
                                     sizes="32px"
-                                    unoptimized={avatarIsDicebear}
+                                    unoptimized
                                     className="object-cover rounded-full"
                                 />
                             ) : (
