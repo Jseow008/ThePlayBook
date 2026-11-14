@@ -1,0 +1,100 @@
+{
+  "version": "notes-panel-opening-fix-v1",
+  "date": "2026-11-15",
+  "baseCommit": "f94320d3bbda315966565db0ad35b4e87b649982",
+  "appFile": "app/(public)/notes/client-page.tsx",
+  "appSourceSha256": "19439035d466177052d11af659ff2b133dd9282b2499979459dcf680ae1106f0",
+  "baseline": {
+    "productionDeployment": "dpl_9XcM4Tsr9rVHp24p2TXtQjWbuXHJ",
+    "cases": [
+      {
+        "network": "normal",
+        "closedAfterMs": 1556
+      },
+      {
+        "openingNavigationDelayMs": 700,
+        "closedAfterMs": 1619
+      }
+    ],
+    "cause": "Opening query was overwritten by context registration using an older query; registering the child also changed its React key."
+  },
+  "candidate": {
+    "productionBuildPassed": true,
+    "browserOrigin": "isolated local Next production build",
+    "authAndData": "Real Supabase password authentication/SSR cookies and synthetic private reflection on a disposable internal user; existing public source read only.",
+    "chatResponse": "Mocked delayed SSE at the browser boundary, no live model calls.",
+    "passedChecks": [
+      {
+        "id": "fresh-open-stable",
+        "contextRegistered": true,
+        "openingServerNavigations": 0,
+        "observedMs": 3000
+      },
+      {
+        "id": "close-reopen-retains-draft",
+        "passed": true
+      },
+      {
+        "id": "back-forward-filter-and-panel-state",
+        "passed": true
+      },
+      {
+        "id": "pending-response-survives-registration",
+        "mocked": true,
+        "delayMs": 2500,
+        "passed": true
+      },
+      {
+        "id": "reload-recovers-chat",
+        "passed": true
+      },
+      {
+        "id": "mobile-full-notes-chat",
+        "passed": true,
+        "noHorizontalOverflow": true
+      }
+    ],
+    "pageErrors": [],
+    "sourceHashVerified": true
+  },
+  "validation": {
+    "componentTests": 34,
+    "relatedFocusedTests": 88,
+    "fullUnitRun": {
+      "passed": 2464,
+      "skipped": 318,
+      "failed": 2,
+      "failureType": "Both 5000ms timeouts under concurrent build load."
+    },
+    "affectedRerun": {
+      "passed": 44,
+      "timeoutBudgetsUnchanged": true
+    },
+    "capacityHarnessPassed": 34,
+    "lintPassed": true,
+    "typecheckPassed": true,
+    "newCiBrowserRegression": "Six configured viewport cases against loopback-only Supabase; pending CI at evidence creation."
+  },
+  "failedAttempts": [
+    "Initial browser acquisition confirmed opening/draft retention but exposed Next history-hook notification being skipped when router-private history state was reused. Corrected the new history calls and navigation probe to the documented null-state API, rebuilt and passed all six browser checks.",
+    "Initial typecheck for the new E2E fixture required an explicit cookie callback parameter type; corrected without changing the app."
+  ],
+  "cleanup": {
+    "localBrowserAcquisitions": 2,
+    "disposableAccountsCreated": 2,
+    "disposableAccountsDeleted": 2,
+    "fixturesVerifiedRemoved": true,
+    "ownedServerStopped": true,
+    "copiedCredentials": false,
+    "paidAiCalls": 0,
+    "indexWorkerTriggered": false,
+    "existingReaderRecordsEdited": false,
+    "publicContentCreated": false
+  },
+  "limits": [
+    "UI URL/component lifetime correction only; API/query/auth/replay/model/schema behavior unchanged. No production database push or hosted schema replay applies.",
+    "Local build uses the existing hosted test-user data connection; the chat stream is mocked to hold the pending request. Production model behavior is not newly qualified by this artifact.",
+    "A background Library snapshot-sync warning appeared in the isolated local configuration; not treated as a Notes opening failure or proof of server-side snapshot health.",
+    "Unavailable local Vercel analytics scripts and navigation/prefetch cancellations are recorded; no chat-request cancellation or page exception in the accepted browser acquisition."
+  ]
+}
