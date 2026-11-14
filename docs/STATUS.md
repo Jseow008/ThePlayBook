@@ -36,18 +36,19 @@ The corrected actual version/replacement routes pass. No application change was
 needed for these fixture/ingress corrections.
 
 Real hosted cache hit, canonical reordered IDs, publish/edit/withdraw/republish/
-delete invalidation pass. Actual linked draft replacement passed. Waiting for the
-first expired read after an external write, followed by admission checks, before
-cleanup and PR. Evidence: `/tmp/lifebook-cache-{db-result,schema-result,hosted-browser}.json`,
-API logs `/tmp/lifebook-cache-api-{run,final}.log`. Build source is an isolated copy
-without production env files. No production schema/data mutation is needed.
+delete invalidation and actual linked draft replacement pass. The first expired
+read after an external write returned the new absence with `refresh`, and cached
+hits still hit the admission boundary at 30 then 429. Hosted branch deleted,
+owned services stopped, and private workdir/credentials removed. Sanitized proof:
+[hosted verification](evidence/content-cache-hosted-20261114.json), candidate
+`441d3dab8e800aaf329e22018125bd441bf7cb48`; final evidence-only commit follows.
 
-Next: finish expiry/admission proof, save sanitized evidence, remove hosted branch,
-private credentials and owned services; commit scoped files, ready PR, inspect scope
-and enable squash auto-merge only after PR scope passes. Follow the exact production
-alias, verify Library and shared-cache behavior on mobile/desktop, report before
-another group. No commit or PR yet. Production API timing is not a controlled
-latency benchmark; claim request/record reduction only.
+Next: publish ready PR, inspect GitHub scope and enable squash auto-merge after
+PR scope passes. Follow exact production alias, verify Library and server-cache
+behavior at both widths, report before another group. No production schema or
+personal data mutation; no push is applicable. Request/record reduction is
+measured; latency is not a controlled benchmark. No commit changes after hosted
+build affect application behavior.
 
 ## Cover-only admin saves — 13 November 2026
 
