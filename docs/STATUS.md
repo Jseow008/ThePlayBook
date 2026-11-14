@@ -2,90 +2,96 @@
 
 ## Mobile startup improvements — 14–15 November 2026 (Singapore)
 
-In progress on fresh `codex/mobile-startup`, worktree
-`/Users/j/Desktop/Lifebook-mobile-startup`, base `913351d5`, measured app `2bc94405` (original base `f94320d3`).
-Original dirty app/cache/region/555 worktrees untouched; one agent, no delegation.
-Authorized mobile startup improvements and mobile/desktop verification, report
-before further groups. Layout/copy/fonts/cards/foreground art unchanged; Sentry
-stays eager. Only browser telemetry scheduling and decorative image sizing change.
-No DB/query/auth/data hydration/mutation paths changed, so OPS§2.2 hosted database
-release gate is N/A for this scope. No database move or infrastructure-plan change.
+Active `codex/mobile-startup`, `/Users/j/Desktop/Lifebook-mobile-startup`, current
+base `913351d5` (#366), head `ee8ac916` plus pending test-only CI correction/docs.
+Initially branched from freshly fetched `f94320d3`. Original dirty app/cache/region/
+555 worktrees untouched. One agent, no delegation, no model/provider calls. Authorized
+startup improvements and mobile/desktop verification; report before further groups.
 
-PostHog was eagerly imported from both instrumentation-client and lib/analytics.
-A lightweight FIFO now defers the SDK until window load + idle (1500ms bound),
-expedited by interaction/hidden visibility. Event timestamp/URL and identity/reset
-order retained; Search URL redaction unchanged. Import/init failure is isolated.
-The cover-only Browse hero's heavily blurred decorative backdrop now requests
-128px instead of256px CSS sizes, at low priority; foreground sizes stay unchanged.
+PostHog was eager in instrumentation-client and lib/analytics. Lightweight FIFO now
+defers SDK until windowload+idle (1500ms bound), expedited by interaction/hidden
+visibility. Preserve queued event URL/time, identify/reset order and original empty
+host/token disable guard. Sentry remains eager; import/init failure isolated. Browse
+cover-only decorative blur sizes256→128px, low priority; foreground art/sizes, layout,
+copy/fonts and data paths unchanged. No DB/auth/query/hydration/mutation application
+change; OPS§2.2 hosted database gate N/A. No region/plan/schema/production-data change.
 
-Frozen comparison completed:36 fresh loads,3 rounds × Home/Browse/Saved × mobile
-390/DPR2,1.6Mbps/80ms/4xCPU and desktop1440/DPR1 native × matched previews. Reduced
-motion holds first hero frame,8s observation, alternating A/B order; backend batch
-prewarmed before Saved pairs. This is a small directional lab comparison, not real
-user/cold-server/cached-visit evidence. Protected Preview interception disables
-HTTP browser cache equally; cached revisit timings were excluded after a pilot
-proved CDP cache override did not restore caching. All36 return200, load visible
-images, no overflow/render faults/HTTP failures. Private artifacts:
-`/tmp/lifebook-mobile-startup-20261114` (0700), frozen-protocol/comparison/summary.json.
+Frozen36-load comparison: three alternating rounds, Home/Browse/Saved, mobile390/DPR2
+1.6Mbps/80ms/4xCPU and desktop1440/DPR1 native. Matched Preview config/defaultiad1,
+batch bom1; reduced motion fixes first hero frame,8s observation, prewarmed batch.
+All36 HTTP200/ready, visible images loaded, no overflow/render faults/HTTP failures.
+Mobile Browse LCP5.144→4.768s, blurred cover41→9KiB (640→256 physical pixels). LCP
+target changes blur→foreground, but unchanged foreground first download also ends
+5.131→4.745s. Saved lookup3.872→3.474s; JS completed before lookup442→373KiB.
+Content-ready4.784→4.786s: no full Library speedup established. Home LCP.884→.840s.
+Desktop Browse LCP.600→.700s with streamed HTML end.348→.467s; no universal desktop
+speedup/no timing-regression claim. SDK deferred, not eliminated; eventual JS similar.
+Small lab sample, not real-user/cold-server/global evidence. Protected routing disables
+HTTP cache equally; failed cache-override pilot retained, cached timings excluded.
+Later duplicate image transfers in protected runs are a cache-interception artifact,
+not normal production download behavior. Native baseline12 loads passed Home/Browse/
+Saved fresh+repeat on both profiles, real zero-transfer/nonzero-body script reuse
+(memory cache, no CDP disk hits). Single sequential production cells are not causal
+latency evidence. All timings retained; no favorable rerun/tuning of frozen samples.
 
-Mobile medians: Browse LCP5.144→4.768s; decorative cover41→9KiB (640→256 physical
-pixels). Saved lookup start3.872→3.474s and JS completed before lookup442→373KiB;
-content-ready4.784→4.786s, so no end-to-end Library speedup established. Home LCP
-0.884→0.840s. Desktop Browse LCP0.600→0.700s (ranges0.596–0.856 vs0.612–1.240);
-streamed HTML response-end median0.348→0.467s accounts for much of this difference.
-Do not claim universal speedup/no desktop timing regression. Desktop Home LCP
-0.440→0.456s; Saved1.836→1.100s but backend variance prevents attribution.
+Measured app `2bc94405` at originalbasef943. Final empty-host guard `c2aa8630` restores
+original disabled-config behavior; configured host verified nonempty, relevant path
+unchanged. Rebased onto #366 after STATUS-only conflict, preserving both workstreams.
+Startup source hashes identical after rebase, unrelated Notes route not loaded/
+prefetched by measured pages. Evidence records reuse limits, exact hashes and results:
+[sanitized record](evidence/mobile-startup-20261115.json). Private artifacts/scripts
+`/tmp/lifebook-mobile-startup-20261114` (0700). No further benchmark needed for the
+subsequent test-only fixture correction; application bytes are unchanged.
 
-Local full unit suite2469 pass/318 intentionally skipped; capacity harness34 pass.
-Focused35 hero/analytics/tracker/search journey tests, full lint and TypeScript pass.
-Both remote Next production builds ready. First analytics browser QA setup attempts
-captured no events: Preview NEXT_PUBLIC_POSTHOG_HOST uses canonical production
-origin, blocked by Preview self-only CSP (diagnostics retained). Not an application
-regression. QA now maps only owned production-origin browser requests to the owned
-candidate Preview with origin-scoped OIDC; analytics ingest locally intercepted.
-This matches production same-origin conditions without changing deployed config.
-Mapped-origin QA passed all4 mobile/desktop delayed/blocked SDK cases: first Home
-and Browse pageviews exactly once, original timestamps, Library content, images,
-no render faults/HTTP failures/overflow. Screenshots with normal motion reviewed.
-Search explicit URL redaction and original queued timestamps pass on both viewports.
-Additional finding: raw Search q still appears in SDK automatic session-entry URL
-metadata (and initial person metadata). Reproduced in unchanged baseline and candidate;
-separate privacy follow-up, no full payload privacy claim. No ingestion sent.
-Final self-review restored original empty-host disable guard;7 deferred-loader tests
-cover empty token/host,35 focused tests overall. Relevant configured branch unchanged;
-frozen evidence remains bound to2bc94405 with reuse rationale in sanitized evidence.
-No synthetic analytics delivered; initial CSP blocked attempts before network.
+Local full unit2469 pass/318 intentionally skipped; capacity harness34 pass. Final
+focused35 across6 files pass, lint/typecheck pass, all remote production builds ready.
+Mapped-origin Preview QA passed4 mobile/desktop delayed/blocked SDK cases: first
+Home/Browse pageviews once, original timestamps, Library ready, visible images, no
+render faults/overflow/HTTP failures. Normal-motion screenshots inspected. Same final
+source atc2aa also passed. Direct Preview initially blocked canonical production
+analytics host by CSP; origin-mapped owned Preview setup resolved this without config
+changes. SDK ingest locally intercepted; no synthetic analytics sent. Route-shutdown
+handling and diagnostic redaction fixed; never print credential-bearing headers.
 
-Temporary Preview IDs: control dpl_9uoThrn2Nn9FfXADqBMktJTYcWqa; initial analytics-only
-candidate dpl_Gk8LBawvaYiP6DxURX2rNUbUAdvQ; combined dpl_9oxncGuVgieJnnybuTcJMh8PrUzW.
-All defaultiad1, batch bom1; never promoted. Baseline detached worktree
-`/Users/j/Desktop/Lifebook-mobile-baseline` atf94320d3. CLI65.12.1 authentication
-works; MCP env metadata403 resolved via native CLI. Access token stays in private
-0600 access.json, env pull deleted immediately. Never use env-run (old CLI misfire).
+Separate finding: explicit Search event/pageview URLs and original queued times pass
+both viewports, but SDK automatic session-entry/initial-person metadata contains raw
+Search q. Independently reproduced unchanged baseline and candidate. This startup
+change does not fix it; no full-payload privacy claim. Recommend separate follow-up.
 
-PR [#367](https://github.com/Jseow008/ThePlayBook/pull/367) opened at final head
-`c2aa8630`. Nine-file Git/local scope verified; PR scope passed, squash auto-merge
-enabled. Required validate/Security Validation and catalog evidence running. Git
-Preview `dpl_G3yYLF1rZB54mXbkxfe4qqEmxAvT` READY at exact final head. Initial analytics-only
-CLI Preview `dpl_Gk8LBawvaYiP6DxURX2rNUbUAdvQ` deleted successfully. Production still
-`dpl_9XcM4Tsr9rVHp24p2TXtQjWbuXHJ` (baseline). Native baseline runs without request
-interception, blocking only telemetry with CDP URLs, so HTTP cache remains active;
-repeat Home already shows2KiB wire vs816KiB fresh. Finish all12 baseline loads.
-No causal speed claim from this single sequential production before/after sample.
+PR [#367](https://github.com/Jseow008/ThePlayBook/pull/367), squash auto-merge enabled;
+Git/local scope clean and PR scope passed. Initial CI superseded by #366 rebase.
+Rebased CI43617237897 passed lint/types/units/build, Security43617237941 and catalog
+passed, but2 Notes phone E2E timed out;226 passed/132 skipped. Main913 independently
+fails same test in43616979211. Artifact action logs show expected persistent local
+snapshot warning covering Send. Test-only correction closes exactly that warning via
+normal Close toast control; no forced clicks/skips/timeouts/assertion relaxation or
+Notes product/data change. Local pinned Supabase2.95.2 isolated project
+mobile-startup-ci-20261115/583xx, full117 migrations latest20261105094614, app3466:
+2 failed-phone cases pass first, remaining4 pass, zero retries/skips. Six synthetic
+accounts globally signed out/deleted, DB count0. Owned server/containers/volumes
+removed, local access keys deleted, retained logs redacted. Existing local stacks
+untouched (default old86-migration stack inspected only). Targeted lint/types pass.
 
-Next: finish native baseline, run final-head Preview functional QA with
-`PREVIEW_URL=https://netflux-cyzbval3z-jseow008s-projects.vercel.app`, monitor PR and
-post-merge CI, then verify released alias/SHA and production mobile/desktop. Preserve
-frozen measurements; do not tune against them. Main #366 (`913351d5`) landed during CI and conflicted only in STATUS.
-Reconciled both status sections intact and rebased. All four startup application
-source hashes are identical to pre-rebase `c2aa8630`; unrelated Notes route changes
-are not loaded/prefetched by the measured pages. Frozen comparison retained under
-that boundary; required CI reruns on the combined final tree. No gate bypass.
-recheck fresh main/scope, publish PR, wait required PR scope before squash auto-merge.
-Requested production verification requires waiting post-merge CI/alias gate; never
-manually promote. Verify released SHA and mobile/desktop flows, real cache revisits
-with native un-routed audit (separate from controlled comparison). Delete only the
-three owned temporary Preview IDs/access file after verification. No next group.
+Next: commit fixture correction and evidence, fresh main/scope check, push and update
+PR validation. Restart watch-pr.cjs after push; its previous session49234 exited on
+failure. Main watcher28553/watch-main.cjs still waits for merge.json. Do not bypass
+required PR or post-merge validate/Security Validation gates or manually promote.
+After exact released alias/SHA: native-audit.cjs Home/Browse/Saved/Reading/Completed
+fresh+repeat on both profiles (20 loads), production qa.cjs and qa-search.cjs with
+ORIGIN=https://www.netflux.blog, inspect screenshots/traffic/cache. Record release,
+cleanup, final findings and stop before another group. Do not push progress-only
+notes during CI (would restart checks). No pending user permission or paid branch.
+
+Owned temporary CLI Previews: control dpl_9uoThrn2Nn9FfXADqBMktJTYcWqa; combined
+candidate dpl_9oxncGuVgieJnnybuTcJMh8PrUzW. Initial dpl_Gk8LBawvaYiP6DxURX2rNUbUAdvQ
+already deleted. Remove remaining2 exact IDs and private0600 access.json after live
+verification. Git-managed PR Previews c2aa dpl_G3yYLF1rZB54mXbkxfe4qqEmxAvT andee8
+ dpl_2roA8fbXyF6uLA52iWSP6CzYrQfr are automatic resources, not manually promoted.
+Baseline detached worktree `/Users/j/Desktop/Lifebook-mobile-baseline` atf943 retained.
+CLI65.12.1 fallback works; MCP env403 resolved via native metadata; development env
+pull deleted immediately, never use env-run. Production baseline identity was
+ dpl_9XcM4Tsr9rVHp24p2TXtQjWbuXHJ. Verify current alias; #366 has separate failed-main
+checks and may still be unreleased. Do not assume any newer deployment is live.
 
 
 ## Notes panel opening fix — 15 November 2026

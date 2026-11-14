@@ -44,6 +44,14 @@ test('Notes opening retains a pending response and its context', async ({ page, 
                 'x-vercel-ai-ui-message-stream': 'v1', 'x-notes-attempt-id': attempt },
                 body: events.map(event => `data: ${JSON.stringify(event)}\n\n`).join('') + 'data: [DONE]\n\n' });
         });
+        // The isolated fixture has no snapshot worker; close its recoverable warning
+        // through the normal control so it does not cover the mobile composer.
+        const snapshotWarning = page.locator('[data-sonner-toast]').filter({
+            hasText: 'Sync unavailable. Your changes remain on this device. Refresh your library to try again.',
+        });
+        await page.addLocatorHandler(snapshotWarning, async warning => {
+            await warning.getByRole('button', { name: 'Close toast', exact: true }).click();
+        });
         await page.goto('/notes');
         const desktop = (page.viewportSize()?.width ?? 0) >= 1024;
         await page.getByRole('button', { name: desktop ? 'Ask these notes' : 'Ask', exact: true }).click();

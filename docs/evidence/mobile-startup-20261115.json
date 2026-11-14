@@ -620,7 +620,7 @@
     "dpl_Gk8LBawvaYiP6DxURX2rNUbUAdvQ",
     "dpl_9oxncGuVgieJnnybuTcJMh8PrUzW"
   ],
-  "cleanup": "Pending after production verification; remove only owned temporary previews and private access file",
+  "cleanup": "Local isolated database/server/keys removed. Initial analytics-only owned Preview deleted; control/combined owned Previews and development OIDC file retained until production verification.",
   "efficiency": {
     "agents": 1,
     "delegation": false,
@@ -636,5 +636,104 @@
   },
   "evidenceReuse": "After measured app2bc94405, restored original empty-host disable guard and parameterized its test. Verified Preview/production host is nonempty canonical production origin. Active configured loading schedule, SDK init settings, imports and image paths unchanged; frozen timing evidence retained with this limitation, not rerun to obtain favorable samples. Final focused tests/types/targeted lint rerun; final remote build/CI still required.",
   "rebasedBase": "913351d5",
-  "rebaseEvidenceReuse": "Main Notes opening PR366 landed while PR367 CI ran. Rebase conflict only in STATUS; both sections preserved. Startup application source hashes unchanged from c2aa8630; Notes client route is not loaded/prefetched by measured Home/Browse/Library. Retain frozen lab results at original base with this limit, require CI on final combined tree and live verification."
+  "rebaseEvidenceReuse": "Main Notes opening PR366 landed while PR367 CI ran. Rebase conflict only in STATUS; both sections preserved. Startup application source hashes unchanged from c2aa8630; Notes client route is not loaded/prefetched by measured Home/Browse/Library. Retain frozen lab results at original base with this limit, require CI on final combined tree and live verification.",
+  "ciFollowup": {
+    "failedRun": 43617237897,
+    "result": {
+      "passed": 226,
+      "skipped": 132,
+      "failed": 2
+    },
+    "failedCases": [
+      "mobile-se Notes opening",
+      "mobile-iphone Notes opening"
+    ],
+    "baselineMainRun": 43616979211,
+    "baselineAlsoFails": true,
+    "cause": "Expected persistent local snapshot-worker configuration warning intercepted the mobile Send click. Playwright action logs identify the toast; not a startup/analytics failure.",
+    "correction": "Test-only locator handler closes only that exact warning through its normal Close toast button. No forced click, skip, timeout or send/response/context assertion relaxed.",
+    "fixtureSha256": "6f96d6a61c3f73bee53bf266aafe25b4936014b88a03cd7e614d0266abb2608d",
+    "localVerification": {
+      "cliVersion": "2.95.2 pinned",
+      "project": "mobile-startup-ci-20261115",
+      "loopbackPorts": "583xx and app3466",
+      "existingOtherStacks": "Untouched; old default inspected read-only and not used",
+      "migrations": 117,
+      "latestMigration": "20261105094614",
+      "mobilePilot": {
+        "startTime": "2026-11-14T17:19:16.355Z",
+        "duration": 20570.683999999997,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "remainingFour": {
+        "startTime": "2026-11-14T17:20:23.539Z",
+        "duration": 37365.643,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "skipped": 0,
+      "retries": 0,
+      "syntheticAccountsCreatedAndRemoved": 6,
+      "accountsRemaining": 0,
+      "snapshotWorker": "Intentionally absent to reproduce exact expected notification",
+      "appCodeChanges": "None; startup and Notes product sources unchanged",
+      "cleanup": "Owned server stopped, project containers/volumes removed, local keys deleted and retained logs redacted"
+    },
+    "next": "Required CI rerun on corrected final head before merge/release"
+  },
+  "imageAttribution": {
+    "control": {
+      "foregroundFirstDownloadEndMs": 5131,
+      "lcpTargets": [
+        "div.-inset-6.absolute.blur-2xl.opacity-45.scale-105>img.object-cover",
+        "div.-inset-6.absolute.blur-2xl.opacity-45.scale-105>img.object-cover",
+        "div.-inset-6.absolute.blur-2xl.opacity-45.scale-105>img.object-cover"
+      ]
+    },
+    "candidate": {
+      "foregroundFirstDownloadEndMs": 4745,
+      "lcpTargets": [
+        "img.object-[50%_30%].object-cover",
+        "img.object-[50%_30%].object-cover",
+        "img.object-[50%_30%].object-cover"
+      ]
+    },
+    "note": "LCP target changes from decorative blur to foreground, but unchanged foreground first download also completes386ms earlier at the median. Later duplicate preload/image transfers in protected measurements reflect disabled browser caching; do not interpret whole8s wire totals as normal production downloads.",
+    "nativeForegroundResources": [
+      {
+        "type": "link",
+        "body": 81936,
+        "transfer": 82236,
+        "start": 135,
+        "end": 4789
+      }
+    ]
+  },
+  "nativeBaseline": {
+    "deployment": "dpl_9XcM4Tsr9rVHp24p2TXtQjWbuXHJ",
+    "loads": 12,
+    "pages": [
+      "Home",
+      "Browse",
+      "Saved"
+    ],
+    "profiles": [
+      "mobile",
+      "desktop"
+    ],
+    "visits": [
+      "fresh",
+      "repeat"
+    ],
+    "allReady": true,
+    "allVisibleImagesLoaded": true,
+    "noOverflowOrRenderFaults": true,
+    "cache": "No request interception; CDP blocks only telemetry. Repeat scripts have zero transfer with nonzero body, consistent with browser memory-cache reuse; no CDP disk-cache hits.",
+    "limit": "One sequential production sample per cell; no causal speedup claim."
+  }
 }
