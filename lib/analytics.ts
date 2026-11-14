@@ -1,6 +1,6 @@
 "use client";
 
-import posthog from "posthog-js";
+import { withAnalyticsClient } from "@/lib/deferred-analytics";
 import {
   ANALYTICS_SCHEMA_VERSION,
   sanitizeAnalyticsProperties,
@@ -31,16 +31,19 @@ export function captureAnalyticsEvent<E extends AnalyticsEvent>(
   if (typeof window === "undefined") return;
 
   const sanitized = sanitizeAnalyticsProperties(event, properties);
+  const timestamp = new Date();
   // PostHog otherwise appends the browser URL, including the private Search query.
   if (event.startsWith("search_")) {
-    posthog.capture(event, {
+    const payload = {
       ...sanitized,
       $current_url: new URL("/search", window.location.origin).toString(),
-    });
+    };
+    withAnalyticsClient(client => client.capture(event, payload, { timestamp }));
     return;
   }
 
-  posthog.capture(event, sanitized);
+  const payload = { ...sanitized, $current_url: window.location.href };
+  withAnalyticsClient(client => client.capture(event, payload, { timestamp }));
 }
 
 export function captureAnalyticsPageview(properties: AnalyticsPageviewProperties) {
@@ -52,11 +55,13 @@ export function captureAnalyticsPageview(properties: AnalyticsPageviewProperties
     sanitizedUrl.searchParams.set("query", "present");
   }
 
-  posthog.capture("$pageview", {
+  const timestamp = new Date();
+  const payload = {
     ...properties,
     schema_version: ANALYTICS_SCHEMA_VERSION,
     $current_url: sanitizedUrl.toString(),
-  });
+  };
+  withAnalyticsClient(client => client.capture("$pageview", payload, { timestamp }));
 }
 
 export function identifyAnalyticsUser(
@@ -65,11 +70,11 @@ export function identifyAnalyticsUser(
 ) {
   if (typeof window === "undefined") return;
 
-  posthog.identify(userId, properties);
+  withAnalyticsClient(client => client.identify(userId, properties));
 }
 
 export function resetAnalyticsUser() {
   if (typeof window === "undefined") return;
 
-  posthog.reset();
+  withAnalyticsClient(client => client.reset());
 }
