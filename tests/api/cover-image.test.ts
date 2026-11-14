@@ -25,7 +25,7 @@ describe("cover image route", () => {
         expect(response.headers.get("Cache-Control")).toContain("s-maxage=2592000");
         expect(fetch).toHaveBeenCalledWith(new URL("https://test.supabase.co/storage/v1/object/public/media/covers/test.jpg"), expect.objectContaining({ redirect: "error" }));
     });
-    it.each(["file=../secret.jpg&w=256", "file=https://evil.test/a.jpg&w=256", "file=foo.svg&w=256", "file=test.jpg&w=257", "file=test.jpg&w=0256", "file=test.jpg&w=256&x=1", "file=x.jpg&file=y.jpg&w=256"])("rejects unsafe/noncanonical input %s before work", async query => {
+    it.each(["file=../secret.jpg&w=256", "file=test.jpg%0A&w=256", "file=https://evil.test/a.jpg&w=256", "file=foo.svg&w=256", "file=test.jpg&w=257", "file=test.jpg&w=0256", "file=test.jpg&w=256&x=1", "file=x.jpg&file=y.jpg&w=256"])("rejects unsafe/noncanonical input %s before work", async query => {
         expect((await GET(request(query))).status).toBe(400);
         expect(admission).not.toHaveBeenCalled();
         expect(fetch).not.toHaveBeenCalled();

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const params = request.nextUrl.searchParams;
     const file = params.get("file") ?? "";
     const width = Number(params.get("w"));
-    if (params.size !== 2 || file.length > 200 || !/^[a-zA-Z0-9_-]+\.(?:jpe?g|png|webp|avif)$/i.test(file)
+    if (params.size !== 2 || file !== file.trim() || file.length > 200 || !/^[a-zA-Z0-9_-]+\.(?:jpe?g|png|webp|avif)$/i.test(file)
         || !COVER_WIDTHS.some(value => String(value) === params.get("w"))) {
         return new NextResponse(null, { status: 400, headers: noStore });
     }
