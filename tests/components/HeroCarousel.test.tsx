@@ -272,7 +272,7 @@ describe("HeroCarousel", () => {
             "/preview/11111111-1111-1111-1111-111111111111"
         );
         expect(screen.getByAltText("").parentElement).toHaveClass("blur-2xl");
-        expect(screen.getByAltText("")).toHaveAttribute("sizes", "256px");
+        expect(screen.getByAltText("")).toHaveAttribute("sizes", "128px");
     });
 
     it("keeps the hero content visible if the direct artwork fails", () => {

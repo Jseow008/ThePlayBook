@@ -1,5 +1,93 @@
 # Netflux release and workstream status
 
+## Mobile startup improvements — 14–15 November 2026 (Singapore)
+
+In progress on fresh `codex/mobile-startup`, worktree
+`/Users/j/Desktop/Lifebook-mobile-startup`, base `913351d5`, measured app `2bc94405` (original base `f94320d3`).
+Original dirty app/cache/region/555 worktrees untouched; one agent, no delegation.
+Authorized mobile startup improvements and mobile/desktop verification, report
+before further groups. Layout/copy/fonts/cards/foreground art unchanged; Sentry
+stays eager. Only browser telemetry scheduling and decorative image sizing change.
+No DB/query/auth/data hydration/mutation paths changed, so OPS§2.2 hosted database
+release gate is N/A for this scope. No database move or infrastructure-plan change.
+
+PostHog was eagerly imported from both instrumentation-client and lib/analytics.
+A lightweight FIFO now defers the SDK until window load + idle (1500ms bound),
+expedited by interaction/hidden visibility. Event timestamp/URL and identity/reset
+order retained; Search URL redaction unchanged. Import/init failure is isolated.
+The cover-only Browse hero's heavily blurred decorative backdrop now requests
+128px instead of256px CSS sizes, at low priority; foreground sizes stay unchanged.
+
+Frozen comparison completed:36 fresh loads,3 rounds × Home/Browse/Saved × mobile
+390/DPR2,1.6Mbps/80ms/4xCPU and desktop1440/DPR1 native × matched previews. Reduced
+motion holds first hero frame,8s observation, alternating A/B order; backend batch
+prewarmed before Saved pairs. This is a small directional lab comparison, not real
+user/cold-server/cached-visit evidence. Protected Preview interception disables
+HTTP browser cache equally; cached revisit timings were excluded after a pilot
+proved CDP cache override did not restore caching. All36 return200, load visible
+images, no overflow/render faults/HTTP failures. Private artifacts:
+`/tmp/lifebook-mobile-startup-20261114` (0700), frozen-protocol/comparison/summary.json.
+
+Mobile medians: Browse LCP5.144→4.768s; decorative cover41→9KiB (640→256 physical
+pixels). Saved lookup start3.872→3.474s and JS completed before lookup442→373KiB;
+content-ready4.784→4.786s, so no end-to-end Library speedup established. Home LCP
+0.884→0.840s. Desktop Browse LCP0.600→0.700s (ranges0.596–0.856 vs0.612–1.240);
+streamed HTML response-end median0.348→0.467s accounts for much of this difference.
+Do not claim universal speedup/no desktop timing regression. Desktop Home LCP
+0.440→0.456s; Saved1.836→1.100s but backend variance prevents attribution.
+
+Local full unit suite2469 pass/318 intentionally skipped; capacity harness34 pass.
+Focused35 hero/analytics/tracker/search journey tests, full lint and TypeScript pass.
+Both remote Next production builds ready. First analytics browser QA setup attempts
+captured no events: Preview NEXT_PUBLIC_POSTHOG_HOST uses canonical production
+origin, blocked by Preview self-only CSP (diagnostics retained). Not an application
+regression. QA now maps only owned production-origin browser requests to the owned
+candidate Preview with origin-scoped OIDC; analytics ingest locally intercepted.
+This matches production same-origin conditions without changing deployed config.
+Mapped-origin QA passed all4 mobile/desktop delayed/blocked SDK cases: first Home
+and Browse pageviews exactly once, original timestamps, Library content, images,
+no render faults/HTTP failures/overflow. Screenshots with normal motion reviewed.
+Search explicit URL redaction and original queued timestamps pass on both viewports.
+Additional finding: raw Search q still appears in SDK automatic session-entry URL
+metadata (and initial person metadata). Reproduced in unchanged baseline and candidate;
+separate privacy follow-up, no full payload privacy claim. No ingestion sent.
+Final self-review restored original empty-host disable guard;7 deferred-loader tests
+cover empty token/host,35 focused tests overall. Relevant configured branch unchanged;
+frozen evidence remains bound to2bc94405 with reuse rationale in sanitized evidence.
+No synthetic analytics delivered; initial CSP blocked attempts before network.
+
+Temporary Preview IDs: control dpl_9uoThrn2Nn9FfXADqBMktJTYcWqa; initial analytics-only
+candidate dpl_Gk8LBawvaYiP6DxURX2rNUbUAdvQ; combined dpl_9oxncGuVgieJnnybuTcJMh8PrUzW.
+All defaultiad1, batch bom1; never promoted. Baseline detached worktree
+`/Users/j/Desktop/Lifebook-mobile-baseline` atf94320d3. CLI65.12.1 authentication
+works; MCP env metadata403 resolved via native CLI. Access token stays in private
+0600 access.json, env pull deleted immediately. Never use env-run (old CLI misfire).
+
+PR [#367](https://github.com/Jseow008/ThePlayBook/pull/367) opened at final head
+`c2aa8630`. Nine-file Git/local scope verified; PR scope passed, squash auto-merge
+enabled. Required validate/Security Validation and catalog evidence running. Git
+Preview `dpl_G3yYLF1rZB54mXbkxfe4qqEmxAvT` READY at exact final head. Initial analytics-only
+CLI Preview `dpl_Gk8LBawvaYiP6DxURX2rNUbUAdvQ` deleted successfully. Production still
+`dpl_9XcM4Tsr9rVHp24p2TXtQjWbuXHJ` (baseline). Native baseline runs without request
+interception, blocking only telemetry with CDP URLs, so HTTP cache remains active;
+repeat Home already shows2KiB wire vs816KiB fresh. Finish all12 baseline loads.
+No causal speed claim from this single sequential production before/after sample.
+
+Next: finish native baseline, run final-head Preview functional QA with
+`PREVIEW_URL=https://netflux-cyzbval3z-jseow008s-projects.vercel.app`, monitor PR and
+post-merge CI, then verify released alias/SHA and production mobile/desktop. Preserve
+frozen measurements; do not tune against them. Main #366 (`913351d5`) landed during CI and conflicted only in STATUS.
+Reconciled both status sections intact and rebased. All four startup application
+source hashes are identical to pre-rebase `c2aa8630`; unrelated Notes route changes
+are not loaded/prefetched by the measured pages. Frozen comparison retained under
+that boundary; required CI reruns on the combined final tree. No gate bypass.
+recheck fresh main/scope, publish PR, wait required PR scope before squash auto-merge.
+Requested production verification requires waiting post-merge CI/alias gate; never
+manually promote. Verify released SHA and mobile/desktop flows, real cache revisits
+with native un-routed audit (separate from controlled comparison). Delete only the
+three owned temporary Preview IDs/access file after verification. No next group.
+
+
 ## Notes panel opening fix — 15 November 2026
 
 User authorized fix, tests and deployment after all checks pass. Fresh managed worktree `/Users/j/.codex/worktrees/fix-notes-panel-opening/Lifebook`, branch `codex/fix-notes-panel-opening`, base `f94320d3`. Old Luna investigation/status/artifacts preserved. One agent. No commit/PR/release yet; production unchanged by this fix so far.
@@ -11,6 +99,7 @@ Localized client-only change in `app/(public)/notes/client-page.tsx`: UI query w
 Accepted built-browser check passed fresh opening (no RSC opening navigation), Close/reopen/draft retention, Back/Forward with filters/panel state, pending 2.5s mocked stream completion without cancellation, reload transcript recovery, and mobile full Notes chat/no overflow. No page exceptions. Failed acquisition retained: initial use of existing Next private history state prevented its URL-hook notification; read installed framework implementation/docs, corrected new writes/probe to supported null state, rebuilt, then passed. New E2E fixture cookie callback type corrected before final typecheck. A background Library snapshot-sync warning in isolated local config is disclosed, not claimed fixed or server-qualified. Two synthetic internal accounts/reflections across browser acquisitions globally signed out/deleted; owned port 3450 server stopped; no copied credentials, live model/index calls, public content or existing reader records changed.
 
 Hash-bound focused evidence: [opening fix](evidence/notes-panel-opening-fix-20261115.json); full private-test artifacts/screenshots under `output/notes-opening-fix-20261114/`. Exact next action: commit only app, component/E2E regression tests, evidence and this checkpoint; inspect scope, push/open ready PR, attach it, require all CI and preview checks. Then squash merge under existing deployment authorization, promote exact production build if needed, verify the live Notes opening and one real response with disposable records, and clean up. No pending product decision or blocker.
+
 
 ## Single content expiry refresh — 14 November 2026
 

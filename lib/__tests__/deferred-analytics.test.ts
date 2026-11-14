@@ -117,8 +117,8 @@ describe("deferred analytics", () => {
     expect(sdk.capture).not.toHaveBeenCalled();
   });
 
-  it("does not load unconfigured analytics", async () => {
-    vi.stubEnv("NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN", "");
+  it.each(["NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN", "NEXT_PUBLIC_POSTHOG_HOST"])("does not load analytics with empty %s", async (key) => {
+    vi.stubEnv(key, "");
     const { initializeDeferredAnalytics, withAnalyticsClient } = await import("@/lib/deferred-analytics");
     initializeDeferredAnalytics();
     withAnalyticsClient(client => client.capture("disabled"));

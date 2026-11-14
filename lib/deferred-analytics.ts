@@ -2,6 +2,8 @@
 
 import type { PostHog } from "posthog-js";
 
+const analyticsHost = (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "/flux").replace(/\/$/, "");
+
 let client: PostHog | undefined;
 let initialized = false;
 let loading = false;
@@ -21,7 +23,7 @@ function loadAnalytics() {
   void import("posthog-js").then(({ default: analytics }) => {
     if (!analytics.__loaded) {
       analytics.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
-        api_host: (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "/flux").replace(/\/$/, ""),
+        api_host: analyticsHost,
         ui_host: process.env.NEXT_PUBLIC_POSTHOG_UI_HOST?.replace(/\/$/, "") || "https://us.posthog.com",
         defaults: "2026-01-30",
         capture_pageview: false,
@@ -60,7 +62,7 @@ function onVisibilityChange() {
 }
 
 export function initializeDeferredAnalytics() {
-  if (typeof window === "undefined" || initialized || !process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN) return;
+  if (typeof window === "undefined" || initialized || !analyticsHost || !process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN) return;
   initialized = true;
   // The SDK is not a dependency of hydration. First interaction can expedite it.
   window.addEventListener("pointerdown", loadAnalytics, { once: true, passive: true });
@@ -71,7 +73,7 @@ export function initializeDeferredAnalytics() {
 }
 
 export function withAnalyticsClient(command: (analytics: PostHog) => void) {
-  if (typeof window === "undefined" || disabled || !process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN) return;
+  if (typeof window === "undefined" || disabled || !analyticsHost || !process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN) return;
   if (client) {
     command(client);
     return;
