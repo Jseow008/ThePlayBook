@@ -129,11 +129,10 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             return apiError("RETRIEVAL_UNAVAILABLE", "Your chat session could not be verified. Please retry.", 503, requestId);
         }
 
-        const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
         const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
         const hasGemini = Boolean(process.env.GEMINI_API_KEY);
 
-        if ((!hasAnthropic && !hasOpenAI) || !hasGemini) {
+        if (!hasOpenAI || !hasGemini) {
             logApiError({ requestId, route: "/api/chat/notes", message: "No AI provider configured", error: new Error("Missing env") });
             return apiError("INTERNAL_ERROR", "AI service is not configured. Please contact an administrator.", 500, requestId);
         }

@@ -1,3 +1,4 @@
+import { INTERACTIVE_AI_MODEL, INTERACTIVE_AI_PROVIDER_OPTIONS } from "@/lib/server/interactive-ai";
 import { withChatDeadline, CHAT_INCOMPLETE_MESSAGE } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse, reserveAiProviderCall } from "@/lib/server/ai-spending";
 import { isAuthSessionMissingError } from "@supabase/supabase-js";
@@ -5,7 +6,6 @@ import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { anthropic } from "@ai-sdk/anthropic";
 import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
@@ -17,7 +17,6 @@ import { retrievalTextResponse } from "@/lib/server/retrieval-response";
 
 export const maxDuration = 60;
 
-const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -328,7 +327,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             return retrievalTextResponse("I don't have source material for this work yet, so I can't answer from its text.", "ui");
         }
 
-        if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+        if (!process.env.OPENAI_API_KEY) {
             logApiError({ requestId, route: "/api/chat/author", message: "API Keys not configured", error: new Error("Missing env") });
             return apiError("INTERNAL_ERROR", "AI service is not configured.", 500, requestId);
         }
@@ -355,29 +354,10 @@ Rules:
 - Do not use hyphen, en dash, or em dash characters in the response. Use commas, periods, parentheses, or numbered lists instead.
 - Match ${authorName}'s tone and challenge weak thinking when appropriate.`;
 
-        // --- Select Model Dynamically based on ENV vars ---
-        // Author uses Luna when its key is available; an explicit override can retain the prior route.
-        const authorModel = process.env.AUTHOR_CHAT_MODEL || (process.env.OPENAI_API_KEY ? "gpt-6-luna" : undefined);
-        let aiModel;
-        let selectedProvider = "anthropic";
-        let selectedModel = authorModel === DEFAULT_ANTHROPIC_MODEL ? authorModel : (process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
-        const provider = authorModel === "gpt-6-luna" ? "openai" : authorModel === DEFAULT_ANTHROPIC_MODEL ? "anthropic" : (process.env.AI_PROVIDER || "anthropic");
-
-        if (authorModel === "gpt-6-luna" && !process.env.OPENAI_API_KEY) {
-            logApiError({ requestId, route: "/api/chat/author", message: "Author Luna key not configured", error: new Error("Missing env") });
-            return apiError("INTERNAL_ERROR", "AI service is not configured.", 500, requestId);
-        }
-
-        if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
-            aiModel = anthropic(selectedModel);
-        } else if (process.env.OPENAI_API_KEY) {
-            const { openai } = await import("@ai-sdk/openai");
-            selectedProvider = "openai";
-            selectedModel = authorModel === "gpt-6-luna" ? authorModel : (process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
-            aiModel = openai(selectedModel);
-        } else {
-            aiModel = anthropic(process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
-        }
+        const { openai } = await import("@ai-sdk/openai");
+        const selectedProvider = "openai";
+        const selectedModel = INTERACTIVE_AI_MODEL;
+        const aiModel = openai(selectedModel);
 
         if (user) {
             const quota = await admitAiUsage(user.id, "author-chat", signal);
@@ -420,7 +400,7 @@ Rules:
             system: systemPrompt,
             messages,
             maxOutputTokens: MAX_OUTPUT_TOKENS,
-            ...(authorModel === "gpt-6-luna" ? { providerOptions: { openai: { reasoningEffort: "none", forceReasoning: true, store: false } } } : {}),
+            providerOptions: INTERACTIVE_AI_PROVIDER_OPTIONS,
             abortSignal: signal,
             experimental_transform: smoothStream({ delayInMs: 20, chunking: "word" }),
             onFinish: async ({ usage }) => {

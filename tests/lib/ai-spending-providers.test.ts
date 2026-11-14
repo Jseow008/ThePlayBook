@@ -16,11 +16,12 @@ const selection = () => generatePersonalEvidenceSelection({ ...buildPersonalEvid
 beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("ANTHROPIC_API_KEY", "fixture");
+    vi.stubEnv("OPENAI_API_KEY", "fixture");
     vi.stubEnv("AI_PROVIDER", "anthropic");
     vi.stubEnv("AI_MODEL", "claude-haiku-4-5-20251001");
     rpc.mockImplementation((name, args) => ({ abortSignal: async () => ({ data: name === "reserve_ai_spend"
         ? { allowed: true, operationId: args.p_operation_id, reservedMicrousd: args.p_reserved_microusd } : { recorded: true }, error: null }) }));
-    generate.mockResolvedValue({ output: { ids: [] }, usage: { inputTokens: 10, outputTokens: 5 }, response: { modelId: "claude-haiku-4-5-20251001" } });
+    generate.mockResolvedValue({ output: { ids: [] }, usage: { inputTokens: 10, outputTokens: 5 }, response: { modelId: "gpt-6-luna" } });
     embed.mockResolvedValue({ embeddings: [{ values: [1, 0] }] });
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -30,9 +31,9 @@ describe("nested provider spending boundaries", () => {
         await scoped(selection);
         expect(rpc.mock.invocationCallOrder[0]).toBeLessThan(generate.mock.invocationCallOrder[0]);
         expect(generate).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0, maxOutputTokens: 1600 }));
-        expect(rpc).toHaveBeenLastCalledWith("record_ai_spend", expect.objectContaining({ p_cost_microusd: 35 }));
+        expect(rpc).toHaveBeenLastCalledWith("record_ai_spend", expect.objectContaining({ p_cost_microusd: 4 }));
     });
-    it("uses only the qualified Luna configuration when explicitly enabled", async () => {
+    it("uses only the qualified Luna configuration despite legacy environment settings", async () => {
         vi.stubEnv("PERSONAL_EVIDENCE_SELECTOR_MODEL", "gpt-6-luna");
         vi.stubEnv("OPENAI_API_KEY", "fixture");
         generate.mockResolvedValueOnce({ output: { requestedFacets: ["fixture"], assessments: [] },
@@ -41,7 +42,7 @@ describe("nested provider spending boundaries", () => {
         expect(result.provider).toBe("openai");
         expect(generate.mock.calls[0][0].model.modelId).toBe("gpt-6-luna");
         expect(generate).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0, maxOutputTokens: 1600,
-            providerOptions: { openai: { reasoningEffort: "low", forceReasoning: true, store: false } } }));
+            providerOptions: { openai: { reasoningEffort: "none", forceReasoning: true, store: false } } }));
         expect(rpc.mock.calls[0][1]).toMatchObject({ p_provider: "openai", p_model: "gpt-6-luna", p_reserved_microusd: 211200 });
         expect(rpc.mock.calls[1][1]).toMatchObject({ p_cost_microusd: 150 });
         expect(process.env.AI_MODEL).toBe("claude-haiku-4-5-20251001");

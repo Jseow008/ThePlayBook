@@ -16,20 +16,17 @@ const valid = () => ({ requestedFacets: ["Synthetic action"], assessments: [{ id
 const privateText = "PRIVATE synthetic output that must not survive an exception";
 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.clearAllMocks(); });
-function providerTransport(provider: string, text: string, limited = false) {
+function providerTransport(legacyProvider: string, text: string, limited = false) {
+    const provider = "luna";
     vi.stubEnv("ANTHROPIC_API_KEY", "synthetic-test-key"); vi.stubEnv("OPENAI_API_KEY", "synthetic-test-key");
-    vi.stubEnv("AI_PROVIDER", provider === "anthropic" ? "anthropic" : "openai");
+    vi.stubEnv("AI_PROVIDER", legacyProvider === "anthropic" ? "anthropic" : "openai");
     vi.stubEnv("PERSONAL_EVIDENCE_SELECTOR_MODEL", provider === "luna" ? PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.model : "");
     const bodies: Array<Record<string, unknown>> = [];
     const transport = vi.fn<typeof fetch>(async (url, options) => {
         // No network fallback: every provider operation must hit this controlled response.
         expect(String(url)).toMatch(/^https:\/\/api\.(anthropic\.com|openai\.com)\/v1\/(messages|responses)$/);
         bodies.push(JSON.parse(String(options?.body)) as Record<string, unknown>);
-        const body = provider === "anthropic" ? {
-            id: "msg_fixture", type: "message", role: "assistant", model: "claude-haiku-4-5-20251001",
-            content: [{ type: "text", text }], stop_reason: limited ? "max_tokens" : "end_turn", stop_sequence: null,
-            usage: { input_tokens: 10, output_tokens: 20 },
-        } : {
+        const body = {
             id: "resp_fixture", object: "response", created_at: 1, model: "synthetic", status: limited ? "incomplete" : "completed",
             error: null, incomplete_details: limited ? { reason: 'max_output_tokens' } : null, output: [{ type: "message", id: "m1", role: "assistant", status: limited ? "incomplete" : "completed",
                 ...(provider === "luna" ? { phase: "final_answer" } : {}),
@@ -58,7 +55,7 @@ describe("Zod 4 through the real AI SDK schema and provider boundary", () => {
             const schema = body.text?.format?.schema ?? body.output_config?.format?.schema ?? body.tools?.[0]?.input_schema;
             // Anthropic already strips unsupported keywords under Zod 3. Compare
             // actual provider wire contracts, not the pre-sanitization schema.
-            expect(schema).toEqual(beforeProviderSchemas[provider as keyof typeof beforeProviderSchemas]);
+            expect(schema).toEqual(beforeProviderSchemas.luna);
         });
         const failures = [
             { name: "truncated JSON", output: `{"requestedFacets":["${privateText}"` },

@@ -1,4 +1,5 @@
 import "server-only";
+import { INTERACTIVE_AI_MODEL } from "@/lib/server/interactive-ai";
 import { withLunaFinalPhase } from "@/lib/server/luna-final-phase";
 import { createSelectionProviderTiming } from "@/lib/server/selection-provider-timing";
 import { measureAskNotesPhase } from "@/lib/server/ask-notes-timing";
@@ -9,7 +10,6 @@ import { createHash } from "node:crypto";
 import { generateText, NoObjectGeneratedError, Output, type LanguageModelUsage } from "ai";
 import { normalizeLibraryFollowups } from "@/lib/library-followups";
 import { LIBRARY_FOLLOWUP_INSTRUCTIONS, readCompleteLeadingField, withCompleteLibrarySelectionCore } from "@/lib/server/library-followup-output";
-import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -69,18 +69,18 @@ export const PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG = Object.freeze({
     temperature: "provider default",
 } as const);
 export const PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG = Object.freeze({
-    version: "personal-evidence-selector-model-v3",
+    version: "personal-evidence-selector-model-v4",
     promptVersion: PERSONAL_EVIDENCE_SELECTOR_PROMPT_VERSION,
-    provider: "openai", model: "gpt-6-luna",
+    provider: "openai", model: INTERACTIVE_AI_MODEL,
     maxOutputTokens: PERSONAL_EVIDENCE_SELECTOR_LIMITS.maxOutputTokens,
     maxRetries: 0, temperature: "provider default",
-    reasoningEffort: "low", forceReasoning: true, store: false,
+    reasoningEffort: "none", forceReasoning: true, store: false,
     responseAdapter: "explicit-final-phase-v1",
 } as const);
 export type PersonalEvidenceSelectionModelConfig = {
     readonly version: string; readonly promptVersion: string; readonly provider: string;
     readonly model: string; readonly maxOutputTokens: number; readonly maxRetries: number;
-    readonly temperature: string; readonly reasoningEffort?: "low";
+    readonly temperature: string; readonly reasoningEffort?: "none";
     readonly forceReasoning?: true; readonly store?: false; readonly responseAdapter?: string;
 };
 export type CanonicalPersonalEvidenceSelectionRequest = {
@@ -140,25 +140,13 @@ For exact-quote mode, identify at most one candidate whose stored content matche
 
 /** This generator has no request-time failover: provider errors fail closed. */
 export const generatePersonalEvidenceSelection: PersonalEvidenceSelectionGenerator = async (request) => {
-    const selectorOverride = process.env.PERSONAL_EVIDENCE_SELECTOR_MODEL;
-    if (selectorOverride && selectorOverride !== PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.model) {
-        throw new PersonalEvidenceSelectionError("NOT_CONFIGURED");
-    }
-    const useLuna = selectorOverride === PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.model;
-    if (useLuna && !process.env.OPENAI_API_KEY) throw new PersonalEvidenceSelectionError("NOT_CONFIGURED");
-    const configuredProvider = process.env.AI_PROVIDER || "anthropic";
-    const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
-    const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
-    const useAnthropic = !useLuna && ((configuredProvider === "anthropic" && hasAnthropic) || (!hasOpenAI && hasAnthropic));
-    if (!hasAnthropic && !hasOpenAI) throw new PersonalEvidenceSelectionError("NOT_CONFIGURED");
-    const provider = useAnthropic ? "anthropic" : "openai";
-    const modelId = useLuna ? PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.model : useAnthropic ? process.env.AI_MODEL || "claude-haiku-4-5-20251001"
-        : process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini";
+    if (!process.env.OPENAI_API_KEY) throw new PersonalEvidenceSelectionError("NOT_CONFIGURED");
+    const provider = "openai";
+    const modelId = INTERACTIVE_AI_MODEL;
     const transportTiming = createSelectionProviderTiming();
-    const baseModel = useAnthropic ? createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY, fetch: transportTiming.fetch })(modelId)
-        : createOpenAI({ apiKey: process.env.OPENAI_API_KEY, fetch: transportTiming.fetch })(modelId);
-    const model = useLuna ? withLunaFinalPhase(request.includeFollowups
-        ? withCompleteLibrarySelectionCore(baseModel, text => request.schema.safeParse(readCompleteLeadingField(text, 'selection')).success) : baseModel) : baseModel;
+    const baseModel = createOpenAI({ apiKey: process.env.OPENAI_API_KEY, fetch: transportTiming.fetch })(modelId);
+    const model = withLunaFinalPhase(request.includeFollowups
+        ? withCompleteLibrarySelectionCore(baseModel, text => request.schema.safeParse(readCompleteLeadingField(text, 'selection')).success) : baseModel);
     const reservation = await measureAskNotesPhase("selection_reserve", () => reserveAiProviderCall({ provider, model: modelId, maxOutputTokens: request.maxOutputTokens, signal: request.signal }));
     request.signal?.throwIfAborted();
     const schema = request.includeFollowups
@@ -175,11 +163,11 @@ export const generatePersonalEvidenceSelection: PersonalEvidenceSelectionGenerat
             output: Output.object<unknown>({ schema }),
             maxOutputTokens: request.maxOutputTokens,
             maxRetries: 0,
-            ...(useLuna ? { providerOptions: { openai: {
+            providerOptions: { openai: {
                 reasoningEffort: PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.reasoningEffort,
                 forceReasoning: PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.forceReasoning,
                 store: PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG.store,
-            } } } : {}),
+            } },
             abortSignal: request.signal,
         })));
         usage = result.usage;

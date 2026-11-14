@@ -9,8 +9,7 @@ const REQUIRED_ALL = [
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_KEY",
     "NEXT_PUBLIC_SITE_URL",
-    "AI_PROVIDER",
-    "AI_MODEL",
+    "OPENAI_API_KEY",
     "GEMINI_API_KEY",
     "UPSTASH_REDIS_REST_URL",
     "UPSTASH_REDIS_REST_TOKEN",
@@ -22,13 +21,8 @@ const REQUIRED_ALL = [
     "NOTES_REPLAY_KEYS",
 ];
 
-const REQUIRED_ONE_OF = [
-    ["ANTHROPIC_API_KEY", "OPENAI_API_KEY"],
-];
-
 const RECOMMENDED = [
     "NEXT_PUBLIC_APP_URL",
-    "OPENAI_FALLBACK_MODEL",
     "RESEND_API_KEY",
     "REQUEST_NOTIFICATION_FROM_EMAIL",
 ];
@@ -53,8 +47,7 @@ Required:
 - NEXT_PUBLIC_SUPABASE_ANON_KEY
 - SUPABASE_SERVICE_KEY
 - NEXT_PUBLIC_SITE_URL
-- AI_PROVIDER
-- AI_MODEL
+- OPENAI_API_KEY
 - GEMINI_API_KEY
 - UPSTASH_REDIS_REST_URL
 - UPSTASH_REDIS_REST_TOKEN
@@ -64,11 +57,9 @@ Required:
 - ANONYMOUS_ACTIVITY_SECRET
 - CATALOG_SEARCH_CURSOR_SECRET
 - NOTES_REPLAY_KEYS (server-only versioned encryption/HMAC key ring)
-- at least one of ANTHROPIC_API_KEY or OPENAI_API_KEY
 
 Recommended:
 - NEXT_PUBLIC_APP_URL
-- OPENAI_FALLBACK_MODEL
 - RESEND_API_KEY
 - REQUEST_NOTIFICATION_FROM_EMAIL
 
@@ -130,10 +121,6 @@ function validateAdminAllowedIps(value) {
     return errors;
 }
 
-function formatEnvList(names) {
-    return names.join(", ");
-}
-
 function resolveEnvFile(argv) {
     const index = argv.indexOf("--env-file");
     if (index === -1) {
@@ -170,12 +157,6 @@ const warnings = [];
 for (const name of REQUIRED_ALL) {
     if (!valueOf(name)) {
         errors.push(`Missing required env var: ${name}`);
-    }
-}
-
-for (const names of REQUIRED_ONE_OF) {
-    if (!names.some((name) => valueOf(name))) {
-        errors.push(`Missing required env var: one of ${formatEnvList(names)}`);
     }
 }
 

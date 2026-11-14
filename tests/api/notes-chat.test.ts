@@ -88,7 +88,7 @@ describe("Notes chat API", () => {
         } as unknown as Awaited<ReturnType<typeof retrievePersonalEvidence>>);
         process.env.ANTHROPIC_API_KEY = "test-key";
         process.env.GEMINI_API_KEY = "test-gemini-key";
-        delete process.env.OPENAI_API_KEY;
+        process.env.OPENAI_API_KEY = 'openai-test-key';
         delete process.env.AI_PROVIDER;
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
@@ -394,7 +394,7 @@ describe("Notes chat API", () => {
         expect(res.status).toBe(500);
     });
 
-    it("falls back to Anthropic when AI_PROVIDER prefers OpenAI but only Anthropic is configured", async () => {
+    it("fails closed when only the legacy Anthropic key is available", async () => {
         process.env.AI_PROVIDER = "openai";
         delete process.env.OPENAI_API_KEY;
 
@@ -407,7 +407,8 @@ describe("Notes chat API", () => {
         });
 
         const res = await POST(req);
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(500);
+        expect(streamText).not.toHaveBeenCalled();
     });
 
     it("returns extracts without a writing model for synthesis-style note questions", async () => {

@@ -5,14 +5,14 @@ import { measureAskNotesPhase, withAskNotesTiming } from "@/lib/server/ask-notes
 
 const mocks = vi.hoisted(() => ({ reserve: vi.fn(), generate: vi.fn(), record: vi.fn() }));
 vi.mock("@/lib/server/ai-spending", () => ({ reserveAiProviderCall: mocks.reserve, AiSpendingError: class extends Error {} }));
-vi.mock("ai", () => ({ generateText: mocks.generate, Output: { object: vi.fn() } }));
+vi.mock("ai", () => ({ generateText: mocks.generate, Output: { object: vi.fn() }, wrapLanguageModel: ({ model }: { model: unknown }) => model }));
 vi.mock("@ai-sdk/anthropic", () => ({ createAnthropic: () => () => ({}) }));
 vi.mock("@ai-sdk/openai", () => ({ createOpenAI: () => () => ({}) }));
 let now = 0;
 const request = () => ({ system: "private system", prompt: "private question", schema: z.object({ requestedFacets: z.array(z.string()), assessments: z.array(z.object({ id: z.string(), requestedFacet: z.string(), supportSummary: z.string(), constraintCheck: z.string(), verdict: z.literal("direct") })) }), signal: new AbortController().signal, maxOutputTokens: 1600 });
 beforeEach(() => {
     vi.resetAllMocks(); now = 0;
-    vi.stubEnv("ANTHROPIC_API_KEY", "test-only"); vi.stubEnv("AI_PROVIDER", "anthropic");
+    vi.stubEnv("OPENAI_API_KEY", "test-only"); vi.stubEnv("AI_PROVIDER", "anthropic");
     vi.spyOn(performance, "now").mockImplementation(() => now);
     vi.spyOn(console, "info").mockImplementation(() => {});
     mocks.reserve.mockImplementation(async () => { now += 20; return { record: mocks.record }; });
