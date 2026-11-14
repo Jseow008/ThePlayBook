@@ -17,11 +17,6 @@ import {
     COMPACT_READER_COVER_WRAPPER_CLASS,
 } from "@/components/ui/content-card-standards";
 
-const publicStorageOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
-const publicCoverPrefix = publicStorageOrigin
-    ? `${publicStorageOrigin}/storage/v1/object/public/media/covers/`
-    : undefined;
-
 /**
  * Reader Hero Header
  *
@@ -109,7 +104,6 @@ export function ReaderHeroHeader({
                                 src={coverImageUrl}
                                 alt={title}
                                 fill
-                                unoptimized={Boolean(publicCoverPrefix && coverImageUrl.startsWith(publicCoverPrefix))}
                                 sizes={COMPACT_READER_COVER_IMAGE_SIZES}
                                 priority
                                 surface="reader-hero"

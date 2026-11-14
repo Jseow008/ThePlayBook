@@ -576,7 +576,7 @@ describe("ContentCard", () => {
         expect(onReflectionClick).toHaveBeenCalledOnce();
     });
 
-    it("falls back to the non-image artwork treatment after the direct retry fails", () => {
+    it("falls back to the non-image artwork treatment after a direct external source fails", () => {
         const itemWithCover = {
             ...item,
             cover_image_url: "https://example.com/deep-work.jpg",
@@ -584,7 +584,6 @@ describe("ContentCard", () => {
 
         render(<ContentCard item={itemWithCover} />);
 
-        fireEvent.error(screen.getByAltText("Deep Work"));
         fireEvent.error(screen.getByAltText("Deep Work"));
 
         expect(screen.queryByAltText("Deep Work")).not.toBeInTheDocument();

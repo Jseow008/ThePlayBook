@@ -275,10 +275,9 @@ describe("HeroCarousel", () => {
         expect(screen.getByAltText("")).toHaveAttribute("sizes", "256px");
     });
 
-    it("keeps the hero content visible if the artwork fails twice", () => {
+    it("keeps the hero content visible if the direct artwork fails", () => {
         render(<HeroCarousel items={items} />);
 
-        fireEvent.error(screen.getByAltText("First Feature"));
         fireEvent.error(screen.getByAltText("First Feature"));
 
         expect(screen.queryByAltText("First Feature")).not.toBeInTheDocument();

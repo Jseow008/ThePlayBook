@@ -157,6 +157,7 @@ const nextConfig: NextConfig = {
     "/api/og/content/[id]": sharpTraceIncludes,
     "/api/og/content/[id]/story": sharpTraceIncludes,
     "/api/admin/story-images/process": sharpTraceIncludes,
+    "/api/media/cover": sharpTraceIncludes,
   },
   serverExternalPackages: ["sharp"],
   images: {

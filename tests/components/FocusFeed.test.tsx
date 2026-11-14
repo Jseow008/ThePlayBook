@@ -259,6 +259,7 @@ describe("FocusFeed", () => {
 
     afterEach(() => {
         mathRandomSpy.mockRestore();
+        vi.unstubAllEnvs();
         vi.mocked(window.localStorage.getItem).mockReset();
     });
 
@@ -651,6 +652,10 @@ describe("FocusFeed", () => {
         { viewport: "desktop", isDesktop: true },
     ])("keeps the $viewport cover placeholder visible through an image retry", async ({ isDesktop }) => {
         mediaQueryState.value.isDesktop = isDesktop;
+        vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://focus.test");
+        fetchMock.mockResolvedValue({ ok: true, json: async () => focusItems.map((item, index) => index === 0
+            ? { ...item, cover_image_url: "https://focus.test/storage/v1/object/public/media/covers/test.jpg" }
+            : item) });
 
         render(<FocusFeed />);
 

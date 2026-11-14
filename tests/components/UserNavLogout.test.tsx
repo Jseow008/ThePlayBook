@@ -30,7 +30,7 @@ vi.mock("next/image", () => ({
         void fill;
         void priority;
         void unoptimized;
-        return <img alt={alt} src={src} {...safeProps} />;
+        return <img alt={alt} src={src} data-unoptimized={String(Boolean(unoptimized))} {...safeProps} />;
     },
 }));
 
@@ -39,6 +39,7 @@ vi.mock("@/hooks/useAuthUser", () => ({
         email: "reader@example.com",
         user_metadata: {
             full_name: "Reader",
+            avatar_url: "https://lh3.googleusercontent.com/test-avatar",
         },
     }),
 }));
@@ -66,6 +67,11 @@ describe("UserNav logout", () => {
         vi.clearAllMocks();
         browserSignOutMock.mockResolvedValue({ error: null });
         signOutActionMock.mockResolvedValue(undefined);
+    });
+
+    it("loads provider avatars directly", () => {
+        render(<UserNav />);
+        expect(screen.getByRole("img", { name: "Reader" })).toHaveAttribute("data-unoptimized", "true");
     });
 
     it("emits a browser auth sign-out before running the server logout action", async () => {

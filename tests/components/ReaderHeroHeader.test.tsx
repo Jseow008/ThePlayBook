@@ -21,7 +21,7 @@ vi.mock('@/components/ui/ContentShareMenu', () => ({
 
 vi.mock('@/components/ui/ResilientImage', () => ({
     ResilientImage: ({ alt, sizes, unoptimized }: { alt: string; sizes?: string; unoptimized?: boolean }) => (
-        <img alt={alt} data-testid="mock-cover-image" sizes={sizes} data-unoptimized={String(unoptimized)} />
+        <img alt={alt} data-testid="mock-cover-image" sizes={sizes} data-unoptimized={String(Boolean(unoptimized))} />
     ),
 }));
 
@@ -86,7 +86,7 @@ describe('ReaderHeroHeader', () => {
         expect(screen.getByTestId('mock-cover-image')).toHaveAttribute('data-unoptimized', 'false');
     });
 
-    it('loads public storage covers directly', () => {
+    it('allows resized delivery for public storage covers', () => {
         render(
             <ReaderHeroHeader
                 title="Test Title"
@@ -100,7 +100,7 @@ describe('ReaderHeroHeader', () => {
             />
         );
 
-        expect(screen.getByTestId('mock-cover-image')).toHaveAttribute('data-unoptimized', 'true');
+        expect(screen.getByTestId('mock-cover-image')).toHaveAttribute('data-unoptimized', 'false');
     });
 
     it('provides a destination for Listen links when audio is available', () => {
