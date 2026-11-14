@@ -16,13 +16,12 @@ async function readCards(ids: string[]) {
 
 export async function getCachedContentBatch(ids: string[]) {
     const canonicalIds = [...new Set(ids)].sort();
-    let readExecuted = false;
-    // The diagnostic flag is not request data and does not affect the cached value.
+    let refresh: ReturnType<typeof readCards> | undefined;
     // Reuse the catalog tag: all content create/update/delete/replacement/narration
     // mutations already hard-expire it through the central revalidation boundary.
     const cachedRead = unstable_cache(async (keys: string[]) => {
-        readExecuted = true;
-        return readCards(keys);
+        refresh = readCards(keys);
+        return refresh;
     }, ["public-content-cards-v1", process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""], {
         revalidate: MAX_AGE_MS / 1000, tags: [SEARCH_CATALOG_CACHE_TAG],
     });
@@ -30,7 +29,10 @@ export async function getCachedContentBatch(ids: string[]) {
     // Next's TTL can serve stale data during background revalidation. Do not
     // extend the freshness window for removed content or out-of-band edits.
     if (Date.now() - cached.checkedAt >= MAX_AGE_MS) {
-        return { ...(await readCards(canonicalIds)), cache: "refresh" as const };
+        // Await the read Next already started, including its failure, rather than
+        // issuing another query or returning the expired value. Keep the fallback
+        // for an expired entry returned without a background refresh.
+        return { ...(await (refresh ?? readCards(canonicalIds))), cache: "refresh" as const };
     }
-    return { ...cached, cache: readExecuted ? "miss" as const : "hit" as const };
+    return { ...cached, cache: refresh ? "miss" as const : "hit" as const };
 }

@@ -1,9 +1,17 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ cache: new Map<string, { value: unknown; tags: string[] }>(), reads: vi.fn(), invalidate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ cache: new Map<string, { value: unknown; tags: string[] }>(), reads: vi.fn(), invalidate: vi.fn(), pending: [] as Promise<unknown>[], backgroundRefresh: true }));
 vi.mock("next/cache", () => ({
     unstable_cache: (fn: (...args: unknown[]) => unknown, keys: string[], options: {tags: string[]}) => async (...args: unknown[]) => {
         const key = JSON.stringify([keys, args]);
-        if (mocks.cache.has(key)) return mocks.cache.get(key)!.value;
+        const entry = mocks.cache.get(key);
+        if (entry) {
+            if (mocks.backgroundRefresh && Date.now() - (entry.value as { checkedAt: number }).checkedAt >= 60_000) {
+                mocks.pending.push(Promise.resolve(fn(...args)).then(value => {
+                    mocks.cache.set(key, { value, tags: options.tags });
+                }).catch(() => {}));
+            }
+            return entry.value;
+        }
         const value = await fn(...args); mocks.cache.set(key, { value, tags: options.tags }); return value;
     },
     revalidatePath: vi.fn(),
@@ -12,8 +20,8 @@ vi.mock("next/cache", () => ({
 vi.mock("@/lib/supabase/public-server", () => ({ createPublicServerClient: () => ({ from: () => ({ select: () => ({ in: (_: string, ids: string[]) => ({ eq: () => ({ is: () => mocks.reads(ids) }) }) }) }) }) }));
 import { getCachedContentBatch } from "@/lib/server/content-batch-cache";
 import { revalidateContentCreated, revalidateContentUpdated, revalidateContentDeleted, revalidateContentBulkChanged, revalidateNarrationContentChanged } from "@/lib/server/revalidation";
-beforeEach(() => { mocks.cache.clear(); mocks.reads.mockReset().mockImplementation(async (ids: string[]) => ({ data: ids.map(id => ({ id, title: "Old", quick_mode_json: {hook:"Hook",big_idea:"Private full summary"} })), error: null })); mocks.invalidate.mockClear(); vi.useFakeTimers(); vi.setSystemTime(1000); });
-afterEach(() => vi.useRealTimers());
+beforeEach(() => { mocks.cache.clear(); mocks.pending = []; mocks.backgroundRefresh = true; mocks.reads.mockReset().mockImplementation(async (ids: string[]) => ({ data: ids.map(id => ({ id, title: "Old", quick_mode_json: {hook:"Hook",big_idea:"Private full summary"} })), error: null })); mocks.invalidate.mockClear(); vi.useFakeTimers(); vi.setSystemTime(1000); });
+afterEach(async () => { await Promise.all(mocks.pending); vi.useRealTimers(); });
 describe("shared public batch cache", () => {
     it("canonicalizes IDs and reuses public projections across calls", async () => {
         expect((await getCachedContentBatch(["b", "a", "a"])).cache).toBe("miss");
@@ -37,6 +45,38 @@ describe("shared public batch cache", () => {
         await getCachedContentBatch(["a"]); vi.setSystemTime(61_001);
         mocks.reads.mockResolvedValue({ data:[], error:null });
         expect(await getCachedContentBatch(["a"])).toMatchObject({items:[],cache:"refresh"});
+        expect(mocks.reads).toHaveBeenCalledTimes(2); // Initial miss, then one shared refresh.
+        await Promise.all(mocks.pending);
+        expect(await getCachedContentBatch(["a"])).toMatchObject({items:[],cache:"hit"});
+        expect(mocks.reads).toHaveBeenCalledTimes(2);
+    });
+    it("keeps the exact freshness boundary and waits for the existing refresh", async () => {
+        await getCachedContentBatch(["a"]);
+        vi.setSystemTime(60_999);
+        expect((await getCachedContentBatch(["a"])).cache).toBe("hit");
+        expect(mocks.reads).toHaveBeenCalledTimes(1);
+        vi.setSystemTime(61_000);
+        const refreshed = Promise.withResolvers<{ data: { id: string; title: string }[]; error: null }>();
+        mocks.reads.mockReturnValue(refreshed.promise);
+        const lookup = getCachedContentBatch(["a"]);
+        let settled = false;
+        void lookup.then(() => { settled = true; });
+        try {
+            await vi.waitFor(() => expect(mocks.reads).toHaveBeenCalledTimes(2));
+            expect(settled).toBe(false);
+        } finally {
+            refreshed.resolve({ data:[{ id:"a",title:"Updated" }], error:null });
+        }
+        expect(await lookup).toMatchObject({ items:[{id:"a",title:"Updated"}], checkedAt:Date.now(), cache:"refresh" });
+        expect(mocks.reads).toHaveBeenCalledTimes(2);
+    });
+    it("still refreshes an expired value if the framework starts no background read", async () => {
+        await getCachedContentBatch(["a"]);
+        mocks.backgroundRefresh = false;
+        vi.setSystemTime(61_000);
+        mocks.reads.mockResolvedValue({ data:[], error:null });
+        expect(await getCachedContentBatch(["a"])).toMatchObject({items:[],cache:"refresh"});
+        expect(mocks.reads).toHaveBeenCalledTimes(2);
     });
     it("never caches database failures or serves expired data during an outage", async () => {
         mocks.reads.mockResolvedValueOnce({data:null,error:new Error("DB down")});
