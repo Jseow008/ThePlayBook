@@ -5,7 +5,7 @@ import { NoteDraftStatus } from "@/components/reader/NoteDraftStatus";
 import { SavedNoteCopyButton } from "@/components/notes/SavedNoteCopyButton";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import Image from "next/image";
+import { ResilientImage } from "@/components/ui/ResilientImage";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
@@ -334,8 +334,10 @@ function HighlightListItem({
                         >
                             <div className="flex items-start gap-3">
                                 {item.content_item?.cover_image_url ? (
-                                    <Image
+                                    <ResilientImage
                                         src={item.content_item.cover_image_url}
+                                        surface="content-card"
+                                        fallback={<div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-card/60 text-muted-foreground"><BookOpen className="size-4" /></div>}
                                         alt=""
                                         width={32}
                                         height={32}
@@ -491,8 +493,10 @@ function ReflectionListItem({
         <>
             <div className="flex items-start gap-3">
                 {item.content_item?.cover_image_url ? (
-                    <Image
+                    <ResilientImage
                         src={item.content_item.cover_image_url}
+                        surface="content-card"
+                        fallback={<div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-card/60 text-muted-foreground"><BookOpen className="size-4" /></div>}
                         alt=""
                         width={32}
                         height={32}

@@ -235,6 +235,30 @@ describe("BrainClientPage", () => {
         };
     });
 
+    it.each([false, true])("uses sized delivery for note and reflection thumbnails (sidebar=%s)", (sidebar) => {
+        vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://test.supabase.co");
+        try {
+            mediaQueryState.value.isNotesAskSidebarAvailable = sidebar;
+            const src = "https://test.supabase.co/storage/v1/object/public/media/covers/cover.jpg";
+            const page = { ...initialPage, data: initialPage.data.map(item => ({ ...item,
+                content_item: item.content_item ? { ...item.content_item, cover_image_url: src } : null,
+            })) };
+            infiniteHighlightsState.value.data = { pages: [page], pageParams: [null] };
+            reflectionsState.value = [{ id: "reflection-cover", user_id: "user-1", content_item_id: "content-1",
+                prompt: "Test question", reflection_text: "Synthetic reflection", created_at: "2026-03-12T12:00:00.000Z",
+                updated_at: null, content_item: { id: "content-1", title: "Test title", author: null, cover_image_url: src } }];
+            const { container } = render(<BrainClientPage initialPage={page} />);
+            const images = Array.from(container.querySelectorAll("img"));
+            expect(images.length).toBeGreaterThanOrEqual(4);
+            for (const image of images) {
+                const url = new URL(image.getAttribute("src")!, "http://localhost");
+                expect(url.pathname).toBe("/api/media/cover");
+                expect(url.searchParams.get("file")).toBe("cover.jpg");
+                expect(image.getAttribute("srcset")).not.toContain("/_next/image");
+            }
+        } finally { vi.unstubAllEnvs(); }
+    });
+
     it.each([
         { type: "all", highlightError: false, reflectionError: true, highlightRetries: 0, reflectionRetries: 1 },
         { type: "all", highlightError: true, reflectionError: false, highlightRetries: 1, reflectionRetries: 0 },
