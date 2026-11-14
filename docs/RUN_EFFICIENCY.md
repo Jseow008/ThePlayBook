@@ -80,3 +80,7 @@ Keep this pattern for comparable changes: one implementation owner, bounded inde
   screenshots may wait for fonts, so use event/paint measurements or explicitly
   non-waiting capture for early-frame claims. Check improvement by invalid runs
   avoided, without repeating unaffected hosted evidence.
+
+## Image-delivery audit — 14 November 2026
+
+A components-only image audit missed two Notes thumbnails under `app/`, requiring a follow-up release after the main image repair. Inventory image-renderer imports and old request URLs across all application roots before opening an image-delivery PR, then pair that inventory with viewport and pixel-density browser checks. Measure improvement by fewer follow-up releases caused by missed callers. Public-page image tests do not establish coverage of private account screens; keep that distinction in the evidence.
