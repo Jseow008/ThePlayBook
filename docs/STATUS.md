@@ -1,5 +1,60 @@
 # Netflux release and workstream status
 
+## Content lookup caching/reuse — 14 November 2026
+
+In progress on `codex/content-cache-reuse` in `/Users/j/Desktop/Lifebook-content-cache`,
+based on `0b6a6aad`. Original dirty worktree is untouched; one agent, no delegation.
+Production baseline at 390px and 1440px: three Library views made three lookups,
+returning six records for three unique items. Candidate needs one lookup/three
+records on both profiles, with zero additional calls on three revisits and no
+unavailable placeholders, overflow or browser exceptions. Browse and Search render.
+
+Changes add a public server batch cache with canonical IDs, the existing catalog
+invalidation tag and strict 60-second age checks; POST responses remain no-store.
+Browser records are shared across lists, preserve display order and cancellation,
+fence older responses, cache authoritative absence, and propagate refreshed/removal
+results. Server remaining freshness is passed to the browser so lifetimes cannot
+stack. No private reading state or persistent client storage is added.
+
+44 focused tests pass, plus lint, standalone TypeScript and production build.
+Hosted candidate uses synthetic fixtures only in project `bayymbcmehxudbwrvzjm`,
+branch `fc877dbe-3ae5-4aee-8634-d7f42c07c0ba`, parent `xmuqsgfxuaaophxnwure`.
+Prior temporary-branch cost authorization applies ($0.01344/hour rechecked).
+Private credentials are only under the private directory named by
+`/tmp/lifebook-cache-hosted-dir`; never print them. Isolated app on port 3202,
+owned Redis container `lifebook-content-cache-redis`, REST adapter port 8402.
+
+Hosted replay has 117 migrations, latest 20261105094614; isolated guarded dry-run
+is up to date. All 14 schema categories and fresh public types match production.
+Six permission checks and transactional DB-002 preservation pass. Security advisor
+matches the same 12 intentionally locked private tables; candidate unused-index
+counts reflect its lack of query history. All seven application smoke checks pass.
+Initial smoke auth callback needed a local forwarding-host override; initial
+replacement fixture was an unrelated draft, correctly rejected by the existing
+version guard, followed by a missing version-request timestamp in the harness.
+The corrected actual version/replacement routes pass. No application change was
+needed for these fixture/ingress corrections.
+
+Real hosted cache hit, canonical reordered IDs, publish/edit/withdraw/republish/
+delete invalidation and actual linked draft replacement pass. The first expired
+read after an external write returned the new absence with `refresh`, and cached
+hits still hit the admission boundary at 30 then 429. Hosted branch deleted,
+owned services stopped, and private workdir/credentials removed. Sanitized proof:
+[hosted verification](evidence/content-cache-hosted-20261114.json), candidate
+`441d3dab8e800aaf329e22018125bd441bf7cb48`; later commits only change evidence and tests.
+
+PR [#363](https://github.com/Jseow008/ThePlayBook/pull/363) is open. Initial CI
+passed 2,457 tests, skipped 318 and failed one old overlapping-list test expecting
+two requests; corrected it to assert reuse and added genuine pending-card coverage.
+All 44 focused tests now pass; application behavior is unchanged from hosted proof.
+Initial security and Catalog Search checks passed. Auto-merge was disabled while
+correcting tests. Next: push test correction, inspect scope and re-enable squash
+auto-merge only after the new PR scope check passes. Follow exact production alias, verify Library and server-cache
+behavior at both widths, report before another group. No production schema or
+personal data mutation; no push is applicable. Request/record reduction is
+measured; latency is not a controlled benchmark. No commit changes after hosted
+build affect application behavior.
+
 ## Cover-only admin saves — 13 November 2026
 
 Focused fix on `codex/fix-cover-only-admin-save` in `/Users/j/.codex/worktrees/fix-cover-only-admin-save/Lifebook`, based on freshly fetched `origin/main` at `0c44ccc7`. No production data or schema changes; no migration required. Admin layout/copy, published reading content, and the database version guard remain unchanged.
