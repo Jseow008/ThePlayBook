@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 const posthogCapture = vi.hoisted(() => vi.fn());
-vi.mock("posthog-js", () => ({ default: { capture: posthogCapture } }));
+vi.mock("@/lib/deferred-analytics", () => ({
+    withAnalyticsClient: (command: (client: { capture: typeof posthogCapture }) => void) => command({ capture: posthogCapture }),
+}));
 
 import { captureAnalyticsEvent } from "@/lib/analytics";
 
@@ -25,10 +27,10 @@ describe("Search analytics URL privacy", () => {
 
         expect(posthogCapture).toHaveBeenCalledWith("search_action_started", expect.objectContaining({
             $current_url: `${window.location.origin}/search`,
-        }));
+        }), { timestamp: expect.any(Date) });
         expect(posthogCapture).toHaveBeenCalledWith("search_action_superseded", expect.objectContaining({
             $current_url: `${window.location.origin}/search`,
-        }));
+        }), { timestamp: expect.any(Date) });
         expect(JSON.stringify(posthogCapture.mock.calls)).not.toContain("private");
     });
 });

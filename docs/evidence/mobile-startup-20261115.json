@@ -1,0 +1,739 @@
+{
+  "date": "2026-11-15 Asia/Singapore",
+  "status": "pre-release verified candidate; production verification pending",
+  "baselineCommit": "f94320d3bbda315966565db0ad35b4e87b649982",
+  "measuredAppCommit": "2bc94405",
+  "sourceSha256": {
+    "instrumentation-client.ts": "cec132c2ca356673ef755334dbb06943c3e4ff0eec5db69b2e6bd00614729a15",
+    "lib/analytics.ts": "138bd953d4eab6dbd1642701ceca9321650e04530edbeaa3e265bb73c6a7d642",
+    "lib/deferred-analytics.ts": "ff5f08b2997e56f779b9ff52bbd575b082022781d4ac106d95720436bef0530a",
+    "components/ui/HeroCarousel.tsx": "e5b5510882b96cc62cb736461b7b9d621efadbb3a5f47988223bd4398540f900"
+  },
+  "protocol": {
+    "date": "2026-11-14T16:12:28.170Z",
+    "source": {
+      "control": "f94320d3",
+      "candidate": "2bc94405"
+    },
+    "profiles": {
+      "mobile": "390x844 DPR2,1.6Mbps down,750kbps up,80ms latency,4xCPU",
+      "desktop": "1440x900 DPR1,native network/CPU"
+    },
+    "pages": [
+      "Home",
+      "Browse",
+      "Saved"
+    ],
+    "rounds": 3,
+    "order": "Alternating control/candidate order each round; consecutive pairs",
+    "visits": "fresh browser per cell; protected origin-scoped interception disables HTTP cache equally",
+    "observationMs": 8000,
+    "reducedMotion": true,
+    "reason": "Hold the initial carousel/animation frame for first-screen comparison; ordinary motion verified separately",
+    "primary": "Mobile Saved lookup start/content readiness and Browse first-screen LCP; initial script bytes, desktop and Home regression checks",
+    "backend": "Prewarm public batch before each Saved pair; preserve cache/server-timing metadata. Not a cold-server or real-user benchmark",
+    "warmups": "Home/Browse on both profiles and variants, excluded",
+    "telemetry": "PostHog/analytics ingestion intercepted locally, no synthetic event ingestion",
+    "limits": [
+      "Small sample, directional medians/ranges only",
+      "Preview auth overhead included in both variants; absolute timings are not production timings"
+    ]
+  },
+  "performance": [
+    {
+      "profile": "mobile",
+      "page": "Home",
+      "variant": "control",
+      "n": 3,
+      "readyMs": {
+        "median": 1253,
+        "min": 1203,
+        "max": 1821
+      },
+      "lcpMs": {
+        "median": 884,
+        "min": 832,
+        "max": 1448
+      },
+      "fcpMs": {
+        "median": 884,
+        "min": 832,
+        "max": 1448
+      },
+      "wireKiB": {
+        "median": 738,
+        "min": 738,
+        "max": 738
+      },
+      "scriptsKiB": {
+        "median": 373,
+        "min": 373,
+        "max": 375
+      },
+      "cls": [
+        0.0001258174216186657,
+        0.0001258174216186657,
+        0.0001258174216186657
+      ]
+    },
+    {
+      "profile": "mobile",
+      "page": "Home",
+      "variant": "candidate",
+      "n": 3,
+      "readyMs": {
+        "median": 1217,
+        "min": 1212,
+        "max": 1247
+      },
+      "lcpMs": {
+        "median": 840,
+        "min": 840,
+        "max": 872
+      },
+      "fcpMs": {
+        "median": 840,
+        "min": 840,
+        "max": 872
+      },
+      "wireKiB": {
+        "median": 740,
+        "min": 739,
+        "max": 740
+      },
+      "scriptsKiB": {
+        "median": 377,
+        "min": 374,
+        "max": 377
+      },
+      "cls": [
+        0.0001258174216186657,
+        0.0001258174216186657,
+        0.0001258174216186657
+      ]
+    },
+    {
+      "profile": "mobile",
+      "page": "Browse",
+      "variant": "control",
+      "n": 3,
+      "readyMs": {
+        "median": 2730,
+        "min": 2704,
+        "max": 2788
+      },
+      "lcpMs": {
+        "median": 5144,
+        "min": 5140,
+        "max": 5216
+      },
+      "fcpMs": {
+        "median": 944,
+        "min": 884,
+        "max": 1004
+      },
+      "wireKiB": {
+        "median": 1383,
+        "min": 1339,
+        "max": 1383
+      },
+      "scriptsKiB": {
+        "median": 479,
+        "min": 478,
+        "max": 479
+      },
+      "cls": [
+        0.00021839844809623117,
+        0.00021839844809623117,
+        0.00021839844809623117
+      ]
+    },
+    {
+      "profile": "mobile",
+      "page": "Browse",
+      "variant": "candidate",
+      "n": 3,
+      "readyMs": {
+        "median": 2768,
+        "min": 2674,
+        "max": 2768
+      },
+      "lcpMs": {
+        "median": 4768,
+        "min": 4684,
+        "max": 4788
+      },
+      "fcpMs": {
+        "median": 956,
+        "min": 904,
+        "max": 1000
+      },
+      "wireKiB": {
+        "median": 1350,
+        "min": 1349,
+        "max": 1352
+      },
+      "scriptsKiB": {
+        "median": 478,
+        "min": 478,
+        "max": 478
+      },
+      "cls": [
+        0.00021839844809623117,
+        0.00021839844809623117,
+        0.00021839844809623117
+      ]
+    },
+    {
+      "profile": "mobile",
+      "page": "Saved",
+      "variant": "control",
+      "n": 3,
+      "readyMs": {
+        "median": 4784,
+        "min": 4759,
+        "max": 4883
+      },
+      "lcpMs": {
+        "median": 4804,
+        "min": 4740,
+        "max": 4860
+      },
+      "fcpMs": {
+        "median": 848,
+        "min": 812,
+        "max": 892
+      },
+      "wireKiB": {
+        "median": 782,
+        "min": 779,
+        "max": 784
+      },
+      "scriptsKiB": {
+        "median": 491,
+        "min": 490,
+        "max": 495
+      },
+      "cls": [
+        0.00021839844809623117,
+        0.00021839844809623117,
+        0.00021839844809623117
+      ],
+      "lookupStartMs": {
+        "median": 3872,
+        "min": 3855,
+        "max": 3982
+      },
+      "lookupDurationMs": {
+        "median": 596,
+        "min": 535,
+        "max": 645
+      },
+      "scriptKiBBeforeLookup": {
+        "median": 442,
+        "min": 442,
+        "max": 442
+      }
+    },
+    {
+      "profile": "mobile",
+      "page": "Saved",
+      "variant": "candidate",
+      "n": 3,
+      "readyMs": {
+        "median": 4786,
+        "min": 4773,
+        "max": 4930
+      },
+      "lcpMs": {
+        "median": 4668,
+        "min": 4552,
+        "max": 5512
+      },
+      "fcpMs": {
+        "median": 828,
+        "min": 804,
+        "max": 1420
+      },
+      "wireKiB": {
+        "median": 782,
+        "min": 780,
+        "max": 782
+      },
+      "scriptsKiB": {
+        "median": 491,
+        "min": 490,
+        "max": 493
+      },
+      "cls": [
+        0.00021839844809623117,
+        0.00021839844809623117,
+        0.00021839844809623117
+      ],
+      "lookupStartMs": {
+        "median": 3474,
+        "min": 3452,
+        "max": 4027
+      },
+      "lookupDurationMs": {
+        "median": 807,
+        "min": 697,
+        "max": 807
+      },
+      "scriptKiBBeforeLookup": {
+        "median": 373,
+        "min": 373,
+        "max": 373
+      }
+    },
+    {
+      "profile": "desktop",
+      "page": "Home",
+      "variant": "control",
+      "n": 3,
+      "readyMs": {
+        "median": 438,
+        "min": 380,
+        "max": 442
+      },
+      "lcpMs": {
+        "median": 440,
+        "min": 432,
+        "max": 504
+      },
+      "fcpMs": {
+        "median": 440,
+        "min": 432,
+        "max": 504
+      },
+      "wireKiB": {
+        "median": 817,
+        "min": 816,
+        "max": 818
+      },
+      "scriptsKiB": {
+        "median": 373,
+        "min": 373,
+        "max": 375
+      },
+      "cls": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "profile": "desktop",
+      "page": "Home",
+      "variant": "candidate",
+      "n": 3,
+      "readyMs": {
+        "median": 390,
+        "min": 386,
+        "max": 449
+      },
+      "lcpMs": {
+        "median": 456,
+        "min": 424,
+        "max": 488
+      },
+      "fcpMs": {
+        "median": 456,
+        "min": 424,
+        "max": 488
+      },
+      "wireKiB": {
+        "median": 818,
+        "min": 816,
+        "max": 818
+      },
+      "scriptsKiB": {
+        "median": 375,
+        "min": 374,
+        "max": 376
+      },
+      "cls": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "profile": "desktop",
+      "page": "Browse",
+      "variant": "control",
+      "n": 3,
+      "readyMs": {
+        "median": 486,
+        "min": 483,
+        "max": 741
+      },
+      "lcpMs": {
+        "median": 600,
+        "min": 596,
+        "max": 856
+      },
+      "fcpMs": {
+        "median": 464,
+        "min": 448,
+        "max": 708
+      },
+      "wireKiB": {
+        "median": 1036,
+        "min": 1034,
+        "max": 1036
+      },
+      "scriptsKiB": {
+        "median": 479,
+        "min": 478,
+        "max": 480
+      },
+      "cls": [
+        9.782235939643347e-06,
+        9.782235939643347e-06,
+        9.782235939643347e-06
+      ]
+    },
+    {
+      "profile": "desktop",
+      "page": "Browse",
+      "variant": "candidate",
+      "n": 3,
+      "readyMs": {
+        "median": 579,
+        "min": 514,
+        "max": 983
+      },
+      "lcpMs": {
+        "median": 700,
+        "min": 612,
+        "max": 1240
+      },
+      "fcpMs": {
+        "median": 580,
+        "min": 476,
+        "max": 956
+      },
+      "wireKiB": {
+        "median": 1041,
+        "min": 1035,
+        "max": 1279
+      },
+      "scriptsKiB": {
+        "median": 480,
+        "min": 479,
+        "max": 481
+      },
+      "cls": [
+        9.782235939643347e-06,
+        9.782235939643347e-06,
+        9.782235939643347e-06
+      ]
+    },
+    {
+      "profile": "desktop",
+      "page": "Saved",
+      "variant": "control",
+      "n": 3,
+      "readyMs": {
+        "median": 2185,
+        "min": 1274,
+        "max": 2250
+      },
+      "lcpMs": {
+        "median": 1836,
+        "min": 1176,
+        "max": 1912
+      },
+      "fcpMs": {
+        "median": 560,
+        "min": 532,
+        "max": 560
+      },
+      "wireKiB": {
+        "median": 715,
+        "min": 713,
+        "max": 715
+      },
+      "scriptsKiB": {
+        "median": 477,
+        "min": 475,
+        "max": 478
+      },
+      "cls": [
+        9.782235939643347e-06,
+        9.782235939643347e-06,
+        9.782235939643347e-06
+      ],
+      "lookupStartMs": {
+        "median": 543,
+        "min": 509,
+        "max": 555
+      },
+      "lookupDurationMs": {
+        "median": 1213,
+        "min": 563,
+        "max": 1344
+      },
+      "scriptKiBBeforeLookup": {
+        "median": 442,
+        "min": 442,
+        "max": 442
+      }
+    },
+    {
+      "profile": "desktop",
+      "page": "Saved",
+      "variant": "candidate",
+      "n": 3,
+      "readyMs": {
+        "median": 1197,
+        "min": 1191,
+        "max": 1204
+      },
+      "lcpMs": {
+        "median": 1100,
+        "min": 928,
+        "max": 1196
+      },
+      "fcpMs": {
+        "median": 528,
+        "min": 500,
+        "max": 572
+      },
+      "wireKiB": {
+        "median": 714,
+        "min": 714,
+        "max": 714
+      },
+      "scriptsKiB": {
+        "median": 477,
+        "min": 474,
+        "max": 479
+      },
+      "cls": [
+        9.782235939643347e-06,
+        9.782235939643347e-06,
+        9.782235939643347e-06
+      ],
+      "lookupStartMs": {
+        "median": 510,
+        "min": 471,
+        "max": 566
+      },
+      "lookupDurationMs": {
+        "median": 571,
+        "min": 305,
+        "max": 621
+      },
+      "scriptKiBBeforeLookup": {
+        "median": 373,
+        "min": 373,
+        "max": 373
+      }
+    }
+  ],
+  "all36Loads": {
+    "http200": true,
+    "visibleImagesLoaded": true,
+    "noOverflow": true,
+    "noRenderFaults": true,
+    "noCompletedHttpErrors": true
+  },
+  "browserQA": {
+    "setup": "Production browser origin mapped to owned protected candidate Preview with scoped OIDC; synthetic analytics locally intercepted. Direct Preview blocked canonical production analytics host via CSP in both variants. No deployment config changed.",
+    "cases": [
+      {
+        "profile": "mobile",
+        "scenario": "delayed",
+        "held": true,
+        "firstPageviewRetained": true,
+        "libraryReady": true,
+        "faults": [],
+        "responses": []
+      },
+      {
+        "profile": "mobile",
+        "scenario": "blocked",
+        "held": true,
+        "firstPageviewRetained": false,
+        "libraryReady": true,
+        "faults": [],
+        "responses": []
+      },
+      {
+        "profile": "desktop",
+        "scenario": "delayed",
+        "held": true,
+        "firstPageviewRetained": true,
+        "libraryReady": true,
+        "faults": [],
+        "responses": []
+      },
+      {
+        "profile": "desktop",
+        "scenario": "blocked",
+        "held": true,
+        "firstPageviewRetained": false,
+        "libraryReady": true,
+        "faults": [],
+        "responses": []
+      }
+    ],
+    "normalMotionScreenshotsReviewed": [
+      "mobile",
+      "desktop"
+    ],
+    "imagesLoaded": true,
+    "search": "Mobile and desktop: exactly one Search pageview, original queued timestamp, sanitized explicit current_url; automatic metadata gap independently reproduced in unchanged baseline and candidate. Search backend result success is not established by Preview privacy QA (Preview lacks production-only key)."
+  },
+  "checks": {
+    "focused": "35 passing across6 files on final empty-host guard",
+    "unit": "2469 passed; 318 intentionally skipped across database-dependent suites",
+    "capacityHarness": "34 passed",
+    "lint": "pass, including ratchets and boundaries",
+    "typescript": "pass",
+    "remoteProductionBuild": "control and candidate READY"
+  },
+  "separateFinding": {
+    "description": "SDK automatic session metadata contains raw Search q despite sanitized explicit current_url. Reproduced baseline and candidate; not fixed by startup change.",
+    "fields": [
+      "$session_entry_url",
+      "person_properties.$initial_current_url"
+    ],
+    "syntheticProbeIngestion": "locally intercepted; none sent",
+    "scope": "Separate privacy follow-up; no claim that full payload privacy passes."
+  },
+  "limitations": [
+    "Small lab sample, no real-user/global performance guarantee",
+    "Saved content-ready median unchanged despite earlier lookup; server response variance remains",
+    "Desktop Browse LCP median 100ms higher, with HTML response-end median 119ms higher; no universal desktop speedup claim",
+    "PostHog download deferred, not eliminated; eventual total script bytes similar",
+    "Early exit before SDK download remains best effort; no guarantee on immediate tab close",
+    "Protected Preview routing disables browser HTTP cache; repeat cache performance excluded",
+    "Benchmark reduced motion; ordinary motion images/layout separately reviewed"
+  ],
+  "databaseReleaseGate": "N/A: no database, auth, query, data-hydration or mutation path change",
+  "productionWrites": false,
+  "temporaryPreviews": [
+    "dpl_9uoThrn2Nn9FfXADqBMktJTYcWqa",
+    "dpl_Gk8LBawvaYiP6DxURX2rNUbUAdvQ",
+    "dpl_9oxncGuVgieJnnybuTcJMh8PrUzW"
+  ],
+  "cleanup": "Local isolated database/server/keys removed. Initial analytics-only owned Preview deleted; control/combined owned Previews and development OIDC file retained until production verification.",
+  "efficiency": {
+    "agents": 1,
+    "delegation": false,
+    "providerCalls": 0,
+    "codexBilledUsage": "unavailable",
+    "experiments": "separate development pilots then one frozen36-load comparison; invalid cached-preview pilot retained; setup failures and separate baseline privacy reproduction retained privately"
+  },
+  "finalSourceSha256": {
+    "instrumentation-client.ts": "cec132c2ca356673ef755334dbb06943c3e4ff0eec5db69b2e6bd00614729a15",
+    "lib/analytics.ts": "138bd953d4eab6dbd1642701ceca9321650e04530edbeaa3e265bb73c6a7d642",
+    "lib/deferred-analytics.ts": "ab12854703a429ff606005fdbf56ba88390325e2000977a36791f728d5bc4a73",
+    "components/ui/HeroCarousel.tsx": "e5b5510882b96cc62cb736461b7b9d621efadbb3a5f47988223bd4398540f900"
+  },
+  "evidenceReuse": "After measured app2bc94405, restored original empty-host disable guard and parameterized its test. Verified Preview/production host is nonempty canonical production origin. Active configured loading schedule, SDK init settings, imports and image paths unchanged; frozen timing evidence retained with this limitation, not rerun to obtain favorable samples. Final focused tests/types/targeted lint rerun; final remote build/CI still required.",
+  "rebasedBase": "913351d5",
+  "rebaseEvidenceReuse": "Main Notes opening PR366 landed while PR367 CI ran. Rebase conflict only in STATUS; both sections preserved. Startup application source hashes unchanged from c2aa8630; Notes client route is not loaded/prefetched by measured Home/Browse/Library. Retain frozen lab results at original base with this limit, require CI on final combined tree and live verification.",
+  "ciFollowup": {
+    "failedRun": 43617237897,
+    "result": {
+      "passed": 226,
+      "skipped": 132,
+      "failed": 2
+    },
+    "failedCases": [
+      "mobile-se Notes opening",
+      "mobile-iphone Notes opening"
+    ],
+    "baselineMainRun": 43616979211,
+    "baselineAlsoFails": true,
+    "cause": "Expected persistent local snapshot-worker configuration warning intercepted the mobile Send click. Playwright action logs identify the toast; not a startup/analytics failure.",
+    "correction": "Test-only locator handler closes only that exact warning through its normal Close toast button. No forced click, skip, timeout or send/response/context assertion relaxed.",
+    "fixtureSha256": "6f96d6a61c3f73bee53bf266aafe25b4936014b88a03cd7e614d0266abb2608d",
+    "localVerification": {
+      "cliVersion": "2.95.2 pinned",
+      "project": "mobile-startup-ci-20261115",
+      "loopbackPorts": "583xx and app3466",
+      "existingOtherStacks": "Untouched; old default inspected read-only and not used",
+      "migrations": 117,
+      "latestMigration": "20261105094614",
+      "mobilePilot": {
+        "startTime": "2026-11-14T17:19:16.355Z",
+        "duration": 20570.683999999997,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "remainingFour": {
+        "startTime": "2026-11-14T17:20:23.539Z",
+        "duration": 37365.643,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "skipped": 0,
+      "retries": 0,
+      "syntheticAccountsCreatedAndRemoved": 6,
+      "accountsRemaining": 0,
+      "snapshotWorker": "Intentionally absent to reproduce exact expected notification",
+      "appCodeChanges": "None; startup and Notes product sources unchanged",
+      "cleanup": "Owned server stopped, project containers/volumes removed, local keys deleted and retained logs redacted"
+    },
+    "next": "Required CI rerun on corrected final head before merge/release"
+  },
+  "imageAttribution": {
+    "control": {
+      "foregroundFirstDownloadEndMs": 5131,
+      "lcpTargets": [
+        "div.-inset-6.absolute.blur-2xl.opacity-45.scale-105>img.object-cover",
+        "div.-inset-6.absolute.blur-2xl.opacity-45.scale-105>img.object-cover",
+        "div.-inset-6.absolute.blur-2xl.opacity-45.scale-105>img.object-cover"
+      ]
+    },
+    "candidate": {
+      "foregroundFirstDownloadEndMs": 4745,
+      "lcpTargets": [
+        "img.object-[50%_30%].object-cover",
+        "img.object-[50%_30%].object-cover",
+        "img.object-[50%_30%].object-cover"
+      ]
+    },
+    "note": "LCP target changes from decorative blur to foreground, but unchanged foreground first download also completes386ms earlier at the median. Later duplicate preload/image transfers in protected measurements reflect disabled browser caching; do not interpret whole8s wire totals as normal production downloads.",
+    "nativeForegroundResources": [
+      {
+        "type": "link",
+        "body": 81936,
+        "transfer": 82236,
+        "start": 135,
+        "end": 4789
+      }
+    ]
+  },
+  "nativeBaseline": {
+    "deployment": "dpl_9XcM4Tsr9rVHp24p2TXtQjWbuXHJ",
+    "loads": 12,
+    "pages": [
+      "Home",
+      "Browse",
+      "Saved"
+    ],
+    "profiles": [
+      "mobile",
+      "desktop"
+    ],
+    "visits": [
+      "fresh",
+      "repeat"
+    ],
+    "allReady": true,
+    "allVisibleImagesLoaded": true,
+    "noOverflowOrRenderFaults": true,
+    "cache": "No request interception; CDP blocks only telemetry. Repeat scripts have zero transfer with nonzero body, consistent with browser memory-cache reuse; no CDP disk-cache hits.",
+    "limit": "One sequential production sample per cell; no causal speedup claim."
+  }
+}

@@ -1,5 +1,99 @@
 # Netflux release and workstream status
 
+## Mobile startup improvements — 14–15 November 2026 (Singapore)
+
+Active `codex/mobile-startup`, `/Users/j/Desktop/Lifebook-mobile-startup`, current
+base `913351d5` (#366), head `ee8ac916` plus pending test-only CI correction/docs.
+Initially branched from freshly fetched `f94320d3`. Original dirty app/cache/region/
+555 worktrees untouched. One agent, no delegation, no model/provider calls. Authorized
+startup improvements and mobile/desktop verification; report before further groups.
+
+PostHog was eager in instrumentation-client and lib/analytics. Lightweight FIFO now
+defers SDK until windowload+idle (1500ms bound), expedited by interaction/hidden
+visibility. Preserve queued event URL/time, identify/reset order and original empty
+host/token disable guard. Sentry remains eager; import/init failure isolated. Browse
+cover-only decorative blur sizes256→128px, low priority; foreground art/sizes, layout,
+copy/fonts and data paths unchanged. No DB/auth/query/hydration/mutation application
+change; OPS§2.2 hosted database gate N/A. No region/plan/schema/production-data change.
+
+Frozen36-load comparison: three alternating rounds, Home/Browse/Saved, mobile390/DPR2
+1.6Mbps/80ms/4xCPU and desktop1440/DPR1 native. Matched Preview config/defaultiad1,
+batch bom1; reduced motion fixes first hero frame,8s observation, prewarmed batch.
+All36 HTTP200/ready, visible images loaded, no overflow/render faults/HTTP failures.
+Mobile Browse LCP5.144→4.768s, blurred cover41→9KiB (640→256 physical pixels). LCP
+target changes blur→foreground, but unchanged foreground first download also ends
+5.131→4.745s. Saved lookup3.872→3.474s; JS completed before lookup442→373KiB.
+Content-ready4.784→4.786s: no full Library speedup established. Home LCP.884→.840s.
+Desktop Browse LCP.600→.700s with streamed HTML end.348→.467s; no universal desktop
+speedup/no timing-regression claim. SDK deferred, not eliminated; eventual JS similar.
+Small lab sample, not real-user/cold-server/global evidence. Protected routing disables
+HTTP cache equally; failed cache-override pilot retained, cached timings excluded.
+Later duplicate image transfers in protected runs are a cache-interception artifact,
+not normal production download behavior. Native baseline12 loads passed Home/Browse/
+Saved fresh+repeat on both profiles, real zero-transfer/nonzero-body script reuse
+(memory cache, no CDP disk hits). Single sequential production cells are not causal
+latency evidence. All timings retained; no favorable rerun/tuning of frozen samples.
+
+Measured app `2bc94405` at originalbasef943. Final empty-host guard `c2aa8630` restores
+original disabled-config behavior; configured host verified nonempty, relevant path
+unchanged. Rebased onto #366 after STATUS-only conflict, preserving both workstreams.
+Startup source hashes identical after rebase, unrelated Notes route not loaded/
+prefetched by measured pages. Evidence records reuse limits, exact hashes and results:
+[sanitized record](evidence/mobile-startup-20261115.json). Private artifacts/scripts
+`/tmp/lifebook-mobile-startup-20261114` (0700). No further benchmark needed for the
+subsequent test-only fixture correction; application bytes are unchanged.
+
+Local full unit2469 pass/318 intentionally skipped; capacity harness34 pass. Final
+focused35 across6 files pass, lint/typecheck pass, all remote production builds ready.
+Mapped-origin Preview QA passed4 mobile/desktop delayed/blocked SDK cases: first
+Home/Browse pageviews once, original timestamps, Library ready, visible images, no
+render faults/overflow/HTTP failures. Normal-motion screenshots inspected. Same final
+source atc2aa also passed. Direct Preview initially blocked canonical production
+analytics host by CSP; origin-mapped owned Preview setup resolved this without config
+changes. SDK ingest locally intercepted; no synthetic analytics sent. Route-shutdown
+handling and diagnostic redaction fixed; never print credential-bearing headers.
+
+Separate finding: explicit Search event/pageview URLs and original queued times pass
+both viewports, but SDK automatic session-entry/initial-person metadata contains raw
+Search q. Independently reproduced unchanged baseline and candidate. This startup
+change does not fix it; no full-payload privacy claim. Recommend separate follow-up.
+
+PR [#367](https://github.com/Jseow008/ThePlayBook/pull/367), squash auto-merge enabled;
+Git/local scope clean and PR scope passed. Initial CI superseded by #366 rebase.
+Rebased CI43617237897 passed lint/types/units/build, Security43617237941 and catalog
+passed, but2 Notes phone E2E timed out;226 passed/132 skipped. Main913 independently
+fails same test in43616979211. Artifact action logs show expected persistent local
+snapshot warning covering Send. Test-only correction closes exactly that warning via
+normal Close toast control; no forced clicks/skips/timeouts/assertion relaxation or
+Notes product/data change. Local pinned Supabase2.95.2 isolated project
+mobile-startup-ci-20261115/583xx, full117 migrations latest20261105094614, app3466:
+2 failed-phone cases pass first, remaining4 pass, zero retries/skips. Six synthetic
+accounts globally signed out/deleted, DB count0. Owned server/containers/volumes
+removed, local access keys deleted, retained logs redacted. Existing local stacks
+untouched (default old86-migration stack inspected only). Targeted lint/types pass.
+
+Next: commit fixture correction and evidence, fresh main/scope check, push and update
+PR validation. Restart watch-pr.cjs after push; its previous session49234 exited on
+failure. Main watcher28553/watch-main.cjs still waits for merge.json. Do not bypass
+required PR or post-merge validate/Security Validation gates or manually promote.
+After exact released alias/SHA: native-audit.cjs Home/Browse/Saved/Reading/Completed
+fresh+repeat on both profiles (20 loads), production qa.cjs and qa-search.cjs with
+ORIGIN=https://www.netflux.blog, inspect screenshots/traffic/cache. Record release,
+cleanup, final findings and stop before another group. Do not push progress-only
+notes during CI (would restart checks). No pending user permission or paid branch.
+
+Owned temporary CLI Previews: control dpl_9uoThrn2Nn9FfXADqBMktJTYcWqa; combined
+candidate dpl_9oxncGuVgieJnnybuTcJMh8PrUzW. Initial dpl_Gk8LBawvaYiP6DxURX2rNUbUAdvQ
+already deleted. Remove remaining2 exact IDs and private0600 access.json after live
+verification. Git-managed PR Previews c2aa dpl_G3yYLF1rZB54mXbkxfe4qqEmxAvT andee8
+ dpl_2roA8fbXyF6uLA52iWSP6CzYrQfr are automatic resources, not manually promoted.
+Baseline detached worktree `/Users/j/Desktop/Lifebook-mobile-baseline` atf943 retained.
+CLI65.12.1 fallback works; MCP env403 resolved via native metadata; development env
+pull deleted immediately, never use env-run. Production baseline identity was
+ dpl_9XcM4Tsr9rVHp24p2TXtQjWbuXHJ. Verify current alias; #366 has separate failed-main
+checks and may still be unreleased. Do not assume any newer deployment is live.
+
+
 ## Notes panel opening fix — 15 November 2026
 
 User authorized fix, tests and deployment after all checks pass. Fresh managed worktree `/Users/j/.codex/worktrees/fix-notes-panel-opening/Lifebook`, branch `codex/fix-notes-panel-opening`, base `f94320d3`. Old Luna investigation/status/artifacts preserved. One agent. No commit/PR/release yet; production unchanged by this fix so far.
@@ -11,6 +105,7 @@ Localized client-only change in `app/(public)/notes/client-page.tsx`: UI query w
 Accepted built-browser check passed fresh opening (no RSC opening navigation), Close/reopen/draft retention, Back/Forward with filters/panel state, pending 2.5s mocked stream completion without cancellation, reload transcript recovery, and mobile full Notes chat/no overflow. No page exceptions. Failed acquisition retained: initial use of existing Next private history state prevented its URL-hook notification; read installed framework implementation/docs, corrected new writes/probe to supported null state, rebuilt, then passed. New E2E fixture cookie callback type corrected before final typecheck. A background Library snapshot-sync warning in isolated local config is disclosed, not claimed fixed or server-qualified. Two synthetic internal accounts/reflections across browser acquisitions globally signed out/deleted; owned port 3450 server stopped; no copied credentials, live model/index calls, public content or existing reader records changed.
 
 Hash-bound focused evidence: [opening fix](evidence/notes-panel-opening-fix-20261115.json); full private-test artifacts/screenshots under `output/notes-opening-fix-20261114/`. Exact next action: commit only app, component/E2E regression tests, evidence and this checkpoint; inspect scope, push/open ready PR, attach it, require all CI and preview checks. Then squash merge under existing deployment authorization, promote exact production build if needed, verify the live Notes opening and one real response with disposable records, and clean up. No pending product decision or blocker.
+
 
 ## Single content expiry refresh — 14 November 2026
 

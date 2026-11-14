@@ -203,7 +203,8 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                         alt=""
                                         fill
                                         surface="hero-carousel"
-                                        sizes="256px"
+                                        sizes="128px"
+                                        fetchPriority="low"
                                         className="object-cover"
                                         fallback={<div className="h-full w-full bg-card" />}
                                     />

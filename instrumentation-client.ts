@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import posthog from "posthog-js";
+import { initializeDeferredAnalytics } from "@/lib/deferred-analytics";
 
 const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
@@ -13,21 +13,4 @@ Sentry.init({
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 
-const posthogProjectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
-const posthogHost = (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "/flux").replace(/\/$/, "");
-const posthogUiHost = process.env.NEXT_PUBLIC_POSTHOG_UI_HOST?.replace(/\/$/, "");
-const captureBotEvents = process.env.NEXT_PUBLIC_POSTHOG_CAPTURE_BOT_EVENTS === "true";
-
-if (posthogProjectToken && posthogHost && !posthog.__loaded) {
-  posthog.init(posthogProjectToken, {
-    api_host: posthogHost,
-    ui_host: posthogUiHost || "https://us.posthog.com",
-    defaults: "2026-01-30",
-    capture_pageview: false,
-    capture_pageleave: true,
-    autocapture: false,
-    disable_session_recording: true,
-    disable_surveys: true,
-    __preview_capture_bot_pageviews: captureBotEvents,
-  });
-}
+initializeDeferredAnalytics();
