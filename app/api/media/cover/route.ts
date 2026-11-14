@@ -4,7 +4,6 @@ import { COVER_WIDTHS } from "@/lib/cover-image";
 import { rateLimitFailureResponse, strictPublicRateLimit } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
-export const preferredRegion = "bom1";
 const MAX_BYTES = 8 * 1024 * 1024;
 const noStore = { "Cache-Control": "no-store" };
 
