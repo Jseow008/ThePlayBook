@@ -20,7 +20,7 @@
   "productionBuild": true,
   "smokePassed": 7,
   "smokeSkipped": 0,
-  "focusedTestsPassed": 35,
+  "focusedTestsPassed": 44,
   "lint": true,
   "typecheck": true,
   "browser": [
@@ -95,5 +95,11 @@
     "Initial unrelated replacement draft was correctly rejected; harness then corrected the required source timestamp and used actual linked version creation",
     "Server cache TTL is 60 seconds, browser carries remaining lifetime; existing open tabs do not receive push updates",
     "Request-count reduction is measured; latency was not a controlled benchmark"
-  ]
+  ],
+  "ciCorrection": {
+    "initialRun": "43578260585",
+    "result": "2457 passed, 318 skipped; one old test expected a redundant second overlapping lookup",
+    "correction": "Test now asserts reuse; a separate deferred read test retains pending-card filtering coverage",
+    "applicationChanged": false
+  }
 }

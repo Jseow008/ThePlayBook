@@ -16,7 +16,7 @@ fence older responses, cache authoritative absence, and propagate refreshed/remo
 results. Server remaining freshness is passed to the browser so lifetimes cannot
 stack. No private reading state or persistent client storage is added.
 
-35 focused tests pass, plus lint, standalone TypeScript and production build.
+44 focused tests pass, plus lint, standalone TypeScript and production build.
 Hosted candidate uses synthetic fixtures only in project `bayymbcmehxudbwrvzjm`,
 branch `fc877dbe-3ae5-4aee-8634-d7f42c07c0ba`, parent `xmuqsgfxuaaophxnwure`.
 Prior temporary-branch cost authorization applies ($0.01344/hour rechecked).
@@ -41,10 +41,15 @@ read after an external write returned the new absence with `refresh`, and cached
 hits still hit the admission boundary at 30 then 429. Hosted branch deleted,
 owned services stopped, and private workdir/credentials removed. Sanitized proof:
 [hosted verification](evidence/content-cache-hosted-20261114.json), candidate
-`441d3dab8e800aaf329e22018125bd441bf7cb48`; final evidence-only commit follows.
+`441d3dab8e800aaf329e22018125bd441bf7cb48`; later commits only change evidence and tests.
 
-Next: publish ready PR, inspect GitHub scope and enable squash auto-merge after
-PR scope passes. Follow exact production alias, verify Library and server-cache
+PR [#363](https://github.com/Jseow008/ThePlayBook/pull/363) is open. Initial CI
+passed 2,457 tests, skipped 318 and failed one old overlapping-list test expecting
+two requests; corrected it to assert reuse and added genuine pending-card coverage.
+All 44 focused tests now pass; application behavior is unchanged from hosted proof.
+Initial security and Catalog Search checks passed. Auto-merge was disabled while
+correcting tests. Next: push test correction, inspect scope and re-enable squash
+auto-merge only after the new PR scope check passes. Follow exact production alias, verify Library and server-cache
 behavior at both widths, report before another group. No production schema or
 personal data mutation; no push is applicable. Request/record reduction is
 measured; latency is not a controlled benchmark. No commit changes after hosted
