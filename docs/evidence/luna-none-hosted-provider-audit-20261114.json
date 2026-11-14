@@ -1,0 +1,402 @@
+[
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 1600,
+    "status": 200,
+    "headersMs": 3422.657707999999,
+    "durationMs": 3424.343041,
+    "usage": {
+      "input_tokens": 1528,
+      "input_tokens_details": {
+        "cache_write_tokens": 1525,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 1525
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 112,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 1640
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 250,
+    "status": 200,
+    "headersMs": 2214.2290000000066,
+    "durationMs": 2973.0097080000123,
+    "usage": {
+      "input_tokens": 1008,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 0
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 48,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 1056
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 400,
+    "status": 200,
+    "headersMs": 535.9420410000021,
+    "durationMs": 1040.4839159999974,
+    "usage": {
+      "input_tokens": 365,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 0
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 28,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 393
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 1600,
+    "status": 200,
+    "headersMs": 3091.1918749999895,
+    "durationMs": 3092.438832999993,
+    "usage": {
+      "input_tokens": 1534,
+      "input_tokens_details": {
+        "cache_write_tokens": 1531,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 1531
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 144,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 1678
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 250,
+    "status": 200,
+    "headersMs": 1021.4586249999702,
+    "durationMs": 1872.0127079999656,
+    "usage": {
+      "input_tokens": 1008,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 0
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 54,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 1062
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 1600,
+    "status": 200,
+    "headersMs": 3606.65862500004,
+    "durationMs": 3607.8756250000442,
+    "usage": {
+      "input_tokens": 2173,
+      "input_tokens_details": {
+        "cache_write_tokens": 2170,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 2170
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 330,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 2503
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 1600,
+    "status": 200,
+    "headersMs": 3339.2964999999967,
+    "durationMs": 3339.7886670000153,
+    "usage": {
+      "input_tokens": 2174,
+      "input_tokens_details": {
+        "cache_write_tokens": 371,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 371
+        },
+        "cached_tokens": 1800
+      },
+      "output_tokens": 263,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 2437
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 400,
+    "status": 200,
+    "headersMs": 558.508582999988,
+    "durationMs": 1002.2061249999679,
+    "usage": {
+      "input_tokens": 426,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 0
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 26,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 452
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 400,
+    "status": 200,
+    "headersMs": 501.7434999999823,
+    "durationMs": 1071.283999999985,
+    "usage": {
+      "input_tokens": 469,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 0
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 25,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 494
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 1600,
+    "status": 200,
+    "headersMs": 2200.254791000043,
+    "durationMs": 2201.0317500000237,
+    "usage": {
+      "input_tokens": 1673,
+      "input_tokens_details": {
+        "cache_write_tokens": 1670,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 1670
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 141,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 1814
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 1600,
+    "status": 200,
+    "headersMs": 2616.871625000029,
+    "durationMs": 2617.4958329999936,
+    "usage": {
+      "input_tokens": 1524,
+      "input_tokens_details": {
+        "cache_write_tokens": 1521,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 1521
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 128,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 1652
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 250,
+    "status": 200,
+    "headersMs": 674.3015420000302,
+    "durationMs": 1522.2525840000017,
+    "usage": {
+      "input_tokens": 1008,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 0
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 51,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 1059
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 1600,
+    "status": 200,
+    "headersMs": 2464.2895000000135,
+    "durationMs": 2464.767374999996,
+    "usage": {
+      "input_tokens": 2157,
+      "input_tokens_details": {
+        "cache_write_tokens": 2154,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 2154
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 231,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 2388
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 1600,
+    "status": 200,
+    "headersMs": 2432.0602499999804,
+    "durationMs": 2433.6873749999795,
+    "usage": {
+      "input_tokens": 2155,
+      "input_tokens_details": {
+        "cache_write_tokens": 360,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 360
+        },
+        "cached_tokens": 1792
+      },
+      "output_tokens": 250,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 2405
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 400,
+    "status": 200,
+    "headersMs": 674.1572089999681,
+    "durationMs": 1124.870458999998,
+    "usage": {
+      "input_tokens": 426,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 0
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 28,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 454
+    }
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoning": "none",
+    "outputLimit": 400,
+    "status": 200,
+    "headersMs": 488.090916999965,
+    "durationMs": 931.7827089999919,
+    "usage": {
+      "input_tokens": 471,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 0
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 23,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 494
+    }
+  }
+]
