@@ -11,7 +11,7 @@ const readyState = Object.getOwnPropertyDescriptor(document, "readyState");
 
 beforeEach(() => {
   vi.resetModules();
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   sdk.__loaded = false;
   sdk.init.mockImplementation(() => { sdk.__loaded = true; });
   vi.stubEnv("NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN", "phc_test");
