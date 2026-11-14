@@ -104,7 +104,7 @@ describe("Admin launch readiness API", () => {
             SUPABASE_SERVICE_KEY: "service-key",
             NEXT_PUBLIC_SITE_URL: "https://netflux.example",
             NEXT_PUBLIC_APP_URL: "https://app.netflux.example",
-            ANTHROPIC_API_KEY: "anthropic-key",
+            OPENAI_API_KEY: "openai-key",
             GEMINI_API_KEY: "gemini-key",
             UPSTASH_REDIS_REST_URL: "https://upstash.example",
             UPSTASH_REDIS_REST_TOKEN: "upstash-token",

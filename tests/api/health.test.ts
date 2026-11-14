@@ -26,7 +26,7 @@ describe("Health API", () => {
             SUPABASE_SERVICE_KEY: "service-key",
             NEXT_PUBLIC_SITE_URL: "https://netflux.example",
             NEXT_PUBLIC_APP_URL: "https://app.netflux.example",
-            ANTHROPIC_API_KEY: "anthropic-key",
+            OPENAI_API_KEY: "openai-key",
             GEMINI_API_KEY: "gemini-key",
             UPSTASH_REDIS_REST_URL: "https://upstash.example",
             UPSTASH_REDIS_REST_TOKEN: "upstash-token",
@@ -94,6 +94,15 @@ describe("Health API", () => {
         });
         expect(json.issues).toEqual([]);
         expect(mockFrom).toHaveBeenCalledWith("content_item");
+    });
+
+    it("reports missing Luna credentials even if a legacy Anthropic key remains", async () => {
+        delete process.env.OPENAI_API_KEY;
+        process.env.ANTHROPIC_API_KEY = "legacy-key";
+        const response = await GET(buildRequest({ "x-health-check-secret": "health-secret" }));
+        const json = await response.json();
+        expect(response.status).toBe(503);
+        expect(json.readiness.ai_generation).toBe("missing");
     });
 
     it("accepts x-health-check-secret for deployment monitoring", async () => {

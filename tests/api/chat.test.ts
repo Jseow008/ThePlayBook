@@ -146,7 +146,7 @@ describe('Chat API', () => {
         delete process.env.AI_PROVIDER;
         delete process.env.AI_MODEL;
         delete process.env.AI_COMPLEX_MODEL;
-        delete process.env.OPENAI_API_KEY;
+        process.env.OPENAI_API_KEY = 'openai-test-key';
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
         (aiRateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
@@ -296,7 +296,7 @@ describe('Chat API', () => {
         }));
     });
 
-    it('falls back to Anthropic when AI_PROVIDER prefers OpenAI but only Anthropic is configured', async () => {
+    it('fails closed when only the legacy Anthropic key is available', async () => {
         process.env.AI_PROVIDER = 'openai';
         delete process.env.OPENAI_API_KEY;
 
@@ -308,7 +308,8 @@ describe('Chat API', () => {
         });
 
         const res = await POST(req);
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(500);
+        expect(streamText).not.toHaveBeenCalled();
     });
 
     it('processes a valid request successfully via Gemini embeddings and RAG', async () => {
@@ -397,7 +398,8 @@ describe('Chat API', () => {
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             maxOutputTokens: 250,
         }));
-        expect(anthropicMock).toHaveBeenCalledWith('claude-haiku-4-5-20251001');
+        expect(anthropicMock).not.toHaveBeenCalled();
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ providerOptions: { openai: { reasoningEffort: 'none', forceReasoning: true, store: false } } }));
     });
 
     it.each([

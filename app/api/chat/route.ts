@@ -1,9 +1,10 @@
+import { INTERACTIVE_AI_MODEL, INTERACTIVE_AI_PROVIDER_OPTIONS } from "@/lib/server/interactive-ai";
 import { withChatDeadline } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse, reserveAiProviderCall } from "@/lib/server/ai-spending";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
 import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
-import { MAX_LIBRARY_CONTEXT_CHARS, getOutputTokenCap, getAnthropicModelName, detectAskIntent, shouldBoostCompletedForIntent, buildRetrievalFallbackText, LIBRARY_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
+import { MAX_LIBRARY_CONTEXT_CHARS, getOutputTokenCap, detectAskIntent, shouldBoostCompletedForIntent, buildRetrievalFallbackText, LIBRARY_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
 import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
 import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
@@ -224,14 +225,12 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
 
         const questionContext = contextualizeUserQuestion(messages);
         if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, "ui", [], false, LIBRARY_CLARIFICATION_FOLLOWUPS);
-        const provider = process.env.AI_PROVIDER || "anthropic";
-        const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
         const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
         const hasGemini = Boolean(process.env.GEMINI_API_KEY);
         const detectedIntent = detectAskIntent(userQuery);
         const intent = questionContext.requiresPassageEvidence && detectedIntent === "library_metadata" ? "hybrid" : detectedIntent;
 
-        if (!hasAnthropic && !hasOpenAI) {
+        if (!hasOpenAI) {
             logApiError({ requestId, route: "/api/chat", message: "No AI provider configured", error: new Error("Missing env") });
             return apiError("INTERNAL_ERROR", "AI service is not configured. Please contact an administrator.", 500, requestId);
         }
@@ -393,22 +392,10 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
 
         const systemPrompt = buildLibraryEvidencePrompt(metadataContext, retrievalContextForPrompt, intent);
 
-        let aiModel;
-        let selectedProvider = "anthropic";
-        let selectedModel = getAnthropicModelName(intent);
-
-        if (provider === "anthropic" && hasAnthropic) {
-            const { anthropic } = await import("@ai-sdk/anthropic");
-            aiModel = anthropic(getAnthropicModelName(intent));
-        } else if (hasOpenAI) {
-            const { openai } = await import("@ai-sdk/openai");
-            selectedProvider = "openai";
-            selectedModel = process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini";
-            aiModel = openai(selectedModel);
-        } else {
-            const { anthropic } = await import("@ai-sdk/anthropic");
-            aiModel = anthropic(getAnthropicModelName(intent));
-        }
+        const { openai } = await import("@ai-sdk/openai");
+        const selectedProvider = "openai";
+        const selectedModel = INTERACTIVE_AI_MODEL;
+        const aiModel = openai(selectedModel);
 
         if (!usesEmbedding) {
             const failure = await admit();
@@ -423,6 +410,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         const result = streamText({
             maxRetries: 0,
             model: aiModel,
+            providerOptions: INTERACTIVE_AI_PROVIDER_OPTIONS,
             system: `${systemPrompt}\n\nReturn JSON with answer as the FIRST field, then followUpQuestions. Complete the answer before writing any questions.\n${LIBRARY_FOLLOWUP_INSTRUCTIONS}`,
             output: Output.object({ schema: LibraryAnswerOutputSchema }),
             messages: [{ role: "user", content: questionContext.semanticQuestion }],

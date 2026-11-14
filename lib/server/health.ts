@@ -52,7 +52,6 @@ export function getRuntimeReadiness(env: NodeJS.ProcessEnv = process.env): Runti
     const hasSupabaseServiceKey = hasNonEmptyEnv(env.SUPABASE_SERVICE_KEY);
     const hasSiteUrl = hasNonEmptyEnv(env.NEXT_PUBLIC_SITE_URL);
     const hasAppUrl = hasNonEmptyEnv(env.NEXT_PUBLIC_APP_URL);
-    const hasAnthropic = hasNonEmptyEnv(env.ANTHROPIC_API_KEY);
     const hasOpenAI = hasNonEmptyEnv(env.OPENAI_API_KEY);
     const hasGemini = hasNonEmptyEnv(env.GEMINI_API_KEY);
     const hasUpstashUrl = hasNonEmptyEnv(env.UPSTASH_REDIS_REST_URL);
@@ -70,7 +69,7 @@ export function getRuntimeReadiness(env: NodeJS.ProcessEnv = process.env): Runti
             : isValidUrl(env.NEXT_PUBLIC_APP_URL)
                 ? "ready"
                 : "invalid",
-        ai_generation: hasAnthropic || hasOpenAI ? "ready" : "missing",
+        ai_generation: hasOpenAI ? "ready" : "missing",
         ai_retrieval: hasGemini ? "ready" : "missing",
         rate_limiting: hasUpstashUrl && hasUpstashToken
             ? "ready"
@@ -101,7 +100,7 @@ export function getRuntimeReadiness(env: NodeJS.ProcessEnv = process.env): Runti
     }
 
     if (checks.ai_generation !== "ready") {
-        issues.push("AI generation requires an Anthropic or OpenAI API key.");
+        issues.push("AI generation requires OPENAI_API_KEY for Luna.");
     }
 
     if (checks.ai_retrieval !== "ready") {

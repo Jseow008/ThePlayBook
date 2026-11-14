@@ -87,7 +87,7 @@ describe("launch validation scripts", () => {
 
         expect(result.code).toBe(1);
         expect(result.stdout).toContain("Status: failed");
-        expect(result.stdout).toContain("Missing required env var: AI_PROVIDER");
+        expect(result.stdout).toContain("Missing required env var: OPENAI_API_KEY");
         expect(result.stdout).toContain("Missing required env var: NEXT_PUBLIC_SENTRY_DSN");
     });
 
@@ -104,7 +104,7 @@ describe("launch validation scripts", () => {
             "NEXT_PUBLIC_APP_URL=https://app.netflux.example",
             "AI_PROVIDER=anthropic",
             "AI_MODEL=test-model",
-            "ANTHROPIC_API_KEY=test-anthropic",
+            "OPENAI_API_KEY=test-openai",
             "GEMINI_API_KEY=test-gemini",
             "UPSTASH_REDIS_REST_URL=https://upstash.example",
             "UPSTASH_REDIS_REST_TOKEN=test-upstash",
@@ -137,7 +137,7 @@ describe("launch validation scripts", () => {
             "NEXT_PUBLIC_SITE_URL=https://netflux.example",
             "AI_PROVIDER=anthropic",
             "AI_MODEL=test-model",
-            "ANTHROPIC_API_KEY=test-anthropic",
+            "OPENAI_API_KEY=test-openai",
             "GEMINI_API_KEY=test-gemini",
             "UPSTASH_REDIS_REST_URL=https://upstash.example",
             "UPSTASH_REDIS_REST_TOKEN=test-upstash",
@@ -168,7 +168,7 @@ describe("launch validation scripts", () => {
             "NEXT_PUBLIC_SITE_URL=https://netflux.example",
             "AI_PROVIDER=anthropic",
             "AI_MODEL=test-model",
-            "ANTHROPIC_API_KEY=test-anthropic",
+            "OPENAI_API_KEY=test-openai",
             "GEMINI_API_KEY=test-gemini",
             "UPSTASH_REDIS_REST_URL=https://upstash.example",
             "UPSTASH_REDIS_REST_TOKEN=test-upstash",

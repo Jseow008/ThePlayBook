@@ -9,7 +9,7 @@ import {
 } from "../personal-evidence-selector";
 
 const providerMocks = vi.hoisted(() => ({ generateText: vi.fn(), anthropic: vi.fn(), openai: vi.fn() }));
-vi.mock("ai", async (importOriginal) => ({ ...await importOriginal<typeof import("ai")>(), generateText: providerMocks.generateText }));
+vi.mock("ai", async (importOriginal) => ({ ...await importOriginal<typeof import("ai")>(), generateText: providerMocks.generateText, wrapLanguageModel: ({ model }: { model: unknown }) => model }));
 vi.mock("@ai-sdk/anthropic", () => ({ createAnthropic: providerMocks.anthropic }));
 vi.mock("@ai-sdk/openai", () => ({ createOpenAI: providerMocks.openai }));
 
@@ -258,25 +258,25 @@ describe("selector deadlines and cancellation", () => {
 describe("existing provider configuration and AI SDK6 structured output", () => {
     const sdkResult = () => ({ output: structuralSelectionOutput([highlight().id]), usage: { inputTokens: 55, outputTokens: 7, totalTokens: 62 }, response: { modelId: "actual-provider-model" } });
 
-    it("uses Anthropic Haiku by default, structured output, no SDK retries and the bounded abort signal", async () => {
-        vi.stubEnv("ANTHROPIC_API_KEY", "dummy-key-never-sent");
+    it("uses Luna none, structured output, no SDK retries and the bounded abort signal", async () => {
+        vi.stubEnv("OPENAI_API_KEY", "dummy-key-never-sent");
         providerMocks.generateText.mockResolvedValue(sdkResult());
         const result = await selectPersonalEvidence({ question: "Find evidence", candidates: [highlight()] });
         expect(providerMocks.generateText).toHaveBeenCalledWith(expect.objectContaining({
-            model: { provider: "anthropic", modelId: "claude-haiku-4-5-20251001" }, maxRetries: 0, maxOutputTokens: 1600,
+            model: { provider: "openai", modelId: "gpt-6-luna" }, providerOptions: { openai: { reasoningEffort: "none", forceReasoning: true, store: false } }, maxRetries: 0, maxOutputTokens: 1600,
             abortSignal: expect.any(AbortSignal), output: expect.objectContaining({ name: "object" }),
         }));
-        expect(result.provider).toBe("anthropic");
+        expect(result.provider).toBe("openai");
         expect(result.model).toBe("actual-provider-model");
         expect(JSON.stringify(result)).not.toContain("dummy-key");
     });
 
-    it("uses the configured OpenAI alternative when Anthropic is absent or OpenAI is selected", async () => {
+    it("ignores legacy provider and model overrides to keep Luna only", async () => {
         vi.stubEnv("OPENAI_API_KEY", "dummy-openai-key"); vi.stubEnv("OPENAI_FALLBACK_MODEL", "configured-openai-model");
         providerMocks.generateText.mockResolvedValue(sdkResult());
         const first = await selectPersonalEvidence({ question: "Find evidence", candidates: [highlight()] });
         expect(first.provider).toBe("openai");
-        expect(providerMocks.generateText.mock.calls[0][0].model.modelId).toBe("configured-openai-model");
+        expect(providerMocks.generateText.mock.calls[0][0].model.modelId).toBe("gpt-6-luna");
         vi.stubEnv("ANTHROPIC_API_KEY", "dummy-anthropic-key"); vi.stubEnv("AI_PROVIDER", "openai");
         await selectPersonalEvidence({ question: "Find evidence", candidates: [highlight()] });
         expect(providerMocks.generateText.mock.calls[1][0].model.provider).toBe("openai");
@@ -287,7 +287,7 @@ describe("existing provider configuration and AI SDK6 structured output", () => 
         providerMocks.generateText.mockRejectedValue(new Error("provider error with private prompt"));
         await expect(selectPersonalEvidence({ question: "Find evidence", candidates: [highlight()] })).rejects.toMatchObject({ code: "UNAVAILABLE" });
         expect(providerMocks.generateText).toHaveBeenCalledTimes(1);
-        expect(providerMocks.openai).not.toHaveBeenCalled();
+        expect(providerMocks.anthropic).not.toHaveBeenCalled();
     });
 
     it("fails explicitly when neither provider is configured", async () => {

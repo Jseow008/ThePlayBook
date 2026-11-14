@@ -1,11 +1,20 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { RECORDED_LUNA_LOW_MODEL_CONFIG } from "../fixtures/retrieval/recorded-luna-low-config";
 import { describe, expect, it } from "vitest";
 import { PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG, buildPersonalEvidenceSelectionRequest, derivePersonalEvidenceSelectionIds, personalEvidenceSelectionRequestHash } from "@/lib/server/personal-evidence-selector";
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 const read = (p: string) => readFileSync(p, "utf8");
 describe("Luna recorded decisions remain bound to evaluated requests and adapter", () => {
-    it("preserves every qualified response and rejects unnoticed production/config drift", () => {
+    it("binds current none settings to fresh hosted qualification, not historical low responses", () => {
+        const evidence = JSON.parse(read("docs/evidence/luna-none-hosted-20261114.json"));
+        expect(evidence.modelConfig).toEqual(PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG);
+        expect(evidence.hostedGatePassed).toBe(true);
+        expect(evidence.productionUnchanged).toBe(true);
+        expect(evidence.chatChecks).toEqual(expect.arrayContaining(["library", "notes", "author"]));
+        for (const [path, digest] of Object.entries(evidence.codeHashes)) expect(sha(read(path))).toBe(digest);
+    });
+    it("preserves every historical low-reasoning response without relabeling it as none", () => {
         const raw = read("docs/evidence/luna-low-quality-20261001.json");
         const evaluated = JSON.parse(raw);
         const fixture = JSON.parse(read("tests/fixtures/retrieval/provider-selections-v2-luna-low.json"));
@@ -16,7 +25,8 @@ describe("Luna recorded decisions remain bound to evaluated requests and adapter
         expect(evaluated.failure).toBeNull();
         expect(evaluated.totals.calls).toBe(168);
         expect(fixture.sourceSha256).toBe(sha(raw));
-        expect(fixture.modelConfig).toEqual(PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG);
+        expect(fixture.modelConfig).toEqual(RECORDED_LUNA_LOW_MODEL_CONFIG);
+        expect(fixture.modelConfig).not.toEqual(PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG);
         expect(evaluated.adapterSha256).toBe(sha(adapter));
         expect(adapter.slice(adapter.indexOf("import "))).toBe(production.slice(production.indexOf("import ")));
         expect(evaluated.harnessSha256).toBe(sha(read("scripts/experiments/selector-luna-phase-quality.ts")));

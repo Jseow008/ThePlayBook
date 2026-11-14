@@ -83,7 +83,7 @@ describe('Author Chat API', () => {
             ? { allowed: true, operationId: args.p_operation_id, reservedMicrousd: args.p_reserved_microusd }
             : { recorded: true }, error: null }) }));
         process.env.ANTHROPIC_API_KEY = 'test-key';
-        delete process.env.OPENAI_API_KEY;
+        process.env.OPENAI_API_KEY = 'openai-test-key';
         delete process.env.AI_PROVIDER;
         delete process.env.AUTHOR_CHAT_MODEL;
 
@@ -360,14 +360,14 @@ describe('Author Chat API', () => {
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ model: 'mock-openai-model' }));
     });
 
-    it('allows an Author-only override back to the earlier Anthropic route', async () => {
+    it('ignores a stale Author override and keeps Luna', async () => {
         process.env.OPENAI_API_KEY = 'openai-test-key';
         process.env.AUTHOR_CHAT_MODEL = 'claude-haiku-4-5-20251001';
         const res = await POST(new NextRequest('http://localhost/api/chat/author', {
             method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody),
         }));
         expect(res.status).toBe(200);
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ model: 'mock-anthropic-model' }));
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ model: 'mock-openai-model' }));
     });
 
     it('answers an empty or whitespace-only source without quota or model work', async () => {
@@ -412,6 +412,7 @@ describe('Author Chat API', () => {
 
     it('fails closed when Luna is selected without an OpenAI key', async () => {
         process.env.AUTHOR_CHAT_MODEL = 'gpt-6-luna';
+        delete process.env.OPENAI_API_KEY;
         const res = await POST(new NextRequest('http://localhost/api/chat/author', {
             method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody),
         }));

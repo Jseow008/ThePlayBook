@@ -38,8 +38,7 @@ jobs:
       SUPABASE_SERVICE_KEY: dummy-service-key
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
-      AI_PROVIDER: gemini
-      AI_MODEL: gemini-pro
+      OPENAI_API_KEY: dummy-openai-key
       GEMINI_API_KEY: dummy-gemini-key
       UPSTASH_REDIS_REST_URL: https://dummy-redis.upstash.io
       UPSTASH_REDIS_REST_TOKEN: dummy-redis-token
@@ -174,7 +173,7 @@ jobs:
           npm run database:catalog-search-runtime
           npm run database:personal-evidence-runtime
           npm run database:personal-retrieval-quality-runtime
-          PERSONAL_EVIDENCE_SELECTOR_MODEL=gpt-6-luna \
+          PERSONAL_RETRIEVAL_RECORDED_MODEL=luna-low \
             PERSONAL_SELECTION_FIXTURE=tests/fixtures/retrieval/provider-selections-v2-luna-low.json \
             PERSONAL_RETRIEVAL_QUALITY_REPORT="${{ runner.temp }}/personal-retrieval-luna-quality.json" \
             npm run database:personal-retrieval-quality-runtime
@@ -399,8 +398,7 @@ jobs:
       SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
       NEXT_PUBLIC_SITE_URL: ${{ inputs.base_url }}
       NEXT_PUBLIC_APP_URL: ${{ inputs.base_url }}
-      AI_PROVIDER: ${{ secrets.AI_PROVIDER }}
-      AI_MODEL: ${{ secrets.AI_MODEL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}

@@ -1,0 +1,65 @@
+{
+  "commit": "071b59180072053e0d9dcd0a7d5866da96da284c",
+  "deploymentId": "dpl_CxUC1j4sEDRtG6BjpgSPq1TjiuZu",
+  "origin": "https://netflux-37eo9mvxr-jseow008s-projects.vercel.app",
+  "acquisition": "Vercel authenticated connector GET requests",
+  "checks": [
+    {
+      "path": "/browse",
+      "status": 200,
+      "title": "Browse summaries - Netflux",
+      "matchedPath": "/browse"
+    },
+    {
+      "path": "/ask",
+      "status": 200,
+      "title": "Ask",
+      "matchedPath": "/ask"
+    },
+    {
+      "path": "/notes",
+      "status": 200,
+      "title": "Notes",
+      "matchedPath": "/notes"
+    },
+    {
+      "path": "/preview/0a52c5c8-f330-4ada-a164-05047b852444",
+      "status": 200,
+      "title": "The Singapore Story",
+      "matchedPath": "/preview/[id]"
+    },
+    {
+      "path": "/read/0a52c5c8-f330-4ada-a164-05047b852444",
+      "status": 200,
+      "title": "The Singapore Story",
+      "matchedPath": "/read/[id]/[[...slug]]"
+    },
+    {
+      "path": "/api/chat",
+      "status": 405,
+      "matchedPath": "/api/chat"
+    },
+    {
+      "path": "/api/chat/notes",
+      "status": 405,
+      "matchedPath": "/api/chat/notes"
+    },
+    {
+      "path": "/api/chat/author",
+      "status": 405,
+      "matchedPath": "/api/chat/author"
+    }
+  ],
+  "shallowHealth": {
+    "status": 200,
+    "bodyStatus": "ok"
+  },
+  "limitations": [
+    "GET 405 confirms POST-only route availability, not signed-in generation or anonymous POST denial.",
+    "No signed-in preview flow: direct browser access required Vercel login; project environment metadata was forbidden to connector and no authenticated CLI was installed.",
+    "Signed-in provider paths retain unchanged code hashes and the prior disposable hosted qualification.",
+    "No production accounts/content created, provider questions submitted, or production application/environment/database configuration changed."
+  ],
+  "temporaryManualShareRevoked": true,
+  "temporaryCredentialsDeleted": true
+}
