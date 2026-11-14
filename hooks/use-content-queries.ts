@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { cachedContentBatch, fetchContentBatch, invalidateContentRecords } from "@/lib/content-record-cache";
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import {
@@ -14,8 +15,6 @@ import {
     recordCachedRecommendations,
     recordRecentRecommendations,
 } from "@/lib/recommendation-memory";
-
-const CONTENT_BATCH_CHUNK_SIZE = 50;
 
 function sortByInputOrder(items: ContentItem[], ids: string[]) {
     return [...items].sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
@@ -32,54 +31,24 @@ function filterExcludedItems(items: ContentItem[] | null | undefined, excludeIds
     return filteredItems.length > 0 ? filteredItems : null;
 }
 
-function chunkIds(ids: string[]) {
-    const chunks: string[][] = [];
-
-    for (let startIndex = 0; startIndex < ids.length; startIndex += CONTENT_BATCH_CHUNK_SIZE) {
-        chunks.push(ids.slice(startIndex, startIndex + CONTENT_BATCH_CHUNK_SIZE));
-    }
-
-    return chunks;
-}
-
 export function useBatchContentItems(ids: string[], options?: { enabled?: boolean }) {
+    const client = useQueryClient();
+    const canonicalIds = useMemo(() => [...new Set(ids)].sort(), [ids]);
+    const queryKey = ["content-batch", canonicalIds];
     const idSet = new Set(ids);
-
-    return useQuery({
-        queryKey: ["content-batch", ids],
-        enabled: (options?.enabled ?? true) && ids.length > 0,
-        queryFn: async ({ signal }) => {
-            const responses = await Promise.all(
-                chunkIds(ids).map(async (chunk) => {
-                    const response = await fetch("/api/content/batch", {
-                        signal,
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ ids: chunk }),
-                    });
-
-                    if (!response.ok) {
-                        throw new Error("Failed to fetch content batch");
-                    }
-
-                    return (await response.json()) as ContentItem[];
-                }),
-            );
-
-            const mergedItems = Array.from(
-                new Map(
-                    responses
-                        .flat()
-                        .map((item) => [item.id, item] as const),
-                ).values(),
-            );
-
-            return sortByInputOrder(mergedItems, ids);
-        },
+    const result = useQuery({
+        queryKey,
+        enabled: (options?.enabled ?? true) && canonicalIds.length > 0,
+        queryFn: ({ signal }) => fetchContentBatch(client, canonicalIds, signal, client.getQueryState(queryKey)?.isInvalidated),
+        initialData: () => canonicalIds.length ? cachedContentBatch(client, canonicalIds) : undefined,
         placeholderData: keepPreviousData,
-        select: (items) => sortByInputOrder(items.filter((item) => idSet.has(item.id)), ids),
-        staleTime: 60 * 1000,
+        select: data => sortByInputOrder(data.items.filter(item => idSet.has(item.id)), ids),
+        staleTime: query => Math.max(0, (query.state.data?.expiresAt ?? 0) - query.state.dataUpdatedAt),
     });
+    return { ...result, refetch: (options?: Parameters<typeof result.refetch>[0]) => {
+        invalidateContentRecords(client, canonicalIds);
+        return result.refetch(options);
+    } };
 }
 
 export function useRecommendations(

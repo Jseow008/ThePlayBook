@@ -4,6 +4,8 @@ import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }));
+
 vi.mock("@/lib/supabase/public-server", () => ({
     createPublicServerClient: vi.fn(),
 }));
@@ -89,7 +91,7 @@ describe("Content batch API", () => {
     it("accepts the maximum batch and preserves generic UUID syntax", async () => {
         const ids = Array(50).fill("11111111-1111-1111-1111-111111111111");
         expect((await POST(createRequest({ ids }))).status).toBe(200);
-        expect(mockIn).toHaveBeenCalledWith("id", ids);
+        expect(mockIn).toHaveBeenCalledWith("id", [...new Set(ids)].sort());
     });
 
     it("fails closed before querying when strict rate limiting is unavailable", async () => {
