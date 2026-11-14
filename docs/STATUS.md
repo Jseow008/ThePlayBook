@@ -1,5 +1,56 @@
 # Netflux release and workstream status
 
+## Single content expiry refresh — 14 November 2026
+
+Hosted verification complete; release pending. Authorized item1 only; mobile startup
+is deferred. Worktree `/Users/j/Desktop/Lifebook-content-refresh`, branch
+`codex/content-expiry-single-refresh`, final base `4bb35505`, tested application
+candidate `0edb36fe` (rebased from initially tested `cb824e70`/base`a9ad1c96` after
+unrelated main #364 landed). Original dirty and previous audit worktrees untouched.
+One agent, no delegation. No UI/API-contract/freshness-limit/region/schema changes.
+
+Cause: Next's background cache refresh and our strict60-second guard each queried
+the database. Candidate shares the callback's promise with the guard. It still
+rejects refresh failures and refreshes when the framework starts no background read.
+This coordinates within one lookup invocation, not a distributed lock across servers.
+
+[Hosted evidence](evidence/content-single-refresh-hosted-20261114.json) binds final
+candidate, schema/security/application proof and byte-identical reused cache inputs.
+Baseline regression reproduced duplicate reads. Candidate37 focused tests pass;
+final cache/API/health set31 passes; lint and TypeScript pass. Real installed Next
+proof: miss1/fresh0/expired1 reads, expired was2. Hosted production HTTP proof counts
+one read after actual61s expiry, returns authoritative withdrawal, and next lookup
+hits with no new read. Publish/edit/withdraw/republish/delete/replacement invalidation
+and30then429 admission pass. Final combined build and all7 hosted smoke pass with
+no skipped checks. Mobile390/desktop1440: all3 Library views plus3 revisits use one
+lookup/three records and zero extra fresh-revisit lookups, no unavailable regions,
+overflow or render errors; Browse/default and typed Search also render. Screenshots
+checked, settled fixture images load. No controlled latency improvement claim.
+
+Both isolated databases replayed117 migrations (latest20261105094614);14 schema
+categories/fresh public types match production;6 permission checks plus transactional
+DB-002 pass. Security advisors match same12 intentionally locked private tables;
+unused indexes differ by fresh synthetic query history (final31 vs production13),
+Auth INFO advisory same. Production push/DDL not applicable. No AI provider calls,
+production/private data copying or production data writes. Placeholder AI keys only
+satisfy presence readiness; local real Redis runs behind a test REST adapter.
+
+Cleanup complete for branches `8ff1c267-6ebf-4969-adf7-bfa05a77a67d`/project
+`beqgsldqprtfakvileij` and `b6245cd9-fead-4b91-ae96-bab543452e5e`/project
+`dtcrctmgnblnugrhpwak`; parent `xmuqsgfxuaaophxnwure` list shows only main.
+Owned app3202/Redis8402/container stopped and credentials/workdirs removed.
+Cost approval reused at rechecked$0.01344/hour; billed cost not measured.
+Private sanitized artifacts `/tmp/lifebook-content-refresh[-final]-20261114`.
+Setup issues preserved: external node_modules symlink rejected by Turbopack (physical
+clone fixed); initial local admin smoke lacked forwarding IP (corrected ingress);
+second branch initially exposed credentials before migration replay completed
+(waited for FUNCTIONS_DEPLOYED/117 migrations, removed only partial own fixture,
+then reran successful gate). No product fix or gate bypass for these setup errors.
+
+Next: publish focused PR with hosted evidence before promotion; inspect GitHub file
+scope, enable squash auto-merge after PR scope passes, verify deployed merge and
+production Library/API at both widths, report and stop. No mobile startup work yet.
+
 ## Luna-only release preparation — 14 November 2026
 
 Published ready-for-review [PR #364](https://github.com/Jseow008/ThePlayBook/pull/364), previous head `403e1ae2`, on `codex/luna-full-flow-test`, managed worktree `/Users/j/.codex/worktrees/luna-full-flow-test/Lifebook`, freshly fetched base `0b6a6aad`; application commit `88b9fb5d`. User authorized PR preparation and hosted verification while keeping production unchanged. Library/Notes/Author pin gpt-6-luna, reasoning none and storage off; legacy provider/model overrides are ignored, missing OpenAI credentials fail closed, and there is no escalation/fallback. Prompts, schema, budgets, quotas, citations, replay behavior and UI remain unchanged. Launch/readiness checks, CI environment fixtures and operations guidance require OpenAI. No migrations or production database push are needed; existing production migration parity was verified read-only.

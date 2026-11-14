@@ -1,0 +1,481 @@
+{
+  "date": "2026-11-14",
+  "candidate": "0edb36fe550c0681673e41ee6a129e33f0d49aa7",
+  "base": "4bb3550567eef73b2a0698e401c503f073300e5f",
+  "project": "dtcrctmgnblnugrhpwak",
+  "parent": "xmuqsgfxuaaophxnwure",
+  "productionSchemaChanges": "none; production database push not applicable",
+  "initialCounts": {
+    "users": 0,
+    "content": 0
+  },
+  "database": {
+    "project": "dtcrctmgnblnugrhpwak",
+    "initialCounts": {
+      "users": 0,
+      "content": 0
+    },
+    "migrationDryRun": "up to date",
+    "permissions": [
+      {
+        "name": "security-function-acl-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-admin-rpc-acl-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-new-object-access-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-analytics-rls-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-embedding-table-read-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-storage-bucket-listing-check.sql",
+        "passed": true
+      },
+      {
+        "name": "database-highlight-preservation-check.sql",
+        "passed": true
+      }
+    ],
+    "migrations": {
+      "count": 117,
+      "latest": "20261105094614"
+    }
+  },
+  "schemaCategoriesMatched": 14,
+  "publicTypesMatch": true,
+  "advisors": {
+    "securityMatchesProduction": true,
+    "security": [
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "count": 12
+      }
+    ],
+    "performance": [
+      {
+        "name": "unused_index",
+        "level": "INFO",
+        "count": 31
+      },
+      {
+        "name": "auth_db_connections_absolute",
+        "level": "INFO",
+        "count": 1
+      }
+    ],
+    "explanation": "Same twelve intentionally locked private tables. Unused-index counts differ in a fresh synthetic database; schema fingerprints match. Auth connection advisory also exists in production."
+  },
+  "productionBuild": true,
+  "smokePassed": 7,
+  "smokeSkipped": 0,
+  "initialFocusedTestsPassed": 37,
+  "finalAffectedTestsPassed": 31,
+  "lint": true,
+  "typecheck": true,
+  "browser": [
+    {
+      "profile": "mobile",
+      "libraryViews": 3,
+      "revisitViews": 3,
+      "additionalRevisitLookups": 0,
+      "lookups": 1,
+      "returnedRecords": 3,
+      "uniqueRecords": 3,
+      "publicRenderErrors": []
+    },
+    {
+      "profile": "desktop",
+      "libraryViews": 3,
+      "revisitViews": 3,
+      "additionalRevisitLookups": 0,
+      "lookups": 1,
+      "returnedRecords": 3,
+      "uniqueRecords": 3,
+      "publicRenderErrors": []
+    }
+  ],
+  "batch": {
+    "first": {
+      "status": 200,
+      "cache": "hit",
+      "freshFor": 45271
+    },
+    "second": {
+      "status": 200,
+      "cache": "hit",
+      "freshFor": 45126
+    },
+    "noExtraReadForHit": true,
+    "uncachedDraft": {
+      "first": "miss",
+      "second": "hit",
+      "originReads": 1,
+      "excluded": true
+    }
+  },
+  "expiryProof": {
+    "sourceCandidate": "cb824e70614549199020bad25cc85fcfffdb9a87",
+    "sourceProject": "beqgsldqprtfakvileij",
+    "realNext": {
+      "source": "Candidate content-batch-cache.ts and installed real Next unstable_cache implementation",
+      "conditions": "Controlled fresh/missing/expired cache entries in an App Router request context; counted public-client stub, no database/network calls",
+      "cases": [
+        {
+          "kind": "miss",
+          "readCalls": 1,
+          "cacheWrites": 1,
+          "resultMarker": "miss"
+        },
+        {
+          "kind": "fresh",
+          "readCalls": 0,
+          "cacheWrites": 0,
+          "resultMarker": "hit"
+        },
+        {
+          "kind": "expired",
+          "readCalls": 1,
+          "cacheWrites": 1,
+          "resultMarker": "refresh"
+        }
+      ]
+    },
+    "hostedAPI": {
+      "project": "beqgsldqprtfakvileij",
+      "cacheMissThenHit": true,
+      "canonicalBatchHit": true,
+      "publicProjection": true,
+      "draftAndDeletedExcluded": true,
+      "publish": true,
+      "metadataUpdate": true,
+      "withdraw": true,
+      "republish": true,
+      "delete": true,
+      "replacement": true,
+      "externalWriteExpiresWithoutStaleResponse": true,
+      "expiredLookupOriginReads": 1,
+      "nextLookupIsHitWithoutOriginRead": true,
+      "admission30Then429": true,
+      "history": [
+        {
+          "status": 200,
+          "cache": "miss",
+          "freshFor": 59999,
+          "serverTiming": "admission;dur=152.6, content;dur=399.1, handler;dur=553.3"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 59915,
+          "serverTiming": "admission;dur=67.2, content;dur=0.2, handler;dur=67.8"
+        },
+        {
+          "status": 400,
+          "cache": null,
+          "freshFor": 0,
+          "serverTiming": "admission;dur=117.6, handler;dur=118.4"
+        },
+        {
+          "status": 200,
+          "cache": "miss",
+          "freshFor": 59999,
+          "serverTiming": "admission;dur=88.4, content;dur=113.0, handler;dur=201.7"
+        },
+        {
+          "status": 200,
+          "cache": "miss",
+          "freshFor": 60000,
+          "serverTiming": "admission;dur=97.7, content;dur=99.4, handler;dur=197.4"
+        },
+        {
+          "status": 200,
+          "cache": "miss",
+          "freshFor": 60000,
+          "serverTiming": "admission;dur=110.3, content;dur=86.4, handler;dur=197.0"
+        },
+        {
+          "status": 200,
+          "cache": "miss",
+          "freshFor": 60000,
+          "serverTiming": "admission;dur=60.2, content;dur=120.9, handler;dur=181.3"
+        },
+        {
+          "status": 200,
+          "cache": "miss",
+          "freshFor": 60000,
+          "serverTiming": "admission;dur=158.8, content;dur=221.1, handler;dur=380.1"
+        },
+        {
+          "status": 200,
+          "cache": "miss",
+          "freshFor": 60000,
+          "serverTiming": "admission;dur=56.1, content;dur=91.7, handler;dur=148.1"
+        },
+        {
+          "status": 200,
+          "cache": "miss",
+          "freshFor": 60000,
+          "serverTiming": "admission;dur=61.6, content;dur=97.2, handler;dur=159.0"
+        },
+        {
+          "status": 200,
+          "cache": "miss",
+          "freshFor": 60000,
+          "serverTiming": "admission;dur=63.1, content;dur=111.1, handler;dur=174.5"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 59708,
+          "serverTiming": "admission;dur=63.6, content;dur=0.2, handler;dur=64.2"
+        },
+        {
+          "status": 200,
+          "cache": "refresh",
+          "freshFor": 59999,
+          "serverTiming": "admission;dur=68.2, content;dur=279.8, handler;dur=348.4"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 59917,
+          "serverTiming": "admission;dur=78.4, content;dur=0.1, handler;dur=78.8"
+        },
+        {
+          "status": 200,
+          "cache": "miss",
+          "freshFor": 60000,
+          "serverTiming": "admission;dur=137.4, content;dur=150.3, handler;dur=287.9"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 59922,
+          "serverTiming": "admission;dur=75.6, content;dur=0.1, handler;dur=75.9"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 59800,
+          "serverTiming": "admission;dur=119.4, content;dur=0.1, handler;dur=119.7"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 59674,
+          "serverTiming": "admission;dur=123.0, content;dur=0.1, handler;dur=123.3"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 59558,
+          "serverTiming": "admission;dur=113.3, content;dur=0.1, handler;dur=113.7"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 59446,
+          "serverTiming": "admission;dur=109.8, content;dur=0.1, handler;dur=110.1"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 59316,
+          "serverTiming": "admission;dur=127.0, content;dur=0.1, handler;dur=127.4"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 59200,
+          "serverTiming": "admission;dur=113.4, content;dur=0.1, handler;dur=113.8"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 59039,
+          "serverTiming": "admission;dur=157.9, content;dur=0.1, handler;dur=158.2"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 58851,
+          "serverTiming": "admission;dur=185.7, content;dur=0.1, handler;dur=186.0"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 58712,
+          "serverTiming": "admission;dur=135.5, content;dur=0.1, handler;dur=135.8"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 58603,
+          "serverTiming": "admission;dur=106.6, content;dur=0.1, handler;dur=106.9"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 58472,
+          "serverTiming": "admission;dur=128.4, content;dur=0.1, handler;dur=128.7"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 58348,
+          "serverTiming": "admission;dur=121.4, content;dur=0.1, handler;dur=121.8"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 58217,
+          "serverTiming": "admission;dur=127.9, content;dur=0.1, handler;dur=128.3"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 58107,
+          "serverTiming": "admission;dur=107.4, content;dur=0.2, handler;dur=107.8"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 57989,
+          "serverTiming": "admission;dur=114.9, content;dur=0.1, handler;dur=115.2"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 57862,
+          "serverTiming": "admission;dur=123.9, content;dur=0.1, handler;dur=124.2"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 57754,
+          "serverTiming": "admission;dur=104.9, content;dur=0.1, handler;dur=105.2"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 57640,
+          "serverTiming": "admission;dur=111.7, content;dur=0.1, handler;dur=112.0"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 57529,
+          "serverTiming": "admission;dur=108.4, content;dur=0.1, handler;dur=108.7"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 57424,
+          "serverTiming": "admission;dur=102.0, content;dur=0.1, handler;dur=102.3"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 57293,
+          "serverTiming": "admission;dur=129.0, content;dur=0.1, handler;dur=129.4"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 57197,
+          "serverTiming": "admission;dur=93.7, content;dur=0.1, handler;dur=94.0"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 57077,
+          "serverTiming": "admission;dur=117.0, content;dur=0.1, handler;dur=117.3"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 56973,
+          "serverTiming": "admission;dur=101.4, content;dur=0.1, handler;dur=101.7"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 56857,
+          "serverTiming": "admission;dur=112.8, content;dur=0.1, handler;dur=113.2"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 56751,
+          "serverTiming": "admission;dur=103.8, content;dur=0.1, handler;dur=104.1"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 56630,
+          "serverTiming": "admission;dur=118.1, content;dur=0.1, handler;dur=118.5"
+        },
+        {
+          "status": 200,
+          "cache": "hit",
+          "freshFor": 56529,
+          "serverTiming": "admission;dur=99.0, content;dur=0.1, handler;dur=99.3"
+        },
+        {
+          "status": 429,
+          "cache": null,
+          "freshFor": 0,
+          "serverTiming": "admission;dur=92.3, handler;dur=92.5"
+        }
+      ]
+    },
+    "identicalInputs": {
+      "lib/server/content-batch-cache.ts": "a312731817ad2eac89a653a0109a611734a4bad8f1c293e4012949fe4e61ec57",
+      "lib/server/content-card-data.ts": "79cf81a98d9b8d6c2f99653b3e8c8b2b8f893e77132ba0b63298b8a67f0bcdfb",
+      "lib/server/revalidation.ts": "bf61fefd465285353960ea87f0c359c025ed80a2cad5c75faa50fbc2088e580f",
+      "lib/supabase/public-server.ts": "48c527355bf4f4a1adcbedef57d20506ce318e7ab57ce252b632dae32942816e",
+      "app/api/content/batch/route.ts": "9ce36afdacaaba9678c9ab3fe85e7c41de6dc245224a69e2c67b3b52867c6af3",
+      "package-lock.json": "a489ebc4a827a7ece3aa012b323b03d5b811c93e153253c15db1748a0cd689a1"
+    },
+    "explanation": "Main advanced with unrelated chat/readiness release. Cache, API, invalidation, projection, public client and dependency bytes unchanged; reuse proven expiry read-count and mutation tests. Final combined build reran hosted schema/types/security/advisors, all7 smoke, actual API cache checks and mobile/desktop Library checks."
+  },
+  "cleanup": {
+    "bothTemporaryBranchesDeleted": true,
+    "ownedAppAndRedisStopped": true,
+    "privateCredentialsRemoved": true
+  },
+  "limitations": [
+    "Counts establish one read per expired lookup invocation; no distributed lock across unrelated requests/servers",
+    "No schema migration or production database push; public freshness window remains60 seconds",
+    "Local production build against isolated hosted database; local Redis REST adapter runs real admission scripts",
+    "No external AI provider calls; presence-only readiness uses synthetic placeholders",
+    "Origin query counting uses a local test-only fetch wrapper; no instrumentation is shipped",
+    "Initial build symlink resolution failed; physical dependency clone fixed setup",
+    "Initial gate wrapper needed its independent fixture-count artifact before permission checks; corrected ordering",
+    "Initial hosted admin smoke ingress lacked x-forwarded-for; corrected local header, all7 then passed",
+    "Transient image diagnostic came from synthetic metadata fixture pointing at absent png; fixture URL corrected, settled visible images pass",
+    "Final branch provisioning initially exposed credentials before migration replay completed; stopped, waited for FUNCTIONS_DEPLOYED and117 migrations, removed only partial synthetic fixture and reran all security/fixture checks successfully",
+    "The changed code coordinates framework/foreground reads within a lookup invocation; unrelated concurrent requests or instances can still issue independent reads",
+    "Measured query-count improvement, no controlled end-to-end latency claim"
+  ],
+  "execution": {
+    "agents": 1,
+    "delegation": false,
+    "acceptedExpiryProofRuns": 1,
+    "finalCombinedBuildReverified": true,
+    "fullElapsed": "not instrumented",
+    "modelUsage": "not measured",
+    "hostingCost": "not measured; approved rate $0.01344/hour per temporary branch"
+  }
+}
