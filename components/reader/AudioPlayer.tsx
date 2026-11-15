@@ -17,7 +17,7 @@ import { useVisualViewportGeometry } from "@/hooks/useVisualViewportGeometry";
 export interface AudioTimeChangeMetadata {
     durationSec: number;
     isEnded: boolean;
-    source?: "hero-seek";
+    source?: "hero-seek" | "mini-seek" | "skip";
 }
 
 interface AudioPlayerProps {
@@ -294,7 +294,7 @@ export function AudioPlayer({
         onTimeChange?.(newTime, {
             durationSec: Number.isFinite(audio.duration) ? audio.duration : 0,
             isEnded: false,
-            ...(surface === "hero" ? { source: "hero-seek" as const } : {}),
+            source: surface === "hero" ? "hero-seek" : "mini-seek",
         });
     };
 
@@ -310,6 +310,7 @@ export function AudioPlayer({
         onTimeChange?.(nextTime, {
             durationSec: Number.isFinite(audio.duration) ? audio.duration : duration,
             isEnded: false,
+            source: "skip",
         });
     };
 
