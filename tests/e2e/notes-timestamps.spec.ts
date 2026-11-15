@@ -38,9 +38,10 @@ for (const [timezoneId, localTime] of [
             } });
             let releaseScripts: (() => void) | undefined;
             try {
-                const source = await admin.from('content_item').select('id').eq('id', '11111111-1111-4111-8111-111111111111').single();
+                const source = await admin.from('content_item').select('id, reading_revision').eq('id', '11111111-1111-4111-8111-111111111111').single();
                 expect(source.error).toBeNull();
                 expect((await admin.from('user_reflections').insert({ user_id: userId, content_item_id: source.data!.id,
+                    content_revision: source.data!.reading_revision,
                     prompt: 'Timestamp regression', reflection_text: 'Temporary timestamp regression reflection.', created_at: createdAt,
                 })).error).toBeNull();
                 expect((await auth.auth.signInWithPassword({ email: created.data.user!.email!, password })).error).toBeNull();
