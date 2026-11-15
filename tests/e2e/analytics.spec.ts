@@ -4,6 +4,7 @@ import { gunzipSync } from "node:zlib";
 type CapturedPostHogEvent = {
     event?: string;
     properties?: Record<string, unknown>;
+    person_properties?: Record<string, unknown>;
 };
 
 function parsePostHogPayload(request: Request): CapturedPostHogEvent[] {
@@ -21,7 +22,7 @@ function parsePostHogPayload(request: Request): CapturedPostHogEvent[] {
             if (Array.isArray(decoded?.batch)) {
                 return decoded.batch;
             }
-            if (typeof decoded?.event === "string") {
+            if (decoded && typeof decoded === "object") {
                 return [decoded];
             }
         } catch {
@@ -39,7 +40,7 @@ function parsePostHogPayload(request: Request): CapturedPostHogEvent[] {
         if (Array.isArray(parsed?.batch)) {
             return parsed.batch;
         }
-        if (typeof parsed?.event === "string") {
+        if (parsed && typeof parsed === "object") {
             return [parsed];
         }
     } catch {
@@ -57,7 +58,7 @@ function parsePostHogPayload(request: Request): CapturedPostHogEvent[] {
             if (Array.isArray(decoded?.batch)) {
                 return decoded.batch;
             }
-            if (typeof decoded?.event === "string") {
+            if (decoded && typeof decoded === "object") {
                 return [decoded];
             }
         } catch {
@@ -71,6 +72,8 @@ function parsePostHogPayload(request: Request): CapturedPostHogEvent[] {
 async function installPostHogCapture(page: Page) {
     const events: CapturedPostHogEvent[] = [];
     const ingestRequests: string[] = [];
+    const payloads: CapturedPostHogEvent[] = [];
+    const referrers: string[] = [];
 
     await page.addInitScript(() => {
         Object.defineProperty(Navigator.prototype, "webdriver", {
@@ -90,6 +93,7 @@ async function installPostHogCapture(page: Page) {
 
     await page.route("**/flux/**", async (route) => {
         const request = route.request();
+        referrers.push(request.headers().referer ?? "");
 
         if (request.method() === "GET") {
             const isScriptRequest = new URL(request.url()).pathname.endsWith(".js");
@@ -102,7 +106,9 @@ async function installPostHogCapture(page: Page) {
         }
 
         ingestRequests.push(request.url());
-        events.push(...parsePostHogPayload(request));
+        const parsed = parsePostHogPayload(request);
+        payloads.push(...parsed);
+        events.push(...parsed.filter(item => item.event));
 
         await route.fulfill({
             status: 200,
@@ -116,7 +122,7 @@ async function installPostHogCapture(page: Page) {
         });
     });
 
-    return { events, ingestRequests };
+    return { events, ingestRequests, payloads, referrers };
 }
 
 async function waitForEvent(
@@ -144,6 +150,14 @@ test.describe("PostHog analytics verification", () => {
     test.use({
         userAgent:
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    });
+
+    test("explains intentional Search analytics on Privacy without horizontal overflow", async ({ page }) => {
+        await installPostHogCapture(page);
+        await page.goto("/privacy");
+        await expect(page.getByText(/We use PostHog to record the text of completed public catalog searches/)).toBeVisible();
+        await expect(page.getByText(/Query text is collected in a dedicated search event/)).toBeVisible();
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     });
 
     test("tracks first pageview and client navigation pageview once through the same-origin proxy", async ({ page }) => {
@@ -184,7 +198,7 @@ test.describe("PostHog analytics verification", () => {
         expect(cspErrors).toEqual([]);
     });
 
-    test("tracks client product events without raw private payloads", async ({ page }) => {
+    test("keeps legacy product events free of raw private payloads", async ({ page }) => {
         const { events } = await installPostHogCapture(page);
 
         await page.goto("/login");
@@ -232,5 +246,82 @@ test.describe("PostHog analytics verification", () => {
         expect(filterOutcome?.properties?.filter_kind).toBe("type");
         expect(filterOutcome?.properties?.outcome).toMatch(/^(results|no_results|failed|input_empty)$/);
         expect(filterOutcome?.properties?.$current_url).toBe(`${new URL(page.url()).origin}/search`);
+    });
+
+    test("collects completed automatic and submitted queries once, excluding drafts and filter reruns", async ({ page }) => {
+        const { events, payloads, referrers } = await installPostHogCapture(page);
+        await page.goto("/search");
+        await waitForEvent(page, events, "search_journey_settled");
+        const input = page.getByRole("searchbox", { name: "Search content", exact: true });
+        const automatic = "nf_analytics_auto_15nov";
+        const submitted = "nf_analytics_submit_15nov";
+        await input.fill("nf_analytics_unfinished_15nov");
+        await input.fill("");
+        await page.waitForTimeout(800);
+        expect(events.filter(event => event.event === "search_query_completed")).toHaveLength(0);
+        await input.fill(automatic);
+        await waitForEvent(page, events, "search_query_completed", event => event.properties?.query_text === automatic);
+        await input.fill(submitted);
+        await input.press("Enter");
+        await waitForEvent(page, events, "search_query_completed", event => event.properties?.query_text === submitted);
+        await input.press("Enter"); // Same settled route does not execute a new search.
+        await page.getByRole("link", { name: "Book", exact: true }).click();
+        await waitForEvent(page, events, "search_journey_settled", event => event.properties?.action_kind === "filter");
+        const completed = events.filter(event => event.event === "search_query_completed");
+        expect(completed.map(event => [event.properties?.query_text, event.properties?.trigger])).toEqual([
+            [automatic, "debounced"], [submitted, "submit"],
+        ]);
+        const filter = events.find(event => event.event === "search_journey_settled" && event.properties?.action_kind === "filter");
+        expect(filter?.properties?.search_id).toBe(completed[1].properties?.search_id);
+        await page.getByRole("button", { name: "Clear search", exact: true }).click();
+        await expect(input).toHaveValue("");
+        await page.waitForURL(url => !url.searchParams.has("q"));
+        await input.click();
+        await page.getByRole("button", { name: submitted, exact: true }).click();
+        await waitForEvent(page, events, "search_query_completed", event => event.properties?.trigger === "recent");
+        expect(events.filter(event => event.event === "search_query_completed")).toHaveLength(3);
+        for (const payload of payloads) {
+            const clean = structuredClone(payload);
+            if (clean.event === "search_query_completed" && clean.properties) delete clean.properties.query_text;
+            expect(JSON.stringify(clean)).not.toMatch(/nf_analytics_(auto|submit|unfinished)_15nov/);
+        }
+        expect(JSON.stringify(referrers)).not.toContain("nf_analytics_");
+    });
+
+    test("cleans saved initial/session metadata on return while preserving analytics identity and recent searches", async ({ page }) => {
+        const { events, payloads, referrers } = await installPostHogCapture(page);
+        const query = "nf_analytics_direct_15nov";
+        const response = await page.goto(`/search?q=${query}`);
+        expect(response?.headers()["referrer-policy"]).toBe("strict-origin");
+        await waitForEvent(page, events, "search_query_completed");
+        expect(events.find(event => event.event === "search_query_completed")?.properties).toMatchObject({ query_text: query, trigger: "direct" });
+        const previousId = await page.evaluate(() => {
+            const key = Object.keys(localStorage).find(key => /^ph_.*_posthog$/.test(key));
+            if (!key) throw new Error("Missing analytics persistence");
+            const saved = JSON.parse(localStorage.getItem(key)!);
+            saved.$initial_person_info = { u: "https://www.netflux.blog/search?q=nf_analytics_legacy_15nov", r: "https://www.netflux.blog/search?q=nf_analytics_legacy_15nov" };
+            if (saved.$client_session_props) saved.$client_session_props.props = { u: "https://www.netflux.blog/search?q=nf_analytics_legacy_15nov", r: "$direct" };
+            localStorage.setItem(key, JSON.stringify(saved));
+            document.cookie = `${key}=${encodeURIComponent(JSON.stringify({ distinct_id: saved.distinct_id, $initial_person_info: saved.$initial_person_info }))}; Path=/; SameSite=Lax`;
+            localStorage.setItem("netflux_recent_searches", JSON.stringify(["device history stays"]));
+            return saved.distinct_id;
+        });
+        payloads.length = 0;
+        events.length = 0;
+        referrers.length = 0;
+        await page.goto("/browse");
+        await waitForEvent(page, events, "$pageview");
+        await expect.poll(() => payloads.some(payload => payload.person_properties), { timeout: 10_000 }).toBe(true);
+        expect(JSON.stringify(payloads)).not.toMatch(/nf_analytics_(direct|legacy)_15nov/);
+        expect(JSON.stringify(referrers)).not.toContain("nf_analytics_");
+        const stored = await page.evaluate(() => {
+            const key = Object.keys(localStorage).find(key => /^ph_.*_posthog$/.test(key))!;
+            return { analytics: localStorage.getItem(key)!, history: localStorage.getItem("netflux_recent_searches"), cookies: decodeURIComponent(document.cookie), session: JSON.stringify(Object.fromEntries(Object.entries(sessionStorage).filter(([key]) => key.startsWith("ph_")))) };
+        });
+        expect(stored.analytics).not.toContain("nf_analytics_");
+        expect(stored.cookies).not.toContain("nf_analytics_");
+        expect(stored.session).not.toContain("nf_analytics_");
+        expect(JSON.parse(stored.analytics).distinct_id).toBe(previousId);
+        expect(JSON.parse(stored.history!)).toEqual(["device history stays"]);
     });
 });

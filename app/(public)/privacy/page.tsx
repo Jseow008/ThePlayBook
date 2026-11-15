@@ -14,7 +14,7 @@ export const metadata = {
 };
 
 export default function PrivacyPage() {
-    const lastUpdated = "July 2026";
+    const lastUpdated = "November 2026";
 
     return (
         <div className="min-h-screen bg-background text-foreground">
@@ -59,7 +59,10 @@ export default function PrivacyPage() {
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Product events, such as saving to library, creating a highlight, asking a question, or performing a search</span></li>
                         </ul>
                         <p className="text-muted-foreground leading-relaxed mb-4">
-                            Product analytics events are designed to avoid sending raw search queries, highlighted text, note bodies, or other sensitive user-generated content.
+                            We use PostHog to record the text of completed public catalog searches, how each search was triggered (including automatic searches after a typing pause), result counts, filter use, and result selections. This helps us understand content demand and improve search. Search activity can be linked to your account when you are signed in. Please avoid entering sensitive personal information in public catalog searches.
+                        </p>
+                        <p className="text-muted-foreground leading-relaxed mb-4">
+                            Query text is collected in a dedicated search event, rather than repeated in automatic page, session, or person metadata. Unfinished drafts, failed or superseded searches, and filter-only reruns do not create additional query-text events. Analytics events are designed to exclude highlighted text, note bodies, and AI chat prompts, including searches within your notes or library.
                         </p>
                         <p className="text-sm text-muted-foreground/70">
                             Vercel Analytics is privacy-focused and does not use third-party cookies or collect personal identifiers for cross-site tracking. Learn more at{" "}
