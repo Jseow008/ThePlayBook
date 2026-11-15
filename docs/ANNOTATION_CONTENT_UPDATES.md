@@ -1,29 +1,43 @@
 # Annotation-based content updates
 
-Status: implementation and verification in progress, 15 November 2026.
+Status: production database rollout complete; application release checks pending.
 
-- Checkout: `/Users/j/.codex/worktrees/annotation-content-updates`, branch `codex/annotation-based-content-updates`, based on `5b66d0b0`.
-- Rule: current highlights/attached notes and reflections from any user protect reading text. Without annotations, retain the record ID and requested status. Keep publication history.
-- Scope: database enforcement (including legacy direct writes), atomic save routing, admin messaging and save handling, reader revision checks, local upload routing. Existing linked drafts are excluded from consolidation.
-- Production exception: the owner explicitly instructed, “Authorised to apply database changes directly to production. We will do the testing in production itself.” This replaces the disposable hosted rehearsal for this release. It does not waive CI, security checks, backups, or verification. Production synthetic tests are rolled back; existing personal records and linked drafts must not be changed.
-- Production project: `xmuqsgfxuaaophxnwure`. Latest completed backup verified: 2026-11-14 23:54 UTC. Dry-run contains only `20261115090527_annotation_based_content_updates.sql`.
-- Evidence so far: transactional production schema/behavior rehearsal passed and rolled back; TypeScript passed before adding the latest timestamp guard (one subsequent type error corrected); 2,494 application tests passed, 322 database/integration tests skipped without configured runtimes; 34 capacity-harness tests passed; 30 upload tests passed; lint passed.
-- Corrected checks: initial SQL assembly included an old schema-move statement, removed before any permanent migration; one synthetic fixture had incomplete Quick Mode data, corrected; build requires a real dependency installation in the isolated checkout because Turbopack rejects the outside-checkout symlink. No production data changes persisted during these checks.
-- Pending: finish updated database regression proofs, simultaneous-save proof, generated-type comparison, build and targeted API tests, migration application, post-migration security/data-preservation checks, PR and deployment verification.
-- Upload repository: `/Users/j/Desktop/DeepResearchLLM` has substantial pre-existing local edits. Only this task's changes in `content.py`, `test_content.py`, and its workflow documentation may be added; existing work must be preserved. Private before-edit snapshots in `/tmp/annotation-upload-*-before.py` support scope review.
+Checkout: `/Users/j/.codex/worktrees/annotation-content-updates`, branch `codex/annotation-based-content-updates`. PR: https://github.com/Jseow008/ThePlayBook/pull/373. Current main was merged without conflicts; unrelated changes remain outside this PR’s diff.
 
-## Production verification completed
+## Final behavior
 
-Migration `20261115090527_annotation_based_content_updates.sql` is applied. The post-apply dry-run is clean. Existing record fingerprints match the baseline exactly after excluding only the newly added nullable revision columns: 717 content records, 7,114 sections, 43 highlights, four reflections, and 31 existing active linked drafts are unchanged. No consolidation was performed.
+- Highlights, attached notes and written reflections from any user protect reading text. Publication history, bookmarks and progress alone do not require linked drafts.
+- Without annotations, save to the existing record and honor the requested draft/verified status. Publication history remains intact.
+- With annotations, atomically save revised text into a linked draft and preserve the original. Existing separate draft work is not silently overwritten; it must be resumed/reviewed explicitly.
+- Direct legacy writes receive database protection too. Normal uploads use the shared atomic routing operation; highlight-replacement overrides are retired.
+- Annotation submissions carry the loaded reading revision. Stale submissions are rejected while the entered text stays available. Metadata/timing-only saves keep the reading revision valid.
+- Reading text cannot change while narration is processing, retaining the previous safeguard against finalizing old audio onto revised text. Metadata/timing maintenance remains available.
+- The 31 existing linked drafts are excluded from consolidation.
 
-Both real simultaneous-save orders passed with independent native database workers. The query interfaces serialize long-running query requests, so attempting to coordinate two workers through those interfaces could not prove overlap; a temporary self-contained pg_cron test provided separate sessions instead. Its jobs, job history, synthetic accounts and content were removed. The first worker harness unscheduled itself too early and was canceled; the corrected idempotent worker is unscheduled after its completed transaction. These harness failures were not counted as successful product checks.
+## Production authorization and rollout
 
-The production-backed browser proof passed desktop same-ID Save as Draft, mobile stale-reflection rejection with entered text retained, saving the refreshed reflection, and saving an annotated revision into a linked draft with the original text, reflection, and publication date preserved. Browser setup was corrected to expand the section and use the current “Capture a reflection” label. No browser page errors were observed. Screenshots remain in the local verification artifacts.
+The owner explicitly instructed: “Authorised to apply database changes directly to production. We will do the testing in production itself.” This is the recorded exception to the repository’s usual disposable hosted gate for this release. CI, security, backup and behavior checks remain required.
 
-Fresh live database types were used for the affected tables/RPC. Typecheck, lint, build, 2,496 application tests, 34 capacity-harness tests, 30 upload tests and the focused tests pass. The 322 environment-dependent runtime tests skipped by the normal local test command are not claimed as executed; the production SQL/browser/concurrency proofs supply task-specific runtime evidence. CI also runs the updated SQL proof and direct-connection race tests on its disposable database.
+Production project: `xmuqsgfxuaaophxnwure`. A completed backup from 2026-11-14 23:54 UTC was verified before rollout. Migrations `20261115090527`, `20261115094450`, and `20261115100520` are applied. Previously applied SQL was not edited. Do not reapply them.
 
-Security advisors are unchanged from baseline (12 informational notices for intentionally private tables). Both admin RPC and general function ACL proofs pass. The ACL verifier now recognizes `auth.role() IS DISTINCT FROM 'service_role'`, which safely rejects NULL as well as other roles.
+## Evidence
 
-Evidence: [verification record](evidence/annotation-content-updates-20261115.json). Remaining action: publish the scoped PR, pass required checks, merge, and verify the deployed application. The upload changes are already present locally, preserving the repository’s earlier uncommitted work.
+[Verification record](evidence/annotation-content-updates-20261115.json).
 
-A forward migration, `20261115094450_preserve_reading_revision_for_metadata_saves.sql`, avoids temporary graph reordering when submitted reading text is identical. This keeps an open reader’s revision valid during timing-only saves. Its production transactional rehearsal passed the added invariant and the full behavior proof. The already-applied first migration was not edited.
+- Production transactional rehearsals passed and rolled back before each migration. Post-apply behavior proofs passed: direct edits, requested draft status, publication history, both annotation tables, another user’s annotations, legacy direct-write bypasses, existing-draft conflicts, deletion, metadata/timing revisions, narration processing and permissions.
+- Both real concurrent transaction orders passed with independent native database workers. Annotation first produces a linked draft; revision first rejects stale highlights and reflections. Temporary jobs, history, accounts and content were removed.
+- Production-backed browser checks passed on a locally served production build: desktop same-ID Save as Draft, mobile stale-reflection rejection with entered text retained, refreshed reflection save, linked-draft redirect, and original text/note/publication-date preservation. No browser page errors. Local screenshots were retained.
+- Before/after fingerprints match for all 717 existing content records, 7,114 sections, 43 highlights and four reflections. All 31 active linked drafts remain unchanged.
+- Fresh live-generated types match the affected tables/RPC. Typecheck, lint, build, 2,496 application tests, 34 capacity-harness tests, 160 focused tests and 30 companion upload tests passed before the unrelated main merge. Environment-dependent skipped tests are not claimed as executed; CI runs the updated SQL/runtime proofs on its disposable database.
+- Admin/function ACL checks passed. Security advisors match the baseline: 12 existing informational notices for intentionally private tables. The ACL verifier recognizes the null-safe service-role check.
+- Security Validation and Catalog Search Evidence passed on `875407e8`; the final narration guard and proof are now being added for a final release run.
+
+## Harness corrections and limitations
+
+The query interfaces serialize long-running requests, so they could not establish overlapping transactions. The native-worker proof supplied independent sessions instead. A worker initially unscheduled itself too early and was canceled; the successful idempotent version is unscheduled after completion. The CLI’s local prepared-query path rejected the multi-statement rollback proof; CI now executes it through `pg` without bind parameters. Browser setup was corrected for a collapsed section and the current “Capture a reflection” label. None of these failed harness attempts are counted as successful behavior evidence.
+
+The companion upload repository (`/Users/j/Desktop/DeepResearchLLM`) contains substantial earlier uncommitted work. This task’s changes to `content.py`, `test_content.py` and its workflow documentation preserve that work. Private before-edit snapshots and task-only patches under `/tmp/annotation-*` support scope review; those existing changes are not included in the application PR.
+
+## Next action
+
+Finish the final required PR checks, verify scope again, re-enable squash auto-merge, confirm the production deployment, run the browser proof against the production domain, and update this checkpoint. Do not consolidate linked drafts. One agent performed the work; task-level token usage was not available.

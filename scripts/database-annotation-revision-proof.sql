@@ -34,6 +34,20 @@ BEGIN
         RAISE EXCEPTION 'unnecessary linked draft created';
     EXCEPTION WHEN SQLSTATE '22023' THEN NULL; END;
     SELECT reading_revision INTO revision FROM public.content_item WHERE id=original;
+    -- A running narration must not finalize old audio onto revised reading text.
+    UPDATE public.content_item SET status='verified',narration_status='processing',narration_requested_at=now(),narration_started_at=now() WHERE id=original;
+    BEGIN
+        PERFORM public.admin_update_content_graph(original,'{"quick_mode_json":{"hook":"Unsafe narration rewrite","big_idea":"Idea","key_takeaways":["One"]}}',NULL,NULL);
+        RAISE EXCEPTION 'reading text changed during narration';
+    EXCEPTION WHEN SQLSTATE '40001' THEN NULL; END;
+    BEGIN
+        UPDATE public.segment SET markdown_body='Unsafe during narration' WHERE id=section;
+        RAISE EXCEPTION 'section changed during narration';
+    EXCEPTION WHEN SQLSTATE '40001' THEN NULL; END;
+    PERFORM public.admin_update_content_graph(original,'{"title":"Synthetic narration metadata"}',jsonb_build_array(jsonb_build_object(
+        'id',section,'order_index',0,'title','Section','markdown_body','Revised quotation','start_time_sec',2,'end_time_sec',9)),NULL);
+    ASSERT (SELECT reading_revision=revision FROM public.content_item WHERE id=original),'narration metadata changed reading revision';
+    UPDATE public.content_item SET status='draft',narration_status='idle',narration_requested_at=NULL,narration_started_at=NULL WHERE id=original;
     -- Stale annotation payloads must fail before any annotation is saved.
     BEGIN
         INSERT INTO public.user_highlights(user_id,content_item_id,segment_id,highlighted_text,content_revision)

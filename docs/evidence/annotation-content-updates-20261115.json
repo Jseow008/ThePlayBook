@@ -19,7 +19,8 @@
     "application_runtime_tests_skipped": 322,
     "capacity_harness_tests": 34,
     "upload_tests": 30,
-    "browser": "production database with locally served production build; desktop direct/draft save, mobile stale reflection rejection with entered text retained, refreshed reflection save, linked draft redirect, original text/history/note preserved"
+    "browser": "production database with locally served production build; desktop direct/draft save, mobile stale reflection rejection with entered text retained, refreshed reflection save, linked draft redirect, original text/history/note preserved",
+    "narration_processing": "Quick/section rewrites rejected while processing; metadata/timing changes accepted without changing the reading revision"
   },
   "existing_records_unchanged": {
     "content": 717,
@@ -48,5 +49,11 @@
     "sha256": "ed8f2333f8cf29f6c38cdccac88809cc746c0b171f7d36ee3988a7e2ca24b1d0",
     "reason": "Keep loaded reading revisions valid when only timings or metadata are saved",
     "transactional_proof": "passed and rolled back before application"
+  },
+  "narration_safeguard_migration": {
+    "name": "20261115100520_preserve_narration_during_direct_content_revisions.sql",
+    "sha256": "7c8b5f4d807382b3bab8b8e8306ce2ca2344b1a0e546e318efbff7dfbb87ae07",
+    "reason": "Retain narration-processing protection while allowing direct revisions; metadata and timing maintenance stay available",
+    "transactional_proof": "passed and rolled back before application; applied to production"
   }
 }
