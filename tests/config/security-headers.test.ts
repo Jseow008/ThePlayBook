@@ -5,6 +5,10 @@ vi.mock("@sentry/nextjs", () => ({
 }));
 
 describe("security headers", () => {
+    it("omits query-bearing referrers even for same-origin analytics", async () => {
+        const { securityHeaders } = await import("@/next.config");
+        expect(securityHeaders.find(header => header.key === "Referrer-Policy")?.value).toBe("strict-origin");
+    });
     it("configures CSP violation reporting", async () => {
         const { cspReportEndpoint, securityHeaders } = await import("@/next.config");
         const csp = securityHeaders.find((header) => header.key === "Content-Security-Policy")?.value;

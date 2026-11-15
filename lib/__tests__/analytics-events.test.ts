@@ -5,6 +5,14 @@ import {
 } from "@/lib/analytics-events";
 
 describe("sanitizeAnalyticsProperties", () => {
+    it("allows query text only for successful public catalog completions", () => {
+        const properties = { source: "search_results", search_scope: "content", search_id: "s1", journey_id: "j1", query_text: "Endure", trigger: "debounced", outcome: "results", result_count: 1, filters_count: 0 };
+        expect(sanitizeAnalyticsProperties("search_query_completed", properties as never)).toMatchObject({ query_text: "Endure" });
+        for (const invalid of [{ search_scope: "notes" }, { search_scope: "library" }, { outcome: "failed" }]) {
+            expect(sanitizeAnalyticsProperties("search_query_completed", { ...properties, ...invalid } as never)).not.toHaveProperty("query_text");
+        }
+        expect(sanitizeAnalyticsProperties("search_performed", { source: "search", query_present: true, query_text: "Endure" } as never)).not.toHaveProperty("query_text");
+    });
     it("adds the analytics schema version", () => {
         expect(
             sanitizeAnalyticsProperties("email_subscribed", {

@@ -1,6 +1,7 @@
 "use client";
 
 import type { PostHog } from "posthog-js";
+import { sanitizeAnalyticsMetadata, sanitizeAnalyticsPersistence } from "@/lib/analytics-privacy";
 
 const analyticsHost = (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "/flux").replace(/\/$/, "");
 
@@ -31,6 +32,20 @@ function loadAnalytics() {
         autocapture: false,
         disable_session_recording: true,
         disable_surveys: true,
+        mask_personal_data_properties: true,
+        custom_personal_data_properties: ["q", "query", "raw_query", "search_query", "query_text"],
+        disable_capture_url_hashes: true,
+        loaded: () => sanitizeAnalyticsPersistence(analytics),
+        before_send: event => {
+          if (!event) return null;
+          sanitizeAnalyticsPersistence(analytics);
+          const queryText = event.event === "search_query_completed" && event.properties.search_scope === "content"
+            && (event.properties.outcome === "results" || event.properties.outcome === "no_results")
+            ? event.properties.query_text : undefined;
+          const properties = sanitizeAnalyticsMetadata(event.properties) as typeof event.properties;
+          if (typeof queryText === "string") properties.query_text = queryText;
+          return { ...event, properties };
+        },
         __preview_capture_bot_pageviews: process.env.NEXT_PUBLIC_POSTHOG_CAPTURE_BOT_EVENTS === "true",
       });
     }

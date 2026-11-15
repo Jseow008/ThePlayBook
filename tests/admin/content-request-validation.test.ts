@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { updateContentRequest } from "@/app/admin/requests/actions";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { after } from "next/server";
+import { queueContentRequestPublishedNotifications, processQueuedContentRequestNotifications } from "@/lib/server/content-request-notifications";
 
 vi.mock("@/lib/admin/auth", () => ({ verifyAdminSession: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ getAdminClient: vi.fn() }));
@@ -21,10 +23,57 @@ function form(values: Record<string, string>) {
 const update = vi.fn();
 beforeEach(() => {
     vi.clearAllMocks(); vi.mocked(verifyAdminSession).mockResolvedValue(true);
+    vi.mocked(queueContentRequestPublishedNotifications).mockResolvedValue(0);
     update.mockReturnValue({ eq: vi.fn(async () => ({ error: null })) });
     vi.mocked(getAdminClient).mockReturnValue({ from: vi.fn(() => ({ update,
         select: vi.fn(() => ({ eq: vi.fn(() => ({ single: vi.fn(async () => ({ data: {
             id: legacyId, status: "pending", published_content_id: null }, error: null })) })) })) })) } as unknown as ReturnType<typeof getAdminClient>);
+});
+
+describe("published notification recovery", () => {
+    it("warns honestly after failure, retries the published request, and clears the warning after success", async () => {
+        let persistedStatus = "pending";
+        vi.mocked(getAdminClient).mockReturnValue({ from: vi.fn(() => ({
+            select: vi.fn(() => ({ eq: vi.fn(() => ({ single: vi.fn(async () => ({
+                data: { id: legacyId, status: persistedStatus }, error: null,
+            })) })) })),
+            update: vi.fn((payload: { status: string }) => ({ eq: vi.fn(async () => {
+                persistedStatus = payload.status;
+                return { error: null };
+            }) })),
+        })) } as unknown as ReturnType<typeof getAdminClient>);
+        vi.mocked(queueContentRequestPublishedNotifications).mockRejectedValueOnce(new Error("synthetic enqueue failure"));
+        const input = { status: "published", publishedContentId: "synthetic-content" };
+        const failed = await updateContentRequest(previous, form(input));
+        expect(failed.status).toBe("success");
+        expect(failed.notificationWarning).toContain("Save changes again to retry");
+        expect(persistedStatus).toBe("published");
+        expect(after).not.toHaveBeenCalled();
+
+        vi.mocked(queueContentRequestPublishedNotifications).mockResolvedValueOnce(2);
+        const recovered = await updateContentRequest(failed, form(input));
+        expect(recovered).toEqual({ status: "success", message: "Request saved." });
+        expect(queueContentRequestPublishedNotifications).toHaveBeenCalledTimes(2);
+        expect(queueContentRequestPublishedNotifications).toHaveBeenLastCalledWith(legacyId);
+        expect(after).toHaveBeenCalledTimes(1);
+        const background = vi.mocked(after).mock.calls[0][0];
+        if (typeof background === "function") await background();
+        expect(processQueuedContentRequestNotifications).toHaveBeenCalledTimes(1);
+
+        await updateContentRequest(recovered, form(input));
+        expect(after).toHaveBeenCalledTimes(1); // zero newly queued rows: no new send
+    });
+
+    it("retains the warning after repeated failure and never queues non-published requests", async () => {
+        vi.mocked(queueContentRequestPublishedNotifications).mockRejectedValue(new Error("synthetic unavailable database"));
+        const input = { status: "published", publishedContentId: "synthetic-content" };
+        const first = await updateContentRequest(previous, form(input));
+        expect((await updateContentRequest(first, form(input))).notificationWarning).toBe(first.notificationWarning);
+        expect(queueContentRequestPublishedNotifications).toHaveBeenCalledTimes(2);
+        await updateContentRequest(previous, form({ status: "pending" }));
+        expect(queueContentRequestPublishedNotifications).toHaveBeenCalledTimes(2);
+        expect(after).not.toHaveBeenCalled();
+    });
 });
 afterEach(() => vi.restoreAllMocks());
 

@@ -4,6 +4,7 @@ export type AnalyticsPropertyValue = string | number | boolean | null | undefine
 export type AnalyticsUserState = "anonymous" | "authenticated";
 export type AnalyticsPrivacyClassification =
   | "non_sensitive_metadata"
+  | "intentional_search_text"
   | "behavioral_metadata";
 export type AnalyticsDeliveryMode =
   | "client_only"
@@ -31,6 +32,7 @@ const SENSITIVE_PROPERTY_NAMES = new Set([
   "query",
   "raw_query",
   "search_query",
+  "query_text",
 ]);
 
 export interface AnalyticsEventContract {
@@ -53,6 +55,17 @@ export interface AnalyticsCommonProperties {
 }
 
 export interface AnalyticsEventPropertiesByName {
+  search_query_completed: AnalyticsCommonProperties & {
+    source: string;
+    search_scope: "content";
+    search_id: string;
+    journey_id: string;
+    query_text: string;
+    trigger: "submit" | "debounced" | "recent" | "direct" | "link" | "select";
+    outcome: "results" | "no_results";
+    result_count: number;
+    filters_count: number;
+  };
   email_subscribed: AnalyticsCommonProperties & {
     source: string;
   };
@@ -136,6 +149,7 @@ export interface AnalyticsEventPropertiesByName {
     failure_kind: "unavailable" | "invalid_input";
   };
   search_action_started: AnalyticsCommonProperties & {
+    search_id?: string;
     source: string;
     journey_id: string;
     action_kind: "query" | "filter";
@@ -150,6 +164,7 @@ export interface AnalyticsEventPropertiesByName {
     filter_kind?: "topic" | "type" | "sort" | "other";
   };
   search_journey_settled: AnalyticsCommonProperties & {
+    search_id?: string;
     source: string;
     journey_id: string;
     action_kind: "query" | "filter" | "initial_load";
@@ -163,6 +178,7 @@ export interface AnalyticsEventPropertiesByName {
     query_present: boolean;
   };
   search_result_clicked: AnalyticsCommonProperties & {
+    search_id?: string;
     source: string;
     journey_id: string;
     action_kind: "query" | "filter" | "initial_load";
@@ -261,6 +277,14 @@ function eventProperties<const T extends readonly AnalyticsEventProperty[]>(
 // Keep requiredProperties in sync with the Phase 9 data-quality HogQL rules in
 // config/posthog/netflux-dashboard-spec.mjs.
 export const ANALYTICS_EVENT_CONTRACTS = {
+  search_query_completed: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "Completed public catalog query, including automatic searches. Query text appears only here; filter-only reruns are not query demand.",
+    requiredProperties: ["source", "search_scope", "search_id", "journey_id", "query_text", "trigger", "outcome", "result_count", "filters_count"],
+    allowedProperties: eventProperties(["search_scope", "search_id", "journey_id", "query_text", "trigger", "outcome", "result_count", "filters_count"]),
+    privacy: "intentional_search_text",
+    delivery: "client_only",
+  },
   email_subscribed: {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,
     description: "Visitor successfully subscribes to a Netflux email list.",
@@ -399,7 +423,7 @@ export const ANALYTICS_EVENT_CONTRACTS = {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,
     description: "A catalog query or filter navigation begins. Never include the URL or query text.",
     requiredProperties: ["source", "journey_id", "action_kind", "trigger", "query_present"],
-    allowedProperties: eventProperties(["journey_id", "action_kind", "filter_kind", "trigger", "query_present"]),
+    allowedProperties: eventProperties(["search_id", "journey_id", "action_kind", "filter_kind", "trigger", "query_present"]),
     privacy: "behavioral_metadata",
     delivery: "client_only",
   },
@@ -415,7 +439,7 @@ export const ANALYTICS_EVENT_CONTRACTS = {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,
     description: "Catalog results, empty state, or error painted after an action or document load. A result count does not establish relevance.",
     requiredProperties: ["source", "journey_id", "action_kind", "navigation_kind", "outcome", "elapsed_ms", "visibility_state", "result_count", "filters_count", "query_present"],
-    allowedProperties: eventProperties(["journey_id", "action_kind", "filter_kind", "navigation_kind", "outcome", "elapsed_ms", "visibility_state", "result_count", "filters_count", "query_present"]),
+    allowedProperties: eventProperties(["search_id", "journey_id", "action_kind", "filter_kind", "navigation_kind", "outcome", "elapsed_ms", "visibility_state", "result_count", "filters_count", "query_present"]),
     privacy: "behavioral_metadata",
     delivery: "client_only",
   },
@@ -423,7 +447,7 @@ export const ANALYTICS_EVENT_CONTRACTS = {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,
     description: "A visible catalog result link is clicked; this is selection intent, not relevance or destination-load proof.",
     requiredProperties: ["source", "journey_id", "action_kind", "navigation_kind", "position"],
-    allowedProperties: eventProperties(["journey_id", "action_kind", "navigation_kind", "position"]),
+    allowedProperties: eventProperties(["search_id", "journey_id", "action_kind", "navigation_kind", "position"]),
     privacy: "behavioral_metadata",
     delivery: "client_only",
   },
@@ -538,7 +562,10 @@ export function sanitizeAnalyticsProperties<E extends AnalyticsEvent>(
   for (const [key, value] of Object.entries(properties)) {
     const property = key as AnalyticsEventProperty;
 
-    if (SENSITIVE_PROPERTY_NAMES.has(key)) {
+    const intentionalQuery = key === "query_text" && event === "search_query_completed"
+      && propertyRecord.search_scope === "content"
+      && (propertyRecord.outcome === "results" || propertyRecord.outcome === "no_results");
+    if (SENSITIVE_PROPERTY_NAMES.has(key) && !intentionalQuery) {
       warnAnalyticsContract(`${event} dropped sensitive property "${key}".`);
       continue;
     }
