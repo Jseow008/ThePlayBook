@@ -36,7 +36,8 @@ describe("DB-103 RLS policy optimization", () => {
         expect(migration).toContain("ON public.user_highlights\n    TO authenticated");
         expect(migration).toContain("ON public.homepage_section\n    TO authenticated");
         expect(roleMatrix).toContain("forbidden_policy_role");
-        expect(roleMatrix).toContain(") <> 65");
+        expect(roleMatrix).toContain(") <> 64");
+        expect(roleMatrix).toContain("request_board_public_read_policy_remains");
     });
 
     it("uses init-plan auth checks and explicit UPDATE invariants", () => {
@@ -65,5 +66,19 @@ describe("DB-103 RLS policy optimization", () => {
         expect(packageJson.scripts?.["database:rls-policies"]).toBe(
             "node scripts/check-database-rls-policies.mjs",
         );
+    });
+});
+
+describe("private summary-request role matrix", () => {
+    const roleMatrix = readFileSync(join(process.cwd(), "scripts/database-rls-policy-check.sql"), "utf8");
+    it("expects browser denial while preserving operational request reads", () => {
+        for (const label of [
+            "anon cannot read submitted requests",
+            "owner cannot directly read submitted requests",
+            "second account cannot directly read submitted requests",
+            "service role retains request history",
+            "service role retains request interest records",
+        ]) expect(roleMatrix).toContain(label);
+        expect(roleMatrix).not.toContain("anon sees only visible requests");
     });
 });
