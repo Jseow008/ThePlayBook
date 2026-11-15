@@ -150,7 +150,7 @@ export function AdminContentRequestForm({
                 ) : null}
             </details>
 
-            {actionState.message ? (
+            {actionState.message && !actionState.notificationWarning ? (
                 <p
                     role={actionState.status === "error" ? "alert" : "status"}
                     className={`rounded-md px-3 py-2 text-sm ${
@@ -163,6 +163,11 @@ export function AdminContentRequestForm({
                 </p>
             ) : null}
 
+            {actionState.notificationWarning ? (
+                <p role="alert" className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    {actionState.notificationWarning}
+                </p>
+            ) : null}
             <SaveButton />
         </form>
     );

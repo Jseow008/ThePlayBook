@@ -42,6 +42,7 @@ const UpdateRequestSchema = z.object({
 export type UpdateContentRequestState = {
     status: "idle" | "success" | "error";
     message: string | null;
+    notificationWarning?: string;
     fieldErrors?: Partial<Record<"publishedContentId" | "adminNote" | "hiddenReason" | "status", string>>;
 };
 
@@ -99,8 +100,8 @@ export async function updateContentRequest(
 
     const supabase = getAdminClient();
     const publishedContentId = emptyToNull(parsed.data.publishedContentId);
-    const { data: existingRequest, error: existingRequestError } = await (supabase as any).from("content_requests")
-        .select("id, status, published_content_id")
+    const { error: existingRequestError } = await (supabase as any).from("content_requests")
+        .select("id")
         .eq("id", parsed.data.requestId)
         .single();
 
@@ -136,9 +137,11 @@ export async function updateContentRequest(
         };
     }
 
-    const shouldQueuePublishedNotifications = existingRequest.status !== "published"
-        && parsed.data.status === "published"
+    // Saving a published request is also the explicit recovery path for a
+    // previously failed enqueue. The outbox's recipient key makes this safe.
+    const shouldQueuePublishedNotifications = parsed.data.status === "published"
         && Boolean(publishedContentId);
+    let notificationWarning: string | undefined;
 
     if (shouldQueuePublishedNotifications) {
         try {
@@ -159,6 +162,7 @@ export async function updateContentRequest(
                 });
             }
         } catch (queueError) {
+            notificationWarning = "Request saved, but notification emails could not be queued. Save changes again to retry.";
             logApiError({
                 requestId,
                 route: "/admin/requests",
@@ -175,5 +179,6 @@ export async function updateContentRequest(
     return {
         status: "success",
         message: "Request saved.",
+        ...(notificationWarning ? { notificationWarning } : {}),
     };
 }

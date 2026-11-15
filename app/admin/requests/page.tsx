@@ -50,6 +50,13 @@ function buildQuickFilterHref(view: AdminRequestView) {
 }
 
 function getNotificationHealth(stats: Awaited<ReturnType<typeof getContentRequestNotificationBacklogStats>>) {
+    if (stats.missing > 0) {
+        return {
+            label: "Needs attention",
+            valueClassName: "text-amber-700",
+            description: "Published-request notifications are missing. Save the affected requests again to retry.",
+        };
+    }
     if (stats.failed > 0 || stats.queuedOlderThanOneHour > 0 || stats.staleProcessing > 0) {
         return {
             label: "Needs attention",
@@ -147,6 +154,9 @@ export default async function AdminRequestsPage({
                         </p>
                     </div>
                     <p className="text-sm text-muted-foreground">
+                        {notificationStats.missing > 0 ? (
+                            <span role="alert" className="mr-3 font-semibold text-amber-700">Not queued: {notificationStats.missing}</span>
+                        ) : null}
                         Sent last 24h: <span className="font-semibold text-foreground">{notificationStats.sentLast24Hours}</span>
                     </p>
                 </div>

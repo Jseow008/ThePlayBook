@@ -1287,6 +1287,7 @@ export type Database = {
         Returns: Json
       }
       canonical_book_base_title: { Args: { p_title: string }; Returns: string }
+      count_missing_content_request_notifications: { Args: never; Returns: number }
       catalog_search_plain_text: { Args: { p_value: string }; Returns: string }
       claim_content_request_notifications: {
         Args: { p_limit?: number }
