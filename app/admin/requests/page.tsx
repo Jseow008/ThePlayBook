@@ -9,7 +9,7 @@ type AdminRequestView = "all" | "top" | "pending" | "processing" | "skipped" | "
 
 const QUICK_FILTERS: Array<{ value: AdminRequestView; label: string; description: string }> = [
     { value: "all", label: "All", description: "Full queue" },
-    { value: "top", label: "Top voted", description: "Highest demand" },
+    { value: "top", label: "Most requested", description: "Highest demand" },
     { value: "pending", label: "Pending", description: "New submissions" },
     { value: "processing", label: "Processing", description: "Claimed by script or admin" },
     { value: "skipped", label: "Skipped", description: "Intentionally not processed" },
@@ -116,11 +116,11 @@ export default async function AdminRequestsPage({
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-                    <p className="text-sm font-medium text-muted-foreground">Visible Requests</p>
+                    <p className="text-sm font-medium text-muted-foreground">Active Requests</p>
                     <p className="mt-1 text-3xl font-bold text-foreground">{visibleRequests.length}</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-                    <p className="text-sm font-medium text-muted-foreground">Total Votes</p>
+                    <p className="text-sm font-medium text-muted-foreground">Interested users</p>
                     <p className="mt-1 text-3xl font-bold text-foreground">
                         {requests.reduce((sum, request) => sum + request.vote_count, 0)}
                     </p>
@@ -225,7 +225,7 @@ export default async function AdminRequestsPage({
                                                 {formatContentType(request.content_type)}
                                             </span>
                                             <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700">
-                                                {request.vote_count} {request.vote_count === 1 ? "vote" : "votes"}
+                                                {request.vote_count} {request.vote_count === 1 ? "interested user" : "interested users"}
                                             </span>
                                             {isHidden ? (
                                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
@@ -282,7 +282,7 @@ export default async function AdminRequestsPage({
                         <p className="mt-1 max-w-md text-sm text-muted-foreground">
                             {requests.length > 0
                                 ? "Switch filters to continue reviewing the request board."
-                                : "Once users submit ideas from the public board, they will appear here for review."}
+                                : "Submitted summary requests will appear here for review."}
                         </p>
                     </div>
                 )}

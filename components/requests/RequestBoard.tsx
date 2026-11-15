@@ -110,7 +110,7 @@ export function RequestBoard({
             const payload = await response.json() as { data: ContentRequestMutationResult };
             setSubmissionState({
                 kind: payload.data.duplicate ? "duplicate" : "new",
-                title: payload.data.request?.title?.trim() || submitted.input,
+                title: submitted.input.trim(),
             });
             // A response completes its submitted request, not any edits made while it waited.
             if (editRevision.current === submittedRevision) {

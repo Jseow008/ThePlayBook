@@ -1,17 +1,13 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
-    deriveUrlTitle,
-    inferContentType,
     normalizeText,
     normalizeUrl,
     parseMaybeUrl,
     splitTitleAndAuthor,
 } from "@/lib/content-requests";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
-import { fetchRequestMetadata } from "@/lib/server/content-request-metadata";
 import { fetchContentRequestById } from "@/lib/server/content-requests";
-import { resolveRequestThumbnail } from "@/lib/server/request-thumbnails";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +16,7 @@ import type { ContentRequestMutationResult } from "@/types/content-requests";
 const RequestSchema = z.object({
     input: z.string().trim().min(2).max(500),
     author: z.string().trim().max(180).optional().nullable(),
-    content_type: z.enum(["book", "article", "podcast", "video"]).optional(),
+    content_type: z.enum(["book", "video"]),
 });
 
 const NEW_REQUEST_LIMIT = 5;
@@ -131,15 +127,12 @@ export async function POST(request: NextRequest) {
         const input = parsed.data.input;
         const url = parseMaybeUrl(input);
         const normalizedUrl = normalizeUrl(input);
-        const metadata = normalizedUrl ? await fetchRequestMetadata(normalizedUrl) : {};
         const textParts = splitTitleAndAuthor(input);
-        const contentType = inferContentType(input, parsed.data.content_type ?? "book");
-        const title = cleanOptional(metadata.title)
-            || (url ? deriveUrlTitle(input) : textParts.title);
+        const contentType = parsed.data.content_type;
+        const title = (url ? input : textParts.title).slice(0, 300);
         const author = cleanOptional(parsed.data.author) || (url ? null : textParts.author);
         const normalizedTitle = normalizeText(title);
         const normalizedAuthor = author ? normalizeText(author) : null;
-        const submittedThumbnailUrl = contentType === "book" ? null : cleanOptional(metadata.thumbnail_url);
 
         if (!normalizedTitle) {
             return apiError("VALIDATION_ERROR", "Enter a clearer title or source URL.", 400, requestId);
@@ -183,7 +176,7 @@ export async function POST(request: NextRequest) {
                 p_normalized_title: normalizedTitle,
                 p_normalized_author: normalizedAuthor,
                 p_content_type: contentType,
-                p_thumbnail_url: submittedThumbnailUrl,
+                p_thumbnail_url: null,
             })
             .single();
 
@@ -200,39 +193,6 @@ export async function POST(request: NextRequest) {
 
         if (!createdRequest) {
             return apiError("NOT_FOUND", "The saved request could not be loaded.", 404, requestId);
-        }
-
-        if (contentType === "book" && !createdRequest.thumbnail_url) {
-            after(async () => {
-                try {
-                    const thumbnailUrl = await resolveRequestThumbnail({
-                        content_type: contentType,
-                        title,
-                        author,
-                        source_url: normalizedUrl,
-                    });
-
-                    if (!thumbnailUrl) return;
-
-                    const { error: thumbnailError } = await (supabase as any)
-                        .from("content_requests")
-                        .update({ thumbnail_url: thumbnailUrl })
-                        .eq("id", result.request_id)
-                        .eq("content_type", "book")
-                        .is("thumbnail_url", null);
-
-                    if (thumbnailError) {
-                        throw thumbnailError;
-                    }
-                } catch (backgroundError) {
-                    logApiError({
-                        requestId,
-                        route: "/api/content-requests[POST]",
-                        message: "Background request thumbnail resolution failed",
-                        error: backgroundError,
-                    });
-                }
-            });
         }
 
         return NextResponse.json({

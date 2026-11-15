@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { inferContentType, normalizeText, normalizeUrl, splitTitleAndAuthor } from "@/lib/content-requests";
-import { fetchRequestMetadata } from "@/lib/server/content-request-metadata";
 import { normalizeContentRequestStatus } from "@/types/content-requests";
 
 afterEach(() => {
@@ -41,10 +40,5 @@ describe("content request helpers", () => {
         expect(normalizeContentRequestStatus("unknown")).toBe("pending");
     });
 
-    it("blocks direct private-network metadata fetches", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-        await expect(fetchRequestMetadata("http://127.0.0.1:54321/private")).resolves.toEqual({});
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
 });

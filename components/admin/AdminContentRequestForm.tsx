@@ -103,21 +103,21 @@ export function AdminContentRequestForm({
             ) : null}
 
             <label className="grid min-w-0 gap-1.5 text-sm font-medium text-foreground">
-                Visibility
+                Duplicate matching
                 <select
                     name="hideRequest"
                     value={hideRequest}
                     onChange={(event) => setHideRequest(event.target.value)}
                     className="h-10 w-full min-w-0 rounded-md border border-input bg-white px-3 text-sm font-normal text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                    <option value="false">Visible</option>
-                    <option value="true">Hidden</option>
+                    <option value="false">Include in matching</option>
+                    <option value="true">Exclude from matching</option>
                 </select>
             </label>
 
             {shouldShowHiddenReason ? (
                 <label className="grid min-w-0 gap-1.5 text-sm font-medium text-foreground">
-                    Hidden reason
+                    Exclusion reason
                     <input
                         name="hiddenReason"
                         defaultValue={request.hidden_reason ?? ""}
