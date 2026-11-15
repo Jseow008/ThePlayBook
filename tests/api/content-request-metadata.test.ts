@@ -8,6 +8,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/content-requests/route";
 import { fetchRequestMetadata } from "@/lib/server/content-request-metadata";
 
+vi.mock("next/server", async original => ({
+    ...await original<typeof import("next/server")>(), after: vi.fn(),
+}));
+
 const { dial, resolveAll, submit } = vi.hoisted(() => ({
     dial: vi.fn<(options: RequestOptions, onResponse: (response: IncomingMessage) => void) => ClientRequest>(),
     resolveAll: vi.fn<(hostname: string, options: LookupAllOptions) => Promise<LookupAddress[]>>(),
