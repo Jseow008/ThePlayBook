@@ -110,7 +110,8 @@ export function SearchAnalyticsTracker({
             if (!(event.target instanceof Element)) return;
             const link = event.target.closest("[data-search-result-position] a[href^='/preview/'], [data-search-result-position] a[href^='/read/']");
             const position = Number(link?.closest("[data-search-result-position]")?.getAttribute("data-search-result-position"));
-            if (link && Number.isInteger(position)) trackSearchResultClick(position);
+            const contentId = link?.getAttribute("href")?.match(/^\/(?:preview|read)\/([a-f0-9-]{36})(?:[/?#]|$)/i)?.[1];
+            if (link && Number.isInteger(position)) trackSearchResultClick(position, contentId);
         };
 
         document.addEventListener("click", onClick, true);

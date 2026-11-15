@@ -14,7 +14,7 @@ describe("Search journey measurement", () => {
 
     afterEach(() => vi.restoreAllMocks());
 
-    it("matches the latest query action to painted results without sending query text", async () => {
+    it("links completed query text to results and clicks without duplicating it", async () => {
         const { beginSearchJourney, settleSearchJourney, trackSearchResultClick } = await import("@/lib/search-journey-measurement");
 
         beginSearchJourney("/search?q=private+phrase", "query", "submit");
@@ -24,14 +24,16 @@ describe("Search journey measurement", () => {
         trackSearchResultClick(1);
 
         expect(capture.mock.calls.map(([event]) => event)).toEqual([
-            "search_action_started", "search_journey_settled", "search_result_clicked",
+            "search_action_started", "search_query_completed", "search_journey_settled", "search_result_clicked",
         ]);
-        expect(capture.mock.calls[1][1]).toMatchObject({
+        expect(capture.mock.calls[2][1]).toMatchObject({
             action_kind: "query", navigation_kind: "in_app", outcome: "results", elapsed_ms: 850,
             visibility_state: "foreground",
         });
-        expect(capture.mock.calls[2][1].journey_id).toBe(capture.mock.calls[1][1].journey_id);
-        expect(JSON.stringify(capture.mock.calls)).not.toContain("private phrase");
+        expect(capture.mock.calls[3][1].journey_id).toBe(capture.mock.calls[1][1].journey_id);
+        expect(capture.mock.calls[3][1].search_id).toBe(capture.mock.calls[1][1].search_id);
+        expect(capture.mock.calls[1][1]).toMatchObject({ query_text: "private phrase", trigger: "submit", search_scope: "content" });
+        expect(JSON.stringify(capture.mock.calls.filter(([event]) => event !== "search_query_completed"))).not.toContain("private phrase");
         expect(JSON.stringify(capture.mock.calls)).not.toContain("private+phrase");
     });
 
@@ -52,6 +54,68 @@ describe("Search journey measurement", () => {
         settleSearchJourney({ searchKey: "/search?type=podcast", outcome: "no_results", resultCount: 0, filtersCount: 1, queryPresent: false });
         expect(capture.mock.calls[3][1]).toMatchObject({ action_kind: "filter", filter_kind: "type", outcome: "no_results", result_count: 0 });
         expect(capture.mock.calls[3][1].journey_id).toBe(capture.mock.calls[2][1].journey_id);
+    });
+
+    it("records automatic, recent and no-result completions once, linking filter and click outcomes", async () => {
+        const { beginSearchJourney, settleSearchJourney, trackSearchResultClick } = await import("@/lib/search-journey-measurement");
+        const settle = (searchKey: string, outcome: "results" | "no_results" = "results") => {
+            window.history.pushState(null, "", searchKey);
+            settleSearchJourney({ searchKey, outcome, resultCount: outcome === "results" ? 1 : 0, filtersCount: 0, queryPresent: true });
+        };
+        beginSearchJourney("/search?q=Endure", "query", "debounced");
+        settle("/search?q=Endure");
+        settle("/search?q=Endure");
+        const completion = capture.mock.calls.find(([event]) => event === "search_query_completed")?.[1];
+        expect(completion).toMatchObject({ query_text: "Endure", trigger: "debounced" });
+        beginSearchJourney("/search?q=Endure&type=book", "filter", "link");
+        settle("/search?q=Endure&type=book");
+        trackSearchResultClick(1, "content-1");
+        expect(capture.mock.calls.filter(([event]) => event === "search_query_completed")).toHaveLength(1);
+        expect(capture.mock.calls.at(-1)?.[1]).toMatchObject({ search_id: completion.search_id, content_id: "content-1" });
+        beginSearchJourney("/search?q=missing", "query", "recent");
+        settle("/search?q=missing", "no_results");
+        expect(capture.mock.calls.filter(([event]) => event === "search_query_completed").at(-1)?.[1]).toMatchObject({ trigger: "recent", outcome: "no_results", query_text: "missing" });
+    });
+
+    it("does not capture failed, empty, draft or superseded query text", async () => {
+        const { beginSearchJourney, settleSearchJourney, setSearchDraftQuery } = await import("@/lib/search-journey-measurement");
+        beginSearchJourney("/search?q=obsolete", "query", "submit");
+        beginSearchJourney("/search?q=latest", "query", "submit");
+        window.history.pushState(null, "", "/search?q=latest");
+        settleSearchJourney({ searchKey: "/search?q=obsolete", outcome: "results", resultCount: 1, filtersCount: 0, queryPresent: true });
+        settleSearchJourney({ searchKey: "/search?q=latest", outcome: "failed", resultCount: 0, filtersCount: 0, queryPresent: true });
+        beginSearchJourney("/search?q=draft", "query", "submit");
+        window.history.pushState(null, "", "/search?q=draft");
+        setSearchDraftQuery("newer unfinished draft");
+        settleSearchJourney({ searchKey: "/search?q=draft", outcome: "results", resultCount: 1, filtersCount: 0, queryPresent: true });
+        expect(capture.mock.calls.some(([event]) => event === "search_query_completed")).toBe(false);
+    });
+
+    it("records direct results once and keeps click correlation after an effect replay", async () => {
+        window.history.replaceState(null, "", "/search?q=Endure");
+        vi.mocked(performance.getEntriesByType).mockReturnValue([{ name: window.location.href } as PerformanceNavigationTiming]);
+        const { settleSearchJourney, trackSearchResultClick } = await import("@/lib/search-journey-measurement");
+        const result = { searchKey: "/search?q=Endure", outcome: "results" as const, resultCount: 1, filtersCount: 0, queryPresent: true };
+        settleSearchJourney(result);
+        settleSearchJourney(result);
+        trackSearchResultClick(1);
+        expect(capture.mock.calls.filter(([event]) => event === "search_query_completed")).toHaveLength(1);
+        expect(capture.mock.calls[0][1]).toMatchObject({ query_text: "Endure", trigger: "direct" });
+        expect(capture.mock.calls.at(-1)?.[1]).toMatchObject({ search_id: capture.mock.calls[0][1].search_id });
+    });
+
+    it("captures a successful retry and unmeasured Back navigation without inventing latency", async () => {
+        const { beginSearchJourney, settleSearchJourney } = await import("@/lib/search-journey-measurement");
+        const result = { searchKey: "/search?q=Endure", resultCount: 1, filtersCount: 0, queryPresent: true };
+        beginSearchJourney(result.searchKey, "query", "submit");
+        window.history.pushState(null, "", result.searchKey);
+        settleSearchJourney({ ...result, outcome: "failed" });
+        settleSearchJourney({ ...result, outcome: "results" });
+        expect(capture.mock.calls.filter(([event]) => event === "search_query_completed")).toHaveLength(1);
+        expect(capture.mock.calls.filter(([event]) => event === "search_journey_settled")).toHaveLength(1);
+        window.history.pushState(null, "", "/search?q=another");
+        settleSearchJourney({ ...result, searchKey: "/search?q=another", outcome: "no_results" });
+        expect(capture.mock.calls.at(-1)).toEqual(["search_query_completed", expect.objectContaining({ query_text: "another", trigger: "link" })]);
     });
 
     it.each([
@@ -101,7 +165,7 @@ describe("Search journey measurement", () => {
         settleSearchJourney({ searchKey: "/search?q=other&type=book", outcome: "results", resultCount: 4, filtersCount: 1, queryPresent: true });
         expect(capture).toHaveBeenCalledTimes(1);
         settleSearchJourney({ searchKey: "/search?q=phrase&type=book", outcome: "results", resultCount: 2, filtersCount: 1, queryPresent: true });
-        expect(capture.mock.calls[1][1]).toMatchObject({ result_count: 2, outcome: "results" });
+        expect(capture.mock.calls.find(([event]) => event === "search_journey_settled")?.[1]).toMatchObject({ result_count: 2, outcome: "results" });
     });
 
     it("marks an action that was hidden before settlement as backgrounded", async () => {
@@ -115,7 +179,7 @@ describe("Search journey measurement", () => {
         window.history.pushState(null, "", "/search?q=book");
         settleSearchJourney({ searchKey: "/search?q=book", outcome: "results", resultCount: 1, filtersCount: 0, queryPresent: true });
 
-        expect(capture.mock.calls[1][1]).toMatchObject({ visibility_state: "backgrounded" });
+        expect(capture.mock.calls.find(([event]) => event === "search_journey_settled")?.[1]).toMatchObject({ visibility_state: "backgrounded" });
     });
 
     it("records a direct document load once and keeps failures distinct", async () => {
