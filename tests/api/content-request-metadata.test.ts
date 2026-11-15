@@ -8,6 +8,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/content-requests/route";
 import { fetchRequestMetadata } from "@/lib/server/content-request-metadata";
 
+vi.mock("next/server", async original => ({
+    ...await original<typeof import("next/server")>(), after: vi.fn(),
+}));
+
 const { dial, resolveAll, submit } = vi.hoisted(() => ({
     dial: vi.fn<(options: RequestOptions, onResponse: (response: IncomingMessage) => void) => ClientRequest>(),
     resolveAll: vi.fn<(hostname: string, options: LookupAllOptions) => Promise<LookupAddress[]>>(),
@@ -176,4 +180,18 @@ it("submits the URL with a derived title when metadata is unavailable", async ()
         p_title: "example article", p_source_url: "https://example.test/example-article", p_thumbnail_url: null,
     }));
     expect((await response.json()).data.request.title).toBe("example article");
+});
+
+it("acknowledges duplicate input without returning the existing request record", async () => {
+    submit.mockReturnValue({ single: async () => ({
+        data: { request_id: "test-request", duplicate: true, voted: true }, error: null,
+    }) });
+    const response = await POST(new NextRequest("http://localhost/api/content-requests", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: "My requested book", content_type: "book" }),
+    }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).data).toEqual({
+        request: { title: "My requested book" }, duplicate: true, voted: true,
+    });
 });

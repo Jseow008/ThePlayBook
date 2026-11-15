@@ -39,7 +39,7 @@ export interface ContentRequestBoardItem {
 }
 
 export interface ContentRequestMutationResult {
-    request: ContentRequestBoardItem;
+    request: Pick<ContentRequestBoardItem, "title">;
     voted: boolean;
     duplicate: boolean;
 }

@@ -127,7 +127,18 @@ BEGIN
         -- projection fail closed even if a browser grant is introduced later.
         -- Content replacement adds one public notice read policy, restricted
         -- to published, available destinations.
-        ) <> 65
+        -- Private summary requests remove the retired public-board read policy.
+        ) <> 64
+
+        UNION ALL
+
+        SELECT 'request_board_public_read_policy_remains'
+        WHERE EXISTS (
+            SELECT 1 FROM pg_policies
+            WHERE schemaname = 'public' AND tablename = 'content_requests'
+              AND cmd IN ('SELECT', 'ALL')
+              AND roles && ARRAY['public', 'anon', 'authenticated']::name[]
+        )
 
         UNION ALL
 
@@ -297,10 +308,9 @@ SELECT pg_temp.assert_count(
     1,
     'anon sees homepage sections'
 );
-SELECT pg_temp.assert_count(
+SELECT pg_temp.expect_insufficient_privilege(
     $$SELECT 1 FROM public.content_requests WHERE id IN ('00000000-0000-4000-8000-000000000251', '00000000-0000-4000-8000-000000000252')$$,
-    1,
-    'anon sees only visible requests'
+    'anon cannot read submitted requests'
 );
 SELECT pg_temp.assert_count(
     $$SELECT 1 FROM public.user_library WHERE user_id = '00000000-0000-4000-8000-000000000101'$$,
@@ -334,6 +344,11 @@ RESET ROLE;
 SELECT set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000101', true);
 SELECT set_config('request.jwt.claim.role', 'authenticated', true);
 SET LOCAL ROLE authenticated;
+
+SELECT pg_temp.expect_insufficient_privilege(
+    $$SELECT 1 FROM public.content_requests WHERE id IN ('00000000-0000-4000-8000-000000000251', '00000000-0000-4000-8000-000000000252')$$,
+    'owner cannot directly read submitted requests'
+);
 
 SELECT pg_temp.assert_count(
     $$SELECT 1 FROM public.content_item WHERE id = '00000000-0000-4000-8000-000000000211'$$,
@@ -420,7 +435,7 @@ SELECT pg_temp.expect_insufficient_privilege(
 );
 SELECT pg_temp.expect_insufficient_privilege(
     $$INSERT INTO public.content_request_votes (user_id, request_id) VALUES ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000251')$$,
-    'owner must use the bounded server vote route'
+    'owner registers request interest through bounded submission'
 );
 SELECT pg_temp.expect_insufficient_privilege(
     $$INSERT INTO public.homepage_section (title, filter_type, filter_value, order_index) VALUES ('DB-103 Non-admin Insert', 'featured', 'true', 1000)$$,
@@ -436,6 +451,16 @@ SELECT pg_temp.expect_insufficient_privilege(
     'authenticated user cannot read admin readiness view'
 );
 
+RESET ROLE;
+
+-- A second authenticated account also has no direct request access.
+SELECT set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000102', true);
+SELECT set_config('request.jwt.claim.role', 'authenticated', true);
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.expect_insufficient_privilege(
+    $$SELECT 1 FROM public.content_requests WHERE id IN ('00000000-0000-4000-8000-000000000251', '00000000-0000-4000-8000-000000000252')$$,
+    'second account cannot directly read submitted requests'
+);
 RESET ROLE;
 
 -- Admin: homepage management remains available through the existing profile role.
@@ -465,6 +490,17 @@ RESET ROLE;
 SELECT set_config('request.jwt.claim.sub', '', true);
 SELECT set_config('request.jwt.claim.role', 'service_role', true);
 SET LOCAL ROLE service_role;
+
+SELECT pg_temp.assert_count(
+    $$SELECT 1 FROM public.content_requests WHERE id IN ('00000000-0000-4000-8000-000000000251', '00000000-0000-4000-8000-000000000252')$$,
+    2,
+    'service role retains request history'
+);
+SELECT pg_temp.assert_count(
+    $$SELECT 1 FROM public.content_request_votes WHERE user_id = '00000000-0000-4000-8000-000000000102' AND request_id = '00000000-0000-4000-8000-000000000251'$$,
+    1,
+    'service role retains request interest records'
+);
 
 SELECT pg_temp.assert_count(
     $$SELECT 1 FROM public.user_library WHERE user_id IN ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000102')$$,
