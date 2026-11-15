@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
-import { runCommand, startSupabase, validatePlan } from "../../scripts/start-supabase-ci.mjs";
+import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createServer } from "node:net";
+import { runCommand, startSupabase, validatePlan, prepareCiDatabasePort } from "../../scripts/start-supabase-ci.mjs";
 
 const plan = JSON.parse(readFileSync("scripts/supabase-ci-images.json", "utf8"));
 const success = output => ({ code: 0, signal: null, output });
@@ -15,8 +18,29 @@ function harness() {
     }
     return success("");
   });
-  return { run, candidate: structuredClone(plan), registry: "ghcr.io", cli: "/locked/supabase", log: vi.fn() };
+  return { run, candidate: structuredClone(plan), registry: "ghcr.io", cli: "/locked/supabase", prepare: vi.fn(), log: vi.fn() };
 }
+
+it("recovers an occupied CI database port without changing other Supabase ports", async () => {
+  const listener = createServer();
+  await new Promise(resolve => listener.listen(0, "0.0.0.0", resolve));
+  const occupied = listener.address().port;
+  const folder = mkdtempSync(join(tmpdir(), "netflux-ci-port-"));
+  const configPath = join(folder, "config.toml");
+  const config = `project_id = "synthetic"\n[api]\nport = 54321\n[db]\n# Database\nport = ${occupied}\nshadow_port = 54320\n[studio]\nport = 54323\n`;
+  writeFileSync(configPath, config);
+  try {
+    await prepareCiDatabasePort({ enabled: false, configPath });
+    expect(readFileSync(configPath, "utf8")).toBe(config);
+    const selected = await prepareCiDatabasePort({ enabled: true, configPath, log: vi.fn() });
+    expect(selected).not.toBe(occupied);
+    expect(readFileSync(configPath, "utf8")).toBe(config.replace(`port = ${occupied}\n`, `port = ${selected}\n`));
+    expect(listener.listening).toBe(true);
+  } finally {
+    await new Promise(resolve => listener.close(resolve));
+    rmSync(folder, { recursive: true, force: true });
+  }
+});
 
 describe("verified original-publisher CI image preload", () => {
   it("keeps the manifest tied to the lockfile CLI and approved 13-image evidence", () => {
@@ -97,6 +121,13 @@ describe("verified original-publisher CI image preload", () => {
     h.run.mockImplementation((cmd, args, opts) => args[0] === "start" ? { code: 2, output: "migration failure" } : original(cmd, args, opts));
     await expect(startSupabase(h)).rejects.toThrow("Supabase startup failed");
     expect(h.run.mock.calls.filter(call => call[1][0] === "start")).toHaveLength(1);
+  });
+
+  it("does not start Supabase when CI port preparation fails", async () => {
+    const h = harness();
+    h.prepare.mockRejectedValueOnce(new Error("cannot bind"));
+    await expect(startSupabase(h)).rejects.toThrow("cannot bind");
+    expect(h.run.mock.calls.some(call => call[1][0] === "start")).toBe(false);
   });
 
   it("stops on a missing executable", async () => {
