@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import type { Redis } from "@upstash/redis";
+import { createRateLimitRedis } from "@/lib/server/rate-limit-redis";
 import { trustedNetworkIdentifier } from "@/lib/server/rate-limit-identity";
 import { recordSecuritySignal, type SecurityTelemetryCategory } from "@/lib/server/security-telemetry";
 
@@ -114,9 +115,9 @@ export async function rateLimit(req: NextRequest, options: RateLimitOptions): Pr
 
     try {
         if (!redis) {
-            redis = new Redis({
-                url: process.env.UPSTASH_REDIS_REST_URL,
-                token: process.env.UPSTASH_REDIS_REST_TOKEN,
+            redis = createRateLimitRedis({
+                url: process.env.UPSTASH_REDIS_REST_URL!,
+                token: process.env.UPSTASH_REDIS_REST_TOKEN!,
             });
         }
 
