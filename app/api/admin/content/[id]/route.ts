@@ -237,6 +237,7 @@ function mergeNarrationSegmentTimings(
 
 // Zod schema for updating content
 const UpdateContentSchema = z.object({
+    source_updated_at: z.string().datetime({ offset: true }).optional(),
     title: z.string().trim().min(1).max(300).optional(),
     author: z.string().optional().nullable(),
     type: z.enum(["podcast", "book", "article", "video"]).optional(),
@@ -392,7 +393,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             return apiError("VALIDATION_ERROR", "Invalid request", 400, requestId, parsed.error.issues);
         }
 
-        const { segments, artifacts, ...contentData } = parsed.data;
+        const { segments, artifacts, source_updated_at, ...contentData } = parsed.data;
         const supabase = getAdminClient();
         const { data: existingContent, error: existingContentError } = await supabase
             .from("content_item")
@@ -536,19 +537,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             version: "1.0.0",
         }));
 
-        const rpcArgs: Database["public"]["Functions"]["admin_update_content_graph"]["Args"] = {
+        const rpcArgs: Database["public"]["Functions"]["admin_save_content_revision"]["Args"] = {
             p_content_id: id,
-            p_content_patch: contentPatch as Database["public"]["Functions"]["admin_update_content_graph"]["Args"]["p_content_patch"],
+            p_source_updated_at: source_updated_at,
+            p_content_patch: contentPatch as Database["public"]["Functions"]["admin_save_content_revision"]["Args"]["p_content_patch"],
             p_segments: segmentsForPersistence ?? null,
             p_artifacts: artifactPayload ?? null,
         };
 
-        const { error: updateGraphError } = await supabase.rpc("admin_update_content_graph", rpcArgs);
+        const { data: saveReceipt, error: updateGraphError } = await supabase.rpc("admin_save_content_revision", rpcArgs);
 
         if (updateGraphError) {
+            if (updateGraphError.code === "40001") {
+                return apiError("CONFLICT", updateGraphError.message, 409, requestId,
+                    z.guid().safeParse(updateGraphError.hint).success ? { draftId: updateGraphError.hint } : undefined);
+            }
             if (updateGraphError.hint === "CONTENT_VERSION_REQUIRED" || updateGraphError.hint === "CONTENT_VERSION_PUBLISH_REQUIRED") {
                 return apiError("CONFLICT", updateGraphError.hint === "CONTENT_VERSION_REQUIRED"
-                    ? "Published reading text is protected. Create an updated version before rewriting it. Your changes have not been saved."
+                    ? "Highlights or notes protect this reading text. Create an updated version before rewriting it. Your changes have not been saved."
                     : "Save this updated version as a draft, then use Publish updated version. Leave its series unassigned until publication.", 409, requestId);
             }
 
@@ -576,6 +582,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }
 
             throw updateGraphError;
+        }
+
+        const saved = saveReceipt as { content_id: string; created_version: boolean; status: string } | null;
+        if (saved?.created_version) {
+            return NextResponse.json({ success: true, data: { id: saved.content_id, version_draft: true,
+                message: "Revisions saved in a linked draft. The annotated original is preserved." } });
         }
 
         if (isManualAudioOverride && !segmentsForPersistence) {

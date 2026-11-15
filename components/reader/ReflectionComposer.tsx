@@ -24,6 +24,7 @@ function getDraftKey(contentId: string) {
 }
 
 interface ReflectionComposerProps {
+    contentRevision?: string | null;
     contentId: string;
     contentTitle: string;
     readerTheme: ReaderTheme;
@@ -36,6 +37,7 @@ interface ReflectionComposerProps {
 }
 
 export function ReflectionComposer({
+    contentRevision,
     contentId,
     contentTitle,
     readerTheme,
@@ -169,6 +171,7 @@ export function ReflectionComposer({
         try {
             await saveReflection.mutateAsync({
                 content_item_id: contentId,
+                content_revision: contentRevision ?? null,
                 prompt: REFLECTION_PROMPT,
                 reflection_text: reflectionText,
             });

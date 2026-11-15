@@ -33,12 +33,14 @@ test.describe("replacement continuity", () => {
         await db.query(`INSERT INTO public.content_item(id,type,title,status,category,quick_mode_json)
             VALUES ($1,'book',$3,'verified','Productivity',$5), ($2,'book',$4,'verified','Productivity',$5)`,
         [sourceId, keptId, `Original continuity ${sourceId}`, `Updated continuity ${keptId}`, { hook: "Fixture", big_idea: "Fixture", key_takeaways: ["Fixture"] }]);
-        await db.query(`INSERT INTO public.user_reflections(user_id,content_item_id,prompt,reflection_text)
-            VALUES ($1,$2,'Original','Original retained reflection'),($1,$3,'Kept','Unrelated kept reflection')`, [adminId,sourceId,keptId]);
         await db.query(`INSERT INTO public.segment(id,item_id,order_index,title,markdown_body)
             VALUES ($1,$2,0,'Original section','Original passage'), ($3,$4,0,'New section','New passage')`, [segmentId, sourceId, randomUUID(), keptId]);
-        await db.query(`INSERT INTO public.user_highlights(id,user_id,content_item_id,segment_id,highlighted_text,note_body,anchor_start,anchor_end)
-            VALUES ($1,$2,$3,$4,'Original passage',$5,0,16)`, [highlightId,adminId,sourceId,segmentId,noteText]);
+        await db.query(`INSERT INTO public.user_reflections(user_id,content_item_id,prompt,reflection_text,content_revision)
+            SELECT $1,id,CASE WHEN id=$2 THEN 'Original' ELSE 'Kept' END,
+                CASE WHEN id=$2 THEN 'Original retained reflection' ELSE 'Unrelated kept reflection' END,reading_revision
+            FROM public.content_item WHERE id IN ($2,$3)`, [adminId,sourceId,keptId]);
+        await db.query(`INSERT INTO public.user_highlights(id,user_id,content_item_id,segment_id,highlighted_text,note_body,anchor_start,anchor_end,content_revision)
+            SELECT $1,$2,$3,$4,'Original passage',$5,0,16,reading_revision FROM public.content_item WHERE id=$3`, [highlightId,adminId,sourceId,segmentId,noteText]);
         await db.query("UPDATE private.personal_evidence_index SET next_attempt_at=now()+interval '7 days' WHERE user_id=$1", [adminId]);
     });
     test.afterAll(async () => {

@@ -118,6 +118,7 @@ export interface ContentItemWithSegments {
     series_order: number | null;
     created_at?: string | null;
     updated_at?: string | null;
+    reading_revision?: string | null;
     seriesContext?: SeriesContext | null;
     segments: SegmentFull[];
     artifacts: ArtifactSummary[];

@@ -837,7 +837,7 @@ describe("Admin content series support", () => {
         });
 
         expect(res.status).toBe(200);
-        expect(rpc).toHaveBeenCalledWith("admin_update_content_graph", expect.objectContaining({
+        expect(rpc).toHaveBeenCalledWith("admin_save_content_revision", expect.objectContaining({
             p_content_patch: expect.objectContaining({
                 title: "Matthew 5-7: Sermon on the Mount",
                 series_id: seriesId,
@@ -1088,7 +1088,7 @@ describe("Admin content series support", () => {
         });
 
         expect(res.status).toBe(200);
-        expect(rpc).toHaveBeenCalledWith("admin_update_content_graph", expect.objectContaining({
+        expect(rpc).toHaveBeenCalledWith("admin_save_content_revision", expect.objectContaining({
             p_content_patch: expect.objectContaining({
                 narration_status: "stale",
                 narration_error: null,
@@ -1178,7 +1178,7 @@ describe("Admin content series support", () => {
         });
 
         expect(res.status).toBe(200);
-        expect(rpc).toHaveBeenCalledWith("admin_update_content_graph", expect.objectContaining({
+        expect(rpc).toHaveBeenCalledWith("admin_save_content_revision", expect.objectContaining({
             p_content_patch: expect.not.objectContaining({
                 narration_status: "stale",
             }),
@@ -1260,7 +1260,7 @@ describe("Admin content series support", () => {
         });
 
         expect(res.status).toBe(200);
-        expect(rpc).toHaveBeenCalledWith("admin_update_content_graph", expect.objectContaining({
+        expect(rpc).toHaveBeenCalledWith("admin_save_content_revision", expect.objectContaining({
             p_segments: [
                 expect.objectContaining({
                     id: "11111111-1111-1111-1111-111111111111",
@@ -1343,7 +1343,7 @@ describe("Admin content series support", () => {
         });
 
         expect(res.status).toBe(200);
-        expect(rpc).toHaveBeenCalledWith("admin_update_content_graph", expect.objectContaining({
+        expect(rpc).toHaveBeenCalledWith("admin_save_content_revision", expect.objectContaining({
             p_content_patch: expect.objectContaining({
                 narration_status: "stale",
             }),
@@ -1422,7 +1422,7 @@ describe("Admin content series support", () => {
         });
 
         expect(res.status).toBe(200);
-        expect(rpc).toHaveBeenCalledWith("admin_update_content_graph", expect.objectContaining({
+        expect(rpc).toHaveBeenCalledWith("admin_save_content_revision", expect.objectContaining({
             p_content_patch: expect.not.objectContaining({
                 narration_status: "ready",
             }),
@@ -2166,7 +2166,7 @@ describe("Admin content series support", () => {
             method: "PUT", body: JSON.stringify({ status, quick_mode_json: { ...quick, big_idea: "Rewritten" }, segments: [{ order_index: 0, markdown_body: "Original" }] }),
         }), { params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }) });
         expect(res.status).toBe(409);
-        expect((await res.json()).error.message).toContain("Published reading text is protected");
+        expect((await res.json()).error.message).toContain("Highlights or notes protect this reading text");
         expect(rpc.mock.calls[0][1].p_content_patch.quick_mode_json).toEqual({ ...quick, big_idea: "Rewritten" });
         expect(revalidatePath).not.toHaveBeenCalled();
     });
@@ -2183,6 +2183,31 @@ describe("Admin content series support", () => {
         expect(res.status).toBe(409);
         expect((await res.json()).error.code).toBe("CONFLICT");
         expect(rpc).toHaveBeenCalledTimes(1);
+    });
+
+    it("returns the saved linked draft without touching the annotated original's follow-up jobs", async () => {
+        const draftId = "223e4567-e89b-42d3-a456-426614174000";
+        const rpc = vi.fn().mockResolvedValue({ data: { content_id: draftId, created_version: true, status: "draft" }, error: null });
+        const from = vi.fn(() => ({select: () => ({eq: () => ({single: async () => ({data:{status:"draft"},error:null})})})}));
+        vi.mocked(getAdminClient).mockReturnValue({ from, rpc } as unknown as ReturnType<typeof getAdminClient>);
+        const res = await updateAdminContent(new NextRequest("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000", {
+            method:"PUT", body: JSON.stringify({status:"draft", quick_mode_json: {hook:"Revision",big_idea:"Idea",key_takeaways:["One"]}}),
+        }),{params:Promise.resolve({id:"123e4567-e89b-12d3-a456-426614174000"})});
+        expect(res.status).toBe(200);
+        expect(await res.json()).toMatchObject({success:true,data:{id:draftId,version_draft:true}});
+        expect(from).toHaveBeenCalledTimes(1);
+        expect(revalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("returns an existing-draft conflict without claiming the edits were saved", async () => {
+        const draftId = "223e4567-e89b-42d3-a456-426614174000";
+        const rpc = vi.fn().mockResolvedValue({ data:null,error:{code:"40001",message:"Open the existing draft",hint:draftId} });
+        vi.mocked(getAdminClient).mockReturnValue({from: () => ({select: () => ({eq: () => ({single: async () => ({data:{status:"draft"},error:null})})})}),rpc} as unknown as ReturnType<typeof getAdminClient>);
+        const res = await updateAdminContent(new NextRequest("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000", {
+            method:"PUT",body:JSON.stringify({status:"draft"}),
+        }),{params:Promise.resolve({id:"123e4567-e89b-12d3-a456-426614174000"})});
+        expect(res.status).toBe(409);
+        expect(await res.json()).toMatchObject({error:{code:"CONFLICT",details:{draftId}}});
     });
 
 });

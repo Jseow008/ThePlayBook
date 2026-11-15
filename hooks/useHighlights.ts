@@ -148,6 +148,7 @@ export function useInfiniteHighlights(contentItemId?: string, options?: UseInfin
 // Create Highlight
 // ----------------------------------------------------------------------------
 interface CreateHighlightArgs {
+    content_revision?: string | null;
     content_item_id: string;
     segment_id?: string;
     highlighted_text: string;
@@ -256,6 +257,7 @@ export function useCreateHighlight() {
                 id: `temp-${Date.now()}`,
                 user_id: "",
                 content_item_id: newArgs.content_item_id,
+                content_revision: newArgs.content_revision ?? null,
                 segment_id: newArgs.segment_id || null,
                 highlighted_text: newArgs.highlighted_text,
                 note_body: newArgs.note_body || null,

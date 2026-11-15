@@ -114,6 +114,8 @@ describeDatabase("typed personal retrieval through real ordinary-account Supabas
              VALUES ($1, $2, 0, 'Owned source context', $3), ($4, $5, 0, 'Wrong source context', 'Unrelated source passage')`,
             [segmentId, contentId, fullQuote, otherSegmentId, otherContentId],
         );
+        // Historical fixtures represent captures predating reading revisions.
+        await db.query("UPDATE public.content_item SET reading_revision=NULL WHERE id=ANY($1::uuid[])", [[contentId, otherContentId, withdrawnContentId]]);
         await db.query(
             `INSERT INTO public.user_highlights (id, user_id, content_item_id, highlighted_text, color, created_at, updated_at)
              SELECT value::uuid, $1, $2, 'Noise passage ' || ordinality, 'blue',
@@ -266,9 +268,10 @@ describeDatabase("typed personal retrieval through real ordinary-account Supabas
                 span: { start: 0, end: 20, text: source.markdown_body.slice(0, 20) },
             }] })[0].href.split('#')[1];
             expect(await resolveReference(sourceToken)).toMatchObject({ state: 'available' });
-            await db.query("UPDATE public.segment SET markdown_body=markdown_body || ' edit' WHERE id=$1", [segmentId]);
-            expect(await resolveReference(sourceToken)).toEqual({ state: 'changed', kind: 'source_segment', title: source.title });
-            await db.query("UPDATE public.segment SET markdown_body=$2 WHERE id=$1", [segmentId, source.markdown_body]);
+            await expect(db.query("UPDATE public.segment SET markdown_body=markdown_body || ' edit' WHERE id=$1", [segmentId])).rejects.toMatchObject({code:"P0001"});
+            await db.query("UPDATE public.content_item SET title=$2 WHERE id=$1",[contentId, source.title + ' edit']);
+            expect(await resolveReference(sourceToken)).toEqual({ state: 'changed', kind: 'source_segment', title: source.title + ' edit' });
+            await db.query("UPDATE public.content_item SET title=$2 WHERE id=$1",[contentId,source.title]);
             await db.query("DELETE FROM public.user_library WHERE user_id=$1 AND content_id=$2", [accountA, contentId]);
             expect(await resolveReference(sourceToken)).toEqual({ state: 'unavailable' });
             await db.query("INSERT INTO public.user_library(user_id,content_id) VALUES($1,$2)", [accountA, contentId]);

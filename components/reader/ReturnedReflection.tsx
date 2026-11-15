@@ -9,10 +9,12 @@ import { REFLECTION_RESUME_PARAM } from "@/lib/auth-redirect";
 import { ReflectionComposer } from "./ReflectionComposer";
 
 export function ReturnedReflection({
+    contentRevision,
     contentId,
     contentTitle,
     readerTheme,
 }: {
+    contentRevision?: string | null;
     contentId: string;
     contentTitle: string;
     readerTheme: ReaderTheme;
@@ -33,6 +35,7 @@ export function ReturnedReflection({
 
     return (
         <ReflectionComposer
+            contentRevision={contentRevision}
             contentId={contentId}
             contentTitle={contentTitle}
             readerTheme={readerTheme}

@@ -116,6 +116,8 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
              VALUES ($1, $2, 0, 'Signal section', 'The segment-only retrieval phrase is a zebra compass.')`,
             [segment, contentSegment],
         );
+        // Historical fixtures represent captures predating reading revisions.
+        await db.query("UPDATE public.content_item SET reading_revision=NULL WHERE id=ANY($1::uuid[])", [[contentExact, contentSegment, contentWithdrawn]]);
         await db.query(
             `INSERT INTO public.user_highlights (user_id, content_item_id, segment_id, highlighted_text, note_body, color)
              VALUES
@@ -240,23 +242,27 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
         expect(allIds).toHaveLength(25);
         expect(new Set(allIds)).toHaveLength(25);
 
-        await db.query("UPDATE public.segment SET markdown_body = 'fresh catalog evidence phrase' WHERE id = $1", [segment]);
+        const refreshContent = randomUUID(), refreshSegment = randomUUID();
+        paginationContentIds.push(refreshContent);
+        await db.query("INSERT INTO public.content_item(id,type,title,status,category) VALUES($1,'article','Unannotated catalog refresh','verified','Science')",[refreshContent]);
+        await db.query("INSERT INTO public.segment(id,item_id,order_index,markdown_body) VALUES($1,$2,0,'old refresh evidence phrase')",[refreshSegment,refreshContent]);
+        await db.query("UPDATE public.segment SET markdown_body = 'fresh catalog evidence phrase' WHERE id = $1", [refreshSegment]);
         await expect(db.query<CatalogRow>(
             `SELECT content_id, title, snippet_headline FROM public.search_catalog($1, ARRAY[]::text[], NULL::public.content_type, NULL, NULL, NULL, NULL, 21)`,
-            ["segment-only retrieval phrase"],
+            ["old refresh evidence phrase"],
         )).resolves.toMatchObject({ rows: [] });
         await expect(db.query<CatalogRow>(
             `SELECT content_id, title, snippet_headline FROM public.search_catalog($1, ARRAY[]::text[], NULL::public.content_type, NULL, NULL, NULL, NULL, 21)`,
             ["fresh catalog evidence phrase"],
-        )).resolves.toMatchObject({ rows: [expect.objectContaining({ content_id: contentSegment })] });
+        )).resolves.toMatchObject({ rows: [expect.objectContaining({ content_id: refreshContent })] });
 
-        await db.query("UPDATE public.content_item SET status = 'draft' WHERE id = $1", [contentSegment]);
+        await db.query("UPDATE public.content_item SET status = 'draft' WHERE id = $1", [refreshContent]);
         await expect(db.query<CatalogRow>(
             `SELECT content_id, title, snippet_headline FROM public.search_catalog($1, ARRAY[]::text[], NULL::public.content_type, NULL, NULL, NULL, NULL, 21)`,
             ["fresh catalog evidence phrase"],
         )).resolves.toMatchObject({ rows: [] });
-        await db.query("UPDATE public.content_item SET status = 'verified' WHERE id = $1", [contentSegment]);
-        await db.query("UPDATE public.segment SET deleted_at = now() WHERE id = $1", [segment]);
+        await db.query("UPDATE public.content_item SET status = 'verified' WHERE id = $1", [refreshContent]);
+        await db.query("UPDATE public.segment SET deleted_at = now() WHERE id = $1", [refreshSegment]);
         await expect(db.query<CatalogRow>(
             `SELECT content_id, title, snippet_headline FROM public.search_catalog($1, ARRAY[]::text[], NULL::public.content_type, NULL, NULL, NULL, NULL, 21)`,
             ["fresh catalog evidence phrase"],

@@ -55,7 +55,7 @@ export function ContentVersionActions(props: Props) {
     return <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5" aria-label="Updated version">
         <h2 className="font-semibold text-zinc-900">{props.mode === "create" ? "Rewriting this summary?" : "Review updated version"}</h2>
         <p className="text-sm text-zinc-600">{props.mode === "create"
-            ? "Start a separate draft from the saved summary, or resume its existing draft. Unsaved changes on this page are not copied. The original stays published while you rewrite."
+            ? "Start a separate draft from the saved summary, or resume its existing draft. Unsaved changes on this page are not copied. Highlights, notes and reflections stay with the original while you rewrite."
             : "Publish the saved draft and replace the original together. Old links will show the existing replacement notice. Original highlights, notes and reading history stay on the original version."}</p>
         {props.mode === "publish" && !review && !error && <p role="status" className="text-sm text-zinc-600">Loading review…</p>}
         {review && <div className="space-y-2 text-sm text-zinc-700">

@@ -17,6 +17,7 @@ import { MobileNoteComposer, type MobileNoteComposerContext } from "./MobileNote
 import { findSegmentElement, getTrimmedSelection } from "./selection-utils";
 
 interface MobileSelectionActionsProps {
+    contentRevision?: string | null;
     contentItemId: string;
     contentTitle: string;
     sections: Array<{
@@ -34,6 +35,7 @@ interface SelectionInfo {
 }
 
 export function MobileSelectionActions({
+    contentRevision,
     contentItemId,
     contentTitle,
     sections,
@@ -180,6 +182,7 @@ export function MobileSelectionActions({
         try {
             const result = await createHighlight.mutateAsync({
                 content_item_id: contentItemId,
+                content_revision: contentRevision ?? null,
                 segment_id: selected.segmentId,
                 highlighted_text: selected.text,
                 anchor_start: selected.anchorStart,
@@ -227,6 +230,7 @@ export function MobileSelectionActions({
         try {
             const result = await createHighlight.mutateAsync({
                 content_item_id: contentItemId,
+                content_revision: contentRevision ?? null,
                 segment_id: selected.segmentId,
                 highlighted_text: selected.text,
                 expected_user_id: noteDraft.owner,

@@ -516,7 +516,7 @@ describe.each([false, true])('SegmentAccordion (reducedMotion=%s)', (reducedMoti
         const selection = getTrimmedSelection(range, section)!;
         expect(selection.text).toBe('Alpha');
         const target = Object.freeze({
-            id: 'captured-repeat', user_id: 'user-1', content_item_id: 'item-1', segment_id: 'seg-1',
+            id: 'captured-repeat', user_id: 'user-1', content_revision: null, content_item_id: 'item-1', segment_id: 'seg-1',
             highlighted_text: selection.text, note_body: 'Original thought', color: 'yellow',
             anchor_start: selection.anchorStart, anchor_end: selection.anchorEnd,
             created_at: '2026-10-23T00:00:00Z', updated_at: null, content_item: null, segment: null,
@@ -538,7 +538,7 @@ describe.each([false, true])('SegmentAccordion (reducedMotion=%s)', (reducedMoti
                     {
                         id: 'highlight-1',
                         user_id: 'user-1',
-                        content_item_id: 'item-1',
+                        content_revision: null, content_item_id: 'item-1',
                         segment_id: 'seg-1',
                         highlighted_text: 'Alpha',
                         note_body: null,
@@ -585,7 +585,7 @@ describe.each([false, true])('SegmentAccordion (reducedMotion=%s)', (reducedMoti
                     {
                         id: 'highlight-blocks',
                         user_id: 'user-1',
-                        content_item_id: 'item-1',
+                        content_revision: null, content_item_id: 'item-1',
                         segment_id: 'seg-blocks',
                         highlighted_text: 'First sentence.',
                         note_body: null,
@@ -629,7 +629,7 @@ describe.each([false, true])('SegmentAccordion (reducedMotion=%s)', (reducedMoti
                     {
                         id: 'highlight-repeated-blocks',
                         user_id: 'user-1',
-                        content_item_id: 'item-1',
+                        content_revision: null, content_item_id: 'item-1',
                         segment_id: 'seg-repeated-blocks',
                         highlighted_text: 'Alpha',
                         note_body: null,
@@ -659,7 +659,7 @@ describe.each([false, true])('SegmentAccordion (reducedMotion=%s)', (reducedMoti
                     {
                         id: 'highlight-2',
                         user_id: 'user-1',
-                        content_item_id: 'item-1',
+                        content_revision: null, content_item_id: 'item-1',
                         segment_id: 'seg-2',
                         highlighted_text: 'Beta Gamma',
                         note_body: 'Cross-node',
@@ -690,7 +690,7 @@ describe.each([false, true])('SegmentAccordion (reducedMotion=%s)', (reducedMoti
                     {
                         id: 'legacy-1',
                         user_id: 'user-1',
-                        content_item_id: 'item-1',
+                        content_revision: null, content_item_id: 'item-1',
                         segment_id: 'seg-1',
                         highlighted_text: 'Beta',
                         note_body: null,
@@ -724,7 +724,7 @@ describe.each([false, true])('SegmentAccordion (reducedMotion=%s)', (reducedMoti
                     {
                         id: 'highlight-3',
                         user_id: 'user-1',
-                        content_item_id: 'item-1',
+                        content_revision: null, content_item_id: 'item-1',
                         segment_id: 'seg-1',
                         highlighted_text: 'Alpha',
                         note_body: null,
@@ -766,7 +766,7 @@ describe.each([false, true])('SegmentAccordion (reducedMotion=%s)', (reducedMoti
                 highlights={[{
                     id: 'highlight-preview',
                     user_id: 'user-1',
-                    content_item_id: 'item-1',
+                    content_revision: null, content_item_id: 'item-1',
                     segment_id: 'seg-1',
                     highlighted_text: 'Alpha',
                     note_body: 'A note',
