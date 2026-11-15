@@ -238,7 +238,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             data: {
-                request: createdRequest,
+                // A duplicate may belong to someone else. Acknowledge only this submission.
+                request: { title },
                 voted: result.voted,
                 duplicate: result.duplicate,
             } satisfies ContentRequestMutationResult,

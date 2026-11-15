@@ -177,3 +177,17 @@ it("submits the URL with a derived title when metadata is unavailable", async ()
     }));
     expect((await response.json()).data.request.title).toBe("example article");
 });
+
+it("acknowledges duplicate input without returning the existing request record", async () => {
+    submit.mockReturnValue({ single: async () => ({
+        data: { request_id: "test-request", duplicate: true, voted: true }, error: null,
+    }) });
+    const response = await POST(new NextRequest("http://localhost/api/content-requests", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: "My requested book", content_type: "book" }),
+    }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).data).toEqual({
+        request: { title: "My requested book" }, duplicate: true, voted: true,
+    });
+});

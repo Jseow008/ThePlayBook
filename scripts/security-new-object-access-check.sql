@@ -21,8 +21,6 @@ DECLARE
             ('content_request_notifications', 'authenticated'),
             ('content_request_votes', 'anon'),
             ('content_request_votes', 'authenticated'),
-            ('content_requests', 'anon'),
-            ('content_requests', 'authenticated'),
             ('content_series', 'anon'),
             ('content_series', 'authenticated'),
             ('homepage_section', 'anon'),
