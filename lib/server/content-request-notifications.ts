@@ -60,6 +60,7 @@ interface ProcessSummary {
 }
 
 export interface ContentRequestNotificationBacklogStats {
+    missing: number;
     queued: number;
     queuedOlderThanOneHour: number;
     processing: number;
@@ -388,6 +389,7 @@ export async function getContentRequestNotificationBacklogStats(): Promise<Conte
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
 
     const [
+        missing,
         queued,
         queuedOlderThanOneHour,
         processing,
@@ -395,6 +397,7 @@ export async function getContentRequestNotificationBacklogStats(): Promise<Conte
         failed,
         sentLast24Hours,
     ] = await Promise.all([
+        getMissingNotificationCount(),
         countNotifications("queued"),
         countNotifications("queued", (query) => query.lt("queued_at", oneHourAgo)),
         countNotifications("processing"),
@@ -404,6 +407,7 @@ export async function getContentRequestNotificationBacklogStats(): Promise<Conte
     ]);
 
     return {
+        missing,
         queued,
         queuedOlderThanOneHour,
         processing,
@@ -411,6 +415,12 @@ export async function getContentRequestNotificationBacklogStats(): Promise<Conte
         failed,
         sentLast24Hours,
     };
+}
+
+async function getMissingNotificationCount() {
+    const { data, error } = await getAdminClient().rpc("count_missing_content_request_notifications");
+    if (error) throw error;
+    return Number(data ?? 0);
 }
 
 export async function processQueuedContentRequestNotifications(

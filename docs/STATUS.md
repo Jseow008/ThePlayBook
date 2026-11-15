@@ -31,6 +31,51 @@ Next: resolve/release parent PRs, retarget this change to current main and rerun
 required checks. No production deployment or merge performed by this task.
 One agent; no delegation/provider calls. Original dirty worktree untouched.
 
+## Intentional Search analytics — 15 November 2026 (Singapore)
+
+Implemented on local `main` in `/Users/j/Desktop/Lifebook` at the user's explicit
+request, based on freshly fetched `982b9feb` (#367). Publish via a separate
+`codex/intentional-search-analytics` ref/PR; never push protected main directly.
+PRs #368/#369/#370 were all open at start (#370 had failed validate/security);
+none of their feature commits are included. Original unrelated STATUS edits from
+`codex/browse-personal-loading` preserved in stash
+`3be58cc99f99a55214e979bd28c7f43af0a0762a`; untracked `output/` left untouched.
+Other worktrees unchanged. One agent, no delegation/provider generation calls.
+
+Dedicated `search_query_completed.query_text` retains completed public catalog
+queries, including 600ms automatic searches, with trigger, outcome/result count,
+search_id and journey_id. Filter-only reruns, pagination and result clicks reuse
+search_id without text; click includes content_id. No draft, superseded, failed,
+input-empty or repeated-effect raw-query events. Existing timing events remain
+metadata-only; unmeasured Back/link completions do not invent latency samples.
+Event whitelist explicitly classifies the narrow text exception; notes/library
+search, note/highlight/chat text protections remain. Privacy now discloses purpose,
+automatic searches and signed-in association. No claim of anonymized query text.
+
+SDK URL masking plus loaded-time persistence repair covers initial/session/person
+URLs before flags; before_send removes nested automatic duplicates. Strict-origin
+referrer policy omits same-origin Search paths/query from request headers. It also
+reduces referring-page attribution to origin. Recent-search history, analytics
+identity/session IDs and deferred SDK initialization are preserved. Historical
+PostHog data, retention/access settings, production database/config and server
+latency remain unchanged. No database-facing application/data-path change;
+OPS §2.2 disposable hosted database gate N/A for this telemetry/copy release.
+
+Clean locked install, final production build, lint/typecheck passed. Focused34
+unit/component/config checks pass. Built-app mobile390x844 and desktop1440x900:
+8 checks pass (Privacy/overflow, filter journey, automatic/submit/recent/draft/
+duplicate handling, initial/session/flag metadata and returning identity/cookie/
+storage cleanup). Test telemetry intercepted before ingestion. Earlier browser
+setup lacked CATALOG_SEARCH_CURSOR_SECRET; stopped, supplied a random local-only
+runtime value, retained failure log. Final build includes the retry/effect guard;
+no production credential/env file changed. Initial4 checks also passed against
+the first build. Logs `/tmp/lifebook-intentional-search-*.log` (temporary).
+
+Next: inspect exact commit/file scope, open PR and retain required checks; after
+merge and automatic production admission, pin alias/deployment SHA and verify
+mobile/desktop Search and Privacy with synthetic intercepted telemetry. Report
+before server-latency work. Production verification/release still pending.
+
 ## Mobile startup improvements — 14–15 November 2026 (Singapore)
 
 Active `codex/mobile-startup`, `/Users/j/Desktop/Lifebook-mobile-startup`, current
