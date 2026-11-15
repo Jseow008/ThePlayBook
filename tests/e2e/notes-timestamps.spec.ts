@@ -55,8 +55,10 @@ for (const [timezoneId, localTime] of [
                 const html = await response!.text();
                 expect(html).toMatch(/<time[^>]*>Nov 14, 4:43 PM UTC<\/time>/);
                 releaseScripts?.();
-                await expect(page.locator('time')).toHaveText(localTime, { timeout: 15000 });
-                expect(new Date((await page.locator('time').getAttribute('datetime'))!).toISOString()).toBe(createdAt);
+                // Next may retain an inactive server tree while the visible page commits.
+                const timestamp = page.locator('time:visible');
+                await expect(timestamp).toHaveText(localTime, { timeout: 15000 });
+                expect(new Date((await timestamp.getAttribute('datetime'))!).toISOString()).toBe(createdAt);
                 const desktop = (page.viewportSize()?.width ?? 0) >= 1024;
                 await page.getByRole('button', { name: desktop ? 'Ask these notes' : 'Ask', exact: true }).click();
                 await expect(page.getByLabel(desktop ? 'Ask a question about the notes in view' : 'Ask a question about these notes', { exact: true })).toBeVisible();
