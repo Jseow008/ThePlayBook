@@ -31,6 +31,7 @@ export function useReflections(contentItemId?: string, initialData?: ReflectionW
 }
 
 interface SaveReflectionArgs {
+    content_revision?: string | null;
     content_item_id: string;
     prompt: string;
     reflection_text: string;

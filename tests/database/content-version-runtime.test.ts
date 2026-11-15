@@ -24,7 +24,7 @@ suite("updated editions on an explicitly disposable database", () => {
             VALUES ($1,'book','Original fixture','verified','Business','https://example.invalid/cover.png',$2,'https://example.invalid/audio.mp3','ready')`, [oldId, quick]);
         await db.query("UPDATE public.content_item SET author=$1,isbn='9780000000001' WHERE id=$2",[`Synthetic author ${oldId}`,oldId]);
         await db.query("INSERT INTO public.segment(id,item_id,order_index,title,markdown_body,start_time_sec,end_time_sec) VALUES ($1,$2,0,'Original section','Original quotation',0,30)", [sectionId, oldId]);
-        await db.query("INSERT INTO public.user_highlights(user_id,content_item_id,segment_id,highlighted_text,note_body) VALUES ($1,$2,$3,'Original quotation','Synthetic thought')", [userId, oldId, sectionId]);
+        await db.query("INSERT INTO public.user_highlights(user_id,content_item_id,segment_id,highlighted_text,note_body,content_revision) SELECT $1,$2,$3,'Original quotation','Synthetic thought',reading_revision FROM public.content_item WHERE id=$2", [userId, oldId, sectionId]);
         await db.query("INSERT INTO public.artifact(item_id,type,payload_schema,version) VALUES ($1,'checklist',$2,'1.0.0')",[oldId,{title:"Original checklist",items:[]}]);
         await db.query("INSERT INTO public.user_library(user_id,content_id,progress) VALUES ($1,$2,$3)", [userId, oldId, { completed: [sectionId] }]);
     });
@@ -161,6 +161,7 @@ suite("updated editions on an explicitly disposable database", () => {
         const before = await state();
         const id = await create();
         await publish(id);
+        await db.query("INSERT INTO public.user_reflections(user_id,content_item_id,prompt,reflection_text,content_revision) SELECT $1,$2,'Prompt','A new note on this edition',reading_revision FROM public.content_item WHERE id=$2",[userId,id]);
         const next = (await db.query("SELECT public.admin_create_content_version($1,$2) AS id",[id,await stamp(id)])).rows[0].id;
         await db.query("SELECT public.admin_replace_content($1,$2,$3,$4)",[id,next,await stamp(id),await stamp(next)]);
         expect((await db.query("SELECT replacement_id FROM public.content_replacement WHERE source_id=$1",[oldId])).rows[0].replacement_id).toBe(next);

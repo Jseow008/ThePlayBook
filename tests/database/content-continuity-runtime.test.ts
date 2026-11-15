@@ -36,10 +36,10 @@ suite("content replacement on an explicitly disposable database", () => {
         await db.query(`INSERT INTO public.user_library(user_id, content_id, is_bookmarked, progress)
             VALUES ($1, $2, true, $4), ($1, $3, true, $5)`,
         [userId, oldId, keptId, { completed: [segmentId], lastSegmentIndex: 0 }, { completed: ["already-read"], lastSegmentIndex: 2 }]);
-        await db.query(`INSERT INTO public.user_highlights(user_id, content_item_id, segment_id, highlighted_text, note_body)
-            VALUES ($1, $2, $3, 'Original passage', 'Original thought')`, [userId, oldId, segmentId]);
-        await db.query(`INSERT INTO public.user_reflections(user_id, content_item_id, prompt, reflection_text)
-            VALUES ($1, $2, 'Fixture', 'Original reflection')`, [userId, oldId]);
+        await db.query(`INSERT INTO public.user_highlights(user_id, content_item_id, segment_id, highlighted_text, note_body, content_revision)
+            SELECT $1, $2, $3, 'Original passage', 'Original thought',reading_revision FROM public.content_item WHERE id=$2`, [userId, oldId, segmentId]);
+        await db.query(`INSERT INTO public.user_reflections(user_id, content_item_id, prompt, reflection_text, content_revision)
+            SELECT $1, $2, 'Fixture', 'Original reflection',reading_revision FROM public.content_item WHERE id=$2`, [userId, oldId]);
         const times = await db.query("SELECT id, updated_at::text FROM public.content_item WHERE id = ANY($1::uuid[])", [[oldId, keptId]]);
         oldUpdatedAt = times.rows.find((row) => row.id === oldId).updated_at;
         keptUpdatedAt = times.rows.find((row) => row.id === keptId).updated_at;

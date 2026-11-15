@@ -1,0 +1,52 @@
+{
+  "date": "2026-11-15",
+  "production_project": "xmuqsgfxuaaophxnwure",
+  "migration": "20261115090527_annotation_based_content_updates.sql",
+  "migration_sha256": "69158e328d7b7281655c2869e554ca7caa8bc1a4cd1c0fdffb3372bc42b72f71",
+  "production_authorization": "Owner explicitly authorized direct production changes and production testing; disposable hosted gate exception recorded.",
+  "backup_completed_utc": "2026-11-14T23:54:06.300Z",
+  "checks": {
+    "production_transactional_behavior": "passed; rolled back",
+    "production_concurrency": "passed both transaction orders with independently running native database workers",
+    "database_admin_rpc_acls": "passed",
+    "database_definer_acls": "passed, recognizing null-safe service-role checks",
+    "production_migration_dry_run_after_apply": "up to date",
+    "security_advisors": "unchanged: 12 existing informational private-table RLS findings",
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "application_tests": 2496,
+    "application_runtime_tests_skipped": 322,
+    "capacity_harness_tests": 34,
+    "upload_tests": 30,
+    "browser": "production database with locally served production build; desktop direct/draft save, mobile stale reflection rejection with entered text retained, refreshed reflection save, linked draft redirect, original text/history/note preserved"
+  },
+  "existing_records_unchanged": {
+    "content": 717,
+    "sections": 7114,
+    "highlights": 43,
+    "reflections": 4,
+    "active_linked_drafts": 31
+  },
+  "before_and_after_matching_hashes": {
+    "content": "0beb87ac6afd1f7f5ab42c076d7ac465",
+    "sections": "28769a5c6a51608449bd75908940ca06",
+    "highlights": "2476c54d67a998be336916b88ac2a970",
+    "reflections": "9760a3fa1a4f5b77fb6fa7c31a7b8d5b"
+  },
+  "cleanup": {
+    "synthetic_content_remaining": 0,
+    "synthetic_jobs_remaining": 0,
+    "synthetic_browser_account": "deleted",
+    "temporary_job_history": "deleted"
+  },
+  "pending": [
+    "GitHub required checks and application deployment"
+  ],
+  "follow_up_migration": {
+    "name": "20261115094450_preserve_reading_revision_for_metadata_saves.sql",
+    "sha256": "ed8f2333f8cf29f6c38cdccac88809cc746c0b171f7d36ee3988a7e2ca24b1d0",
+    "reason": "Keep loaded reading revisions valid when only timings or metadata are saved",
+    "transactional_proof": "passed and rolled back before application"
+  }
+}

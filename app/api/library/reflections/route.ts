@@ -13,6 +13,7 @@ const PROMPT_MAX_LENGTH = 500;
 
 const SaveReflectionSchema = z.object({
     content_item_id: z.guid(),
+    content_revision: z.guid().nullable().optional(),
     prompt: z.string().trim().min(1).max(PROMPT_MAX_LENGTH),
     reflection_text: z.string().trim().min(1).max(REFLECTION_MAX_LENGTH),
 });
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
 
         const payload: ReflectionInsert = {
             user_id: user.id,
+            content_revision: parsed.data.content_revision ?? null,
             content_item_id: parsed.data.content_item_id,
             prompt: parsed.data.prompt,
             reflection_text: parsed.data.reflection_text,

@@ -88,6 +88,7 @@ describe("ContentCard", () => {
         deleted_at: null,
         isbn: null,
         update_source_id: null,
+        reading_revision: null,
     };
 
     beforeEach(() => {

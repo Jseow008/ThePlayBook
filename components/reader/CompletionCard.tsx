@@ -36,6 +36,7 @@ const AuthorChat = dynamic(
 );
 
 interface CompletionCardProps {
+    contentRevision?: string | null;
     contentId: string;
     title: string;
     author: string | null;
@@ -45,7 +46,7 @@ interface CompletionCardProps {
     onCelebrationConsumed?: () => void;
 }
 
-export function CompletionCard({ contentId, title, author, segmentCount, readerTheme = "dark", celebrationRequested = false, onCelebrationConsumed }: CompletionCardProps) {
+export function CompletionCard({ contentRevision, contentId, title, author, segmentCount, readerTheme = "dark", celebrationRequested = false, onCelebrationConsumed }: CompletionCardProps) {
     const { completedIds, inProgressIds, myListIds, isLoaded, user } = useReadingProgress();
     const [showChat, setShowChat] = useState(false);
     const [showReflectionComposer, setShowReflectionComposer] = useState(false);
@@ -197,6 +198,7 @@ export function CompletionCard({ contentId, title, author, segmentCount, readerT
             )}
 
             <ReflectionComposer
+                contentRevision={contentRevision}
                 contentId={contentId}
                 contentTitle={title}
                 readerTheme={readerTheme}

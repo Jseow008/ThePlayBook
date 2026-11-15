@@ -74,7 +74,7 @@ describe("useHighlights", () => {
             data: [{
                 id,
                 user_id: id === "highlight-a" ? "user-1" : "user-2",
-                content_item_id: "content-1",
+                content_revision: null, content_item_id: "content-1",
                 segment_id: null,
                 anchor_start: null,
                 anchor_end: null,
@@ -135,7 +135,7 @@ describe("useHighlights", () => {
         let response: Awaited<ReturnType<typeof result.current.mutateAsync>> | undefined;
         await act(async () => {
             response = await result.current.mutateAsync({
-                content_item_id: "content-1",
+                content_revision: null, content_item_id: "content-1",
                 segment_id: "segment-1",
                 highlighted_text: "Duplicate",
                 anchor_start: 0,
@@ -170,7 +170,7 @@ describe("useHighlights", () => {
         await act(async () => {
             try {
                 await result.current.mutateAsync({
-                    content_item_id: "content-1",
+                    content_revision: null, content_item_id: "content-1",
                     segment_id: "segment-1",
                     highlighted_text: "Nested",
                     anchor_start: 4,

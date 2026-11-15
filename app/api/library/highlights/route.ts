@@ -109,6 +109,7 @@ function highlightOverlapResponse(
 const CreateHighlightSchema = z.object({
     expected_user_id: z.guid().optional(),
     content_item_id: z.guid(),
+    content_revision: z.guid().nullable().optional(),
     segment_id: z.guid().optional().nullable(),
     highlighted_text: z.string().trim().min(1).max(HIGHLIGHT_TEXT_MAX),
     note_body: z.string().trim().max(NOTE_BODY_MAX).optional().nullable(),
@@ -208,6 +209,7 @@ export async function POST(request: NextRequest) {
 
         const payload: HighlightInsert = {
             user_id: user.id,
+            content_revision: parsed.data.content_revision ?? null,
             content_item_id,
             segment_id: segment_id ?? null,
             highlighted_text,

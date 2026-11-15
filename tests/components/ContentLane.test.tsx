@@ -73,6 +73,7 @@ describe("ContentLane", () => {
             deleted_at: null,
         isbn: null,
         update_source_id: null,
+        reading_revision: null,
         },
         {
             id: "22222222-2222-2222-2222-222222222222",
@@ -105,6 +106,7 @@ describe("ContentLane", () => {
             deleted_at: null,
         isbn: null,
         update_source_id: null,
+        reading_revision: null,
         },
     ];
 

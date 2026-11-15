@@ -149,7 +149,7 @@ describe("BrainClientPage", () => {
             {
                 id: "highlight-1",
                 user_id: "user-1",
-                content_item_id: "content-1",
+                content_revision: null, content_item_id: "content-1",
                 segment_id: "seg-1",
                 highlighted_text: "The highlighted passage",
                 note_body: "?",
@@ -172,7 +172,7 @@ describe("BrainClientPage", () => {
             {
                 id: "highlight-2",
                 user_id: "user-1",
-                content_item_id: "content-2",
+                content_revision: null, content_item_id: "content-2",
                 segment_id: "seg-2",
                 highlighted_text: "A second highlight",
                 note_body: null,
@@ -195,7 +195,7 @@ describe("BrainClientPage", () => {
             {
                 id: "highlight-3",
                 user_id: "user-1",
-                content_item_id: "content-1",
+                content_revision: null, content_item_id: "content-1",
                 segment_id: "seg-3",
                 highlighted_text: "Whitespace note highlight",
                 note_body: "   ",
@@ -260,7 +260,7 @@ describe("BrainClientPage", () => {
                 content_item: item.content_item ? { ...item.content_item, cover_image_url: src } : null,
             })) };
             infiniteHighlightsState.value.data = { pages: [page], pageParams: [null] };
-            reflectionsState.value = [{ id: "reflection-cover", user_id: "user-1", content_item_id: "content-1",
+            reflectionsState.value = [{ id: "reflection-cover", user_id: "user-1", content_revision: null, content_item_id: "content-1",
                 prompt: "Test question", reflection_text: "Synthetic reflection", created_at: "2026-03-12T12:00:00.000Z",
                 updated_at: null, content_item: { id: "content-1", title: "Test title", author: null, cover_image_url: src } }];
             const { container } = render(<BrainClientPage initialPage={page} />);
@@ -353,7 +353,7 @@ describe("BrainClientPage", () => {
         const original = {
             ...initialPage.data[0],
             content_item: { id: "original-edition", title: "Original saved edition", author: null, cover_image_url: null },
-            content_item_id: "original-edition", segment: null,
+            content_revision: null, content_item_id: "original-edition", segment: null,
             note_body: thought, source_replaced: true,
         };
         const unavailable = { ...initialPage.data[2], content_item: null, segment: null, source_replaced: false };
@@ -383,7 +383,7 @@ describe("BrainClientPage", () => {
         reflectionsState.value = [{
             id: "reflection-1",
             user_id: "user-1",
-            content_item_id: "content-1",
+            content_revision: null, content_item_id: "content-1",
             prompt: "What idea do you want to remember from this?",
             reflection_text: "Choose the work that matters, even when the comfortable option is to stop.",
             created_at: "2026-03-12T12:00:00.000Z",
@@ -407,10 +407,10 @@ describe("BrainClientPage", () => {
     it.each(["item=content-1", "item=content-1&type=reflection"])("shows retained original reflections through %s", (query) => {
         setQuerySnapshot(query);
         reflectionsState.value = [
-            { id: "old-reflection", user_id: "user-1", content_item_id: "content-1",
+            { id: "old-reflection", user_id: "user-1", content_revision: null, content_item_id: "content-1",
                 prompt: "What stayed with you?", reflection_text: "Retained original reflection",
                 created_at: "2026-03-12T12:00:00.000Z", updated_at: null, content_item: null },
-            { id: "other-reflection", user_id: "user-1", content_item_id: "content-2",
+            { id: "other-reflection", user_id: "user-1", content_revision: null, content_item_id: "content-2",
                 prompt: "Other", reflection_text: "Unrelated reflection",
                 created_at: "2026-03-12T12:00:00.000Z", updated_at: null, content_item: null },
         ];
@@ -424,7 +424,7 @@ describe("BrainClientPage", () => {
         reflectionsState.value = [{
             id: "reflection-1",
             user_id: "user-1",
-            content_item_id: "content-1",
+            content_revision: null, content_item_id: "content-1",
             prompt: "What idea do you want to remember from this?",
             reflection_text: "Original reflection",
             created_at: "2026-03-12T12:00:00.000Z",
@@ -516,7 +516,7 @@ describe("BrainClientPage", () => {
         reflectionsState.value = [{
             id: "reflection-1",
             user_id: "user-1",
-            content_item_id: "content-1",
+            content_revision: null, content_item_id: "content-1",
             prompt: "What do you remember?",
             reflection_text: "A saved reflection remains visible.",
             created_at: "2026-03-12T12:00:00.000Z",

@@ -71,14 +71,14 @@ BEGIN
         user_id,
         content_item_id,
         segment_id,
-        highlighted_text
+        highlighted_text, content_revision
     )
     VALUES (
         v_highlight_id,
         v_user_id,
         v_content_id,
         v_highlighted_segment_id,
-        'saved words'
+        'saved words', (SELECT reading_revision FROM public.content_item WHERE id=v_content_id)
     );
 
     INSERT INTO public.segment_embedding_gemini (
@@ -110,9 +110,14 @@ BEGIN
         '1.0.0'
     );
 
-    -- A never-published draft can still edit/reorder its graph. Published text
-    -- is separately protected by the edition guard below. Add a new
-    -- segment. Existing UUIDs and the attached highlight must survive.
+    -- Annotation protection applies even to never-published drafts.
+    BEGIN
+        PERFORM public.admin_update_content_graph(v_content_id, '{}', '[]', NULL);
+        RAISE EXCEPTION 'DB-002 regression: annotated draft edits were accepted';
+    EXCEPTION WHEN SQLSTATE 'P0001' THEN NULL;
+    END;
+    -- Remove this synthetic annotation to exercise unannotated reconciliation.
+    DELETE FROM public.user_highlights WHERE id=v_highlight_id;
     PERFORM public.admin_update_content_graph(
         v_content_id,
         '{}'::jsonb,
@@ -137,6 +142,10 @@ BEGIN
         ),
         NULL
     );
+
+    INSERT INTO public.user_highlights(id,user_id,content_item_id,segment_id,highlighted_text,content_revision)
+        SELECT v_highlight_id,v_user_id,v_content_id,v_highlighted_segment_id,'saved words',reading_revision
+        FROM public.content_item WHERE id=v_content_id;
 
     SELECT id
     INTO STRICT v_new_segment_id
@@ -217,7 +226,7 @@ BEGIN
         );
     EXCEPTION
         WHEN SQLSTATE 'P0001' THEN
-            IF SQLERRM = 'DB002_HIGHLIGHTED_SEGMENT_REMOVAL' THEN
+            IF SQLERRM = 'Highlights or notes protect these sections; create a linked draft' THEN
                 v_removal_blocked := true;
             ELSE
                 RAISE;
@@ -264,7 +273,8 @@ BEGIN
         RAISE EXCEPTION 'DB-002 regression: a rejected graph update recreated a draft embedding';
     END IF;
 
-    -- Omitting an unhighlighted segment remains supported.
+    -- Reconciliation remains supported after the final annotation is removed.
+    DELETE FROM public.user_highlights WHERE id=v_highlight_id;
     PERFORM public.admin_update_content_graph(
         v_content_id,
         '{}'::jsonb,
@@ -293,6 +303,10 @@ BEGIN
         RAISE EXCEPTION 'DB-002 regression: an unhighlighted omitted segment was not removed';
     END IF;
 
+    INSERT INTO public.user_highlights(id,user_id,content_item_id,segment_id,highlighted_text,content_revision)
+        SELECT v_highlight_id,v_user_id,v_content_id,v_highlighted_segment_id,'saved words',reading_revision
+        FROM public.content_item WHERE id=v_content_id;
+
     IF NOT EXISTS (
         SELECT 1
         FROM public.user_highlights
@@ -302,13 +316,13 @@ BEGIN
         RAISE EXCEPTION 'DB-002 regression: later unhighlighted cleanup removed the saved highlight';
     END IF;
 
-    -- Once published, the same body change must fail even via Save as Draft.
+    -- Annotations protect the text after publication and Save as Draft too.
     UPDATE public.content_item SET status='verified' WHERE id=v_content_id;
     BEGIN
         PERFORM public.admin_update_content_graph(v_content_id, '{"status":"draft"}', '[]', NULL);
         RAISE EXCEPTION 'DB-002 regression: published sections were removed';
     EXCEPTION WHEN SQLSTATE 'P0001' THEN
-        IF SQLERRM <> 'Create an updated version before rewriting published sections' THEN RAISE; END IF;
+        IF SQLERRM <> 'Highlights or notes protect these sections; create a linked draft' THEN RAISE; END IF;
     END;
 
     INSERT INTO public.segment_embedding_gemini (
