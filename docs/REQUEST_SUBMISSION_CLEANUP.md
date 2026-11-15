@@ -14,3 +14,5 @@ Production migration has not been applied. Required CI/security checks and the r
 Pending on the access-control change. Remove external metadata and cover enrichment, retain explicit format, source URL, duplicate and notification behavior. Keep hidden-request deduplication semantics under an admin “Exclude from matching” label. Browser coverage and final validation to be recorded before handoff.
 
 The first hosted security gate found remaining legacy browser write privileges after SELECT revocation. The migration now revokes all table privileges from PUBLIC, anon and authenticated. This is within the private-request boundary. Required gates rerun on this correction.
+
+CI correction: the catalog guard now expects 64 public-schema policies after removal of the retired request-board policy, and explicitly rejects any request read policy applying to public/browser roles. Existing snapshot/service policies remain required by the other access checks.
