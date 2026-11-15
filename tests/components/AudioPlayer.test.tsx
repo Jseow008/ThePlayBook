@@ -391,18 +391,21 @@ describe("AudioPlayer", () => {
         expect(onTimeChange).toHaveBeenLastCalledWith(14, {
             durationSec: 120,
             isEnded: false,
+            source: "skip",
         });
 
         fireEvent.click(screen.getByRole("button", { name: "Forward 10 seconds" }));
         expect(onTimeChange).toHaveBeenLastCalledWith(24, {
             durationSec: 120,
             isEnded: false,
+            source: "skip",
         });
 
         fireEvent.change(screen.getByLabelText("Seek mini player timeline"), { target: { value: "40" } });
         expect(onTimeChange).toHaveBeenLastCalledWith(40, {
             durationSec: 120,
             isEnded: false,
+            source: "mini-seek",
         });
 
         fireEvent.click(screen.getByRole("button", { name: "Change mini player playback speed" }));

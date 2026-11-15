@@ -205,6 +205,10 @@ export function ReaderView({ content }: ReaderViewProps) {
     }, [content.category, content.id, content.type]);
 
     const handleAudioTimeChange = useCallback((timeSec: number, metadata?: AudioTimeChangeMetadata) => {
+        if (metadata?.source) {
+            // An explicit seek owns this visit's position, even before progress loads.
+            handledReaderEntryRef.current = readerEntryKey;
+        }
         latestAudioStateRef.current = {
             timeSec,
             durationSec: metadata?.durationSec ?? 0,
@@ -217,7 +221,15 @@ export function ReaderView({ content }: ReaderViewProps) {
             setIsAudioFollowEnabled(false);
             setSegmentScrollRequest(null);
         }
-    }, []);
+    }, [readerEntryKey]);
+    const handleAudioPlaybackStateChange = useCallback((isPlaying: boolean) => {
+        if (isPlaying) {
+            // Native play fires before play() resolves, so late hydration and the
+            // first progress save cannot re-enter resume initialization.
+            handledReaderEntryRef.current = readerEntryKey;
+        }
+        setIsAudioPlaying(isPlaying);
+    }, [readerEntryKey]);
     const handleExpandedSegmentChange = useCallback((segmentId: string | null) => {
         setExpandedSegmentId(segmentId);
 
@@ -424,10 +436,10 @@ export function ReaderView({ content }: ReaderViewProps) {
             latestAudioStateRef.current = { timeSec: 0, durationSec: 0 };
             setExpandedSegmentId(null);
             setSegmentScrollRequest(null);
+            previousStorageScopeRef.current = storageScope;
         }
 
         setCelebrationRequest(null);
-        previousStorageScopeRef.current = storageScope;
         setHasPendingProgressSave(false);
     }, [readerEntryKey, storageScope]);
 
@@ -489,16 +501,16 @@ export function ReaderView({ content }: ReaderViewProps) {
             return;
         }
 
-        if (handledReaderEntryRef.current === readerEntryKey) {
-            return;
-        }
-
         const scopeChanged = previousStorageScopeRef.current !== storageScope;
         previousStorageScopeRef.current = storageScope;
 
         if (scopeChanged && hasSyncedAudioPosition) {
             const { timeSec, durationSec } = latestAudioStateRef.current;
             persistAudioResume(timeSec, durationSec, true);
+            return;
+        }
+
+        if (handledReaderEntryRef.current === readerEntryKey) {
             return;
         }
 
@@ -1118,7 +1130,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onResumeAudioFollow={resumeAudioFollow}
                     initialAudioTimeSec={initialAudioTimeSec}
                     onAudioTimeChange={handleAudioTimeChange}
-                    onAudioPlaybackStateChange={setIsAudioPlaying}
+                    onAudioPlaybackStateChange={handleAudioPlaybackStateChange}
                     onAudioPlaybackStarted={handleAudioPlaybackStarted}
                 />
 

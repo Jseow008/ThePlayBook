@@ -1,5 +1,36 @@
 # Netflux release and workstream status
 
+## Reader audio resume fix — 15 November 2026 (Singapore)
+
+Branch `codex/reader-audio-resume`, worktree
+`/Users/j/.codex/workspaces/netflux-reader-audio-resume`, based on PR #369 at
+`4dd0d17d369fba91ad36fa22c9f9dca3da18b5ac` (parent #368 remains unmerged).
+Native playback and explicit main/mini seeks now finish automatic resume setup
+for the current reader entry. Late progress and first boundary saves cannot move
+active audio. Initial section/local resume, queued pre-metadata resume, audio follow,
+controls, and guest-to-account audio-position persistence are retained.
+
+Eight new reader/player integration regressions pass; five failed before the fix.
+Focused reader/player/header/sync suites passed. Lint, typecheck, production build,
+Sharp traces, critical CSS and 34 capacity harness checks passed. Full unit suite:
+2465 passed, 318 skipped, one inherited `tests/security/rls-policies.test.ts`
+assertion failure (`) <> 65`); independently reproduced on unchanged PR #369.
+No RLS/migration change in this fix. Disposable account browser checks passed
+real snapshot/mutation/cloud read-back, fresh and returning guest/account playback,
+10-second delayed hydration, 390px controls, and uninterrupted actual MP3 playback
+through segment 3 at 2x with zero seeks. Fixture signed out/deleted; no library rows
+remain. One natural-playback selector error retained; corrected isolated playback
+check passed without repeating account scenarios. Browser coverage is Chromium,
+not physical Safari/iOS. Sanitized evidence: `docs/evidence/reader-audio-resume-20261115.json`.
+
+Implementation commit `19c658a6`. PR [#370](https://github.com/Jseow008/ThePlayBook/pull/370)
+is ready against #369 with `stacked-pr`; remote six-file scope verified and PR scope
+passed. Release only after #369/#368 and their gates; refresh/retest against main
+before production merge. Inherited full-suite failure remains open on the parent.
+Next: resolve/release parent PRs, retarget this change to current main and rerun
+required checks. No production deployment or merge performed by this task.
+One agent; no delegation/provider calls. Original dirty worktree untouched.
+
 ## Intentional Search analytics — 15 November 2026 (Singapore)
 
 Implemented on local `main` in `/Users/j/Desktop/Lifebook` at the user's explicit

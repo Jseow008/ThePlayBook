@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ReaderView } from '@/components/reader/ReaderView';
+import { AudioPlayer } from '@/components/reader/AudioPlayer';
 import { vi } from 'vitest';
 import type { ContentItemWithSegments } from '@/types/domain';
 import { audioResumeKey } from '@/lib/local-user-storage';
@@ -22,6 +23,7 @@ const {
     useHighlightsSpy,
     resolvedTargetState,
     realAccordionState,
+    realAudioState,
     syncFromCloudMock,
     toastSuccessMock,
 } = vi.hoisted(() => ({
@@ -29,6 +31,7 @@ const {
     localStorageState: new Map<string, string>(),
     notesDrawerSpy: vi.fn(),
     progressState: {
+        isLoaded: true,
         value: null as { completed?: string[]; manuallyIncomplete?: string[]; maxSegmentIndex?: number; lastSegmentIndex?: number; isCompleted?: boolean } | null,
     },
     readerHeroHeaderSpy: vi.fn(),
@@ -57,6 +60,7 @@ const {
     },
     useHighlightsSpy: vi.fn(),
     realAccordionState: { value: false },
+    realAudioState: { value: false },
     resolvedTargetState: { data: undefined as Record<string, unknown> | null | undefined, error: false },
     syncFromCloudMock: vi.fn(),
     toastSuccessMock: vi.fn(),
@@ -86,6 +90,15 @@ vi.mock('sonner', () => ({
 vi.mock('@/components/reader/ReaderHeroHeader', () => ({
     ReaderHeroHeader: (props: any) => {
         readerHeroHeaderSpy(props);
+        if (realAudioState.value) return (
+            <AudioPlayer
+                src={props.audioUrl}
+                initialTimeSec={props.initialAudioTimeSec}
+                onTimeChange={props.onAudioTimeChange}
+                onPlaybackStateChange={props.onAudioPlaybackStateChange}
+                onPlaybackStarted={props.onAudioPlaybackStarted}
+            />
+        );
         return (
             <div data-testid="mock-hero-header">
                 <button
@@ -282,7 +295,7 @@ vi.mock('@/hooks/useReadingProgress', () => ({
         recovery: { attention: [] },
         retryHydration: vi.fn(),
         reapplyIntent: vi.fn(),
-        isLoaded: true,
+        isLoaded: progressState.isLoaded,
         storageScope: storageScopeState.value,
     }),
 }));
@@ -361,6 +374,8 @@ describe('ReaderView', () => {
         notesDrawerSpy.mockClear();
         removeFromProgressMock.mockClear();
         progressState.value = null;
+        progressState.isLoaded = true;
+        realAudioState.value = false;
         readerHeroHeaderSpy.mockClear();
         routerReplaceMock.mockClear();
         searchParamsState.value = '';
@@ -371,7 +386,7 @@ describe('ReaderView', () => {
         highlightsState.value = [];
         useHighlightsSpy.mockClear();
         vi.mocked(useMediaQuery).mockReturnValue(true);
-        saveReadingProgressMock.mockClear();
+        saveReadingProgressMock.mockReset();
         toastSuccessMock.mockClear();
         window.scrollTo = vi.fn();
         localStorageState.clear();
@@ -394,6 +409,117 @@ describe('ReaderView', () => {
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
         Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+    });
+
+    describe('resume initialization with the real audio player', () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [0, 1, 2].map(index => ({
+                ...mockContent.segments[0],
+                id: `seg-${index + 1}`,
+                order_index: index,
+                start_time_sec: index * 30,
+                end_time_sec: (index + 1) * 30,
+            })),
+        };
+
+        function renderAudio(content = timedContent, loadMetadata = true) {
+            realAudioState.value = true;
+            const view = render(<ReaderView content={content} />);
+            const audio = view.container.querySelector('audio')!;
+            let nativeTime = 0;
+            const seeks: number[] = [];
+            Object.defineProperty(audio, 'duration', { configurable: true, value: 90 });
+            Object.defineProperty(audio, 'currentTime', {
+                configurable: true,
+                get: () => nativeTime,
+                set: (time: number) => { seeks.push(time); nativeTime = time; },
+            });
+            if (loadMetadata) fireEvent(audio, new Event('loadedmetadata'));
+            return {
+                ...view, audio, seeks,
+                advance(time: number) {
+                    nativeTime = time;
+                    fireEvent(audio, new Event('timeupdate'));
+                },
+            };
+        }
+
+        afterEach(() => { vi.useRealTimers(); });
+
+        it.each(['guest', 'user:listener'])('does not rewind segment 2 when the first progress save publishes (%s)', async scope => {
+            vi.useFakeTimers();
+            storageScopeState.value = scope;
+            saveReadingProgressMock.mockImplementation((_id, progress) => { progressState.value = progress; });
+            const view = renderAudio();
+            fireEvent(view.audio, new Event('play'));
+            view.advance(31.3);
+            await act(async () => { await vi.advanceTimersByTimeAsync(1100); });
+            expect(saveReadingProgressMock).toHaveBeenCalledWith(timedContent.id,
+                expect.objectContaining({ completed: ['seg-1'] }));
+            expect(view.audio.currentTime).toBe(31.3);
+            expect(view.seeks).toEqual([]);
+            view.advance(61.3);
+            await act(async () => { await vi.advanceTimersByTimeAsync(1100); });
+            expect(progressState.value?.completed).toEqual(['seg-1', 'seg-2']);
+            expect(view.seeks).toEqual([]);
+        });
+
+        it.each(['playing', 'paused'])('keeps the chosen position when cloud progress arrives after playback starts (%s)', state => {
+            progressState.isLoaded = false;
+            const view = renderAudio();
+            fireEvent(view.audio, new Event('play'));
+            view.advance(10);
+            if (state === 'paused') fireEvent(view.audio, new Event('pause'));
+            progressState.value = { completed: ['seg-1'], maxSegmentIndex: 0 };
+            progressState.isLoaded = true;
+            view.rerender(<ReaderView content={timedContent} />);
+            expect(view.audio.currentTime).toBe(10);
+            expect(view.seeks).toEqual([]);
+            expect(readerHeroHeaderSpy.mock.lastCall?.[0].initialAudioTimeSec).toBe(0);
+        });
+
+        it('does not replace a manual timeline seek with late cloud progress', () => {
+            progressState.isLoaded = false;
+            const view = renderAudio();
+            fireEvent.change(screen.getByLabelText('Seek timeline'), { target: { value: '12' } });
+            progressState.value = { completed: ['seg-1'], maxSegmentIndex: 0 };
+            progressState.isLoaded = true;
+            view.rerender(<ReaderView content={timedContent} />);
+            expect(view.audio.currentTime).toBe(12);
+            expect(view.seeks).toEqual([12]);
+        });
+
+        it('still resumes at the earliest unfinished section when progress arrives before playback', () => {
+            progressState.isLoaded = false;
+            const view = renderAudio();
+            progressState.value = { completed: ['seg-1'], maxSegmentIndex: 0 };
+            progressState.isLoaded = true;
+            view.rerender(<ReaderView content={timedContent} />);
+            expect(view.audio.currentTime).toBe(30);
+            expect(view.seeks).toEqual([30]);
+        });
+
+        it('keeps a saved resume queued when Play precedes audio metadata', () => {
+            progressState.value = { completed: ['seg-1'], maxSegmentIndex: 0 };
+            const view = renderAudio(timedContent, false);
+            fireEvent(view.audio, new Event('play'));
+            fireEvent(view.audio, new Event('loadedmetadata'));
+            expect(view.audio.currentTime).toBe(30);
+            expect(view.seeks).toEqual([30]);
+        });
+
+        it('still restores a local audio position when there is no reading progress', () => {
+            localStorageState.set(audioResumeKey('guest', timedContent.id), JSON.stringify({
+                currentTimeSec: 42,
+                audioSource: timedContent.audio_url,
+                lastUpdatedAt: new Date().toISOString(),
+            }));
+            const view = renderAudio();
+            expect(view.audio.currentTime).toBe(42);
+            expect(view.seeks).toEqual([42]);
+        });
     });
 
     describe.each([true, false])('quotation integrity with real Markdown (desktop=%s)', (desktop) => {

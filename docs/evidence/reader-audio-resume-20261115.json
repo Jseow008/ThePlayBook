@@ -1,0 +1,178 @@
+{
+  "date": "2026-11-15 Asia/Singapore",
+  "parentPullRequest": 369,
+  "parentCommit": "4dd0d17d369fba91ad36fa22c9f9dca3da18b5ac",
+  "appSourceSha256": {
+    "components/reader/ReaderView.tsx": "2db93b2aebea69157b90effe6e6e72be05f3ec0bbc7a6534ddc1454457009942",
+    "components/reader/AudioPlayer.tsx": "f0d79a88944eab9a1c15084e571f4ecd797f879e51382256219d5920bf3e4300"
+  },
+  "checks": {
+    "regressions": {
+      "newPassing": 8,
+      "failingBeforeFix": 5,
+      "resumeControlsPassingBeforeFix": 2
+    },
+    "focusedSuites": "reader/player/header/audio-sync passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed including Sharp and critical CSS",
+    "capacityHarness": {
+      "passed": 34
+    },
+    "fullUnitSuite": {
+      "passed": 2465,
+      "skipped": 318,
+      "failed": 1
+    },
+    "inheritedFailure": {
+      "test": "tests/security/rls-policies.test.ts",
+      "assertion": "roleMatrix contains ) <> 65",
+      "reproducedOnUnchangedParent": true
+    }
+  },
+  "browser": {
+    "target": "Production build served locally, using real Supabase content/audio and one disposable ordinary account",
+    "cloudProgressReadback": {
+      "success": true,
+      "hasProgress": true,
+      "completed": [
+        "02a3ab74-1568-4da6-a205-f327361c0c55"
+      ]
+    },
+    "scenarios": [
+      {
+        "case": "signed-in fresh progress, natural crossing after test setup seek",
+        "finalTime": 39.009446,
+        "seeks": [
+          {
+            "from": 0,
+            "to": 31,
+            "actor": "test-seek"
+          }
+        ],
+        "progressSaveCount": 1
+      },
+      {
+        "case": "signed-in revisit with saved progress",
+        "finalTime": 35,
+        "seeks": [
+          {
+            "from": 0,
+            "to": 35,
+            "actor": "application"
+          }
+        ],
+        "progressSaveCount": 0
+      },
+      {
+        "case": "signed-in returning listener crossing segment 2",
+        "finalTime": 39.012134,
+        "seeks": [
+          {
+            "from": 0,
+            "to": 35,
+            "actor": "application"
+          },
+          {
+            "from": 35,
+            "to": 31,
+            "actor": "test-seek"
+          }
+        ],
+        "progressSaveCount": 1
+      },
+      {
+        "case": "signed-in delayed progress hydration during playback",
+        "finalTime": 12.623216,
+        "seeks": [],
+        "progressSaveCount": 0
+      },
+      {
+        "case": "fresh guest crossing segment 2 after setup seek",
+        "finalTime": 39.016935,
+        "seeks": [
+          {
+            "from": 0.039589,
+            "to": 31,
+            "actor": "test-seek"
+          }
+        ],
+        "progressSaveCount": 1
+      },
+      {
+        "case": "guest revisit with saved progress",
+        "finalTime": 35,
+        "seeks": [
+          {
+            "from": 0,
+            "to": 35,
+            "actor": "application"
+          }
+        ],
+        "progressSaveCount": 0
+      },
+      {
+        "case": "returning guest crossing segment 2",
+        "finalTime": 39.021973,
+        "seeks": [
+          {
+            "from": 0,
+            "to": 35,
+            "actor": "application"
+          },
+          {
+            "from": 35,
+            "to": 31,
+            "actor": "test-seek"
+          }
+        ],
+        "progressSaveCount": 0
+      },
+      {
+        "case": "mobile 390px seek, main and mini pause/resume, dismissal",
+        "finalTime": 53.04617,
+        "seeks": [
+          {
+            "from": 0,
+            "to": 35,
+            "actor": "application"
+          },
+          {
+            "from": 35,
+            "to": 31,
+            "actor": "test-seek"
+          },
+          {
+            "from": 39.021973,
+            "to": 12,
+            "actor": "user-control"
+          },
+          {
+            "from": 13.208795,
+            "to": 52,
+            "actor": "user-control"
+          }
+        ],
+        "progressSaveCount": 0
+      },
+      {
+        "case": "fresh guest uninterrupted actual audio through segment 3 at 2x",
+        "finalTime": 99.040729,
+        "seeks": [],
+        "progressSaveCount": 2
+      }
+    ],
+    "cleanup": {
+      "signedOut": true,
+      "accountDeleted": true,
+      "accountAbsent": true,
+      "libraryRowsRemaining": 0
+    },
+    "setupFailure": "Additional natural-playback phase initially used an incorrect speed-button selector; prior eight cases retained. Corrected standalone natural-playback phase passed.",
+    "limits": [
+      "Chromium desktop and mobile viewport; no physical Safari/iOS coverage.",
+      "Metadata startup initiated by Play because audio preload is none."
+    ]
+  },
+  "scope": "Frontend playback coordination and tests only. No schema, stored audio, or production deployment changes."
+}
