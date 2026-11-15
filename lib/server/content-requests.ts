@@ -100,38 +100,6 @@ export function mapRequestRow(row: any): ContentRequestBoardItem {
     };
 }
 
-export async function fetchVisibleContentRequests() {
-    const supabase = getAdminClient();
-    let { data, error } = await (supabase as any).from("content_requests")
-        .select(REQUEST_SELECT)
-        .is("hidden_at", null)
-        .order("vote_count", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-    if (isMissingColumn(error)) {
-        const fallback = await (supabase as any).from("content_requests")
-            .select(LEGACY_REQUEST_SELECT)
-            .is("hidden_at", null)
-            .order("vote_count", { ascending: false })
-            .order("created_at", { ascending: false })
-            .limit(100);
-        data = fallback.data;
-        error = fallback.error;
-    }
-
-    if (error) {
-        if (isMissingContentRequestTable(error)) {
-            return [];
-        }
-        throw error;
-    }
-
-    return ((data ?? []) as any[])
-        .map((row) => mapRequestRow(row))
-        .filter((request) => request.status !== "skipped" && request.status !== "failed");
-}
-
 export async function fetchAdminContentRequests(): Promise<AdminContentRequest[]> {
     const supabase = getAdminClient();
     let { data, error } = await (supabase as any).from("content_requests")
