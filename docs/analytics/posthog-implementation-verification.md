@@ -76,7 +76,36 @@ NEXT_PUBLIC_POSTHOG_UI_HOST=https://us.posthog.com
   - no raw note text
   - no highlighted passage text
   - no chat prompt text
-  - no raw search query
+  - no notes/library search text
+  - public catalog query text only in `search_query_completed.query_text` (see below)
+
+### Intentional catalog query analytics — November 2026
+
+- `search_query_completed` is the query-demand event. It has one raw-text field,
+  `query_text`, and is classified `intentional_search_text`, not non-sensitive metadata.
+  Scope is public catalog Search only, including signed-in use; never notes, personal
+  library search or AI prompts. Text is trimmed, not anonymized or guaranteed free of
+  personal information. Do not treat it as a safe field for public exports.
+- Emit after results/no-results settle for the current route. Trigger is `submit`,
+  `debounced` (600 ms typing pause), `recent`, `direct`, or a link/select navigation.
+  Drafts, stale/superseded outcomes, failed/input-empty outcomes, repeated effects and
+  Enter on an already settled identical route emit no additional query-text event.
+- A filter-only rerun or pagination keeps the current `search_id`; a changed query
+  gets a new ID. Filter navigation that executes a newly typed query records its
+  actual link/select trigger. Clearing resets the query association. Result-click
+  events carry `search_id`, `journey_id`, position and catalog `content_id`, without
+  text. Existing metadata-only events remain compatible; `search_performed` includes
+  filter reruns and must not be used as the query-demand count.
+- SDK URL masking covers new initial/session URLs; its `loaded` callback repairs
+  older persisted URL/referrer metadata before flag requests. `before_send` cleans
+  nested event/person/session metadata while allowing only the dedicated field.
+  Identity/session IDs, consent and local recent-search history are preserved.
+- `Referrer-Policy: strict-origin` prevents same-origin telemetry requests from
+  carrying the Search URL in the HTTP Referer header. Attribution keeps the origin,
+  not the referring path. No new telemetry proxy server work is introduced.
+- This release changes future collection and repairs browser persistence; it does
+  not delete historical ingested data or change project retention/access settings.
+  Raw terms can be associated with signed-in accounts, as disclosed in Privacy.
 
 ### Server-Side Truth Events
 
@@ -137,7 +166,7 @@ The Playwright analytics spec verifies:
 - CSP does not block same-origin ingest
 - `signup_started` client event
 - `search_performed` client event
-- raw search query is not sent
+- raw Search text is limited to the dedicated completion event, never automatic metadata
 
 The component test verifies:
 

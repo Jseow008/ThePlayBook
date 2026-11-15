@@ -14,6 +14,9 @@ type SettledJourney = {
     filterKind?: FilterKind;
     navigationKind: "in_app" | "document";
     target: string;
+    searchId?: string;
+    trigger?: Trigger;
+    outcome?: Outcome;
 };
 
 type PendingJourney = Omit<SettledJourney, "actionKind" | "navigationKind"> & {
@@ -28,12 +31,14 @@ let settledJourney: SettledJourney | null = null;
 let documentMeasurementConsumed = false;
 let visibilityListenerAttached = false;
 let draftQuery: string | null = null;
+let completedQuery: { text: string; id: string } | null = null;
 
 function routeKey(url: URL) {
     if (url.pathname !== "/search") return `${url.pathname}${url.search}`;
 
     // Match the result identity produced by buildSearchHref, regardless of URL
-    // parameter order or explicit defaults. Keep query text in memory only.
+    // parameter order or explicit defaults. Route identities stay in memory;
+    // only the dedicated completion event may include query text.
     const params = new URLSearchParams();
     const query = url.searchParams.get("q")?.trim();
     const category = url.searchParams.get("category");
@@ -138,6 +143,7 @@ export function beginSearchJourney(href: string, actionKind: ActionKind, trigger
         filterKind: actionKind === "filter" ? selectedFilterKind ?? filterKind(current, target) : undefined,
         navigationKind: "in_app",
         target: routeKey(target),
+        trigger,
         startedAt: performance.now(),
         backgrounded: document.visibilityState !== "visible",
     };
@@ -151,6 +157,7 @@ export function beginSearchJourney(href: string, actionKind: ActionKind, trigger
         filter_kind: pendingJourney.filterKind,
         trigger,
         query_present: Boolean(target.searchParams.get("q")?.trim()),
+        search_id: completedQuery?.text === target.searchParams.get("q")?.trim() ? completedQuery?.id : undefined,
     });
 }
 
@@ -173,10 +180,12 @@ export function settleSearchJourney({
     const resultUrl = new URL(searchKey, window.location.origin);
     if (resultUrl.origin !== window.location.origin || routeKey(resultUrl) !== currentUrl) return;
     if (pendingJourney && pendingJourney.target !== currentUrl) return;
+    if (!pendingJourney && settledJourney?.target === currentUrl && settledJourney.outcome === outcome) return;
 
     let journey: SettledJourney;
     let startedAt: number;
     let visibilityState: VisibilityState;
+    let hasTiming = true;
 
     if (pendingJourney) {
         journey = pendingJourney;
@@ -188,15 +197,16 @@ export function settleSearchJourney({
     } else {
         const [navigation] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
         if (!navigation || routeKey(new URL(navigation.name)) !== currentUrl || documentMeasurementConsumed) {
-            settledJourney = null;
-            return;
+            // Back/forward and uninstrumented links still complete searches,
+            // but have no observable navigation start for latency measurement.
+            hasTiming = false;
         }
 
         documentMeasurementConsumed = true;
         journey = {
             id: crypto.randomUUID(),
             actionKind: "initial_load",
-            navigationKind: "document",
+            navigationKind: hasTiming ? "document" : "in_app",
             target: currentUrl,
         };
         startedAt = 0;
@@ -206,7 +216,23 @@ export function settleSearchJourney({
     }
 
     settledJourney = journey;
-    captureAnalyticsEvent("search_journey_settled", {
+    journey.outcome = outcome;
+    const query = resultUrl.searchParams.get("q")?.trim() ?? "";
+    if (!query) completedQuery = null;
+    if (query && queryPresent && (outcome === "results" || outcome === "no_results")
+        && (draftQuery === null || draftQuery === query)) {
+        if (journey.actionKind === "query" || completedQuery?.text !== query) {
+            completedQuery = { text: query, id: crypto.randomUUID() };
+            captureAnalyticsEvent("search_query_completed", {
+                source: "search_results", route: "/search", search_scope: "content",
+                search_id: completedQuery.id, journey_id: journey.id, query_text: query,
+                trigger: journey.trigger === "clear" ? "link" : journey.trigger ?? (hasTiming ? "direct" : "link"),
+                outcome, result_count: resultCount, filters_count: filtersCount,
+            });
+        }
+        journey.searchId = completedQuery?.id;
+    }
+    if (hasTiming) captureAnalyticsEvent("search_journey_settled", {
         source: "search_results",
         route: "/search",
         journey_id: journey.id,
@@ -219,10 +245,11 @@ export function settleSearchJourney({
         result_count: resultCount,
         filters_count: filtersCount,
         query_present: queryPresent,
+        search_id: journey.searchId,
     });
 }
 
-export function trackSearchResultClick(position: number) {
+export function trackSearchResultClick(position: number, contentId?: string) {
     if (!settledJourney || !Number.isInteger(position) || position < 1 || typeof window === "undefined") return;
     if (routeKey(new URL(window.location.href)) !== settledJourney.target) return;
 
@@ -233,5 +260,7 @@ export function trackSearchResultClick(position: number) {
         action_kind: settledJourney.actionKind,
         navigation_kind: settledJourney.navigationKind,
         position,
+        search_id: settledJourney.searchId,
+        content_id: contentId,
     });
 }
