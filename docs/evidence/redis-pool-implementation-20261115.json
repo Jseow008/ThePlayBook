@@ -1,0 +1,448 @@
+{
+  "date": "2026-11-15",
+  "scope": "Limiter-only Redis HTTP pool; implementation and pre-release verification. Reader caching excluded.",
+  "candidate": {
+    "implementationCommit": "de436ea8e3d03995755a1ff40013e876d15f6e38",
+    "base": "ab7cf0d0",
+    "branch": "codex/redis-limiter-pool",
+    "filesSha256": {
+      "lib/__tests__/rate-limit-backend.test.ts": "6e1896f2fba43ecadde0fdf32ecd881fd70c1c6b3850f3a6c1047ff38a02043f",
+      "lib/__tests__/rate-limit-redis.test.ts": "9e34b8b1ff8206940fd23f1d747c4db89ff2dc485fa762bbfbfc92aac8a6d366",
+      "lib/server/rate-limit-redis.ts": "1ca3c4949081b1caff7b22c8fbf46c7fbbf3f7708dc06c66b744e050e8cd6d65",
+      "lib/server/rate-limit.ts": "184282235c0047ee1432ce9ab3b1522b1a6b1171f74c0aebc888fda5571ef2d2",
+      "package-lock.json": "192e2eb774fccc1a44f8b0b1198730adb601623c602a2f771bb24e490eacda34",
+      "package.json": "4f84123df2d2defd06bd2b6574d6525934644888027a1cba95ec0b5fca73bdab",
+      "types/undici-pool.d.ts": "1e5d26940682263b363fdee3e2d4fc1bf8a0724f8f630d3202fb4beb9432aa3b"
+    },
+    "originalTestedImplementationCommit": "bf696219794b72f2516e8fcbce7f93cc6a743bbf",
+    "baseAlignment": {
+      "from": "ab7cf0d0",
+      "to": "e3c6299b",
+      "upstreamChange": "Already-merged Reader audio resume UI correction #370; STATUS was the sole rebase conflict.",
+      "limiterSourceAndDependenciesChanged": false,
+      "hostedEvidenceReuse": "All seven implementation/package/test file hashes match the tested tree. Redis HTTP, quota, failure, credentials, native runtime and disposable database inputs are unchanged; targeted tests cover the incoming Reader UI changes.",
+      "targetedReaderTests": {
+        "files": 2,
+        "passed": 115
+      }
+    }
+  },
+  "transport": {
+    "package": "undici@7.30.2",
+    "idleMs": 60000,
+    "maxIdleMs": 60000,
+    "connections": null,
+    "pipelining": 1,
+    "allowH2": false,
+    "originRestricted": true,
+    "redirects": "error",
+    "globalDispatcherOrFetchMutation": false,
+    "SDKAutoPipeliningPreserved": true,
+    "networkRetries": 5,
+    "limiterPolicyChanges": false
+  },
+  "earlierHostedDiagnostic": {
+    "status": "Pre-implementation prototype evidence, not an app production result",
+    "runtime": {
+      "node": "v24.22.3",
+      "builtinUndici": "7.30.2",
+      "candidateUndici": "7.30.2",
+      "rateLimitSdk": "2.0.8",
+      "redisSdk": "1.36.3",
+      "region": "bom1",
+      "sameConfiguredRedisEndpoint": true
+    },
+    "performance": {
+      "pairs": [
+        {
+          "round": 0,
+          "gap": 0,
+          "order": [
+            "baseline",
+            "pool"
+          ],
+          "eligible": true,
+          "baselineMs": 131.89201999999932,
+          "poolMs": 130.70040299999528,
+          "baselineNewConnections": 0,
+          "poolNewConnections": 0
+        },
+        {
+          "round": 0,
+          "gap": 8,
+          "order": [
+            "pool",
+            "baseline"
+          ],
+          "eligible": true,
+          "baselineMs": 396.66824699999415,
+          "poolMs": 130.46869700000389,
+          "baselineNewConnections": 2,
+          "poolNewConnections": 0
+        },
+        {
+          "round": 0,
+          "gap": 15,
+          "order": [
+            "baseline",
+            "pool"
+          ],
+          "eligible": true,
+          "baselineMs": 393.65587499999674,
+          "poolMs": 130.9815879999951,
+          "baselineNewConnections": 2,
+          "poolNewConnections": 0
+        },
+        {
+          "round": 0,
+          "gap": 30,
+          "order": [
+            "pool",
+            "baseline"
+          ],
+          "eligible": true,
+          "baselineMs": 399.82423699999345,
+          "poolMs": 130.34643800000777,
+          "baselineNewConnections": 2,
+          "poolNewConnections": 0
+        },
+        {
+          "round": 1,
+          "gap": 0,
+          "order": [
+            "pool",
+            "baseline"
+          ],
+          "eligible": true,
+          "baselineMs": 132.22412800000166,
+          "poolMs": 130.84456999998656,
+          "baselineNewConnections": 0,
+          "poolNewConnections": 0
+        },
+        {
+          "round": 1,
+          "gap": 8,
+          "order": [
+            "baseline",
+            "pool"
+          ],
+          "eligible": true,
+          "baselineMs": 392.2127099999925,
+          "poolMs": 131.87870400000247,
+          "baselineNewConnections": 2,
+          "poolNewConnections": 0
+        },
+        {
+          "round": 1,
+          "gap": 15,
+          "order": [
+            "pool",
+            "baseline"
+          ],
+          "eligible": true,
+          "baselineMs": 395.4443840000022,
+          "poolMs": 130.88062399998307,
+          "baselineNewConnections": 2,
+          "poolNewConnections": 0
+        },
+        {
+          "round": 1,
+          "gap": 30,
+          "order": [
+            "baseline",
+            "pool"
+          ],
+          "eligible": true,
+          "baselineMs": 404.40992299999925,
+          "poolMs": 130.61802299995907,
+          "baselineNewConnections": 2,
+          "poolNewConnections": 0
+        }
+      ],
+      "eligibleNonzeroIdlePairs": 6,
+      "excludedPairs": 0,
+      "firstAdmissionAfterIdleMs": {
+        "baseline": {
+          "n": 6,
+          "min": 392.2127099999925,
+          "median": 396.05631549999816,
+          "max": 404.40992299999925
+        },
+        "pool": {
+          "n": 6,
+          "min": 130.34643800000777,
+          "median": 130.74932349997107,
+          "max": 131.87870400000247
+        }
+      },
+      "medianSavingMs": 265.3069920000271,
+      "medianReductionPercent": 66.98718884588229,
+      "baselinePairsOpeningConnections": 6,
+      "candidatePairsOpeningConnections": 0,
+      "immediatePairs": [
+        {
+          "round": 0,
+          "gap": 0,
+          "order": [
+            "baseline",
+            "pool"
+          ],
+          "eligible": true,
+          "baselineMs": 131.89201999999932,
+          "poolMs": 130.70040299999528,
+          "baselineNewConnections": 0,
+          "poolNewConnections": 0
+        },
+        {
+          "round": 1,
+          "gap": 0,
+          "order": [
+            "pool",
+            "baseline"
+          ],
+          "eligible": true,
+          "baselineMs": 132.22412800000166,
+          "poolMs": 130.84456999998656,
+          "baselineNewConnections": 0,
+          "poolNewConnections": 0
+        }
+      ],
+      "criteriaPassed": true,
+      "interpretation": "60-second Redis-only pool preserved sockets through8/15/30-second inactivity and removed warm-instance reconnection overhead in every eligible fixed comparison. Fresh instance setup and underlying~130ms upstream time remain."
+    },
+    "sourceArtifactSha256": "6fe57558df106f7ceab4e7f782b05a5eae7ea2ced82c57c1edd4e739f3221db4"
+  },
+  "applicationIntegration": {
+    "build": "npm run build (Next.js 16.4.6 production Turbopack, build host Node25.3.0)",
+    "servedRuntime": {
+      "node": "v24.22.3",
+      "undici": "7.30.2"
+    },
+    "environment": "Two local production-build app processes; private TLS Upstash-protocol fixture backed by disposable real Redis 7; synthetic disposable hosted Supabase data. No public test route or instrumentation is shipped.",
+    "http": {
+      "hostedContentRead": true,
+      "idle": [
+        {
+          "seconds": 8,
+          "sameSockets": true,
+          "evidence": "prior Node24 HTTP phase; raw request log retained"
+        },
+        {
+          "seconds": 15,
+          "sameSockets": true,
+          "evidence": "prior Node24 HTTP phase; raw request log retained"
+        },
+        {
+          "seconds": 30,
+          "sameSockets": true,
+          "evidence": "prior Node24 HTTP phase; raw request log retained"
+        }
+      ],
+      "reconnectAfterSocketClose": true,
+      "parallelBelowQuota": {
+        "requests": 16,
+        "allowed": 16
+      },
+      "sharedQuotaAcrossProcesses": {
+        "requests": 36,
+        "allowed": 30,
+        "denied": 6
+      },
+      "failures": [
+        {
+          "mode": "http503",
+          "status": 503,
+          "code": "RATE_LIMIT_UNAVAILABLE",
+          "ms": 71,
+          "recovered": true
+        },
+        {
+          "mode": "malformed",
+          "status": 503,
+          "code": "RATE_LIMIT_UNAVAILABLE",
+          "ms": 6,
+          "recovered": true
+        },
+        {
+          "mode": "disconnect",
+          "status": 503,
+          "code": "RATE_LIMIT_UNAVAILABLE",
+          "ms": 4350,
+          "recovered": true
+        },
+        {
+          "mode": "delay",
+          "status": 503,
+          "code": "RATE_LIMIT_UNAVAILABLE",
+          "ms": 5018,
+          "recovered": true
+        },
+        {
+          "mode": "redirect",
+          "status": 503,
+          "code": "RATE_LIMIT_UNAVAILABLE",
+          "ms": 4334,
+          "recovered": true
+        }
+      ],
+      "redirectCredentialLeakRequests": 0,
+      "nativeFetchPoolDispatches": 173,
+      "nextPassesDispatcher": true,
+      "auth": [
+        {
+          "path": "/api/account-data/snapshots",
+          "status": 401
+        },
+        {
+          "path": "/api/admin/content",
+          "status": 401
+        }
+      ],
+      "authGatesHeld": true
+    },
+    "browser": {
+      "command": "tests/e2e/production-smoke.spec.ts",
+      "projects": [
+        "desktop-chromium 1440x1000",
+        "mobile-iphone 390x844"
+      ],
+      "checksPerProject": [
+        "login",
+        "missing-code auth callback",
+        "browse",
+        "public read",
+        "anonymous admin denial",
+        "authenticated admin access",
+        "shallow and authorized detailed health"
+      ],
+      "stats": {
+        "startTime": "2026-11-15T15:42:17.374Z",
+        "duration": 10175.876,
+        "expected": 14,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  },
+  "hostedDatabaseGate": {
+    "ref": "ekgipojzblvxqlpijqno",
+    "productionRef": "xmuqsgfxuaaophxnwure",
+    "withData": false,
+    "initialCounts": {
+      "users": 0,
+      "content": 0
+    },
+    "migrations": {
+      "count": 122,
+      "latest": "20261115100520"
+    },
+    "schemaCategories": 14,
+    "security": [
+      {
+        "name": "security-function-acl-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-admin-rpc-acl-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-new-object-access-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-analytics-rls-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-embedding-table-read-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-storage-bucket-listing-check.sql",
+        "passed": true
+      },
+      {
+        "name": "database-highlight-preservation-check.sql",
+        "passed": true
+      }
+    ],
+    "typeContractsMatch": true,
+    "securityAdvisors": {
+      "candidate": {
+        "rls_enabled_no_policy_INFO": 12
+      },
+      "production": {
+        "rls_enabled_no_policy_INFO": 12
+      },
+      "interpretation": "Same private deny-by-default tables; no candidate-only security warning."
+    },
+    "performanceAdvisors": {
+      "candidate": {
+        "unused_index_INFO": 34,
+        "auth_db_connections_absolute_INFO": 1
+      },
+      "production": {
+        "unused_index_INFO": 13,
+        "auth_db_connections_absolute_INFO": 1
+      },
+      "interpretation": "Fresh synthetic database has not exercised the same indexes; schema fingerprints match. Existing Auth connection strategy is unchanged."
+    },
+    "migrationOnlyProductionPushSteps": "Not applicable: no schema, SQL, database privileges or migration changes; no production db push."
+  },
+  "checks": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "vitest": {
+      "focusedSecurityAndLimiter": {
+        "files": 23,
+        "passed": 127
+      },
+      "accountSnapshotHydrationMutationReset": {
+        "files": 4,
+        "passed": 35
+      }
+    },
+    "build": "passed, including Sharp traces and critical CSS",
+    "dependencyPosture": "passed",
+    "bundleBudgets": "passed",
+    "clientBoundaries": "passed",
+    "productionNpmAudit": {
+      "high": 0,
+      "critical": 0,
+      "moderate": 5,
+      "unchangedFromBase": true,
+      "packages": "Pre-existing Sentry bundler glob/minimatch chain; no Undici advisory reported."
+    }
+  },
+  "verificationSetupCorrections": [
+    "Codex-managed worktree creation stalled with no operation/artifact; created isolated ordinary Git worktree from fetched main instead.",
+    "Node-only test environment conflicted with repository browser setup; used the existing jsdom test environment.",
+    "SDK custom requester skips auto-pipeline proxy; compatibility test caught it and implementation preserves it via subclass.",
+    "First browser run: 10 passed, 4 failed from fixture admin IP omission and forwarded-host HTTPS redirect on local HTTP; corrected fixture headers/configuration, then all 14 passed on hosted-equivalent Node24.",
+    "Initial HTTP fault selector used unhashed IPs; corrected to SHA256 identifiers. Idle/quota phase passed.",
+    "Socket-close fixture reused its action nonce on the second run; changed to unique action, verified reconnect separately, retained passing idle phase.",
+    "Final auth probe initially used singular snapshot path (404); corrected to actual plural POST route and verified 401. Controlled fault/auth phase persists each result; all five failure/recovery cases pass."
+  ],
+  "cleanup": {
+    "hostedBranchDeleted": true,
+    "branchAbsentFromList": true,
+    "ownedAppListenersStopped": [
+      3236,
+      3237
+    ],
+    "TLSFixtureStopped": 8436,
+    "ownedRedisContainerRemoved": true,
+    "temporaryDatabaseCredentialsAppSecretsAndTLSPrivateKeyDeleted": true,
+    "productionDatabaseMutated": false
+  },
+  "limitations": [
+    "No production deployment or new live latency measurement is claimed. Earlier 396-to-131ms result is a hosted diagnostic prototype, not the current live app.",
+    "TLS fixture proves actual Next/native-fetch pool integration, quotas, timeout and recovery; it is not an Internet latency benchmark.",
+    "Pool cannot prevent cold starts, platform recycling, server-enforced connection close or the underlying Redis round trip.",
+    "Node/Undici and Upstash transport compatibility must be rechecked when these dependencies or runtime change.",
+    "Provider-side dropped response can cause retries as with the existing SDK; no new exactly-once admission guarantee is claimed."
+  ],
+  "privateArtifacts": "/tmp/lifebook-redis-integration-20261115"
+}

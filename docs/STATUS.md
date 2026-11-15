@@ -1,5 +1,18 @@
 # Netflux release and workstream status
 
+## Redis limiter connection pool — 15 November 2026 (Singapore)
+
+Implemented on `codex/redis-limiter-pool` in `/Users/j/Desktop/Lifebook-redis-limiter-pool`, from freshly fetched `origin/main` `ab7cf0d0`. Implementation commit `de436ea8e3d03995755a1ff40013e876d15f6e38`; subsequent evidence/status-only commit does not alter the tested application. Original `/Users/j/Desktop/Lifebook` main and its uncommitted investigation artifacts preserved. One agent, no delegation or provider generation calls. Managed worktree setup stalled without an artifact; ordinary isolated Git worktree used.
+
+Limiter-only HTTPS Pool (`undici@7.30.2`) retains idle sockets up to 60 seconds. No global dispatcher/fetch replacement; SDK serialization, auto-pipelining, sync tokens, retries, quota keys and failure policies preserved. Compatibility testing caught the SDK custom-requester constructor skipping auto-pipelining; fixed before the verified build. Public lookup cache and Reader caching unchanged.
+
+Evidence: [implementation and verification](evidence/redis-pool-implementation-20261115.json). Full lint/typecheck/build, dependency posture, bundle/client boundaries, 162 focused tests pass. Native Node24.22.3/Undici7.30.2 served the built app: 8/15/30-second idle reuse, socket-close recovery, 16 concurrent admissions, and two-process shared quota (30 allowed/6 denied of 36) pass. All five controlled upstream failures reject protected work with 503 and recover; the 6-second delayed response rejects at 5.018 seconds. Redirect target received no credentials. Actual snapshot/admin POST auth rejects anonymous requests with 401. All seven smoke checks pass at desktop/mobile viewports (14 passed, no skips).
+
+Disposable hosted branch `ekgipojzblvxqlpijqno` started with zero users/content, replayed 122 migrations, matches all 14 production schema categories and fresh type contracts, passes six permission checks and DB-002 behavior proof. Advisor differences are expected unused indexes on synthetic data; security INFO findings match production. Branch and private credentials deleted, owned app/TLS listeners and disposable Redis stopped/removed. No production database write or migration. Five moderate dependency findings in the existing Sentry/glob/minimatch chain are identical on main; no high/critical or new Undici finding. Harness setup failures and corrections retained in evidence.
+
+Release: [PR #374](https://github.com/Jseow008/ThePlayBook/pull/374) is ready. Rebased onto `e3c6299b` after #370 merged; resolved STATUS only, preserved both task checkpoints. All seven tested implementation/package/test file hashes are identical, and 115 incoming Reader/Audio component tests pass. GitHub file scope is clean; PR scope gate is pending. Do not enable auto-merge before that gate passes. Do not wait for merge or production; user will request status later. The earlier hosted diagnostic median 396→131ms is prototype evidence, not a new live-app result. Exact next action: publish the conflict resolution, recheck GitHub scope, wait only for PR scope, enable squash auto-merge, then report without starting Reader caching.
+
+
 ## Reader audio resume fix — 15 November 2026 (Singapore)
 
 Branch `codex/reader-audio-resume`, worktree

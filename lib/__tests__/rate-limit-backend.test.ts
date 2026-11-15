@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 const { limit } = vi.hoisted(() => ({ limit: vi.fn() }));
-vi.mock("@upstash/redis", () => ({ Redis: class {} }));
+vi.mock("@/lib/server/rate-limit-redis", () => ({ createRateLimitRedis: vi.fn(() => ({})) }));
 vi.mock("@upstash/ratelimit", () => ({ Ratelimit: class {
     static slidingWindow = vi.fn(); limit = limit;
 } }));
