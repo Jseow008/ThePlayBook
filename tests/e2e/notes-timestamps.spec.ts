@@ -8,6 +8,7 @@ const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const serviceKey = process.env.SUPABASE_SERVICE_KEY;
 const loopback = (url: string) => ['localhost', '127.0.0.1', '[::1]'].includes(new URL(url).hostname);
 const createdAt = '2026-11-14T16:43:01.133Z';
+test.use({ trace: 'off' });
 
 for (const [timezoneId, localTime] of [
     ['UTC', 'Nov 14, 4:43 PM'],
@@ -15,7 +16,7 @@ for (const [timezoneId, localTime] of [
     ['America/Los_Angeles', 'Nov 14, 8:43 AM'],
 ]) {
     test.describe(timezoneId, () => {
-        test.use({ timezoneId, trace: 'off' });
+        test.use({ timezoneId });
         test('Notes dates hydrate without recovery and retain local time', async ({ page, context, baseURL }) => {
             test.skip(!apiUrl || !anonKey || !serviceKey, 'Requires disposable local Supabase credentials.');
             if (!loopback(apiUrl!) || !baseURL || !loopback(baseURL)) throw new Error('Timestamp fixture requires loopback app and Supabase URLs.');
