@@ -23,8 +23,12 @@ remain. One natural-playback selector error retained; corrected isolated playbac
 check passed without repeating account scenarios. Browser coverage is Chromium,
 not physical Safari/iOS. Sanitized evidence: `docs/evidence/reader-audio-resume-20261115.json`.
 
-Next: open a ready stacked PR against #369 with `stacked-pr`; release only after
-#369/#368 and their gates, refresh/retest against main before production merge.
+Implementation commit `19c658a6`. PR [#370](https://github.com/Jseow008/ThePlayBook/pull/370)
+is ready against #369 with `stacked-pr`; remote six-file scope verified and PR scope
+passed. Release only after #369/#368 and their gates; refresh/retest against main
+before production merge. Inherited full-suite failure remains open on the parent.
+Next: resolve/release parent PRs, retarget this change to current main and rerun
+required checks. No production deployment or merge performed by this task.
 One agent; no delegation/provider calls. Original dirty worktree untouched.
 
 ## Mobile startup improvements — 14–15 November 2026 (Singapore)
