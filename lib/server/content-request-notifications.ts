@@ -142,7 +142,7 @@ function buildPublishedEmail(params: {
         "",
         `Read it here: ${params.readUrl}`,
         "",
-        `You are receiving this because you voted for or submitted "${params.requestTitle}" on the Netflux request board.`,
+        `You are receiving this because you requested "${params.requestTitle}" through Netflux.`,
         `Turn off these request notification emails: ${params.unsubscribeUrl}`,
     ].join("\n");
 
@@ -161,7 +161,7 @@ function buildPublishedEmail(params: {
                 <p style="margin:0 0 28px;">
                   <a href="${readUrl}" style="display:inline-block;border-radius:8px;background:#171717;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 16px;">Read summary</a>
                 </p>
-                <p style="margin:0;font-size:13px;line-height:1.6;color:#737373;">You are receiving this because you voted for or submitted "${requestTitle}" on the Netflux request board.</p>
+                <p style="margin:0;font-size:13px;line-height:1.6;color:#737373;">You are receiving this because you requested "${requestTitle}" through Netflux.</p>
                 <p style="margin:12px 0 0;font-size:13px;line-height:1.6;color:#737373;">
                   <a href="${unsubscribeUrl}" style="color:#525252;">Turn off request notification emails</a>
                 </p>

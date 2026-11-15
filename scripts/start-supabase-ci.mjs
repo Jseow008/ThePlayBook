@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { createServer } from "node:net";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -69,11 +70,48 @@ function requireSuccess(result, action) {
   if (result.code !== 0 || result.signal || result.timedOut) throw new Error(`${action} failed; stopping CI setup.`);
 }
 
+function availablePort(port) {
+  return new Promise((resolvePort, reject) => {
+    const server = createServer();
+    server.once("error", error => {
+      if (error.code === "EADDRINUSE" && port !== 0) {
+        availablePort(0).then(resolvePort, reject);
+      } else reject(error);
+    });
+    server.listen(port, "0.0.0.0", () => {
+      const selected = server.address().port;
+      server.close(error => error ? reject(error) : resolvePort(selected));
+    });
+  });
+}
+
+export async function prepareCiDatabasePort({
+  enabled = process.env.GITHUB_ACTIONS === "true",
+  configPath = resolve("supabase/config.toml"),
+  log = console.log,
+} = {}) {
+  if (!enabled) return;
+  const config = readFileSync(configPath, "utf8");
+  const section = /(^\[db\]\s*$)([\s\S]*?)(?=^\[|$(?![\s\S]))/m;
+  const db = config.match(section);
+  const port = db?.[2].match(/^port\s*=\s*(\d+)\s*$/m);
+  if (!port) throw new Error("CI database port is missing from the Supabase configuration.");
+  const configured = Number(port[1]);
+  const selected = await availablePort(configured);
+  if (selected !== configured) {
+    const replacement = db[0].replace(/^port\s*=\s*\d+\s*$/m, `port = ${selected}`);
+    writeFileSync(configPath, config.replace(db[0], replacement));
+    log(`CI database port ${configured} is occupied; using available port ${selected}.`);
+  }
+  return selected;
+}
+
 export async function startSupabase({
   candidate = plan,
   registry = process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY,
   cli = resolve("node_modules/.bin/supabase"),
   run = runCommand,
+  prepare = prepareCiDatabasePort,
   log = console.log,
 } = {}) {
   const version = await run(cli, ["--version"], { quiet: true });
@@ -96,6 +134,7 @@ export async function startSupabase({
     log(`Verified ${image.target} at ${image.digest}.`);
   }
   log("All 13 pinned images verified; starting Supabase with normal health checks.");
+  await prepare({ log });
   const result = await run(cli, ["start"]);
   requireSuccess(result, "Supabase startup");
   return 0;

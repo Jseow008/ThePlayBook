@@ -111,8 +111,8 @@ describe("RequestBoard sign-in return", () => {
 
         expect(screen.getByPlaceholderText("Paste a URL or type a title by author")).toHaveValue("");
         expect(screen.getByPlaceholderText("Optional")).toHaveValue("");
-        expect(screen.getByText("Completed request A")).toBeInTheDocument();
-        expect(screen.getByRole("status")).toHaveTextContent("Completed request A");
+        expect(screen.getByText("https://example.com/source-a")).toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("https://example.com/source-a");
         expect(screen.getByText(duplicate ? "We already have this request." : "Request received.")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Submit request" })).toBeEnabled();
     });
@@ -133,7 +133,7 @@ describe("RequestBoard sign-in return", () => {
         expect(screen.getByPlaceholderText("Paste a URL or type a title by author")).toHaveValue("Newer request B — exact text");
         expect(screen.getByPlaceholderText("Optional")).toHaveValue("Creator B");
         expect(screen.getByRole("combobox", { name: "Format" })).toHaveValue("video");
-        expect(screen.getByText("Completed request A")).toBeInTheDocument();
+        expect(screen.getByText("Request A")).toBeInTheDocument();
         expect(fetchMock).toHaveBeenCalledOnce();
         expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ input: "Request A", author: "Creator A", content_type: "book" });
         expect(window.sessionStorage.getItem("netflux_request_draft:v1")).toBeNull();
@@ -180,7 +180,7 @@ describe("RequestBoard sign-in return", () => {
 
         fetchMock.mockResolvedValueOnce(completedResponse(false, "Completed request B"));
         fireEvent.click(screen.getByRole("button", { name: "Submit request" }));
-        await screen.findByText("Completed request B");
+        await screen.findByText("Unsent B");
         expect(fetchMock).toHaveBeenCalledTimes(2);
         expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ input: "Unsent B", author: "Creator B", content_type: "video" });
         expect(screen.getByPlaceholderText("Paste a URL or type a title by author")).toHaveValue("");
