@@ -127,7 +127,18 @@ BEGIN
         -- projection fail closed even if a browser grant is introduced later.
         -- Content replacement adds one public notice read policy, restricted
         -- to published, available destinations.
-        ) <> 65
+        -- Private summary requests remove the retired public-board read policy.
+        ) <> 64
+
+        UNION ALL
+
+        SELECT 'request_board_public_read_policy_remains'
+        WHERE EXISTS (
+            SELECT 1 FROM pg_policies
+            WHERE schemaname = 'public' AND tablename = 'content_requests'
+              AND cmd IN ('SELECT', 'ALL')
+              AND roles && ARRAY['public', 'anon', 'authenticated']::name[]
+        )
 
         UNION ALL
 
