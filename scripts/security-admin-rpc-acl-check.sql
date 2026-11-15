@@ -6,6 +6,7 @@ BEGIN
     VALUES
       ('admin_create_content_version', 'p_source_id uuid, p_source_updated_at timestamp with time zone'),
       ('admin_replace_content', 'p_source_id uuid, p_replacement_id uuid, p_source_updated_at timestamp with time zone, p_replacement_updated_at timestamp with time zone'),
+      ('admin_save_content_revision', 'p_content_id uuid, p_content_patch jsonb, p_segments jsonb, p_artifacts jsonb, p_source_updated_at timestamp with time zone'),
       ('admin_update_content_graph', 'p_content_id uuid, p_content_patch jsonb, p_segments jsonb, p_artifacts jsonb'),
       ('admin_finalize_narration_generation', 'p_content_id uuid, p_expected_started_at timestamp with time zone, p_audio_url text, p_completed_at timestamp with time zone, p_segment_timings jsonb')
   ),

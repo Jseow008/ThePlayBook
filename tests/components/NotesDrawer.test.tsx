@@ -47,7 +47,7 @@ describe("NotesDrawer", () => {
         {
             id: "highlight-1",
             user_id: "user-1",
-            content_item_id: "content-1",
+            content_revision: null, content_item_id: "content-1",
             segment_id: "seg-1",
             highlighted_text: "The highlighted passage",
             note_body: "My note body",
@@ -62,7 +62,7 @@ describe("NotesDrawer", () => {
         {
             id: "highlight-2",
             user_id: "user-1",
-            content_item_id: "content-1",
+            content_revision: null, content_item_id: "content-1",
             segment_id: "seg-2",
             highlighted_text: "A second highlight",
             note_body: null,
@@ -77,7 +77,7 @@ describe("NotesDrawer", () => {
         {
             id: "highlight-3",
             user_id: "user-1",
-            content_item_id: "content-1",
+            content_revision: null, content_item_id: "content-1",
             segment_id: "seg-3",
             highlighted_text: "Whitespace note highlight",
             note_body: "   ",

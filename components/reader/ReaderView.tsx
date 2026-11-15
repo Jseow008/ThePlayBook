@@ -1303,6 +1303,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                 {isBookCompleted ? (
                     <div ref={completionRef} className="scroll-mt-24" role="region" aria-label="Reading complete" tabIndex={-1}>
                         <CompletionCard
+                    contentRevision={content.reading_revision}
                             contentId={content.id}
                             title={content.title}
                             author={content.author}
@@ -1318,9 +1319,10 @@ export function ReaderView({ content }: ReaderViewProps) {
             </div>
 
             {/* Floating elements — rendered OUTSIDE the content wrapper so position:fixed works correctly */}
-            {isReaderInteractionDesktop && <TextSelectionToolbar contentItemId={content.id} />}
+            {isReaderInteractionDesktop && <TextSelectionToolbar contentItemId={content.id} contentRevision={content.reading_revision} />}
             {!isReaderInteractionDesktop && (
                 <MobileSelectionActions
+                    contentRevision={content.reading_revision}
                     contentItemId={content.id}
                     contentTitle={content.title}
                     sections={sectionMeta}
@@ -1377,6 +1379,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             )}
             {searchParams.get(REFLECTION_RESUME_PARAM) === "1" && (
                 <ReturnedReflection
+                    contentRevision={content.reading_revision}
                     contentId={content.id}
                     contentTitle={content.title}
                     readerTheme={readerTheme}

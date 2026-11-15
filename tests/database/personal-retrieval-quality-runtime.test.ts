@@ -172,6 +172,8 @@ describeDatabase("frozen personal retrieval corpus through real Auth and product
         }
         await db.query(`INSERT INTO public.segment(id,item_id,order_index,title,markdown_body)
             SELECT id,item_id,0,title,markdown_body FROM jsonb_to_recordset($1::jsonb) AS x(id uuid,item_id uuid,title text,markdown_body text)`, [JSON.stringify([...segmentRows.values()])]);
+        // The frozen corpus represents historical captures imported before revision tracking.
+        await db.query("UPDATE public.content_item SET reading_revision=NULL WHERE id=ANY($1::uuid[])",[contentIds]);
         const highlights = rows.filter((row) => row.type === "highlight").map((row) => ({
             id: recordUuid(row), user_id: accounts.get(row.accountId)!.id, content_item_id: contentUuid(row),
             segment_id: row.segmentId ? segmentUuid(row.segmentId) : null, highlighted_text: row.text,

@@ -86,6 +86,7 @@ describe("HomeFeed", () => {
         deleted_at: null,
         isbn: null,
         update_source_id: null,
+        reading_revision: null,
     };
 
     const section: HomepageSection = {

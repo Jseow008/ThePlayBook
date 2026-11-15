@@ -74,6 +74,7 @@ const featuredItems: ContentItem[] = [
     deleted_at: null,
     isbn: null,
         update_source_id: null,
+        reading_revision: null,
   },
   {
     id: "featured-2",
@@ -106,6 +107,7 @@ const featuredItems: ContentItem[] = [
     deleted_at: null,
     isbn: null,
         update_source_id: null,
+        reading_revision: null,
   },
 ];
 

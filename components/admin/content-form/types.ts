@@ -20,6 +20,7 @@ export interface QuickModeJson {
 export type UploadZone = "cover" | "hero" | "audio";
 
 export interface ContentFormData {
+    source_updated_at?: string;
     id?: string;
     title: string;
     author: string;

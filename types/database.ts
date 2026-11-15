@@ -228,6 +228,7 @@ export type Database = {
           narration_status: string
           published_at: string | null
           quick_mode_json: Json | null
+          reading_revision: string | null
           series_id: string | null
           series_order: number | null
           source_url: string | null
@@ -260,6 +261,7 @@ export type Database = {
           narration_status?: string
           published_at?: string | null
           quick_mode_json?: Json | null
+          reading_revision?: string | null
           series_id?: string | null
           series_order?: number | null
           source_url?: string | null
@@ -292,6 +294,7 @@ export type Database = {
           narration_status?: string
           published_at?: string | null
           quick_mode_json?: Json | null
+          reading_revision?: string | null
           series_id?: string | null
           series_order?: number | null
           source_url?: string | null
@@ -1020,6 +1023,7 @@ export type Database = {
           anchor_start: number | null
           color: string | null
           content_item_id: string
+          content_revision: string | null
           created_at: string | null
           highlighted_text: string
           id: string
@@ -1033,6 +1037,7 @@ export type Database = {
           anchor_start?: number | null
           color?: string | null
           content_item_id: string
+          content_revision?: string | null
           created_at?: string | null
           highlighted_text: string
           id?: string
@@ -1046,6 +1051,7 @@ export type Database = {
           anchor_start?: number | null
           color?: string | null
           content_item_id?: string
+          content_revision?: string | null
           created_at?: string | null
           highlighted_text?: string
           id?: string
@@ -1158,6 +1164,7 @@ export type Database = {
       user_reflections: {
         Row: {
           content_item_id: string
+          content_revision: string | null
           created_at: string
           id: string
           prompt: string
@@ -1167,6 +1174,7 @@ export type Database = {
         }
         Insert: {
           content_item_id: string
+          content_revision?: string | null
           created_at?: string
           id?: string
           prompt: string
@@ -1176,6 +1184,7 @@ export type Database = {
         }
         Update: {
           content_item_id?: string
+          content_revision?: string | null
           created_at?: string
           id?: string
           prompt?: string
@@ -1256,6 +1265,16 @@ export type Database = {
           p_replacement_updated_at: string
           p_source_id: string
           p_source_updated_at: string
+        }
+        Returns: Json
+      }
+      admin_save_content_revision: {
+        Args: {
+          p_artifacts?: Json
+          p_content_id: string
+          p_content_patch?: Json
+          p_segments?: Json
+          p_source_updated_at?: string
         }
         Returns: Json
       }

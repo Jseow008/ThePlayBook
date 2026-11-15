@@ -106,6 +106,8 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
              VALUES ($1, $2, true, '{"itemId":"export","isCompleted":true}'::jsonb)`,
             [accountExport, contentExport],
         );
+        // Historical fixtures represent captures predating reading revisions.
+        await db.query("UPDATE public.content_item SET reading_revision=NULL WHERE id=ANY($1::uuid[])", [[contentExport]]);
         await db.query(
             `INSERT INTO public.user_highlights
                 (user_id, content_item_id, segment_id, highlighted_text, note_body, color, anchor_start, anchor_end)

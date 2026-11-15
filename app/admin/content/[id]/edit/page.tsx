@@ -48,6 +48,12 @@ export default async function EditContentPage({ params, searchParams }: EditCont
     }
 
     const contentItem = contentItemRaw as any;
+    const [highlights, reflections] = await Promise.all([
+        supabase.from("user_highlights").select("id", { count: "exact", head: true }).eq("content_item_id", id),
+        supabase.from("user_reflections").select("id", { count: "exact", head: true }).eq("content_item_id", id),
+    ]);
+    if (highlights.error || reflections.error) throw highlights.error || reflections.error;
+    const hasAnnotations = (highlights.count ?? 0) > 0 || (reflections.count ?? 0) > 0;
     const narrationJob = getNarrationJobState({
         audio_url: contentItem.audio_url,
         narration_status: contentItem.narration_status,
@@ -66,6 +72,7 @@ export default async function EditContentPage({ params, searchParams }: EditCont
     // Transform data for the form
     const formData = {
         id: contentItem.id,
+        source_updated_at: contentItem.updated_at,
         title: contentItem.title,
         author: contentItem.author || "",
         type: contentItem.type as "podcast" | "book" | "article" | "video",
@@ -114,7 +121,8 @@ export default async function EditContentPage({ params, searchParams }: EditCont
                 </p>
             </div>
 
-            {contentItem.status === "verified" && <ContentVersionActions key={id} mode="create" contentId={id} updatedAt={contentItem.updated_at} />}
+            {hasAnnotations && <ContentVersionActions key={id} mode="create" contentId={id} updatedAt={contentItem.updated_at} />}
+            {!hasAnnotations && <p className="text-sm text-zinc-600">This summary has no highlights or notes. Saving revisions updates this record directly. Annotations are checked again when you save.</p>}
             {!contentItem.update_source_id && <ReplaceContentPanel contentId={id} options={replacementOptions} />}
 
             <ContentForm

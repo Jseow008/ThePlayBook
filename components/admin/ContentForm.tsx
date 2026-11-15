@@ -563,6 +563,11 @@ export function ContentForm({
             const data = await response.json();
 
             if (data.success) {
+                if (data.data?.version_draft) {
+                    router.push(`/admin/content/${data.data.id}/edit`);
+                    router.refresh();
+                    return;
+                }
                 setPersistedReadingContent(submittedReadingContent);
                 if (isVersionDraft && status === "verified") {
                     setReviewVersion(true);

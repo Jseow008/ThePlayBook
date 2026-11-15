@@ -8,6 +8,7 @@ suite("edition admission on an explicitly disposable database", () => {
         const parsed = new URL(url!);
         if (!["localhost","127.0.0.1","[::1]"].includes(parsed.hostname) && process.env.CONTENT_CONTINUITY_DISPOSABLE !== "1") throw new Error("Explicit disposable database required");
         const db = new Client({connectionString:url}); await db.connect();
+        const userId = randomUUID();
         const old = randomUUID(); let draft: string | undefined;
         async function call(sql: string,args: unknown[]) {
             const worker = new Client({connectionString:url}); await worker.connect();
@@ -21,6 +22,8 @@ suite("edition admission on an explicitly disposable database", () => {
             await db.query(`INSERT INTO public.content_item(id,title,type,status,category,cover_image_url,quick_mode_json)
                 VALUES ($1,'Concurrent synthetic edition','book','verified','Business','https://example.invalid/cover.png',$2)`,[old,{hook:"Synthetic",big_idea:"Synthetic",key_takeaways:["Synthetic"]}]);
             await db.query("INSERT INTO public.segment(item_id,order_index,markdown_body) VALUES ($1,0,'Synthetic original')",[old]);
+            await db.query("INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data) VALUES($1,$2,'{}','{}')",[userId,`${userId}@example.invalid`]);
+            await db.query("INSERT INTO public.user_reflections(user_id,content_item_id,prompt,reflection_text,content_revision) SELECT $1,$2,'Prompt','Synthetic note',reading_revision FROM public.content_item WHERE id=$2",[userId,old]);
             const originalTime = await stamp(old);
             const copies = await Promise.all([call("SELECT public.admin_create_content_version($1,$2) AS id",[old,originalTime]),call("SELECT public.admin_create_content_version($1,$2) AS id",[old,originalTime])]);
             draft = copies[0].id; expect(copies[1].id).toBe(draft);
@@ -36,6 +39,7 @@ suite("edition admission on an explicitly disposable database", () => {
             expect((await db.query("SELECT count(*)::int AS n FROM public.content_item WHERE id=ANY($1::uuid[]) AND status='verified' AND deleted_at IS NULL",[[old,draft]])).rows[0].n).toBe(1);
         } finally {
             // Remove only this test's synthetic records, after clearing the link.
+            await db.query("DELETE FROM auth.users WHERE id=$1",[userId]);
             await db.query("DELETE FROM public.content_replacement WHERE source_id=$1",[old]);
             await db.query("DELETE FROM public.content_item WHERE update_source_id=$1",[old]);
             await db.query("DELETE FROM public.content_item WHERE id=$1",[old]);

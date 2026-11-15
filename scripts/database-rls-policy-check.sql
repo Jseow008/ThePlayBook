@@ -231,6 +231,10 @@ VALUES
     ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000211', true),
     ('00000000-0000-4000-8000-000000000102', '00000000-0000-4000-8000-000000000211', false);
 
+-- Legacy fixture captures use the pre-migration NULL reading revision.
+UPDATE public.content_item SET reading_revision=NULL WHERE id IN
+ ('00000000-0000-4000-8000-000000000211','00000000-0000-4000-8000-000000000212');
+
 INSERT INTO public.user_highlights (
     id,
     user_id,

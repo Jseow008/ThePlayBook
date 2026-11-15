@@ -21,7 +21,7 @@ const siteUrl = SITE_URL;
 const PREVIEW_SELECT =
     "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, created_at, series_id, series_order";
 const READ_SELECT = `
-    id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, series_id, series_order,
+    id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, series_id, series_order, reading_revision,
     segments:segment(id, item_id, order_index, title, markdown_body, start_time_sec, end_time_sec, deleted_at),
     artifacts:artifact(id, type, payload_schema, version)
 `;
@@ -54,6 +54,7 @@ export interface SeriesPageData {
 }
 
 interface ReadContentRow {
+    reading_revision: string | null;
     id: string;
     type: string;
     title: string;
@@ -334,6 +335,7 @@ export const getReadPageData = cache(async (id: string): Promise<ContentItemWith
         series_order: content.series_order,
         created_at: content.created_at,
         updated_at: content.updated_at,
+        reading_revision: content.reading_revision,
         seriesContext,
         segments: content.segments
             .filter((segment) => !segment.deleted_at)

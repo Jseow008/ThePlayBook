@@ -29,6 +29,7 @@ export async function POST(request: NextRequest, { params }: Context) {
         });
         if (error) {
             if (error.code === "40001") return apiError("CONFLICT", "The original changed or narration is processing. Reload and review it again.", 409, requestId);
+            if (error.hint === "CONTENT_DIRECT_EDIT_ALLOWED") return apiError("VALIDATION_ERROR", "This summary has no highlights or notes. Save revisions directly in the editor.", 400, requestId);
             if (error.code === "22023") return apiError("VALIDATION_ERROR", "Choose an available published summary", 400, requestId);
             if (error.code === "P0002") return apiError("NOT_FOUND", "Summary not found", 404, requestId);
             throw error;
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest, { params }: Context) {
         ]);
         for (const result of [sourceResult, library, highlights, reflections]) if (result.error) throw result.error;
         const source = sourceResult.data;
-        if (!source || source.status !== "verified" || source.deleted_at || source.narration_status === "processing" || draft.narration_status === "processing") {
+        if (!source || source.deleted_at || source.narration_status === "processing" || draft.narration_status === "processing") {
             return apiError("CONFLICT", "The original must still be published and narration must be finished. Review again when ready.", 409, requestId);
         }
         return NextResponse.json({ source, replacement: draft, preserved: {

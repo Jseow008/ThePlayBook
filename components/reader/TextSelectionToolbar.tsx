@@ -17,10 +17,11 @@ import { findSegmentElement, getTrimmedSelection } from "./selection-utils";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 interface TextSelectionToolbarProps {
+    contentRevision?: string | null;
     contentItemId: string;
 }
 
-export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProps) {
+export function TextSelectionToolbar({ contentItemId, contentRevision }: TextSelectionToolbarProps) {
     const [selectionInfo, setSelectionInfo] = useState<{
         text: string;
         rect: DOMRect;
@@ -156,6 +157,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
         try {
             const result = await createHighlight.mutateAsync({
                 content_item_id: contentItemId,
+                content_revision: contentRevision ?? null,
                 segment_id: selected.segmentId,
                 highlighted_text: selected.text,
                 anchor_start: selected.anchorStart,
@@ -197,6 +199,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
         try {
             const result = await createHighlight.mutateAsync({
                 content_item_id: contentItemId,
+                content_revision: contentRevision ?? null,
                 segment_id: selected.segmentId,
                 highlighted_text: selected.text,
                 expected_user_id: noteDraft.owner,
