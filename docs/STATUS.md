@@ -1,5 +1,16 @@
 # Netflux release and workstream status
 
+## Notes date hydration fix — 16 November 2026
+
+Authorized by user: implement date-rendering mismatch fix, test desktop/mobile across timezones and deploy after all checks pass; consider running PR374. Fresh managed worktree `/Users/j/.codex/worktrees/b105/Lifebook`, branch `codex/fix-notes-date-rendering`, freshly fetched base `e3c6299b`. Prior opening-fix/investigation worktree and its dirty checkpoint/artifacts are preserved. One agent, no delegation. PR374 is unrelated Redis pooling and already auto-merging after its gates; no stack needed. Include it through current main before final release if it merges; do not modify its branch or gates.
+
+Candidate (uncommitted): three Notes timestamp locations delegate to `NotesTimestamp`; stable explicit UTC formatter for server/first hydration snapshot, then unchanged date-fns reader-local display. Uses stable useSyncExternalStore snapshots, matching existing ContentCard hydration pattern. No warning suppression, inline script, new dependency or timezone stored in data. Layout/typography/copy hierarchy, APIs/auth/storage/schema/query semantics and AI remain unchanged. UI-only fix; no DB-facing application/type/migration or production db push; hosted schema replay does not apply.
+
+Small sample passed41 component checks including real SSR→hydrateRoot node reuse with no recovery, explicit UTC server text, client-only/date-change behavior and missing/invalid fallback. Typecheck and targeted lint passed after fixing a test-only possibly-undefined script-release callback. Full lint running. New loopback-only permanent E2E covers UTC/SG/LA on all six configured screen sizes, creates/deletes only its local user/reflection, holds JS until full server HTML to expose the original mismatch, and checks local date plus normal Ask entry. No emails/chat/model requests or trace capture. Has not yet run; build/browser proof and all release gates pending. Old baseline diagnosis evidence is in prior worktree output and remains valid because its formatter/date seeding code is unchanged upstream.
+
+Next: finish lint, align to main after PR374 if ready, build exact candidate with locked dependencies, test complete Notes page on desktop/mobile across UTC/SG/LA/half-hour/DST boundaries using only disposable private records, preserve failed acquisitions and cleanup. Commit focused application/tests/evidence/checkpoint, verify PR scope/gates, merge and deploy exact production SHA, verify aliases and live timezone cases. No pending product decision or approval.
+
+
 ## Redis limiter connection pool — 15 November 2026 (Singapore)
 
 Implemented on `codex/redis-limiter-pool` in `/Users/j/Desktop/Lifebook-redis-limiter-pool`, from freshly fetched `origin/main` `ab7cf0d0`. Implementation commit `de436ea8e3d03995755a1ff40013e876d15f6e38`; subsequent evidence/status-only commit does not alter the tested application. Original `/Users/j/Desktop/Lifebook` main and its uncommitted investigation artifacts preserved. One agent, no delegation or provider generation calls. Managed worktree setup stalled without an artifact; ordinary isolated Git worktree used.
