@@ -166,6 +166,7 @@ jobs:
           npm run database:account-data-snapshots
           npm run database:capture-write-runtime
           npm run database:account-write-runtime
+          REQUEST_NOTIFICATION_RUNTIME_REQUIRED=1 npx vitest run tests/database/content-request-notifications-runtime.test.ts
           npm run database:ai-spend-runtime
           NOTES_REPLAY_TEST_DATABASE_URL="$DB107_ADMIN_DATABASE_URL" npm run database:notes-replay-runtime
           npm run database:ai-quota-runtime
