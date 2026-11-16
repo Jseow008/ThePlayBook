@@ -1,0 +1,88 @@
+{
+  "date": "2026-11-16",
+  "base": "345dec3d",
+  "parentPR376": "merged; independent branch from current main including it",
+  "branch": "codex/story-image-design-current",
+  "template": "story-jpeg-v3",
+  "changes": [
+    "Approved Book/Podcast summary header, 540x810 cover, complete sample title, clearer Netflux destination footer.",
+    "New template hash avoids serving previous design as current.",
+    "Cleanup requires matching latest verified content, completed record and reachable replacement; older version names only.",
+    "Recheck latest content before deletion; preserve uploads newer than replacement.",
+    "On-demand fallback cleans after upload/completion; worker and later backfill share guarded cleanup.",
+    "Future backfill cleanup enabled by default; backfill not run."
+  ],
+  "checks": {
+    "focusedAPITests": {
+      "passed": 24,
+      "files": 6
+    },
+    "unchangedShareControlTests": {
+      "passed": 11,
+      "files": 2
+    },
+    "lint": "passed including ratchets",
+    "typecheck": "passed",
+    "productionBuild": "passed including 7 Sharp traces and critical CSS"
+  },
+  "visual": {
+    "shortTitle": "Engineering in Plain Sight",
+    "longTitle": "Overcoming Modern Male Deconditioning, Behavioral Addictions, and Loss of Purpose",
+    "coverFallback": "synthetic; no cover",
+    "observations": "Inspected actual generated JPEGs; long title retains Purpose without the old ellipsis.",
+    "images": [
+      {
+        "file": "render-0.jpg",
+        "bytes": 115819,
+        "sha256": "7d03425d62c370b5abf571c0943d74aca6e6a4d568ad01f009ea97d52533c3cb",
+        "dimensions": [
+          1080,
+          1920
+        ]
+      },
+      {
+        "file": "render-1.jpg",
+        "bytes": 136400,
+        "sha256": "2d508f33f29cf659b2a35cebe66f0ba44158a74626ce18071e908222aac74a39",
+        "dimensions": [
+          1080,
+          1920
+        ]
+      },
+      {
+        "file": "render-2.jpg",
+        "bytes": 63945,
+        "sha256": "1200045d2112679832e5ff9b27512fced7f49a2c818b0652c1dbd16130c83f5c",
+        "dimensions": [
+          1080,
+          1920
+        ]
+      }
+    ]
+  },
+  "failedAttempts": [
+    "Initial tsc required a narrowed non-null timestamp variable in cleanup callback; corrected and rechecked.",
+    "Initial Turbopack build rejected node_modules symlink outside project root; dependency files cloned locally without package/config changes; normal build then passed."
+  ],
+  "productionMutations": "none",
+  "backfillRun": false,
+  "scheduledWorker": "verified disabled_manually; unchanged",
+  "releaseHold": "Disposable hosted Storage/database lifecycle verification required by docs/OPS.md section2.2 before release. No migration; required CI/security still pending. Auto-merge must remain off until hosted gate or explicit scoped exception.",
+  "hostedQuote": {
+    "organization": "Jseow008",
+    "amountUSD": 10,
+    "recurrence": "monthly",
+    "proratedTotal": "not specified",
+    "approved": false
+  },
+  "limits": [
+    "No hosted upload/delete lifecycle proof yet; failure and race guards checked with mocked Storage/database responses.",
+    "Current JPEGs rendered locally using real public covers; synthetic fallback no production writes.",
+    "Desktop/narrow Share component unchanged, 11 existing control tests reused fresh; physical phones and Safari not tested.",
+    "Cleanup may retain files on verification/deletion failures or while newer uploads are in flight. This favors preserving usable images over guaranteeing one object at every instant.",
+    "No full unit suite or production-browser deployment check; required hosted CI will run."
+  ],
+  "agentCount": 1,
+  "providerAICalls": 0,
+  "tokenUsage": "unavailable"
+}

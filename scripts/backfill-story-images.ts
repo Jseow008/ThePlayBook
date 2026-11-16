@@ -37,7 +37,7 @@ function parsePositiveInteger(rawValue: string, flag: string) {
 }
 
 function parseCliArgs(argv: string[]): CliOptions {
-    const options: CliOptions = { dryRun: false, cleanup: false, limit: null };
+    const options: CliOptions = { dryRun: false, cleanup: true, limit: null };
 
     for (let index = 0; index < argv.length; index += 1) {
         const arg = argv[index];
@@ -132,7 +132,6 @@ async function main() {
                     supabase,
                     contentId: content.id,
                     currentStoragePath: storagePath,
-                    retainCount: 2,
                 });
                 result.cleaned += cleanup.removed;
             }

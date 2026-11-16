@@ -5,7 +5,7 @@ import { getContent } from "@/app/api/og/content/[id]/og-content-image-utils";
 import { strictPublicRateLimit } from "@/lib/server/rate-limit";
 import { createStoryImageJpegResponse } from "@/lib/server/story-image-renderer";
 import { findCompletedStoryImage, markStoryImageVersionCompleted } from "@/lib/server/story-image-queue";
-import { storedStoryImageExists, storeStoryImage } from "@/lib/server/story-image-storage";
+import { cleanupOldStoryImageVersions, storedStoryImageExists, storeStoryImage } from "@/lib/server/story-image-storage";
 
 vi.mock("@/lib/supabase/public-server", () => ({ createPublicServerClient: vi.fn() }));
 
@@ -38,6 +38,7 @@ vi.mock("@/lib/server/story-image-storage", () => ({
     getStoryImagePublicUrl: vi.fn((path: string) => `https://storage.example.com/${path}`),
     storedStoryImageExists: vi.fn(),
     storeStoryImage: vi.fn(),
+    cleanupOldStoryImageVersions: vi.fn(),
 }));
 
 const content = {
@@ -140,5 +141,38 @@ describe("story image route", () => {
             renderVersion: "aaaaaaaaaaaaaaaaaaaaaaaa",
             storagePath: `story-images/${content.id}/aaaaaaaaaaaaaaaaaaaaaaaa.jpg`,
         });
+        expect(cleanupOldStoryImageVersions).toHaveBeenCalledWith({
+            contentId: content.id,
+            currentStoragePath: `story-images/${content.id}/aaaaaaaaaaaaaaaaaaaaaaaa.jpg`,
+        });
+        expect(vi.mocked(storeStoryImage).mock.invocationCallOrder[0]).toBeLessThan(
+            vi.mocked(markStoryImageVersionCompleted).mock.invocationCallOrder[0],
+        );
+        expect(vi.mocked(markStoryImageVersionCompleted).mock.invocationCallOrder[0]).toBeLessThan(
+            vi.mocked(cleanupOldStoryImageVersions).mock.invocationCallOrder[0],
+        );
+    });
+
+    it.each(["upload", "completion"])("retains old images when %s fails and still returns the rendered image", async (failure) => {
+        vi.mocked(findCompletedStoryImage).mockResolvedValue(null);
+        vi.mocked(createStoryImageJpegResponse).mockResolvedValue(new Response(new Uint8Array([255, 216, 255, 217])));
+        vi.mocked(storeStoryImage).mockResolvedValue("https://storage.example.com/new.jpg");
+        vi.mocked(markStoryImageVersionCompleted).mockResolvedValue({} as never);
+        if (failure === "upload") vi.mocked(storeStoryImage).mockRejectedValueOnce(new Error("upload failed"));
+        else vi.mocked(markStoryImageVersionCompleted).mockRejectedValueOnce(new Error("completion failed"));
+
+        expect((await GET(request(), { params: Promise.resolve({ id: content.id }) })).status).toBe(200);
+        expect(cleanupOldStoryImageVersions).not.toHaveBeenCalled();
+    });
+
+    it("does not fail sharing when replacement cleanup fails", async () => {
+        vi.mocked(findCompletedStoryImage).mockResolvedValue(null);
+        vi.mocked(createStoryImageJpegResponse).mockResolvedValue(new Response(new Uint8Array([255, 216, 255, 217])));
+        vi.mocked(storeStoryImage).mockResolvedValue("https://storage.example.com/new.jpg");
+        vi.mocked(markStoryImageVersionCompleted).mockResolvedValue({} as never);
+        vi.mocked(cleanupOldStoryImageVersions).mockRejectedValueOnce(new Error("cleanup unavailable"));
+
+        expect((await GET(request(), { params: Promise.resolve({ id: content.id }) })).status).toBe(200);
+        expect(markStoryImageVersionCompleted).toHaveBeenCalled();
     });
 });

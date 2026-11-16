@@ -850,3 +850,14 @@ its health. No user data or credentials were read into the record.
 ### #274 review corrections — 22 October 2026
 
 The archived-only series deletion, original-reflection recovery link and unavailable-list controls reported at `8fb698ac` are corrected. Fresh focused component/API and full-schema local database proofs pass (54 tests), as do the production build, permission audits and the extended desktop/mobile browser journey. Existing archive protections and reader state remain intact. The [continuity checkpoint](CONTENT_CONTINUITY.md#review-corrections--22-october-2026) distinguishes this evidence from the initial candidate and retains the hosted verification/release hold.
+
+
+## Story-image design and safe replacement — 16 November 2026
+
+Branch `codex/story-image-design-current`, worktree `/Users/j/.codex/workspaces/netflux-story-image-design`, fresh main345dec3d includes merged#376. Its cache files do not overlap; no stacked PR needed. Implemented approved story-jpeg-v3 design with original fonts/dark style, Book/Podcast summary label,540×810 cover, complete sample titles and Read the summary footer. Existing Share UI and30/minute cross-title limit unchanged.
+
+Cleanup now requires latest matching verified content, completed version record and reachable uploaded replacement before deleting older JPEG versions; rechecks current content and preserves newer in-flight uploads. On-demand route, publication worker and future backfill use this guarded policy; future backfill cleanup defaults on. Upload/completion failures never trigger deletion; cleanup failure does not prevent returning the rendered JPEG. Failures may retain old images until a later cleanup.
+
+Local24 API/storage/renderer tests and11 Share UI tests passed, full lint/ratchets passed, final types passed, normal production build with7 Sharp traces/critical CSS passed. Actual rendered short/long/fallback JPEGs inspected; long title retains Purpose. Initial non-null callback type error corrected; initial symlinked-dependency Turbopack failure fixed by cloning dependency files locally, no manifest/config change. One agent; no provider calls; exact tokens/elapsed unavailable. Sanitized evidence: [design verification](evidence/story-image-design-20261116.json).
+
+No production writes, migration, catalog backfill or schedule activation. GitHub worker state remains disabled_manually. Release hold: docs/OPS.md§2.2 requires disposable hosted upload/replacement/delete lifecycle checks for mutation-path changes even without migrations. Supabase quotes$10/month in Jseow008, no prorated total. Not approved or created in this task. Publish PR with auto-merge OFF; required CI/security must pass and hosted gate (or owner's explicit scoped exception) must be resolved before release. Exact next action: inspect published PR file scope, report local results/CI state and present this concrete hosted approval decision. Existing investigation-only worktree edits left intact.
