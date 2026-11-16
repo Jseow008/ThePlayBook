@@ -1,9 +1,13 @@
+import "server-only";
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
+import { z } from "zod";
 import { APP_NAME } from "@/lib/brand";
 import { buildReadPath } from "@/lib/content-paths";
 import { SITE_URL } from "@/lib/seo";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
+import { PUBLIC_READER_CACHE_TAG, PUBLIC_READER_MAX_AGE_MS } from "@/lib/server/reader-cache-config";
 import type { ContentItem } from "@/types/database";
 import { QuickModeSchema } from "@/types/domain";
 import type {
@@ -21,7 +25,7 @@ const siteUrl = SITE_URL;
 const PREVIEW_SELECT =
     "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, created_at, series_id, series_order";
 const READ_SELECT = `
-    id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, series_id, series_order, reading_revision,
+    id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, series_id, series_order, reading_revision, created_at, updated_at,
     segments:segment(id, item_id, order_index, title, markdown_body, start_time_sec, end_time_sec, deleted_at),
     artifacts:artifact(id, type, payload_schema, version)
 `;
@@ -158,7 +162,8 @@ function buildContentOgImageUrl(contentId: string) {
 }
 
 async function getSeriesContext(
-    item: { series_id: string | null; series_order: number | null }
+    item: { series_id: string | null; series_order: number | null },
+    rejectErrors = false,
 ): Promise<SeriesContext | null> {
     if (!item.series_id || typeof item.series_order !== "number") {
         return null;
@@ -176,7 +181,7 @@ async function getSeriesContext(
             .from("content_series")
             .select("id, slug, title, description")
             .eq("id", item.series_id)
-            .single(),
+            .maybeSingle(),
         supabase
             .from("content_item")
             .select("id, title, series_order")
@@ -203,7 +208,9 @@ async function getSeriesContext(
             .is("deleted_at", null),
     ]);
 
-    if (seriesError || previousError || nextError || countError || !seriesData) {
+    const error = seriesError ?? previousError ?? nextError ?? countError;
+    if (error && rejectErrors) throw error;
+    if (error || !seriesData) {
         return null;
     }
 
@@ -301,7 +308,7 @@ export const getPreviewPageData = cache(async (id: string): Promise<PreviewPageD
     };
 });
 
-export const getReadPageData = cache(async (id: string): Promise<ContentItemWithSegments | null> => {
+async function readPublicReader(id: string): Promise<ContentItemWithSegments | null> {
     const supabase = createPublicServerClient();
     const { data, error } = await supabase
         .from("content_item")
@@ -310,14 +317,14 @@ export const getReadPageData = cache(async (id: string): Promise<ContentItemWith
         .eq("status", "verified")
         .is("deleted_at", null)
         .order("order_index", { referencedTable: "segment", ascending: true })
-        .single();
+        .maybeSingle();
 
-    if (error || !data) {
-        return null;
-    }
+    // An outage must not become a cached 404 or renew an expired public copy.
+    if (error) throw error;
+    if (!data) return null;
 
     const content = data as unknown as ReadContentRow;
-    const seriesContext = await getSeriesContext(content);
+    const seriesContext = await getSeriesContext(content, true);
 
     return {
         id: content.id,
@@ -351,6 +358,30 @@ export const getReadPageData = cache(async (id: string): Promise<ContentItemWith
             })) as SegmentFull[],
         artifacts: content.artifacts as ArtifactSummary[],
     };
+}
+
+// React cache still deduplicates metadata/page work within a render. Only the
+// cookie-free, public-policy projection persists across requests; personal
+// progress, notes, highlights and sessions never enter this cache or its key.
+export const getReadPageData = cache(async (id: string): Promise<ContentItemWithSegments | null> => {
+    if (!z.guid().safeParse(id).success) return null;
+    let refresh: Promise<{ item: ContentItemWithSegments | null; checkedAt: number }> | undefined;
+    const cachedRead = unstable_cache(async (contentId: string) => {
+        refresh = readPublicReader(contentId).then(item => ({ item, checkedAt: Date.now() }));
+        return refresh;
+    }, ["public-reader-v1", process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""], {
+        revalidate: PUBLIC_READER_MAX_AGE_MS / 1000,
+        tags: [PUBLIC_READER_CACHE_TAG],
+    });
+    const cached = await cachedRead(id.toLowerCase());
+    // Next's time-based revalidation can return stale data while refreshing.
+    // At the boundary, await that same refresh (including errors), so expired
+    // withdrawals, deleted segments and external edits are not served again.
+    if (Date.now() - cached.checkedAt >= PUBLIC_READER_MAX_AGE_MS) {
+        const refreshed = await (refresh ?? readPublicReader(id.toLowerCase()).then(item => ({ item, checkedAt: Date.now() })));
+        return refreshed.item;
+    }
+    return cached.item;
 });
 
 export const getSeriesPageData = cache(async (slug: string): Promise<SeriesPageData | null> => {
