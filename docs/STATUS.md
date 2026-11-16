@@ -1,3 +1,11 @@
+## 2026-11-16 — charcoal link previews and full credits
+
+Independent worktree `/Users/j/.codex/workspaces/netflux-link-preview-charcoal`, branch `codex/link-preview-charcoal-credits`, fresh main `4e43d062` (#378). #379 remains open and only removes the disabled workflow/updates status; no application overlap, no stacking needed. Landscape1200×630 image now uses uniform `#111113` and complete author/guest credits. Title treatment, fonts, cover, metadata/footer and access/rate/cache policy remain unchanged. Shared menu supplies “Preview the summary of …” for Preview/Focus and “Read the summary of …” for Read; exact existing URL/query/anchor and URL-only Copy link remain unchanged.
+
+[Verification record](evidence/link-preview-charcoal-20261116.json): 43 focused tests passed with zero skips, lint/policy checks, typecheck and production build/Sharp seven-route tracing/critical CSS passed. Actual route renders reviewed for the two approved real-cover examples plus synthetic long-credit/missing-cover fallback. Six controlled local browser shared-menu payload checks passed (Preview/Read/Focus at1440/390); no external share or generation. React review found no new hooks, events, fetching or responsive behavior changes. No failed verification attempt. Worker API still `disabled_manually`; workflow untouched, zero production/database/Storage writes, no backlog generation, no paid resources. Storage mutation paths unchanged, so #377 lifecycle evidence remains applicable without another hosted database project.
+
+Limits: browser verification uses actual shared component in local harness, not full-page or recipient-app/OS sharing; physical phones/Safari/cache refresh remain unverified. Required hosted CI/security and their skipped coverage remain pending. Exact next action: inspect intended commit/file scope, push ready PR, verify GitHub file list, enable protected squash auto-merge only after PR scope passes; report pending checks without monitoring. #379 remains independent and untouched. One agent; application-provider token usage/billing unknown (no AI generation requested).
+
 # Netflux release and workstream status
 
 ## Reader public-data caching — 16 November 2026 (Singapore)

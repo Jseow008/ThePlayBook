@@ -173,7 +173,6 @@ export function ReaderHeroHeader({
                                 themeClassName={`reader-${readerTheme}`}
                                 url={shareUrl}
                                 title={title}
-                                text={`Read "${title}" on ${APP_NAME}`}
                                 source="reader_header"
                                 contentId={contentId}
                                 contentType={type}
