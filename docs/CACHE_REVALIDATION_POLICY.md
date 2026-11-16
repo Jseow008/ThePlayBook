@@ -1,7 +1,7 @@
 # Netflux Cache and Revalidation Policy
 
 Status: Active
-Last updated: 2026-07-01
+Last updated: 2026-11-16
 
 This document records the current cache strategy. It does not change route structure, UI behavior, or public page freshness requirements.
 
@@ -12,7 +12,7 @@ This document records the current cache strategy. It does not change route struc
 | `/` | ISR route segment | `revalidate = 3600` |
 | `/browse` | ISR route segment | `revalidate = 300` |
 | `/preview/[id]` | ISR route segment | `revalidate = 300` |
-| `/read/[id]/[[...slug]]` | ISR route segment | `revalidate = 300` |
+| `/read/[id]/[[...slug]]` | dynamic render (query parameters), shared public data cache | public data max 60 seconds; mutation invalidation below |
 | `/series/[slug]` | ISR route segment | `revalidate = 300` |
 | Authenticated library, notes, settings, activity | request/client personalized | not public ISR content |
 | Admin routes | admin/request-time data | not public ISR content |
@@ -118,6 +118,11 @@ The boundary is enforced by `scripts/check-revalidation-boundaries.mjs`.
 
 ## Tag-Based Invalidation
 
-`revalidateTag` is not used yet. Do not add tags opportunistically.
+Tag ownership is centralized in `lib/server/revalidation.ts`:
 
-A future tag migration should first define tag ownership for public collections, item reads, preview data, and series pages. Because much of the data is loaded through Supabase server clients rather than tagged `fetch` calls, tag-based invalidation should be treated as a separate cache architecture migration.
+- `search-catalog-v1`: public Search/catalog and batch-card data. Helpers that invalidate `/search` hard-expire this tag.
+- `public-reader-v1`: public Reader content, active segments, artifact templates, reading revision, timestamps and series context. Content create/update/delete/bulk/narration/replacement changes, and series metadata/path changes hard-expire this tag with `{ expire: 0 }`. The shared tag covers neighboring titles, publication state and series counts, including Readers other than the edited item. Featured-only ordering changes do not change Reader data.
+
+Reader uses the cookie-free anonymous Supabase client and an explicit public projection. Sessions, progress, bookmarks, highlights and notes are never shared-cache inputs or values. The cache key includes the Supabase project URL and normalized content UUID, not query parameters or cookies. React render-local memoization still deduplicates metadata and page reads.
+
+The 60-second Reader data boundary is enforced in the foreground even when Next returns a stale entry while starting background revalidation. Readers wait for that existing refresh, including its failure. Valid missing/unpublished/deleted results may be cached within the same bound and are cleared on publishing. Database failures and incomplete series reads are not cached as missing or degraded content. External writers that bypass application invalidation have a maximum 60-second data age; the first request after expiry blocks for a fresh read. Application publishing, withdrawal, deletion and replacement invalidate immediately after success. In-flight pages and already-rendered tabs are not live-updated by server cache invalidation.
