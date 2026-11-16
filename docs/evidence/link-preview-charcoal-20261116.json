@@ -123,5 +123,18 @@
     "Physical phones and Safari unverified.",
     "Hosted CI/security pending; earlier skipped tests remain outside coverage."
   ],
-  "next": "Publish ready PR; inspect files/history, enable protected squash auto-merge after PR scope passes. Do not wait on long CI or deploy/modify production data in this task."
+  "next": "Publish ready PR; inspect files/history, enable protected squash auto-merge after PR scope passes. Do not wait on long CI or deploy/modify production data in this task.",
+  "refresh_after_381": {
+    "base": "e2bd4e4fd9a092eeef32f19fb304b9cb0c1809cc",
+    "merged_381": true,
+    "conflicts": "docs/STATUS.md only; both records preserved",
+    "renderer_share_and_tests_unchanged_from": "77b6f627c66bf32b8606b39b423016b926f45812",
+    "combined_focused_tests": 51,
+    "skips": 0,
+    "typecheck": "passed",
+    "lint_and_policy_checks": "passed",
+    "worker": "disabled schedule removed by merged #379; preserved",
+    "production_deployment": "not verified",
+    "required_refreshed_ci_security": "pending after push"
+  }
 }
