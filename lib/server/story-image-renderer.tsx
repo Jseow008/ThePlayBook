@@ -4,7 +4,6 @@ import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import {
     buildCoverFallback,
     cacheControl,
-    clampText,
     encodeJpegImageResponse,
     fontPromise,
     getImageDataUrl,
@@ -24,7 +23,7 @@ export interface StoryImageContent {
 export const STORY_IMAGE_WIDTH = 1080;
 export const STORY_IMAGE_HEIGHT = 1920;
 export const STORY_IMAGE_JPEG_QUALITY = 85;
-export const STORY_IMAGE_TEMPLATE_VERSION = "story-jpeg-v3";
+export const STORY_IMAGE_TEMPLATE_VERSION = "story-jpeg-v4";
 export const STORY_IMAGE_STORAGE_PREFIX = "story-images";
 export const STORY_IMAGE_CONTENT_TYPE = "image/jpeg";
 
@@ -64,7 +63,7 @@ export async function createStoryImageJpegResponse(content: StoryImageContent) {
     const uiFont = fonts.some((font) => font.name === "Inter") ? "Inter" : "sans-serif";
     const brandFont = fonts.some((font) => font.name === "Outfit") ? "Outfit" : uiFont;
     const title = content.title;
-    const author = content.author ? clampText(content.author, 48) : APP_TAGLINE;
+    const author = content.author || APP_TAGLINE;
     const metadataLine = buildMetadataLine(content);
     const coverImageSrc = content.cover_image_url ? await getImageDataUrl(content.cover_image_url) : null;
     const hasCover = Boolean(coverImageSrc);
@@ -74,8 +73,7 @@ export async function createStoryImageJpegResponse(content: StoryImageContent) {
         (
             <div
                 style={{
-                    background:
-                        "radial-gradient(circle at 50% 8%, rgba(250, 250, 250, 0.16) 0, transparent 28%), linear-gradient(180deg, #09090b 0%, #111113 48%, #18181b 100%)",
+                    background: "#111113",
                     color: "#fafafa",
                     display: "flex",
                     flexDirection: "column",
