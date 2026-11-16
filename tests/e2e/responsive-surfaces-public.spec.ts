@@ -42,14 +42,16 @@ test.describe('responsive public high-risk surfaces', () => {
         await completeGuestOnboarding(page);
     });
 
-    test('landing hero CTA and featured reads stay contained', async ({ page }) => {
+    test('landing library controls and featured reads stay contained', async ({ page }) => {
         const guard = installResponsiveErrorGuard(page);
 
         await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-        const heroCta = page.getByRole('link', { name: /explore a summary/i });
-        await expect(heroCta).toBeVisible({ timeout: 20_000 });
-        await heroCta.click({ trial: true });
+        const browseLink = page.getByRole('region', { name: 'Explore the library' })
+            .getByRole('link', { name: 'Browse all', exact: true });
+        await expect(browseLink).toBeVisible({ timeout: 20_000 });
+        await expect(browseLink).toHaveAttribute('href', '/browse');
+        await browseLink.click({ trial: true });
         await expectNoDocumentHorizontalScroll(page);
 
         const carousel = page.getByTestId('featured-reads-carousel');

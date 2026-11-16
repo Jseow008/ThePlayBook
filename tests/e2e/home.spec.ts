@@ -22,9 +22,14 @@ test('landing page loads and renders correctly', async ({ page }) => {
         await expect(reveal).toHaveCSS('filter', 'none');
     }
 
-    // Verify the landing page exposes the current hero CTAs
-    await expect(heroSection.getByRole('link', { name: 'Explore a Summary' })).toBeVisible();
-    await expect(heroSection.getByRole('link', { name: 'Build Your Library Free' })).toBeVisible();
+    // Discovery now starts in the library; signup remains in the final CTA.
+    await expect(heroSection.getByRole('link')).toHaveCount(0);
+    const library = page.getByRole('region', { name: 'Explore the library' });
+    await expect(library).toBeVisible();
+    await expect(library.getByRole('link', { name: 'Browse all', exact: true })).toHaveAttribute('href', '/browse');
+    await expect(library.getByRole('link', { name: 'Browse all', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Build Your Library Free', exact: true })).toHaveAttribute('href', '/login');
+    await expect(page.getByRole('link', { name: 'Build Your Library Free', exact: true })).toBeVisible();
 });
 
 test('browse page loads and renders correctly', async ({ page }) => {
@@ -34,12 +39,12 @@ test('browse page loads and renders correctly', async ({ page }) => {
     await expect(page.locator('main, [class*="HomeFeed"], [class*="hero"]').first()).toBeVisible({ timeout: 10000 });
 });
 
-test('landing page CTA navigates to browse', async ({ page }) => {
+test('landing library Browse all navigates to browse', async ({ page }) => {
     await page.goto('/');
-    const heroSection = page.locator('h1').locator('xpath=ancestor::section[1]');
+    const library = page.getByRole('region', { name: 'Explore the library' });
 
-    // Click the browse CTA and wait for navigation
-    await heroSection.getByRole('link', { name: 'Explore a Summary' }).click();
+    // Exercise the library's client-side navigation, not header/footer links.
+    await library.getByRole('link', { name: 'Browse all', exact: true }).click();
 
     // Should navigate to /browse
     await page.waitForURL(/\/browse/, { timeout: 15000 });
