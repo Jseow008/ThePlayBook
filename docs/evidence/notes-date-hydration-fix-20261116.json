@@ -1,0 +1,253 @@
+{
+  "date": "2026-11-16",
+  "scope": "Notes timestamp rendering/hydration only",
+  "applicationCommit": "5c5ecaa8666a01fbb09f1c7d3b3c2cdc61e7773e",
+  "base": "92d01370b12a21cd2c737c24f234f3b160b4dfd7",
+  "upstream": "PR374 merged before final release; included by rebase, only STATUS conflict, both workstreams preserved. Locked dependencies reinstalled and combined production build passed.",
+  "sourceSha256": {
+    "app/(public)/notes/client-page.tsx": "203031f38c6c5554df53e44edfd00d5ec72ed025049d2e8675fbb83c84c76aa6",
+    "components/notes/NotesTimestamp.tsx": "48fb9d3f0eef6a50e4bcd2e646a66225c7a219ef067e59d054562d4206db6781",
+    "tests/components/NotesTimestamp.test.tsx": "ab7aca642398c2ca43184040dfb2684e669e4b40e1b461ab40eec60c9b685ad0",
+    "tests/e2e/notes-timestamps.spec.ts": "4dbf43b5e407e61f916d6d5a0ae0459668669b179dab7bee10c3a8b8b3b648ba"
+  },
+  "behavior": "Server and first browser hydration render an explicitly labelled deterministic UTC time; each instance then displays the existing reader-local date-fns format. No suppressHydrationWarning or injected script. Stored instants/layout/styles/copy hierarchy/auth/data APIs/queries/AI unchanged.",
+  "databaseGate": "Client-only rendering change. No database-facing code/types/query/transport/schema changes in this PR; no migration or production db push. Hosted schema replay not applicable. Upstream PR374 retains its own pre-merge hosted evidence.",
+  "baseline": {
+    "artifact": "/Users/j/.codex/worktrees/fix-notes-panel-opening/Lifebook/output/notes-render-warning-investigation-timing-20261115/diagnosis.json",
+    "rendererAndServerSeedingFilesMatchFreshBaseByteForByte": true,
+    "reusedFinding": "Holding scripts until completed SSR HTML reproduced418 on desktop/mobile Singapore, none in UTC/empty controls; same instant formats differently in UTC and Singapore. No new model trials needed."
+  },
+  "localChecks": {
+    "focusedNotesAndTimestampTestsPassed": 47,
+    "extraTimestampTestsUnderUTC": 7,
+    "extraTimestampTestsUnderLosAngeles": 7,
+    "fullLint": "passed on final combined tree",
+    "typecheck": "passed; also in both production builds",
+    "productionBuilds": "passed before and after incoming PR374; final built source above",
+    "sharpTraces": "passed7routes",
+    "criticalCSS": "passed",
+    "permanentE2E": "Corrected actual test file executed against owned isolated loopback Supabase with122migrations and non-null seed reading_revision: UTC desktop pilot1passed7.4s, then all18cases (3zones x6projects) passed1.3m with1worker/retries0 and zero skipped. CI execution still required."
+  },
+  "builtBrowser": {
+    "candidate": {
+      "passed": true,
+      "cases": 14,
+      "sourceUnchangedAfterRebase": true,
+      "inputs": "UTC, Asia/Singapore, America/Los_Angeles, Asia/Kolkata, Pacific/Auckland on1440and390; LosAngeles09:30Z\u219210:30Z spring DST boundary on both widths",
+      "outcomes": [
+        {
+          "zone": "UTC",
+          "width": 1440,
+          "instant": "2026-11-14T16:43:01.133Z",
+          "visibleLocalTime": "Nov 14, 4:43 PM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "UTC",
+          "width": 390,
+          "instant": "2026-11-14T16:43:01.133Z",
+          "visibleLocalTime": "Nov 14, 4:43 PM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "Asia/Singapore",
+          "width": 1440,
+          "instant": "2026-11-14T16:43:01.133Z",
+          "visibleLocalTime": "Nov 15, 12:43 AM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "Asia/Singapore",
+          "width": 390,
+          "instant": "2026-11-14T16:43:01.133Z",
+          "visibleLocalTime": "Nov 15, 12:43 AM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "America/Los_Angeles",
+          "width": 1440,
+          "instant": "2026-11-14T16:43:01.133Z",
+          "visibleLocalTime": "Nov 14, 8:43 AM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "America/Los_Angeles",
+          "width": 390,
+          "instant": "2026-11-14T16:43:01.133Z",
+          "visibleLocalTime": "Nov 14, 8:43 AM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "Asia/Kolkata",
+          "width": 1440,
+          "instant": "2026-11-14T16:43:01.133Z",
+          "visibleLocalTime": "Nov 14, 10:13 PM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "Asia/Kolkata",
+          "width": 390,
+          "instant": "2026-11-14T16:43:01.133Z",
+          "visibleLocalTime": "Nov 14, 10:13 PM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "Pacific/Auckland",
+          "width": 1440,
+          "instant": "2026-11-14T16:43:01.133Z",
+          "visibleLocalTime": "Nov 15, 5:43 AM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "Pacific/Auckland",
+          "width": 390,
+          "instant": "2026-11-14T16:43:01.133Z",
+          "visibleLocalTime": "Nov 15, 5:43 AM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "America/Los_Angeles",
+          "width": 1440,
+          "instant": "2026-03-08T09:30:00.000Z",
+          "visibleLocalTime": "Mar 8, 1:30 AM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "America/Los_Angeles",
+          "width": 390,
+          "instant": "2026-03-08T09:30:00.000Z",
+          "visibleLocalTime": "Mar 8, 1:30 AM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "America/Los_Angeles",
+          "width": 1440,
+          "instant": "2026-03-08T10:30:00.000Z",
+          "visibleLocalTime": "Mar 8, 3:30 AM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        },
+        {
+          "zone": "America/Los_Angeles",
+          "width": 390,
+          "instant": "2026-03-08T10:30:00.000Z",
+          "visibleLocalTime": "Mar 8, 3:30 AM",
+          "pageErrors": 0,
+          "askEntryUsable": true,
+          "pendingAPIsAtClose": 0
+        }
+      ],
+      "closeReopenReload": "passed desktopSG",
+      "screenshotsInspected": true
+    },
+    "combined": {
+      "passed": true,
+      "cases": 2,
+      "outcomes": [
+        {
+          "zone": "Asia/Singapore",
+          "width": 1440,
+          "pageErrors": 0,
+          "localTime": "Nov 15, 12:43 AM"
+        },
+        {
+          "zone": "Asia/Singapore",
+          "width": 390,
+          "pageErrors": 0,
+          "localTime": "Nov 15, 12:43 AM"
+        }
+      ],
+      "closeReopenReload": "passed desktopSG"
+    },
+    "environment": "Locally built production app with TZUTC, actual hosted Auth and own private reflection against existing public book. No hosted environment/latency/server snapshot qualification claimed. Background missing local snapshot config warnings not addressed."
+  },
+  "unsuccessfulAttempts": [
+    {
+      "stage": "test authoring",
+      "detail": "Possibly undefined script-release callback caught by typecheck; corrected before passing typecheck. Trace policy inside describe rejected by Playwright discovery; moved to file scope,18cases discovered."
+    },
+    {
+      "stage": "initial browser acquisition",
+      "outcome": false,
+      "detail": "UTC1440/390passed. Singapore active local date was correct and pageErrors empty, but unscoped time selector saw2elements. Subsequent DOM evidence records inactive UTC node with checkVisibility false. Restricted assertion to active visible time; still requires exactly one visible date, exact expected text and zero pageErrors. Raw failure retained, no threshold loosened.",
+      "cleanup": {
+        "created": 1,
+        "deleted": 1,
+        "remainingProfiles": 0,
+        "remainingReflections": 0,
+        "cleanupVerified": true
+      },
+      "cleanupFollowup": "First acquisition deleted account while a snapshot request was still active, producing a fixture-only FK error. Later harness waits for all observed app API requests to settle before closing/deleting; accepted runs record0pending. No existing reader records affected."
+    },
+    {
+      "stage": "CI fixture preflight after publication",
+      "detail": "Reviewed local seed while first CI was running and found an invalid published-status lookup: this schema uses draft/verified. Corrected the test to the exact existing local seed ID11111111-1111-4111-8111-111111111111. No application change or acceptance relaxation; initial runs superseded before browser evidence. New final CI must execute all18cases."
+    },
+    {
+      "stage": "CI43735126862 completed during user pause",
+      "results": {
+        "unitsPassed": 2510,
+        "unitsSkipped": 324,
+        "e2ePassed": 245,
+        "e2eFailed": 18,
+        "e2eFlaky": 1,
+        "e2eSkipped": 132
+      },
+      "cause": "All18newcases failed inserting fixture before any UI assertion: PT409 CONTENT_REVISION_CHANGED. Fresh seed segment inserts generate a non-null reading_revision; test omitted matching content_revision. Prior hosted synthetic book retained its legacy null revision, masking this fixture-contract gap.",
+      "fix": "Read exact seed reading_revision and include it in the own reflection content_revision. Do not change application, schema, revision guard or acceptance criteria. Existing tablet Notes opening case passed on retry with30s timeout; unrelated and unchanged."
+    }
+  ],
+  "cleanup": {
+    "fixtureAccountsCreated": 3,
+    "fixtureAccountsDeleted": 3,
+    "allOwnProfilesAndReflectionsRemoved": true,
+    "globalSignoutBeforeDeletion": true,
+    "ownedAppStopped": true,
+    "publicContentCreated": false,
+    "existingReaderRecordsEdited": false,
+    "credentialsOrAuthCookiesSaved": false
+  },
+  "chatPostRequests": 0,
+  "agentCount": 1,
+  "codexUsageAndProviderInvoice": "not measured",
+  "release": "Resumed by user. Required CI must pass for corrected fixture head; no merge/deployment yet.",
+  "localFixtureVerification": {
+    "project": "netflux-notes-date-20261116",
+    "migrations": 122,
+    "seedHasNonNullReadingRevision": true,
+    "pilotCases": 1,
+    "fullCasesPassed": 18,
+    "retries": 0,
+    "skips": 0,
+    "remainingAuthFixtureUsersBeforeStop": 0,
+    "remainingReflectionsBeforeStop": 0,
+    "applicationChanges": false,
+    "databaseSchemaOrGuardsChanged": false,
+    "localSetupOnlyNoHostedProjectCreated": true
+  }
+}

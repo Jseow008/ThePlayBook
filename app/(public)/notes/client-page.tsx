@@ -3,12 +3,12 @@
 import { useNoteDraft } from "@/hooks/useNoteDraft";
 import { NoteDraftStatus } from "@/components/reader/NoteDraftStatus";
 import { SavedNoteCopyButton } from "@/components/notes/SavedNoteCopyButton";
+import { NotesTimestamp } from "@/components/notes/NotesTimestamp";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { format } from "date-fns";
 import {
     BotMessageSquare,
     BookOpen,
@@ -365,11 +365,7 @@ function HighlightListItem({
                                             {itemType}
                                         </span>
                                         <span className="text-muted-foreground/40">•</span>
-                                        <time dateTime={item.created_at || undefined}>
-                                            {item.created_at
-                                                ? format(new Date(item.created_at), "MMM d, h:mm a")
-                                                : "Saved passage"}
-                                        </time>
+                                        <NotesTimestamp createdAt={item.created_at} />
                                     </div>
                                 </div>
                             </div>
@@ -404,11 +400,7 @@ function HighlightListItem({
                                             {itemType}
                                         </span>
                                         <span className="text-muted-foreground/40">•</span>
-                                        <time dateTime={item.created_at || undefined}>
-                                            {item.created_at
-                                                ? format(new Date(item.created_at), "MMM d, h:mm a")
-                                                : "Saved passage"}
-                                        </time>
+                                        <NotesTimestamp createdAt={item.created_at} />
                                     </div>
                                 </div>
                             </div>
@@ -514,7 +506,7 @@ function ReflectionListItem({
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.76rem] text-muted-foreground">
                         <span className="rounded-full border border-white/10 bg-card/40 px-2 py-0.5 text-[0.68rem] font-medium uppercase tracking-[0.12em] text-foreground/78">Reflection</span>
                         <span className="text-muted-foreground/40">•</span>
-                        <time dateTime={item.created_at}>{format(new Date(item.created_at), "MMM d, h:mm a")}</time>
+                        <NotesTimestamp createdAt={item.created_at} />
                     </div>
                 </div>
             </div>
