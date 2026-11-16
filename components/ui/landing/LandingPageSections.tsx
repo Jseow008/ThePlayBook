@@ -294,7 +294,7 @@ export function FeaturedReadsSection({
   const roundedContentCount = Math.floor(totalContentCount / 100) * 100;
   const popularIdeasCopy =
     roundedContentCount >= 100
-      ? `Over ${roundedContentCount}+ summaries across books, podcasts, articles, and videos.`
+      ? `${roundedContentCount}+ summaries across books, podcasts, articles, and videos.`
       : "Summaries across books, podcasts, articles, and videos.";
   const browseHref = activeCategory
     ? `/search?category=${encodeURIComponent(activeCategory)}`
@@ -367,65 +367,67 @@ export function FeaturedReadsSection({
   return (
     <section
       id="featured-reads"
-      className="landing-featured-band scroll-mt-20 overflow-hidden pt-5 pb-16 sm:pt-8 sm:pb-24"
+      aria-labelledby="landing-library-title"
+      className="landing-featured-band scroll-mt-20 overflow-hidden pb-16 sm:pb-24"
     >
-      <FadeIn className="mx-auto mb-4 flex max-w-7xl flex-col gap-4 px-6 md:mb-6 md:flex-row md:items-end md:justify-between md:gap-8">
-        <SectionIntro
-          label="Explore the library"
-          title="Ideas worth remembering."
-          body={popularIdeasCopy}
-        />
-        <Link prefetch={false}
-          href={browseHref}
-          className="focus-ring landing-soft-action group inline-flex w-fit items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-white/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
-        >
-          {activeCategory ? `Browse ${activeCategory}` : "Browse all"}
-          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-        </Link>
-      </FadeIn>
-
-      {visibleCategories.length > 0 ? (
-        <FadeIn delayMs={75} className="mx-auto mb-3 max-w-7xl px-6">
-          <div
-            role="tablist"
-            aria-label="Explore library domains"
-            className="landing-domain-nav scrollbar-hide flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeCategory === null}
-              onClick={showAllItems}
-              className={cn(
-                "focus-ring touch-target-44 landing-domain-chip shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
-                activeCategory === null
-                  ? "landing-domain-chip-active"
-                  : "border-white/10 bg-white/[0.025] text-zinc-400 hover:border-white/20 hover:text-white"
-              )}
+      <h2 id="landing-library-title" className="sr-only">Explore the library</h2>
+      <p className="landing-library-description mx-auto mb-6 max-w-3xl px-6 text-center text-base leading-relaxed text-zinc-300 sm:mb-9 sm:text-lg">
+        {popularIdeasCopy}
+      </p>
+      <FadeIn className="mx-auto mb-1 flex max-w-7xl items-center gap-3 px-6 sm:gap-6">
+        {visibleCategories.length > 0 ? (
+          <div className="min-w-0 flex-1">
+            <div
+              role="tablist"
+              aria-label="Explore library domains"
+              className="landing-domain-nav scrollbar-hide flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]"
             >
-              All
-            </button>
-            {visibleCategories.map((category) => (
               <button
-                key={category.category}
                 type="button"
                 role="tab"
-                aria-selected={activeCategory === category.category}
-                aria-label={`${category.category}, ${category.count} reads`}
-                onClick={() => void showCategory(category.category)}
+                aria-selected={activeCategory === null}
+                onClick={showAllItems}
                 className={cn(
                   "focus-ring touch-target-44 landing-domain-chip shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
-                  activeCategory === category.category
+                  activeCategory === null
                     ? "landing-domain-chip-active"
                     : "border-white/10 bg-white/[0.025] text-zinc-400 hover:border-white/20 hover:text-white"
                 )}
               >
-                {category.category}
+                All
               </button>
-            ))}
+              {visibleCategories.map((category) => (
+                <button
+                  key={category.category}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeCategory === category.category}
+                  aria-label={`${category.category}, ${category.count} reads`}
+                  onClick={() => void showCategory(category.category)}
+                  className={cn(
+                    "focus-ring touch-target-44 landing-domain-chip shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
+                    activeCategory === category.category
+                      ? "landing-domain-chip-active"
+                      : "border-white/10 bg-white/[0.025] text-zinc-400 hover:border-white/20 hover:text-white"
+                  )}
+                >
+                  {category.category}
+                </button>
+              ))}
+            </div>
           </div>
-        </FadeIn>
-      ) : null}
+        ) : null}
+
+        <Link prefetch={false}
+          href={browseHref}
+          className="focus-ring touch-target-44 landing-soft-action group ml-auto inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-2 py-2 text-xs font-medium text-zinc-300 transition-colors hover:text-white sm:text-sm"
+        >
+          <span className="max-w-28 truncate sm:max-w-none">
+            {activeCategory ? `Browse ${activeCategory}` : "Browse all"}
+          </span>
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+        </Link>
+      </FadeIn>
 
       <FadeIn delayMs={100}>
         <div
