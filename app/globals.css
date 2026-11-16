@@ -816,6 +816,9 @@ mark[data-highlight-spotlight="true"] {
 
 .landing-page-shell {
   isolation: isolate;
+  background:
+    radial-gradient(ellipse 900px 440px at 57% 0%, color-mix(in srgb, var(--solar-gold-300) 3%, transparent), transparent 85%),
+    hsl(var(--background));
 }
 
 .landing-page-shell,
@@ -857,31 +860,6 @@ mark[data-highlight-spotlight="true"] {
   opacity: 0.72;
 }
 
-.landing-hero-section::before,
-.landing-hero-section::after {
-  content: "";
-  position: absolute;
-  pointer-events: none;
-}
-
-.landing-hero-section::before {
-  inset: 0;
-  z-index: 0;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.34), transparent 44%, rgba(0, 0, 0, 0.14)),
-    radial-gradient(ellipse 760px 520px at 72% 34%, rgba(244, 192, 79, 0.072), transparent 64%),
-    radial-gradient(ellipse 620px 460px at 23% 22%, rgba(255, 255, 255, 0.052), transparent 68%);
-  opacity: 0.8;
-}
-
-.landing-hero-section::after {
-  inset-inline: max(1.5rem, calc((100vw - 80rem) / 2));
-  bottom: 0;
-  z-index: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
-}
-
 .landing-hero-copy {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-weight: 400;
@@ -916,9 +894,29 @@ mark[data-highlight-spotlight="true"] {
 }
 
 .landing-hero-section h1.font-serif {
-  font-family: var(--font-serif), Georgia, serif;
+  font-family: var(--font-landing-hero), var(--font-serif), Georgia, serif;
   font-weight: 400;
   letter-spacing: 0;
+}
+
+.landing-hero-title {
+  font-size: clamp(1.4375rem, 7vw, 3.625rem);
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+@media (min-width: 640px) and (max-height: 500px) {
+  .landing-hero-motion-content {
+    padding-block: 1.25rem;
+  }
+
+  .landing-hero-title {
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+  }
+
+  .landing-library-description {
+    margin-bottom: 1rem;
+  }
 }
 
 .landing-cta-band h2.font-serif {
@@ -1035,33 +1033,6 @@ mark[data-highlight-spotlight="true"] {
   color: var(--solar-gold-300);
 }
 
-.landing-hero-emphasis::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -0.08em;
-  width: calc(100% - 0.16em);
-  height: 1px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--solar-gold-300) 44%, transparent), transparent);
-  opacity: 0;
-  transform: translateX(-50%) scaleX(0);
-  transform-origin: center;
-  will-change: opacity, transform;
-}
-
-@keyframes landingHeroUnderlineReveal {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) scaleX(0);
-  }
-
-  to {
-    opacity: 0.46;
-    transform: translateX(-50%) scaleX(1);
-  }
-}
-
 @keyframes landingHeroReveal {
   from {
     transform: translateY(10px);
@@ -1105,10 +1076,6 @@ mark[data-highlight-spotlight="true"] {
     animation: landingHeroReveal 780ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
     animation-delay: var(--hero-reveal-delay, 0ms);
     will-change: transform;
-  }
-
-  .landing-hero-emphasis::after {
-    animation: landingHeroUnderlineReveal 680ms cubic-bezier(0.22, 1, 0.36, 1) 940ms both;
   }
 
   .landing-primary-cta::after {
@@ -1252,9 +1219,17 @@ mark[data-highlight-spotlight="true"] {
   isolation: isolate;
 }
 
+/* The library is now above the fold; its server-rendered content must be visible
+   before hydration, including when JavaScript is unavailable. */
+.landing-featured-band .landing-reveal {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  will-change: auto;
+}
+
 .landing-domain-nav {
-  border-block: 1px solid rgba(255, 255, 255, 0.045);
-  padding-block: 0.75rem;
+  padding-block: 0.25rem;
 }
 
 .landing-domain-chip {
@@ -1488,12 +1463,6 @@ mark[data-highlight-spotlight="true"] {
 
   .landing-hero-pointer-glow {
     opacity: 0;
-  }
-
-  .landing-hero-emphasis::after {
-    opacity: 0.58;
-    transform: translateX(-50%) scaleX(1);
-    animation: none;
   }
 
   .landing-reveal {

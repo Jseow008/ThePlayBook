@@ -3,15 +3,10 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 
 const heroRevealStyle = (delay: string) =>
   ({ "--hero-reveal-delay": delay } as CSSProperties);
-const PRIMARY_CTA_CLASS =
-  "focus-ring landing-primary-cta landing-hero-primary-cta group relative inline-flex min-h-11 min-w-0 items-center justify-center gap-2.5 overflow-hidden rounded-full bg-solar-gold px-6 py-3 text-sm font-semibold text-solar-gold-foreground transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.985] sm:px-7 sm:text-base";
-const SECONDARY_CTA_CLASS =
-  "focus-ring landing-secondary-cta inline-flex min-h-11 items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.025] px-5 text-sm font-semibold text-zinc-300 transition-[border-color,background-color,color,transform] duration-200 hover:-translate-y-px hover:border-white/25 hover:bg-white/[0.055] hover:text-white active:translate-y-0 active:scale-[0.985]";
 
 export function LandingHeader() {
   return (
@@ -132,40 +127,20 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="landing-hero-section relative flex min-h-[calc(100svh-4rem)] items-center overflow-hidden"
+      className="landing-hero-section relative flex items-center overflow-hidden"
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
     >
       <div aria-hidden="true" className="landing-hero-pointer-glow pointer-events-none absolute inset-0 z-[1]" />
-      <div className="landing-hero-motion-content relative z-10 mx-auto w-full max-w-7xl px-4 py-16 text-center min-[360px]:px-6 sm:py-20 lg:px-8">
+      <div className="landing-hero-motion-content relative z-10 mx-auto w-full max-w-7xl px-4 pt-8 pb-4 text-center min-[360px]:px-6 sm:pt-12 sm:pb-5 lg:px-8">
         <h1
-          className="landing-hero-reveal mx-auto max-w-6xl font-serif text-[clamp(1.3rem,6vw,3.4rem)] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:leading-[1.05] lg:text-[3.75rem] xl:text-[4.25rem]"
+          className="landing-hero-reveal landing-hero-title mx-auto max-w-6xl font-serif font-normal text-white"
           style={heroRevealStyle("80ms")}
         >
           Know what’s worth your time.
           <br />{" "}
           <span className="landing-hero-emphasis">Keep what’s worth remembering.</span>
         </h1>
-
-        <p
-          className="landing-hero-reveal landing-hero-copy mx-auto mt-8 max-w-xl text-[0.9375rem] leading-7 text-zinc-300 max-[359px]:-mx-2 min-[360px]:text-base sm:mt-9 sm:text-lg sm:leading-8"
-          style={heroRevealStyle("260ms")}
-        >
-          Explore structured breakdowns of books, podcasts, articles, and videos. Decide where to go deeper, capture key insights, and retrieve them when life makes them relevant.
-        </p>
-
-        <div
-          className="landing-hero-reveal mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:mt-7 sm:gap-x-4"
-          style={heroRevealStyle("560ms")}
-        >
-          <Link prefetch={false} href="/browse" className={PRIMARY_CTA_CLASS}>
-            <span className="relative z-10">Explore a Summary</span>
-            <ArrowRight className="landing-hero-cta-arrow relative z-10 size-4" />
-          </Link>
-          <Link prefetch={false} href="/login" className={SECONDARY_CTA_CLASS}>
-            Build Your Library Free
-          </Link>
-        </div>
       </div>
     </section>
   );

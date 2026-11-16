@@ -2,8 +2,12 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { LandingPage } from "@/components/ui/LandingPage";
 
-vi.mock("next/dynamic", () => ({
-  default: () => function DeferredSections() {
+vi.mock("next/font/google", () => ({
+  Instrument_Serif: () => ({ variable: "landing-hero-font" }),
+}));
+
+vi.mock("@/components/ui/landing/LandingDeferredSections", () => ({
+  LandingDeferredSections: function DeferredSections() {
     return <div data-testid="landing-deferred-sections" />;
   },
 }));

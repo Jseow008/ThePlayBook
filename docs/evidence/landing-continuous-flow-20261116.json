@@ -1,0 +1,141 @@
+{
+  "date": "2026-11-16",
+  "branch": "codex/landing-first-screen",
+  "base": "e2bd4e4fd9a092eeef32f19fb304b9cb0c1809cc",
+  "implementation_commit": "35e0e80964a299ae2e03fd5f952e762bcfde9a89",
+  "environment": "Local production build against public read-only catalog data; Chromium desktop and emulated viewports",
+  "source_sha256": {
+    "app/globals.css": "5c5038bca0c52d17a665af92231babfbd5eccb7fce248e0d7c0863995317e450",
+    "components/ui/LandingPage.tsx": "4d812b604f96ca0add7745fe8865c4ade698d828c0e0890c2ba637a893831acd",
+    "components/ui/landing/LandingDeferredSections.tsx": "eb5e9718879691f3d0ef8c866ecd31b2fe8d23adb4754b98f8df68146908a1d0",
+    "components/ui/landing/LandingHeroSections.tsx": "a84af613aa57e2e821b024cffef0c5ff516b24001b0b99c9ec3237af86702bbc",
+    "components/ui/landing/LandingPageSections.tsx": "1a3262dd80ada6e232750f8db59f58c58f0439f90316dbfc3d157e579f134327"
+  },
+  "checks": {
+    "focused_component_route_carousel_filter_tests": {
+      "passed": 16,
+      "skipped": 0
+    },
+    "lint_and_policies": "passed",
+    "typecheck": "passed",
+    "production_build_with_sharp_trace_and_critical_css": "passed",
+    "desktop_and_mobile_category_selection_reset": "passed",
+    "desktop_mouse_drag": "passed",
+    "mobile_native_touch_swipe": "passed",
+    "mobile_reduced_motion_autoplay_stopped": "passed",
+    "no_js_actual_library_summary_browse_visibility": "passed",
+    "no_decorative_hero_rules_or_repeated_visible_library_heading": "passed",
+    "document_horizontal_overflow": "none",
+    "browser_page_errors": "none",
+    "visible_cover_images_loaded": "all passed"
+  },
+  "unchanged_contracts": {
+    "cards": {
+      "unchanged_from_main": true,
+      "sha256": "d4d28795a1bb11563ef7c3e7f4099028af523b7ed572bfd7243c19e7c18eff14"
+    },
+    "scrolling": {
+      "unchanged_from_main": true,
+      "sha256": "8b717d7a7ca1f67c982de205fe843251e446f7316af3873b04ddf99957c1159f"
+    }
+  },
+  "viewports": [
+    {
+      "width": 320,
+      "hero_font_size": "23px",
+      "hero_height": 51.5,
+      "first_card_top": 314.5,
+      "first_card_bottom": 572.5,
+      "topic_track_width": 161.140625,
+      "browse_right": 296.0,
+      "document_width": 320,
+      "visible_images_loaded": true
+    },
+    {
+      "width": 375,
+      "hero_font_size": "26.25px",
+      "hero_height": 58.78125,
+      "first_card_top": 321.78125,
+      "first_card_bottom": 579.78125,
+      "topic_track_width": 216.140625,
+      "browse_right": 351.0,
+      "document_width": 375,
+      "visible_images_loaded": true
+    },
+    {
+      "width": 390,
+      "hero_font_size": "27.3px",
+      "hero_height": 61.125,
+      "first_card_top": 324.125,
+      "first_card_bottom": 582.125,
+      "topic_track_width": 231.140625,
+      "browse_right": 366.0,
+      "document_width": 390,
+      "visible_images_loaded": true
+    },
+    {
+      "width": 844,
+      "hero_font_size": "33.76px",
+      "hero_height": 75.625,
+      "first_card_top": 303.875,
+      "first_card_bottom": 671.875,
+      "topic_track_width": 663.328125,
+      "browse_right": 820.0,
+      "document_width": 844,
+      "visible_images_loaded": true
+    },
+    {
+      "width": 768,
+      "hero_font_size": "53.76px",
+      "hero_height": 120.40625,
+      "first_card_top": 396.65625,
+      "first_card_bottom": 764.65625,
+      "topic_track_width": 587.328125,
+      "browse_right": 744.0,
+      "document_width": 768,
+      "visible_images_loaded": true
+    },
+    {
+      "width": 1024,
+      "hero_font_size": "58px",
+      "hero_height": 129.90625,
+      "first_card_top": 406.15625,
+      "first_card_bottom": 774.15625,
+      "topic_track_width": 843.328125,
+      "browse_right": 1000.0,
+      "document_width": 1024,
+      "visible_images_loaded": true
+    },
+    {
+      "width": 1440,
+      "hero_font_size": "58px",
+      "hero_height": 129.90625,
+      "first_card_top": 406.15625,
+      "first_card_bottom": 774.15625,
+      "topic_track_width": 1099.328125,
+      "browse_right": 1336.0,
+      "document_width": 1440,
+      "visible_images_loaded": true
+    }
+  ],
+  "no_js_library_styles": [
+    {
+      "opacity": "1",
+      "filter": "none",
+      "transform": "none"
+    },
+    {
+      "opacity": "1",
+      "filter": "none",
+      "transform": "none"
+    }
+  ],
+  "verification_corrections": [
+    "The initial mobile probe checked autoplay after a native swipe while browser inertia was still moving the track. Separated reduced-motion autoplay assertion before the swipe from the native touch-movement assertion; no carousel code changes. Both passed on the final production build."
+  ],
+  "limitations": [
+    "Chromium desktop and emulated mobile only; no physical-device or Safari claim.",
+    "Local production-build evidence, not hosted deployment verification.",
+    "Screenshots retained under worktree output/landing-revised, not committed."
+  ]
+}

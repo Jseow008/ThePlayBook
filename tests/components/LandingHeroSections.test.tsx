@@ -30,7 +30,7 @@ describe("Landing hero", () => {
     expect(screen.getByRole("link", { name: "Sign In" })).toHaveClass("px-3", "py-1.5");
   });
 
-  it("shows the landing proposition and keeps the CTA hierarchy", () => {
+  it("shows only the two-line landing proposition", () => {
     render(<HeroSection />);
 
     expect(
@@ -39,20 +39,7 @@ describe("Landing hero", () => {
         name: "Know what’s worth your time. Keep what’s worth remembering.",
       })
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Explore structured breakdowns of books, podcasts, articles, and videos. Decide where to go deeper, capture key insights, and retrieve them when life makes them relevant."
-      )
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/summaries$/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/topics$/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Explore a Summary" })).toHaveAttribute(
-      "href",
-      "/browse"
-    );
-    expect(screen.getByRole("link", { name: "Build Your Library Free" })).toHaveAttribute(
-      "href",
-      "/login"
-    );
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Explore structured breakdowns/)).not.toBeInTheDocument();
   });
 });

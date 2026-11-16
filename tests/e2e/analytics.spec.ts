@@ -179,7 +179,8 @@ test.describe("PostHog analytics verification", () => {
             })
             .toBeGreaterThan(0);
 
-        const browseLink = page.getByRole("link", { name: "Explore a Summary" });
+        const browseLink = page.getByRole("region", { name: "Explore the library" })
+            .getByRole("link", { name: "Browse all", exact: true });
         await expect(browseLink).toBeVisible();
         await Promise.all([
             page.waitForURL(/\/browse$/, { timeout: 15_000 }),

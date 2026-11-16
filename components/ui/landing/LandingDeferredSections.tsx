@@ -21,7 +21,6 @@ export function LandingDeferredSections({
 }: LandingDeferredSectionsProps) {
   return (
     <>
-      <CorePlatformFeaturesSection />
       {featuredItems.length > 0 ? (
         <FeaturedReadsSection
           items={featuredItems}
@@ -29,6 +28,7 @@ export function LandingDeferredSections({
           totalContentCount={totalContentCount}
         />
       ) : null}
+      <CorePlatformFeaturesSection />
       <FinalCTASection />
       <LandingFooter />
     </>
