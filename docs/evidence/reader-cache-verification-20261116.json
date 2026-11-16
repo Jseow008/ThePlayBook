@@ -1,0 +1,458 @@
+{
+  "dateSingapore": "2026-11-16",
+  "scope": "Reader public-data caching, publication freshness, personal-data privacy. No UI redesign, no database schema change, no production deployment or mutation.",
+  "candidate": {
+    "implementationCommit": "abdb4e3a7ac1b396b79d158ad02c48bbfe123fb7",
+    "originalBeforeBaseAlignment": "ca6f6b3a3734a809f18e923b7d6d3981e3ae465c",
+    "initialBase": "92d01370",
+    "alignedBase": "b393ca90",
+    "upstreamChange": "PR375 changes Notes index date rendering only; Reader, caching, data clients, packages, config and database contract unchanged. All five implementation/test/policy hashes match the tested tree.",
+    "sourceSha256": {
+      "docs/CACHE_REVALIDATION_POLICY.md": "6e563889e545ba9f43d6f4e3fe8211609fb141538ecbecc022dc3ab241e22c75",
+      "lib/server/public-content.ts": "e9daca18ec304fbb976b33dd628946b0864367440ab76dc93ed29c0442e91a60",
+      "lib/server/reader-cache-config.ts": "b3ae9d49a303c3c893e91ef4be60452b205c0b2c0d59b1800197c6b201cc196a",
+      "lib/server/revalidation.ts": "a89436037fd7e0ad443b445a6ea7963ebcd770d31cc8bb03333978f54aca372e",
+      "tests/lib/reader-cache.test.ts": "2409f03f0d240e148b50aa9c7af31a140d225ac2cc55bb46aa624e0fd9477711"
+    },
+    "allFiveMatchTestedTree": {
+      "docs/CACHE_REVALIDATION_POLICY.md": true,
+      "lib/server/public-content.ts": true,
+      "lib/server/reader-cache-config.ts": true,
+      "lib/server/revalidation.ts": true,
+      "tests/lib/reader-cache.test.ts": true
+    }
+  },
+  "findings": [
+    "Reader React cache deduplicates metadata/page within one render; dynamic route repeats database work on subsequent requests despite revalidate300 export.",
+    "A series Reader performs one content/segments/artifacts query, one series query, two neighbor queries and one HEAD count per uncached render.",
+    "READ_SELECT omitted created_at/updated_at although the existing returned Reader model and JSON-LD used them; now explicitly selected.",
+    "Current error-to-null handling would cache transient failures as missing. Reader now propagates content and series errors; legitimate missing results remain null.",
+    "Personal state is loaded through account-scoped client/API paths and is excluded from the shared public projection.",
+    "Existing cache policy documentation incorrectly said tags were unused; updated ownership for the existing catalog tag and new Reader tag."
+  ],
+  "implementation": {
+    "cache": "Next unstable_cache, server-only cookie-free anonymous Supabase projection, wrapped by React render-local cache",
+    "key": "public-reader-v1 + Supabase URL + normalized valid UUID",
+    "freshnessMs": 60000,
+    "publicFields": [
+      "content metadata",
+      "created/updated timestamps",
+      "reading revision",
+      "active segments",
+      "artifact templates",
+      "series context"
+    ],
+    "excluded": [
+      "cookies",
+      "headers",
+      "sessions",
+      "account identifiers",
+      "reading progress",
+      "bookmarks",
+      "highlights",
+      "private notes"
+    ],
+    "tag": "public-reader-v1",
+    "hardInvalidation": [
+      "content creation",
+      "metadata/body/segment/artifact update",
+      "publication/withdrawal",
+      "delete/bulk",
+      "narration/audio",
+      "replacement",
+      "series metadata/slug and neighbor dependencies"
+    ],
+    "expiry": "Await the framework refresh in the foreground at >=60s; never return an expired copy during an outage.",
+    "scope": "Read data cache only; no shared full-page or personal response cache, and no client layout/control edits."
+  },
+  "comparison": {
+    "environment": "Two local Next16.4.6 production builds on native Node24.22.3, same disposable hosted Supabase database and synthetic records; baseline copied before source edits. Real Data API requests observed without credentials/row data in logs.",
+    "protocol": "Three sequential canonical HTML renders per standalone/series item, varying an ignored query parameter; same fixed six requests per build. First visit retained as cold sample; subsequent visits compare cache reuse.",
+    "baseline": [
+      {
+        "series": false,
+        "visit": 0,
+        "status": 200,
+        "ms": 818,
+        "readerQueries": 1,
+        "relatedSeriesQueries": 0,
+        "headCountIncluded": true
+      },
+      {
+        "series": false,
+        "visit": 1,
+        "status": 200,
+        "ms": 284,
+        "readerQueries": 1,
+        "relatedSeriesQueries": 0,
+        "headCountIncluded": true
+      },
+      {
+        "series": false,
+        "visit": 2,
+        "status": 200,
+        "ms": 263,
+        "readerQueries": 1,
+        "relatedSeriesQueries": 0,
+        "headCountIncluded": true
+      },
+      {
+        "series": true,
+        "visit": 0,
+        "status": 200,
+        "ms": 561,
+        "readerQueries": 1,
+        "relatedSeriesQueries": 4,
+        "headCountIncluded": true
+      },
+      {
+        "series": true,
+        "visit": 1,
+        "status": 200,
+        "ms": 524,
+        "readerQueries": 1,
+        "relatedSeriesQueries": 4,
+        "headCountIncluded": true
+      },
+      {
+        "series": true,
+        "visit": 2,
+        "status": 200,
+        "ms": 381,
+        "readerQueries": 1,
+        "relatedSeriesQueries": 4,
+        "headCountIncluded": true
+      }
+    ],
+    "candidate": [
+      {
+        "series": false,
+        "visit": 0,
+        "status": 200,
+        "ms": 837,
+        "readerQueries": 1,
+        "relatedSeriesQueries": 0
+      },
+      {
+        "series": false,
+        "visit": 1,
+        "status": 200,
+        "ms": 37,
+        "readerQueries": 0,
+        "relatedSeriesQueries": 0
+      },
+      {
+        "series": false,
+        "visit": 2,
+        "status": 200,
+        "ms": 31,
+        "readerQueries": 0,
+        "relatedSeriesQueries": 0
+      },
+      {
+        "series": true,
+        "visit": 0,
+        "status": 200,
+        "ms": 505,
+        "readerQueries": 1,
+        "relatedSeriesQueries": 4
+      },
+      {
+        "series": true,
+        "visit": 1,
+        "status": 200,
+        "ms": 39,
+        "readerQueries": 0,
+        "relatedSeriesQueries": 0
+      },
+      {
+        "series": true,
+        "visit": 2,
+        "status": 200,
+        "ms": 28,
+        "readerQueries": 0,
+        "relatedSeriesQueries": 0
+      }
+    ],
+    "repeatMs": {
+      "baseline": {
+        "min": 263,
+        "max": 524
+      },
+      "candidate": {
+        "min": 28,
+        "max": 39
+      }
+    },
+    "repeatReaderAndSeriesOriginRequests": "Standalone1\u21920, series5\u21920 per repeated Reader render.",
+    "limitation": "Small controlled sample, not production user latency, client interactivity time or percentile evidence. Cache misses still pay origin costs."
+  },
+  "freshness": {
+    "steps": [
+      {
+        "name": "metadata title, timestamps and canonical redirect are fresh",
+        "passed": true
+      },
+      {
+        "name": "segments and artifact templates refresh",
+        "passed": true
+      },
+      {
+        "name": "segment removal, revision and audio metadata refresh",
+        "passed": true
+      },
+      {
+        "name": "neighbor title change refreshes another Reader",
+        "passed": true
+      },
+      {
+        "name": "series title and slug refresh",
+        "passed": true
+      },
+      {
+        "name": "withdrawal removes cached body, republishing restores it",
+        "passed": true
+      },
+      {
+        "name": "cached unpublished item publishes immediately, deletion removes it",
+        "passed": true
+      },
+      {
+        "name": "replacement removes source body and shows the published successor notice",
+        "passed": true
+      },
+      {
+        "name": "external write TTL and expired-read outage fixtures prepared",
+        "passed": true
+      }
+    ],
+    "canonicalRedirectTransport": "streamed Next redirect",
+    "external": {
+      "id": "5557442f-ef34-455c-8ca8-3fdad9067c46",
+      "title": "External Freshness Source",
+      "warmedAt": "2026-11-16T10:17:09.218Z",
+      "freshWithinBound": true
+    },
+    "fault": {
+      "id": "83205c0f-aeab-44e4-a30b-3bdd0f59166d",
+      "title": "Reader Failure Source",
+      "warmedAt": "2026-11-16T10:17:09.638Z",
+      "freshWithinBound": true
+    }
+  },
+  "expiryAndRecovery": {
+    "waitMs": 0,
+    "externalWithdrawal": {
+      "firstExpiredReaderOriginReads": 1,
+      "nextReaderOriginReads": 0,
+      "oldBodyAbsent": true,
+      "notFound": true
+    },
+    "expiredBackendFailure": {
+      "status": 200,
+      "oldBodyAbsent": true,
+      "notMisrepresentedAs404": true
+    },
+    "recovery": {
+      "freshBody": true,
+      "nextReaderOriginReads": 0
+    }
+  },
+  "browserPrivacy": [
+    {
+      "viewport": "desktop",
+      "account": "a",
+      "progress": "1 of 2 sections completed",
+      "ownNotesVisible": true,
+      "otherNotesAbsent": true,
+      "privateMarkersAbsentFromHTML": true
+    },
+    {
+      "viewport": "desktop",
+      "account": "b",
+      "progress": "0 of 2 sections completed",
+      "ownNotesVisible": true,
+      "otherNotesAbsent": true,
+      "privateMarkersAbsentFromHTML": true
+    },
+    {
+      "viewport": "desktop",
+      "account": "anonymous",
+      "progress": "0 of 2 sections completed",
+      "ownNotesVisible": false,
+      "otherNotesAbsent": true,
+      "privateMarkersAbsentFromHTML": true
+    },
+    {
+      "viewport": "mobile",
+      "account": "a",
+      "progress": "1 of 2 sections completed",
+      "ownNotesVisible": true,
+      "otherNotesAbsent": true,
+      "privateMarkersAbsentFromHTML": true
+    },
+    {
+      "viewport": "mobile",
+      "account": "b",
+      "progress": "0 of 2 sections completed",
+      "ownNotesVisible": true,
+      "otherNotesAbsent": true,
+      "privateMarkersAbsentFromHTML": true
+    },
+    {
+      "viewport": "mobile",
+      "account": "anonymous",
+      "progress": "0 of 2 sections completed",
+      "ownNotesVisible": false,
+      "otherNotesAbsent": true,
+      "privateMarkersAbsentFromHTML": true
+    }
+  ],
+  "browserFreshness": [
+    {
+      "viewport": "desktop",
+      "canonicalRedirectPreservedQuery": true,
+      "newTitleVisible": true,
+      "deletedContentUnavailable": true
+    },
+    {
+      "viewport": "mobile",
+      "canonicalRedirectPreservedQuery": true,
+      "newTitleVisible": true,
+      "deletedContentUnavailable": true
+    }
+  ],
+  "smoke": {
+    "projects": [
+      "desktop1440x1000",
+      "mobile390x844"
+    ],
+    "checks": [
+      "login",
+      "missing-code callback",
+      "browse",
+      "read",
+      "anonymous admin denial",
+      "authenticated admin access",
+      "shallow/detailed health"
+    ],
+    "stats": {
+      "startTime": "2026-11-16T10:07:15.696Z",
+      "duration": 11452.496,
+      "expected": 14,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "hostedDatabaseGate": {
+    "ref": "cfevmljkfbhlyoyzwzdu",
+    "productionRef": "xmuqsgfxuaaophxnwure",
+    "withData": false,
+    "initialCounts": {
+      "users": 0,
+      "content": 0
+    },
+    "migrations": {
+      "count": 122,
+      "latest": "20261115100520"
+    },
+    "schemaCategories": 14,
+    "security": [
+      {
+        "name": "security-function-acl-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-admin-rpc-acl-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-new-object-access-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-analytics-rls-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-embedding-table-read-check.sql",
+        "passed": true
+      },
+      {
+        "name": "security-storage-bucket-listing-check.sql",
+        "passed": true
+      },
+      {
+        "name": "database-highlight-preservation-check.sql",
+        "passed": true
+      }
+    ],
+    "typeContractsMatch": true,
+    "securityAdvisors": {
+      "candidateRlsEnabledNoPolicyInfo": 12,
+      "productionRlsEnabledNoPolicyInfo": 12,
+      "interpretation": "Same private deny-by-default tables; no warning regression."
+    },
+    "performanceAdvisors": {
+      "candidateUnusedIndexInfo": 32,
+      "productionUnusedIndexInfo": 13,
+      "authDbConnectionsAbsoluteInfoBoth": 1,
+      "interpretation": "Synthetic branch has not exercised production index workloads; schema categories match. Existing Auth connection allocation INFO unchanged."
+    },
+    "productionMigrationPush": "Not applicable: no migration/schema/type/privilege changes; no production db push."
+  },
+  "checks": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed, including Sharp traces and critical CSS",
+    "focusedTests": {
+      "files": 25,
+      "passed": 221
+    },
+    "mutationTests": {
+      "files": 6,
+      "passed": 68
+    },
+    "bundleBudgets": "passed",
+    "clientBoundaries": "passed",
+    "dependencyAudit": "No high/critical; five pre-existing moderate Sentry/glob/minimatch findings, package and lock files unchanged."
+  },
+  "verificationCorrections": [
+    "Baseline summary initially omitted series HEAD counts; re-counted original raw records to4 related requests without rerunning the cohort.",
+    "First freshness assertion assumed a native HTTP redirect; Next streams redirect instructions with200 after the shell. Retained raw response and verified canonical query-preserving redirect in real mobile/desktop browsers.",
+    "Second freshness assertion assumed status404; captured not-found instruction with200 and no withdrawn body. Resumed remaining scenarios using framework outcome plus absence of old content, then verified rendered Summary unavailable in both browsers.",
+    "Replacement fixture initially lacked user annotations, so #373 correctly rejected version creation with400. Added one synthetic note to that source and ran only the remaining replacement/expiry phases; all earlier passing mutation and privacy evidence retained.",
+    "Expiry runner was first invoked before the blocked replacement phase had prepared fixtures; it stopped on its precondition. After fixture preparation, the fixed expiry/outage/recovery run passed."
+  ],
+  "cleanup": {
+    "branchId": "13033959-64c2-4b3e-8d94-9f801b40069f",
+    "candidateRef": "cfevmljkfbhlyoyzwzdu",
+    "hostedBranchDeleted": true,
+    "branchAbsentFromList": true,
+    "ownedAppAndTLSListenersStopped": [
+      3239,
+      3240,
+      8440
+    ],
+    "ownedRedisContainerRemoved": "lifebook-reader-cache-20261116",
+    "privateDatabaseCredentialsAppSecretsSyntheticPasswordsAndTLSKeyDeleted": true,
+    "productionDataMutations": 0,
+    "providerGenerationCalls": 0,
+    "browserContextsClosed": true
+  },
+  "limits": [
+    "Browser coverage is Chromium viewport emulation, not physical Safari/iOS.",
+    "External writers bypassing application invalidation may have up to60s of cached data; app mutation paths invalidate immediately.",
+    "Already-open tabs are not live-refreshed by server invalidation.",
+    "Request-local errors and not-found outcomes may retain HTTP200 after streaming starts; no stale Reader body is returned.",
+    "Global Reader tag is conservative: unrelated content/series edits can evict other Reader entries.",
+    "No merge or live production result is claimed; user requested handoff before the next workstream."
+  ],
+  "actors": {
+    "agents": 1,
+    "delegation": false,
+    "codexUsage": "Not available"
+  },
+  "privateArtifacts": "/tmp/lifebook-reader-cache-20261116"
+}
