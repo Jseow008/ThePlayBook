@@ -11,6 +11,7 @@ import { sharePreparedImage, usePreparedShareImage } from "@/hooks/usePreparedSh
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 import { cn } from "@/lib/utils";
+import { APP_NAME } from "@/lib/brand";
 
 interface ContentShareMenuProps {
     contentId?: string;
@@ -65,7 +66,11 @@ export function ContentShareMenu({
     const triggerButtonRef = useRef<HTMLButtonElement>(null);
     const isCompactReaderControls = useMediaQuery(VIEWPORT_QUERIES.compactReaderControls);
     const resolvedUrl = buildResolvedUrl(url, path);
-    const shareData = { title, text: text ?? title, url: resolvedUrl };
+    const shareData = {
+        title,
+        text: text ?? `${destination === "Read" ? "Read" : "Preview"} the summary of “${title}” on ${APP_NAME}.`,
+        url: resolvedUrl,
+    };
     const showSendLink = isOpen && mounted && canSendLink(shareData);
     const imageContentId = destination === "Read" ? contentId : undefined;
     const {

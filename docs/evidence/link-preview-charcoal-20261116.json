@@ -1,0 +1,140 @@
+{
+  "base": "4e43d062",
+  "branch": "codex/link-preview-charcoal-credits",
+  "scope": "Landscape link-preview background/full credits and shared native link wording only; renderer/layout dimensions, title treatment, metadata, branding, URL destinations and storage lifecycle unchanged.",
+  "independent_pr": {
+    "number": 379,
+    "state": "OPEN",
+    "files": [
+      ".github/workflows/process-story-images.yml",
+      "docs/STATUS.md"
+    ],
+    "application_overlap": false
+  },
+  "local_verification": {
+    "focused_tests": 43,
+    "skips": 0,
+    "lint": "passed, including policy checks",
+    "typecheck": "passed",
+    "production_build": "passed, including Sharp traces for seven routes and critical CSS",
+    "browser": {
+      "method": "Actual shared component in controlled local harness; native share/clipboard capture, no external message. Story preparation intercepted. Desktop1440/narrow390. Not full-page navigation or OS/device verification.",
+      "cases": [
+        {
+          "width": 1440,
+          "surface": "Preview",
+          "sent": {
+            "title": "Crucial Conversations",
+            "text": "Preview the summary of \u201cCrucial Conversations\u201d on Netflux.",
+            "url": "http://127.0.0.1:3459/preview/d1638e1a-802d-47c8-9d3b-9d33344e6202"
+          },
+          "copied": "http://127.0.0.1:3459/preview/d1638e1a-802d-47c8-9d3b-9d33344e6202",
+          "pass": true
+        },
+        {
+          "width": 1440,
+          "surface": "Read",
+          "sent": {
+            "title": "Crucial Conversations",
+            "text": "Read the summary of \u201cCrucial Conversations\u201d on Netflux.",
+            "url": "http://127.0.0.1:3459/read/example?highlight=saved#section-3"
+          },
+          "copied": "http://127.0.0.1:3459/read/example?highlight=saved#section-3",
+          "pass": true
+        },
+        {
+          "width": 1440,
+          "surface": "Focus",
+          "sent": {
+            "title": "Crucial Conversations",
+            "text": "Preview the summary of \u201cCrucial Conversations\u201d on Netflux.",
+            "url": "http://127.0.0.1:3459/preview/d1638e1a-802d-47c8-9d3b-9d33344e6202"
+          },
+          "copied": "http://127.0.0.1:3459/preview/d1638e1a-802d-47c8-9d3b-9d33344e6202",
+          "pass": true
+        },
+        {
+          "width": 390,
+          "surface": "Preview",
+          "sent": {
+            "title": "Crucial Conversations",
+            "text": "Preview the summary of \u201cCrucial Conversations\u201d on Netflux.",
+            "url": "http://127.0.0.1:3459/preview/d1638e1a-802d-47c8-9d3b-9d33344e6202"
+          },
+          "copied": "http://127.0.0.1:3459/preview/d1638e1a-802d-47c8-9d3b-9d33344e6202",
+          "pass": true
+        },
+        {
+          "width": 390,
+          "surface": "Read",
+          "sent": {
+            "title": "Crucial Conversations",
+            "text": "Read the summary of \u201cCrucial Conversations\u201d on Netflux.",
+            "url": "http://127.0.0.1:3459/read/example?highlight=saved#section-3"
+          },
+          "copied": "http://127.0.0.1:3459/read/example?highlight=saved#section-3",
+          "pass": true
+        },
+        {
+          "width": 390,
+          "surface": "Focus",
+          "sent": {
+            "title": "Crucial Conversations",
+            "text": "Preview the summary of \u201cCrucial Conversations\u201d on Netflux.",
+            "url": "http://127.0.0.1:3459/preview/d1638e1a-802d-47c8-9d3b-9d33344e6202"
+          },
+          "copied": "http://127.0.0.1:3459/preview/d1638e1a-802d-47c8-9d3b-9d33344e6202",
+          "pass": true
+        }
+      ]
+    },
+    "image_review": [
+      {
+        "file": "actual-2.png",
+        "sha256": "81aa2580e39541af54e888621b8fead63799af9fe63229575d8d21ed6f40996d"
+      },
+      {
+        "file": "actual-0.png",
+        "sha256": "02f17a6ae4d4265e092dd12ae1472329e00753e2c97231fcafdae69e3e3215ca"
+      },
+      {
+        "file": "actual-1.png",
+        "sha256": "e9ad97329b8d78ee35c1f9e53d3671bce50af66710567634123f7d65f7768caa"
+      }
+    ],
+    "image_cases": [
+      "Crucial Conversations: full four-author credit and real public cover",
+      "Navigating Modern Relationships, Divorce Realities, and Authentic Intimacy: full guest credits and real public cover",
+      "Synthetic long credits with missing cover: fallback renders and credits stay visible"
+    ],
+    "artifact_directory": "/tmp/netflux-link-preview-evidence-20261116"
+  },
+  "constraints": {
+    "worker": "GitHub API confirmed disabled_manually; workflow untouched",
+    "backlog": "not generated",
+    "database_storage_writes": 0,
+    "paid_resources_created": 0,
+    "external_messages_sent": 0
+  },
+  "evidence_limits": [
+    "Local browser harness exercises the actual shared menu at1440/390, not full page navigation or native OS sharing.",
+    "Real-cover PNGs generated by actual route with controlled content query; public cover downloads only.",
+    "Recipient application rendering and stale external thumbnail caches unverified.",
+    "Physical phones and Safari unverified.",
+    "Hosted CI/security pending; earlier skipped tests remain outside coverage."
+  ],
+  "next": "Publish ready PR; inspect files/history, enable protected squash auto-merge after PR scope passes. Do not wait on long CI or deploy/modify production data in this task.",
+  "refresh_after_381": {
+    "base": "e2bd4e4fd9a092eeef32f19fb304b9cb0c1809cc",
+    "merged_381": true,
+    "conflicts": "docs/STATUS.md only; both records preserved",
+    "renderer_share_and_tests_unchanged_from": "77b6f627c66bf32b8606b39b423016b926f45812",
+    "combined_focused_tests": 51,
+    "skips": 0,
+    "typecheck": "passed",
+    "lint_and_policy_checks": "passed",
+    "worker": "disabled schedule removed by merged #379; preserved",
+    "production_deployment": "not verified",
+    "required_refreshed_ci_security": "pending after push"
+  }
+}

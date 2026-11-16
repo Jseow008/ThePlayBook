@@ -41,7 +41,6 @@ function renderMenu(destination: "Preview" | "Read" = "Read") {
         <ContentShareMenu
             contentId={contentId}
             title="Can't Hurt Me"
-            text="Read Can't Hurt Me on Netflux"
             destination={destination}
             url={destination === "Read" ? "https://netflux.test/read/cant-hurt-me" : undefined}
             path={destination === "Preview" ? `/preview/${contentId}` : undefined}
@@ -134,9 +133,37 @@ describe("ContentShareMenu", () => {
         await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
         expect(share).toHaveBeenCalledWith({
             title: "Can't Hurt Me",
-            text: "Read Can't Hurt Me on Netflux",
+            text: "Read the summary of “Can't Hurt Me” on Netflux.",
             url: "https://netflux.test/read/cant-hurt-me",
         });
+    });
+
+    it("sends a Preview message with the unchanged Preview destination", async () => {
+        const share = vi.fn().mockResolvedValue(undefined);
+        Object.defineProperty(navigator, "share", { configurable: true, value: share });
+        Object.defineProperty(navigator, "canShare", { configurable: true, value: () => true });
+        renderMenu("Preview");
+        fireEvent.click(screen.getByRole("menuitem", { name: "Send link" }));
+        await waitFor(() => expect(share).toHaveBeenCalledWith({
+            title: "Can't Hurt Me",
+            text: "Preview the summary of “Can't Hurt Me” on Netflux.",
+            url: `${window.location.origin}/preview/${contentId}`,
+        }));
+    });
+
+    it("preserves a custom message and exact Read query and anchor", async () => {
+        const share = vi.fn().mockResolvedValue(undefined);
+        const writeText = mockClipboard();
+        Object.defineProperty(navigator, "share", { configurable: true, value: share });
+        Object.defineProperty(navigator, "canShare", { configurable: true, value: () => true });
+        const url = "https://netflux.test/read/example?highlight=saved#section-3";
+        render(<ContentShareMenu title="Example" destination="Read" url={url} text="Custom message" />);
+        fireEvent.click(screen.getByRole("button", { name: "Share this content" }));
+        fireEvent.click(screen.getByRole("menuitem", { name: "Send link" }));
+        await waitFor(() => expect(share).toHaveBeenCalledWith({ title: "Example", text: "Custom message", url }));
+        fireEvent.click(screen.getByRole("button", { name: "Share this content" }));
+        fireEvent.click(screen.getByRole("menuitem", { name: "Copy link" }));
+        await waitFor(() => expect(writeText).toHaveBeenCalledWith(url));
     });
 
     it("copies the link from the copy link action", async () => {

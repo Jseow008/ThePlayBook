@@ -65,7 +65,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const uiFont = fonts.some((font) => font.name === "Inter") ? "Inter" : "sans-serif";
     const brandFont = fonts.some((font) => font.name === "Outfit") ? "Outfit" : uiFont;
     const title = clampText(content.title, 82);
-    const author = content.author ? clampText(content.author, 52) : APP_TAGLINE;
+    const author = content.author || APP_TAGLINE;
     const metadataLine = buildMetadataLine(content);
     const coverImageSrc = content.cover_image_url ? await getImageDataUrl(content.cover_image_url) : null;
     const hasCover = Boolean(coverImageSrc);
@@ -75,8 +75,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         (
             <div
                 style={{
-                    background:
-                        "radial-gradient(circle at 72% 24%, rgba(250, 250, 250, 0.12) 0, transparent 23%), radial-gradient(circle at 86% 18%, rgba(250, 250, 250, 0.06) 0, transparent 30%), linear-gradient(135deg, #09090b 0%, #111113 62%, #151518 100%)",
+                    background: "#111113",
                     color: "#fafafa",
                     display: "flex",
                     fontFamily: uiFont,

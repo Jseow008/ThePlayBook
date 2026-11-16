@@ -10,7 +10,6 @@ import type { ContentItem } from "@/types/database";
 import type { QuickMode, SeriesContext } from "@/types/domain";
 import { ContentShareMenu } from "@/components/ui/ContentShareMenu";
 import { SaveToLibraryButton } from "@/components/ui/SaveToLibraryButton";
-import { APP_NAME } from "@/lib/brand";
 import { buildReadPath } from "@/lib/content-paths";
 import { promoteFocusPreviewReadIntent } from "@/lib/focus-read-attribution";
 import { ResilientImage } from "@/components/ui/ResilientImage";
@@ -326,7 +325,6 @@ export function ContentPreview({
                                     themeClassName={`reader-${readerTheme}`}
                                     path={`/preview/${item.id}`}
                                     title={item.title}
-                                    text={`Check out "${item.title}" on ${APP_NAME}`}
                                     source="content_preview"
                                     contentId={item.id}
                                     contentType={item.type}
@@ -483,7 +481,6 @@ export function ContentPreview({
                         themeClassName={`reader-${readerTheme}`}
                         path={`/preview/${item.id}`}
                         title={item.title}
-                        text={`Check out "${item.title}" on ${APP_NAME}`}
                         source="content_preview_mobile"
                         contentId={item.id}
                         contentType={item.type}
