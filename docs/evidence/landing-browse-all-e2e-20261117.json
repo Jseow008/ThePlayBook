@@ -1,0 +1,87 @@
+{
+  "date": "2026-11-17",
+  "timezone": "Asia/Singapore",
+  "pr": 382,
+  "test_fix_commit": "90b74e836128e5e319a87a48cc66d46658ed1640",
+  "base": "bf81ee0c0e8e72aa425f9112b2a14e867f6e4c8b",
+  "previous_failed_run": 43890446107,
+  "environment": "Local Next development server matching the CI Playwright server configuration, with public anonymous catalog reads. Dummy CI PostHog token; the analytics test intercepts ingestion through its existing capture. No database fixture writes.",
+  "source_sha256": {
+    "tests/e2e/home.spec.ts": "286d19e8685fc2ed5d4550e55a633f852d13b4d6d3fa2e7915046db1091513c4",
+    "tests/e2e/analytics.spec.ts": "fc0136c16c64ff6ae5e114530c4b1ab8702a3228278293b1c4eed9542219f6fc",
+    "tests/e2e/responsive-surfaces-public.spec.ts": "6572d9fadff9fe8efef4b37767a8436099b7b621a9490b61464726d7166c51bf",
+    "app/globals.css": "5c5038bca0c52d17a665af92231babfbd5eccb7fce248e0d7c0863995317e450",
+    "components/ui/LandingPage.tsx": "4d812b604f96ca0add7745fe8865c4ade698d828c0e0890c2ba637a893831acd",
+    "components/ui/landing/LandingDeferredSections.tsx": "eb5e9718879691f3d0ef8c866ecd31b2fe8d23adb4754b98f8df68146908a1d0",
+    "components/ui/landing/LandingHeroSections.tsx": "a84af613aa57e2e821b024cffef0c5ff516b24001b0b99c9ec3237af86702bbc",
+    "components/ui/landing/LandingPageSections.tsx": "1a3262dd80ada6e232750f8db59f58c58f0439f90316dbfc3d157e579f134327"
+  },
+  "pilot": {
+    "project": "desktop-chromium",
+    "passed": 4,
+    "skipped": 0,
+    "retries": 0,
+    "duration_seconds": 19.6
+  },
+  "matrix": {
+    "passed": 24,
+    "failed": 0,
+    "flaky": 0,
+    "skipped": 0,
+    "retries": 0,
+    "workers": 1,
+    "start_time_utc": "2026-11-16T16:08:50.679Z",
+    "duration_ms": 42955.126,
+    "projects": {
+      "desktop-chromium": {
+        "passed": 4,
+        "attempts": 4
+      },
+      "mobile-se": {
+        "passed": 4,
+        "attempts": 4
+      },
+      "mobile-iphone": {
+        "passed": 4,
+        "attempts": 4
+      },
+      "mobile-landscape": {
+        "passed": 4,
+        "attempts": 4
+      },
+      "tablet-portrait": {
+        "passed": 4,
+        "attempts": 4
+      },
+      "tablet-landscape": {
+        "passed": 4,
+        "attempts": 4
+      }
+    },
+    "test_titles": [
+      "landing library Browse all navigates to browse",
+      "landing library controls and featured reads stay contained",
+      "landing page loads and renders correctly",
+      "tracks first pageview and client navigation pageview once through the same-origin proxy"
+    ]
+  },
+  "preserved_assertions": [
+    "Hero entrance content readable before delayed animation completes",
+    "No hero links; library Browse all visible and targets /browse",
+    "Final Build Your Library Free action visible and targets /login",
+    "Actual library navigation reaches /browse",
+    "Exactly one homepage and one browse pageview through the same-origin analytics proxy; no CSP error",
+    "Responsive Browse link usable; no document overflow; existing intentional horizontal carousel checks preserved"
+  ],
+  "quality_checks": {
+    "typecheck": "passed",
+    "targeted_eslint_no_warnings": "passed",
+    "diff_whitespace": "passed",
+    "application_changes_in_test_fix_commit": false
+  },
+  "limitations": [
+    "Local Chromium and emulated screen sizes, not physical-device/Safari verification.",
+    "Full GitHub validate/security checks must run again on the updated PR; the old failed run is retained.",
+    "No fresh local production build or unrelated browser suite rerun: this repair changes only test expectations and evidence. Existing application evidence remains valid for unchanged landing code."
+  ]
+}
