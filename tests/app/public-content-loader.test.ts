@@ -72,3 +72,46 @@ describe("public content loaders", () => {
         expect(result?.segmentCount).toBe(7);
     });
 });
+
+describe("public content sharing metadata", () => {
+    it.each(["preview", "read"] as const)("omits the separate site name on %s while preserving title, hook, image and destination", async (route) => {
+        const { buildPublicContentMetadata } = await import("@/lib/server/public-content");
+        const { SITE_URL } = await import("@/lib/seo");
+        const content = {
+            id: "11111111-1111-4111-8111-111111111111",
+            type: "book",
+            title: "Crucial Conversations",
+            author: "Kerry Patterson, Joseph Grenny, Ron McMillan, and Al Switzler",
+            category: "Relationships & Communication",
+            cover_image_url: null,
+            quick_mode_json: {
+                hook: "The conversations that matter most are often the hardest to have.",
+                big_idea: "Make it safe to disagree.",
+                key_takeaways: [],
+            },
+        };
+        const metadata = buildPublicContentMetadata(content, route);
+        const path = route === "read"
+            ? `/read/${content.id}/crucial-conversations`
+            : `/preview/${content.id}`;
+        const image = `${SITE_URL}/api/og/content/${content.id}`;
+
+        expect(metadata.title).toBe(content.title);
+        expect(metadata.description).toBe(content.quick_mode_json.hook);
+        expect(metadata.openGraph).not.toHaveProperty("siteName");
+        expect(metadata.openGraph).toMatchObject({
+            title: content.title,
+            description: content.quick_mode_json.hook,
+            url: `${SITE_URL}${path}`,
+            type: "article",
+            images: [{ url: image, width: 1200, height: 630, alt: content.title }],
+        });
+        expect(metadata.twitter).toEqual({
+            card: "summary_large_image",
+            title: content.title,
+            description: content.quick_mode_json.hook,
+            images: [image],
+        });
+        expect(metadata.alternates).toEqual(route === "read" ? { canonical: `${SITE_URL}${path}` } : undefined);
+    });
+});

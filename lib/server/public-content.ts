@@ -256,7 +256,6 @@ export function buildPublicContentMetadata(
             title,
             description,
             url,
-            siteName: APP_NAME,
             images: [{ url: ogImage, width: 1200, height: 630, alt: content.title }],
             type: "article",
         },
