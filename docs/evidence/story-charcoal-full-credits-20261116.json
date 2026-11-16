@@ -1,0 +1,73 @@
+{
+  "date": "2026-11-16",
+  "base": "c1fb702e02aef59133d309b4ad1d5a5f80e6d67f",
+  "branch": "codex/story-charcoal-full-credits",
+  "template": "story-jpeg-v4",
+  "scope": [
+    "Uniform #111113 background",
+    "Remove48-character author/guest clamp; natural wrapping at existing font size",
+    "New template version to avoid treating old images as current"
+  ],
+  "unchanged": [
+    "Read the summary \u00b7 netflux.blog footer",
+    "Category and duration metadata",
+    "Title treatment, fonts, cover size/shadow, JPEG dimensions/quality",
+    "Share controls, rate limiter and all upload/completion/cleanup behavior"
+  ],
+  "checks": {
+    "focusedTests": 33,
+    "exportedImageViewportFitChecks": 6,
+    "viewports": [
+      1440,
+      390
+    ],
+    "fullLint": "passed including ratchets",
+    "typecheck": "passed",
+    "build": "passed normal production build, all7 Sharp traces and critical CSS checks"
+  },
+  "visual": {
+    "examples": [
+      "Crucial Conversations",
+      "Navigating Modern Relationships, Divorce Realities, and Authentic Intimacy",
+      "Lessons on Risk, Bundling, and Reinvention from Business Leaders"
+    ],
+    "authorLengths": [
+      61,
+      68,
+      109
+    ],
+    "inspection": "Complete credits fit at existing36px font; longest109-character credit wraps to3lines with footer/metadata visible. Local actual JPEGs inspected.",
+    "jpegBytes": [
+      129665,
+      151182,
+      149205
+    ]
+  },
+  "regressions": [
+    "Actual JPEG pixel check confirms one RGB value #111113 in the broad lower-margin background.",
+    "Actual rendered full109-character credit differs from legacy truncated credit; guards against restoring the48-character clamp."
+  ],
+  "reusedLifecycleEvidence": {
+    "PR": "https://github.com/Jseow008/ThePlayBook/pull/377",
+    "scope": "Hosted/project cleanup and production image replacement proofs linked inline in parent PR; mutation files unchanged byte-for-byte. This change does not add or alter a DB/schema/Storage mutation path.",
+    "fileSHA256": {
+      "lib/server/story-image-storage.ts": "144aa0624a2d827fb2fc7b89d35eaced58722b425774e377bd48e235c5ed47e6",
+      "lib/server/story-image-queue.ts": "149903200e9e673de14a9113744a1b3f3cbe8985e634957d83947f0c780cceaf",
+      "lib/server/story-image-processor.ts": "784b3e2d97a75b2d8edcdfccb77864d6c810ef0bc3df726df6543995b8a07f9d",
+      "app/api/og/content/[id]/story/route.tsx": "2a97c6b383eb52a93795b3181205d703eea6229e272ad5387c8af97df866383b",
+      "scripts/backfill-story-images.ts": "edc68faef87ad4e699edec0998afac8768e433bc40f8d0ebd331c71c624ba306"
+    }
+  },
+  "backfillRun": false,
+  "scheduledWorker": "verified disabled_manually; not changed",
+  "productionWrites": false,
+  "paidResourcesCreated": false,
+  "providerCalls": 0,
+  "limits": [
+    "No deployment or native OS share check for this candidate yet.",
+    "Physical phones/Safari and social-platform recompression unverified.",
+    "Three local content examples, not all522 generated."
+  ],
+  "agentCount": 1,
+  "tokenUsage": "unavailable"
+}
