@@ -1,3 +1,11 @@
+## 2026-11-16 — omit content preview site-name field
+
+Worktree `/Users/j/.codex/workspaces/netflux-link-preview-no-site-name`, branch `codex/link-preview-no-site-name`, from freshly fetched main `ece66d06` (#379). #380 remains open; independent change, no application dependency or stacking. Removed only `siteName` from `buildPublicContentMetadata` for Preview and Read; title, hook/description, image and alt text, Read/Preview URLs, canonical and Twitter metadata unchanged. Global homepage/other-page metadata and branding remain unchanged. Next 16.4.6 installed metadata guide confirms route Open Graph objects replace parent objects, so root siteName is not inherited when omitted here. Shared metadata is viewport-independent.
+
+Verification: eight focused tests across public-content-loader and PublicContentPages passed (zero skips), including both routes retaining exact title/hook/image/URL/Twitter/canonical contracts and omitting siteName. Full lint/policy checks, typecheck and production build (Sharp tracing and critical CSS) passed. No failed local checks. No browser/recipient-app/OS/native-share tests claimed; receiving apps may independently show a domain/site label or cached metadata. Existing external/phone/Safari coverage limits remain. No database/Storage writes, schedule changes, backlog generation or paid resources; #379 already removed the disabled schedule on main.
+
+Next: commit only implementation/test/status, inspect independent history and GitHub file list, open ready PR and enable protected squash auto-merge after PR scope passes. Required CI/security must pass; do not wait for long checks or merge/deployment monitoring. No pending product decision. One agent, no model/provider generation.
+
 # Netflux release and workstream status
 
 ## Reader public-data caching — 16 November 2026 (Singapore)
