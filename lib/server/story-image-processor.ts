@@ -209,7 +209,6 @@ export async function processNextStoryImageJob(requestId: string) {
                 supabase,
                 contentId: job.content_id,
                 currentStoragePath: storagePath,
-                retainCount: 2,
             });
         } catch (cleanupError) {
             logApiError({

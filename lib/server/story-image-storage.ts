@@ -1,7 +1,10 @@
 import {
     STORY_IMAGE_CONTENT_TYPE,
     STORY_IMAGE_STORAGE_PREFIX,
+    buildStoryImageRenderVersion,
+    buildStoryImageStoragePath,
 } from "@/lib/server/story-image-renderer";
+import { findCompletedStoryImage, loadVerifiedStoryImageContent } from "@/lib/server/story-image-queue";
 import { getAdminClient } from "@/lib/supabase/admin";
 
 const STORY_IMAGE_BUCKET = "media";
@@ -53,10 +56,20 @@ export async function cleanupOldStoryImageVersions(params: {
     supabase?: AdminClient;
     contentId: string;
     currentStoragePath: string;
-    retainCount?: number;
 }) {
     const supabase = params.supabase ?? getAdminClient();
     const imageBucket = supabase.storage.from(STORY_IMAGE_BUCKET);
+    const content = await loadVerifiedStoryImageContent(supabase, params.contentId);
+    if (!content) return { removed: 0 };
+    const renderVersion = buildStoryImageRenderVersion(content);
+    if (buildStoryImageStoragePath(content.id, renderVersion) !== params.currentStoragePath) {
+        return { removed: 0 };
+    }
+    const completed = await findCompletedStoryImage({ supabase, contentId: content.id, renderVersion });
+    if (completed?.storage_path !== params.currentStoragePath
+        || !await storedStoryImageExists(getStoryImagePublicUrl(params.currentStoragePath, supabase))) {
+        return { removed: 0 };
+    }
     const folder = `${STORY_IMAGE_STORAGE_PREFIX}/${params.contentId}`;
     const { data, error } = await imageBucket.list(folder, {
         limit: 100,
@@ -67,17 +80,21 @@ export async function cleanupOldStoryImageVersions(params: {
         throw error;
     }
 
-    const storedPaths = (data ?? [])
-        .filter((object) => object.name.endsWith(".jpg"))
+    const replacement = data?.find((object) => `${folder}/${object.name}` === params.currentStoragePath);
+    if (!replacement?.created_at) return { removed: 0 };
+    const replacementCreatedAt = replacement.created_at;
+    // Preserve newer uploads: another replacement may still be in flight.
+    const obsolete = (data ?? [])
+        .filter((object) => /^[a-f0-9]{24}\.jpg$/.test(object.name)
+            && object.created_at && object.created_at < replacementCreatedAt)
         .map((object) => `${folder}/${object.name}`);
-    const keep = new Set([
-        params.currentStoragePath,
-        ...storedPaths.filter((path) => path !== params.currentStoragePath),
-    ].slice(0, Math.max(1, params.retainCount ?? 2)));
-    const obsolete = storedPaths
-        .filter((path) => !keep.has(path));
 
     if (obsolete.length === 0) {
+        return { removed: 0 };
+    }
+
+    const latestContent = await loadVerifiedStoryImageContent(supabase, params.contentId);
+    if (!latestContent || buildStoryImageRenderVersion(latestContent) !== renderVersion) {
         return { removed: 0 };
     }
 

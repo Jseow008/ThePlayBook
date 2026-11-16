@@ -24,7 +24,7 @@ export interface StoryImageContent {
 export const STORY_IMAGE_WIDTH = 1080;
 export const STORY_IMAGE_HEIGHT = 1920;
 export const STORY_IMAGE_JPEG_QUALITY = 85;
-export const STORY_IMAGE_TEMPLATE_VERSION = "story-jpeg-v2";
+export const STORY_IMAGE_TEMPLATE_VERSION = "story-jpeg-v3";
 export const STORY_IMAGE_STORAGE_PREFIX = "story-images";
 export const STORY_IMAGE_CONTENT_TYPE = "image/jpeg";
 
@@ -63,12 +63,12 @@ export async function createStoryImageJpegResponse(content: StoryImageContent) {
     const fonts = await fontPromise;
     const uiFont = fonts.some((font) => font.name === "Inter") ? "Inter" : "sans-serif";
     const brandFont = fonts.some((font) => font.name === "Outfit") ? "Outfit" : uiFont;
-    const title = clampText(content.title, 76);
+    const title = content.title;
     const author = content.author ? clampText(content.author, 48) : APP_TAGLINE;
     const metadataLine = buildMetadataLine(content);
     const coverImageSrc = content.cover_image_url ? await getImageDataUrl(content.cover_image_url) : null;
     const hasCover = Boolean(coverImageSrc);
-    const titleFontSize = title.length > 58 ? 56 : title.length > 38 ? 66 : 76;
+    const titleFontSize = title.length > 110 ? 48 : title.length > 58 ? 60 : 76;
 
     const image = new ImageResponse(
         (
@@ -82,7 +82,7 @@ export async function createStoryImageJpegResponse(content: StoryImageContent) {
                     fontFamily: uiFont,
                     height: "100%",
                     overflow: "hidden",
-                    padding: 72,
+                    padding: "140px 80px 160px",
                     width: "100%",
                 }}
             >
@@ -90,24 +90,27 @@ export async function createStoryImageJpegResponse(content: StoryImageContent) {
                     style={{
                         alignItems: "center",
                         display: "flex",
-                        flex: 1,
                         flexDirection: "column",
                         justifyContent: "flex-start",
                         width: "100%",
                     }}
                 >
+                    <div style={{ color: "#b4b4b8", display: "flex", fontSize: 30, letterSpacing: 4 }}>
+                        {normalizeLabel(content.type).toUpperCase()} SUMMARY
+                    </div>
                     <div
                         style={{
                             background:
                                 "linear-gradient(180deg, rgba(250,250,250,0.16), rgba(250,250,250,0.04))",
                             border: "1px solid rgba(250, 250, 250, 0.16)",
-                            borderRadius: 36,
-                            boxShadow: "0 48px 120px rgba(0, 0, 0, 0.55)",
+                            borderRadius: 32,
+                            boxShadow: "0 40px 100px rgba(0, 0, 0, 0.55)",
                             display: "flex",
-                            height: 900,
-                            marginTop: 96,
+                            height: 810,
+                            flexShrink: 0,
+                            marginTop: 42,
                             overflow: "hidden",
-                            width: 600,
+                            width: 540,
                         }}
                     >
                         {hasCover ? (
@@ -131,7 +134,7 @@ export async function createStoryImageJpegResponse(content: StoryImageContent) {
                             alignItems: "center",
                             display: "flex",
                             flexDirection: "column",
-                            marginTop: 64,
+                            marginTop: 56,
                             textAlign: "center",
                             width: "100%",
                         }}
@@ -143,21 +146,19 @@ export async function createStoryImageJpegResponse(content: StoryImageContent) {
                                 fontSize: titleFontSize,
                                 fontWeight: 700,
                                 letterSpacing: 0,
-                                lineHeight: 1.02,
-                                maxHeight: 232,
-                                maxWidth: 900,
-                                overflow: "hidden",
+                                lineHeight: 1.08,
+                                maxWidth: 920,
                             }}
                         >
                             {title}
                         </div>
                         <div
                             style={{
-                                color: "rgba(250, 250, 250, 0.68)",
+                                color: "#c4c4c7",
                                 display: "flex",
                                 fontSize: 36,
-                                lineHeight: 1.24,
-                                marginTop: 26,
+                                lineHeight: 1.25,
+                                marginTop: 28,
                             }}
                         >
                             {author}
@@ -165,11 +166,11 @@ export async function createStoryImageJpegResponse(content: StoryImageContent) {
                         {metadataLine && (
                             <div
                                 style={{
-                                    color: "rgba(250, 250, 250, 0.56)",
+                                    color: "#aaaab0",
                                     display: "flex",
                                     fontSize: 30,
-                                    lineHeight: 1.2,
-                                    marginTop: 20,
+                                    lineHeight: 1.25,
+                                    marginTop: 22,
                                 }}
                             >
                                 {metadataLine}
@@ -183,25 +184,16 @@ export async function createStoryImageJpegResponse(content: StoryImageContent) {
                         alignItems: "center",
                         display: "flex",
                         flexDirection: "column",
-                        marginBottom: 96,
+                        marginTop: "auto",
                         width: "100%",
                     }}
                 >
                     <div
                         style={{
-                            background: "linear-gradient(90deg, rgba(59, 130, 246, 0), rgba(59, 130, 246, 0.86), rgba(250, 250, 250, 0.18), rgba(59, 130, 246, 0))",
-                            display: "flex",
-                            height: 2,
-                            marginBottom: 30,
-                            width: 188,
-                        }}
-                    />
-                    <div
-                        style={{
-                            color: "rgba(250, 250, 250, 0.76)",
+                            color: "#fafafa",
                             display: "flex",
                             fontFamily: brandFont,
-                            fontSize: 34,
+                            fontSize: 44,
                             fontWeight: 700,
                             letterSpacing: 0,
                             lineHeight: 1,
@@ -211,14 +203,14 @@ export async function createStoryImageJpegResponse(content: StoryImageContent) {
                     </div>
                     <div
                         style={{
-                            color: "rgba(250, 250, 250, 0.48)",
+                            color: "#c4c4c7",
                             display: "flex",
-                            fontSize: 24,
+                            fontSize: 30,
                             lineHeight: 1,
-                            marginTop: 14,
+                            marginTop: 20,
                         }}
                     >
-                        netflux.blog
+                        Read the summary · netflux.blog
                     </div>
                 </div>
             </div>

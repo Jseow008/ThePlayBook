@@ -13,6 +13,7 @@ import {
 } from "@/lib/server/story-image-queue";
 import {
     getStoryImagePublicUrl,
+    cleanupOldStoryImageVersions,
     storedStoryImageExists,
     storeStoryImage,
 } from "@/lib/server/story-image-storage";
@@ -88,6 +89,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
             renderVersion,
             storagePath,
         });
+        try {
+            await cleanupOldStoryImageVersions({ contentId: content.id, currentStoragePath: storagePath });
+        } catch (error) {
+            logApiError({
+                requestId: `story-image:${content.id}`,
+                route: "/api/og/content/[id]/story",
+                message: "Story image stored, but old versions could not be cleaned up",
+                error,
+            });
+        }
     } catch (error) {
         logApiError({
             requestId: `story-image:${content.id}`,
