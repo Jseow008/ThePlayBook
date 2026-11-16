@@ -367,9 +367,9 @@ export function FeaturedReadsSection({
   return (
     <section
       id="featured-reads"
-      className="landing-featured-band scroll-mt-20 overflow-hidden py-24 sm:py-32"
+      className="landing-featured-band scroll-mt-20 overflow-hidden pt-5 pb-16 sm:pt-8 sm:pb-24"
     >
-      <FadeIn className="mx-auto mb-8 flex max-w-7xl flex-col gap-8 px-6 md:mb-10 md:flex-row md:items-end md:justify-between">
+      <FadeIn className="mx-auto mb-4 flex max-w-7xl flex-col gap-4 px-6 md:mb-6 md:flex-row md:items-end md:justify-between md:gap-8">
         <SectionIntro
           label="Explore the library"
           title="Ideas worth remembering."
@@ -385,7 +385,7 @@ export function FeaturedReadsSection({
       </FadeIn>
 
       {visibleCategories.length > 0 ? (
-        <FadeIn delayMs={75} className="mx-auto mb-7 max-w-7xl px-6">
+        <FadeIn delayMs={75} className="mx-auto mb-3 max-w-7xl px-6">
           <div
             role="tablist"
             aria-label="Explore library domains"

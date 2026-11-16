@@ -1,0 +1,113 @@
+{
+  "date": "2026-11-16",
+  "branch": "codex/landing-first-screen",
+  "base": "ece66d06",
+  "environment": "Local production build with public read-only catalog data; Chromium",
+  "source_sha256": {
+    "app/globals.css": "87795f84474a716776ac9b03d6562260d2be4aed459bb2f131be9561ad203287",
+    "components/ui/LandingPage.tsx": "4d812b604f96ca0add7745fe8865c4ade698d828c0e0890c2ba637a893831acd",
+    "components/ui/landing/LandingDeferredSections.tsx": "eb5e9718879691f3d0ef8c866ecd31b2fe8d23adb4754b98f8df68146908a1d0",
+    "components/ui/landing/LandingHeroSections.tsx": "b282a935e40188caa7a1f1b347397e8b373b401c84b8a717a3647fc89df57f2d",
+    "components/ui/landing/LandingPageSections.tsx": "9e1c8c18429fdae9580c36bbbc638417435ad7e2a5c3c4d379b5466f8f0890b8"
+  },
+  "checks": {
+    "focused_component_and_route_tests": {
+      "passed": 16,
+      "skipped": 0
+    },
+    "lint_and_policy_checks": "passed",
+    "typecheck": "passed",
+    "production_build": "passed",
+    "sharp_trace": "passed",
+    "critical_css": "passed",
+    "desktop_category_and_reset": "passed",
+    "mobile_reduced_motion": "passed",
+    "javascript_disabled_library_visibility": "passed",
+    "document_overflow": "none",
+    "visible_cover_loads": "all passed",
+    "browser_pageerrors": "none"
+  },
+  "viewports": [
+    {
+      "width": 320,
+      "hero_font": "\"Instrument Serif\", \"Instrument Serif Fallback\", \"Playfair Display\", \"Playfair Display Fallback\", Georgia, serif",
+      "hero_font_size": "23px",
+      "hero_height": 51.5,
+      "first_card_top": 561.65625,
+      "document_width": 320,
+      "visible_cover_images_loaded": true
+    },
+    {
+      "width": 375,
+      "hero_font": "\"Instrument Serif\", \"Instrument Serif Fallback\", \"Playfair Display\", \"Playfair Display Fallback\", Georgia, serif",
+      "hero_font_size": "26.25px",
+      "hero_height": 58.78125,
+      "first_card_top": 542.546875,
+      "document_width": 375,
+      "visible_cover_images_loaded": true
+    },
+    {
+      "width": 390,
+      "hero_font": "\"Instrument Serif\", \"Instrument Serif Fallback\", \"Playfair Display\", \"Playfair Display Fallback\", Georgia, serif",
+      "hero_font_size": "27.3px",
+      "hero_height": 61.125,
+      "first_card_top": 513.53125,
+      "document_width": 390,
+      "visible_cover_images_loaded": true
+    },
+    {
+      "width": 768,
+      "hero_font": "\"Instrument Serif\", \"Instrument Serif Fallback\", \"Playfair Display\", \"Playfair Display Fallback\", Georgia, serif",
+      "hero_font_size": "53.76px",
+      "hero_height": 120.40624237060547,
+      "first_card_top": 524.421875,
+      "document_width": 768,
+      "visible_cover_images_loaded": true
+    },
+    {
+      "width": 1024,
+      "hero_font": "\"Instrument Serif\", \"Instrument Serif Fallback\", \"Playfair Display\", \"Playfair Display Fallback\", Georgia, serif",
+      "hero_font_size": "68px",
+      "hero_height": 152.3125,
+      "first_card_top": 579.953125,
+      "document_width": 1024,
+      "visible_cover_images_loaded": true
+    },
+    {
+      "width": 1440,
+      "hero_font": "\"Instrument Serif\", \"Instrument Serif Fallback\", \"Playfair Display\", \"Playfair Display Fallback\", Georgia, serif",
+      "hero_font_size": "68px",
+      "hero_height": 152.3125,
+      "first_card_top": 598.015625,
+      "document_width": 1440,
+      "visible_cover_images_loaded": true
+    }
+  ],
+  "no_js_visibility": [
+    {
+      "opacity": "1",
+      "filter": "none",
+      "transform": "none"
+    },
+    {
+      "opacity": "1",
+      "filter": "none",
+      "transform": "none"
+    },
+    {
+      "opacity": "1",
+      "filter": "none",
+      "transform": "none"
+    }
+  ],
+  "limitations": [
+    "Chromium desktop and emulated viewports only; no physical phone or Safari run.",
+    "Local production build, not a deployed verification.",
+    "Screenshots retained under worktree output/landing; not committed."
+  ],
+  "attempts": [
+    "Initial dependency symlink could serve webpack development but Turbopack production build rejected resolution outside worktree. Installed locked dependencies locally; production build then passed.",
+    "Initial mobile spacing left too little of the shelf visible. Tightened gaps, tuned font hierarchy, and repeated affected browser checks on final production build.",
+    "Visual inspection found the original dynamic loading boundary still displayed a skeleton with JavaScript disabled, despite computed child styles passing. Removed that boundary for the now-above-fold library, added ancestor visibility assertions, and repeated build, lint, types, focused tests and all browser checks successfully. Final no-JavaScript screenshot shows real content."
+  ]
+}

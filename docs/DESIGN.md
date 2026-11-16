@@ -52,10 +52,16 @@ The current landing page is not the older streaming-style hero carousel page.
 It now ships as a marketing/editorial composition with:
 
 - sticky minimal header
-- editorial hero
-- core platform feature storytelling
+- compact two-line editorial hero without supporting copy or hero buttons
 - horizontally scrolling featured reads strip with compact domain filters
+- core platform feature storytelling
 - final CTA
+
+The library follows the hero immediately and remains visible before hydration.
+Landing-only fluid type sizing and restrained charcoal/gold shading keep the
+headline readable while bringing covers into the first desktop and mobile screen.
+Library copy, filters, card dimensions, previews, autoplay/drag/touch behavior,
+and reduced-motion support retain their existing contracts.
 
 Landing messaging follows [POSITIONING.md](./POSITIONING.md), including its distinction between shipped capabilities and product goals. This design document does not maintain a separate copy bank.
 

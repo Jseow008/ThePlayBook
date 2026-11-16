@@ -816,6 +816,7 @@ mark[data-highlight-spotlight="true"] {
 
 .landing-page-shell {
   isolation: isolate;
+  background: linear-gradient(180deg, hsl(var(--background) / 0.2), hsl(var(--background) / 0.72) 52rem);
 }
 
 .landing-page-shell,
@@ -868,10 +869,8 @@ mark[data-highlight-spotlight="true"] {
   inset: 0;
   z-index: 0;
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.34), transparent 44%, rgba(0, 0, 0, 0.14)),
-    radial-gradient(ellipse 760px 520px at 72% 34%, rgba(244, 192, 79, 0.072), transparent 64%),
-    radial-gradient(ellipse 620px 460px at 23% 22%, rgba(255, 255, 255, 0.052), transparent 68%);
-  opacity: 0.8;
+    radial-gradient(ellipse 760px 360px at 65% 0%, rgba(244, 192, 79, 0.045), transparent 72%),
+    linear-gradient(180deg, hsl(var(--background) / 0.12), transparent);
 }
 
 .landing-hero-section::after {
@@ -916,9 +915,15 @@ mark[data-highlight-spotlight="true"] {
 }
 
 .landing-hero-section h1.font-serif {
-  font-family: var(--font-serif), Georgia, serif;
+  font-family: var(--font-landing-hero), var(--font-serif), Georgia, serif;
   font-weight: 400;
   letter-spacing: 0;
+}
+
+.landing-hero-title {
+  font-size: clamp(1.4375rem, 7vw, 4.25rem);
+  line-height: 1.12;
+  text-wrap: balance;
 }
 
 .landing-cta-band h2.font-serif {
@@ -1252,9 +1257,29 @@ mark[data-highlight-spotlight="true"] {
   isolation: isolate;
 }
 
+/* The library is now above the fold; its server-rendered content must be visible
+   before hydration, including when JavaScript is unavailable. */
+.landing-featured-band .landing-reveal {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  will-change: auto;
+}
+
+.landing-featured-band .landing-section-title {
+  font-size: clamp(1.75rem, 3.4vw, 3rem);
+  line-height: 1.12;
+}
+
+.landing-featured-band .landing-section-body {
+  margin-top: 1rem;
+  font-size: clamp(1rem, 1.3vw, 1.125rem);
+  line-height: 1.65;
+}
+
 .landing-domain-nav {
   border-block: 1px solid rgba(255, 255, 255, 0.045);
-  padding-block: 0.75rem;
+  padding-block: 0.5rem;
 }
 
 .landing-domain-chip {
