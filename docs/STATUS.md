@@ -872,3 +872,12 @@ Branch codex/story-charcoal-full-credits, worktree /Users/j/.codex/workspaces/ne
 Parent#377 completed disposable hosted mutation verification and synthetic production release checks; full sanitized evidence is inline in its PR body. Reuse only unchanged storage/queue/processor/public route/backfill behavior with recorded SHA256 hashes; this renderer-only change adds no database-facing mutation behavior and requires no new paid project/migration. New assets still need final candidate CI/security and later deployed verification. Worker remains disabled_manually; no backlog/pre-generation or production writes. Local renders fetched existing public covers only; no model calls. Physical phone/Safari/native OS sharing/social recompression unverified.
 
 Evidence: [charcoal and credit verification](evidence/story-charcoal-full-credits-20261116.json). Exact next action: finish normal build, inspect/publish four-file PR scope, require PR scope/validate/security, enable protected squash auto-merge after scope passes, and do not wait for long-running CI. No direct-main push or deployment in this task.
+
+
+## Remove disabled story-image schedule — 16 November 2026
+
+Owner authorized deleting the scheduled GitHub workflow only. Branch codex/remove-story-image-schedule, worktree /Users/j/.codex/workspaces/netflux-remove-story-schedule, fresh main4e43d062 includes#378. Deleted .github/workflows/process-story-images.yml, removing its ten-minute timer and GitHub workflow_dispatch wrapper. Kept both GET/POST manual recovery endpoints, publishing-time queue/processor, backfill script, on-demand Share fallback, shared CRON_SECRET and all other workflows unchanged. GitHub workflow was already disabled_manually. No database/schema/Storage mutation, backlog/pre-generation, application code change or paid resources.
+
+Validation: diff/whitespace checks; exact runtime paths match main; remaining create/update/bulk generation callers and manual recovery/backfill/Share paths verified present. Only other schedule-path reference is a dated historical audit, not active operational configuration. No new tests or full application rebuild warranted for this workflow deletion; required hosted CI/security still gate merge. One agent; no provider calls; token/precise elapsed usage unavailable.
+
+Exact next action: publish narrow two-file PR, verify scope and active main gates, enable protected squash auto-merge after PR scope passes, then exit without waiting for full CI.
