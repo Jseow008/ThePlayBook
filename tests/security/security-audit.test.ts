@@ -72,6 +72,20 @@ describe("production security audit policy", () => {
         expect(assessAudit(report, policy.reviewedVersions, now).blocking).toHaveLength(1);
     });
 
+    it("retains a critical duplicate even when a high duplicate appears later", () => {
+        const report = auditReport();
+        report.vulnerabilities.picomatch.via.unshift({
+            name: "picomatch", severity: "critical", url: policy.advisory,
+        });
+        expect(assessAudit(report, policy.reviewedVersions, now).blocking).toHaveLength(1);
+    });
+
+    it("rejects a critical package finding explained only by a high source", () => {
+        const report = auditReport();
+        report.vulnerabilities.picomatch.severity = "critical";
+        expect(() => assessAudit(report, policy.reviewedVersions, now)).toThrow("Unexplained blocking severity");
+    });
+
     it("allows a clean audit even after this exception expires", () => {
         expect(assessAudit({ auditReportVersion: 2, vulnerabilities: {} }, {}, new Date(policy.expiresAt)))
             .toEqual({ accepted: [], blocking: [] });

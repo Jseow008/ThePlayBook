@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const exception = JSON.parse(readFileSync(join(root, "scripts/security-audit-exceptions.json"), "utf8"));
 const blockingSeverities = new Set(["high", "critical"]);
-const severities = new Set(["info", "low", "moderate", "high", "critical"]);
+const severityRanks = new Map(["info", "low", "moderate", "high", "critical"].map((severity, index) => [severity, index]));
 
 export function assessAudit(report, installedVersions, now = new Date()) {
   if (!report || report.error || report.auditReportVersion !== 2 || !report.vulnerabilities
@@ -21,21 +21,21 @@ export function assessAudit(report, installedVersions, now = new Date()) {
     if (resolved.has(name)) return resolved.get(name);
     const finding = report.vulnerabilities[name];
     if (!finding || !Array.isArray(finding.via) || !Array.isArray(finding.nodes)
-        || !severities.has(finding.severity) || finding.via.length === 0) {
+        || !severityRanks.has(finding.severity) || finding.via.length === 0) {
       throw new Error(`Incomplete audit finding for ${name}`);
     }
     const next = new Set(chain).add(name);
     const leaves = finding.via.flatMap((via) => {
       if (typeof via === "string") return collect(via, next);
-      if (!via || typeof via.url !== "string" || !severities.has(via.severity)) {
+      if (!via || typeof via.url !== "string" || !severityRanks.has(via.severity)) {
         throw new Error(`Unsupported advisory for ${name}`);
       }
       const advisory = { ...via, owner: name, nodes: finding.nodes };
-      advisories.set(`${name}:${via.url}`, advisory);
+      advisories.set(`${name}:${via.url}:${via.severity}`, advisory);
       return [advisory];
     });
     if (blockingSeverities.has(finding.severity)
-        && !leaves.some((leaf) => blockingSeverities.has(leaf.severity))) {
+        && !leaves.some((leaf) => severityRanks.get(leaf.severity) >= severityRanks.get(finding.severity))) {
       throw new Error(`Unexplained blocking severity for ${name}`);
     }
     resolved.set(name, leaves);
