@@ -49,7 +49,7 @@
     "deps:outdated": "node scripts/check-dependency-posture.mjs --outdated",
     "supabase:types": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_REF\" > types/database.ts",
     "supabase:types:local": "supabase gen types typescript --local > types/database.ts",
-    "security:audit": "npm audit --omit=dev --audit-level=high",
+    "security:audit": "node scripts/security-audit.mjs",
     "security:admin-rpc-acls": "node scripts/check-supabase-admin-rpc-acls.mjs",
     "security:function-acls": "node scripts/check-supabase-function-acls.mjs",
     "security:new-object-access": "node scripts/check-supabase-new-object-access.mjs",

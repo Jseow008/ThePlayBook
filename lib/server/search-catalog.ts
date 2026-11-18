@@ -67,13 +67,13 @@ const getCachedRecentCatalogPage = unstable_cache(
         type: type ?? undefined,
         page: 1,
     }),
-    ["search-recent-page-one-v1"],
+    ["search-recent-page-one-v2"],
     { revalidate: SEARCH_CATALOG_CACHE_SECONDS, tags: [SEARCH_CATALOG_CACHE_TAG] },
 );
 
 const getCachedCategoryStats = unstable_cache(
     () => getCategoryStats(),
-    ["search-category-stats-v1"],
+    ["search-category-stats-v2"],
     { revalidate: SEARCH_CATALOG_CACHE_SECONDS, tags: [SEARCH_CATALOG_CACHE_TAG] },
 );
 
@@ -107,7 +107,7 @@ const getCachedPopularItems = unstable_cache(
         const audioById = new Map((audioRows ?? []).map((row) => [row.id, row.audio_url]));
         return items.map((item) => ({ ...item, audio_url: audioById.get(item.id) ?? null }));
     },
-    ["search-popular-v2"],
+    ["search-popular-v3"],
     { revalidate: SEARCH_CATALOG_CACHE_SECONDS, tags: [SEARCH_CATALOG_CACHE_TAG] },
 );
 

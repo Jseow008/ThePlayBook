@@ -123,5 +123,36 @@
     "pr": 384,
     "auto_merge": false,
     "hold": "Await upstream picomatch remedy; no audit suppression, forced downgrade, temporary fork, patch or gate bypass."
+  },
+  "merge_refresh": {
+    "base_main": "e57049ae",
+    "previous_head": "e6f5bbc7da42292cb181a55d33d60360d30b4601",
+    "owner_instruction": "Resolve conflicts, fix Security Validation, and enable auto-merge only after required checks pass. This supersedes the earlier upstream-only hold.",
+    "conflicts": [
+      "docs/STATUS.md append histories, both preserved with the saved local handoff"
+    ],
+    "approved_ui_unchanged": true,
+    "security_resolution": "Inherit merged main PR #385 scoped advisory policy, expiry 2026-12-02T00:00:00Z. Preserve the existing Sentry glob14.0.6 override.",
+    "local_checks": {
+      "productionAudit": "passed; scoped exception reported; no blocking advisories",
+      "focusedTests": 44,
+      "typecheck": "passed",
+      "lintAndPolicies": "passed",
+      "normalProductionBuild": "passed, including seven Sharp traces and critical CSS",
+      "desktopMobileBrowser": {
+        "passed": 7,
+        "skipped": 1,
+        "skipReason": "Mouse-only drag is inapplicable on emulated mobile; touch paths retain their existing evidence."
+      }
+    },
+    "limitations": [
+      "The refreshed local production server has no Upstash configuration, so expensive media cover API requests fail closed. The seven browser checks establish controls and navigation, not image-backend health. No production or physical-device/Safari verification claimed."
+    ],
+    "retained_source_hashes": {
+      "components/ui/landing/LandingPageSections.tsx": "592aa7c5f2604d1c67175cfd18b4a68a253495c0babf9ba8559d88b14779ddcc",
+      "components/ui/landing/LandingHeroSections.tsx": "67df72934eaa8721307d9b01bff0c42f5ac9f24a59b17aa50ab4aa4d6446163e",
+      "app/globals.css": "b68c374134ff0d07ea5251df4fd3f176af78421c057e8a0f28033be9555e62ba",
+      "tests/e2e/home.spec.ts": "5860f21b66135321ff7cf4dbfc17f6f80e9e0a19fb511426f05a3992b66157c0"
+    }
   }
 }

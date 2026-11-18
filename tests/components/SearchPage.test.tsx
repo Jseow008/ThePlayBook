@@ -589,7 +589,7 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "Business" })).toHaveClass("bg-primary");
     });
 
-    it.each(["Mindset", "Christian", "Religion & Spirituality", "book_summary", "NoSuchTopic"])(
+    it.each(["Mindset", "Christian", "Parenting", "book_summary", "NoSuchTopic"])(
         "clears the retired or unknown category %s without losing search text or type",
         async (category) => {
             await expect(loadSearchPage({ q: "faith", category, type: "book", cursor: "old-cursor" }))
@@ -648,7 +648,7 @@ describe("SearchPage", () => {
         });
     });
 
-    it("shows the six desktop shortcuts and the twelve remaining topics", async () => {
+    it("shows the six desktop shortcuts and the thirteen remaining topics", async () => {
         await renderSearchPage({});
 
         const shortcuts = screen.getAllByRole("link")
@@ -664,7 +664,7 @@ describe("SearchPage", () => {
         expect(optionLabels).toEqual([
             "More topics", "Biography & Memoir", "Careers & Work", "Christianity", "Economics", "History",
             "Learning & Creativity", "Management & Leadership", "Philosophy", "Politics & Society",
-            "Relationships & Communication", "Science & Environment", "Technology & the Future",
+            "Relationships & Communication", "Religion & Spirituality", "Science & Environment", "Technology & the Future",
         ]);
     });
 
@@ -690,7 +690,7 @@ describe("SearchPage", () => {
         expect(more).toHaveClass("h-9");
     });
 
-    it.each(["Business", "Christianity"])(
+    it.each(["Business", "Christianity", "Religion & Spirituality"])(
         "shows the selected %s topic on narrow screens",
         async (category) => {
             await renderSearchPage({ category });
@@ -725,7 +725,7 @@ describe("SearchPage", () => {
         await runSearchResultsFromPage({ q: "faith", category: "Christianity" });
         expect(searchCatalogMock).toHaveBeenCalledWith({
             query: "faith",
-            categories: ["Christianity"],
+            categories: ["Christian", "Christianity"],
             type: null,
             cursor: null,
         });
