@@ -101,6 +101,12 @@ jobs:
           test "$(printf '%s\n' "$exported_environment" | sed '/^$/d' | wc -l)" -eq 3
           printf '%s\n' "$exported_environment" >> "$GITHUB_ENV"
 
+      - name: Configure disposable snapshot worker
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
+        run: node scripts/configure-ci-snapshot-worker.mjs
+        env:
+          SUPABASE_LOCAL: "1"
+
       - name: Build
         if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm run build

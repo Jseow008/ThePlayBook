@@ -10,6 +10,8 @@ const loopback = (url: string) => ['localhost', '127.0.0.1', '[::1]'].includes(n
 
 test.use({ trace: 'off' });
 test('Notes opening retains a pending response and its context', async ({ page, context, baseURL }) => {
+    // Account setup, real snapshot hydration and dev navigation share this budget.
+    test.setTimeout(60_000);
     test.skip(!apiUrl || !anonKey || !serviceKey, 'Requires disposable local Supabase credentials.');
     // This test may create/delete only its own account on a local test database.
     if (!loopback(apiUrl!) || !baseURL || !loopback(baseURL)) throw new Error('Notes fixture requires loopback app and Supabase URLs.');
@@ -44,15 +46,20 @@ test('Notes opening retains a pending response and its context', async ({ page, 
                 'x-vercel-ai-ui-message-stream': 'v1', 'x-notes-attempt-id': attempt },
                 body: events.map(event => `data: ${JSON.stringify(event)}\n\n`).join('') + 'data: [DONE]\n\n' });
         });
-        // The isolated fixture has no snapshot worker; close its recoverable warning
-        // through the normal control so it does not cover the mobile composer.
-        const snapshotWarning = page.locator('[data-sonner-toast]').filter({
-            hasText: 'Sync unavailable. Your changes remain on this device. Refresh your library to try again.',
-        });
-        await page.addLocatorHandler(snapshotWarning, async warning => {
-            await warning.getByRole('button', { name: 'Close toast', exact: true }).click();
-        });
-        await page.goto('/notes');
+        // Exercise real hydration; configuration failures must fail the test,
+        // not be hidden by a toast handler that interrupts composer actions.
+        const snapshotCreated = page.waitForResponse(response =>
+            new URL(response.url()).pathname === '/api/account-data/snapshots'
+            && response.request().method() === 'POST', { timeout: 30_000 });
+        const libraryLoaded = page.waitForResponse(response =>
+            /^\/api\/account-data\/snapshots\/[^/]+\/user_library$/.test(new URL(response.url()).pathname),
+            { timeout: 30_000 });
+        await Promise.all([
+            page.goto('/notes'),
+            snapshotCreated.then(response => expect(response.ok(), 'Snapshot creation must succeed').toBe(true)),
+            libraryLoaded.then(response => expect(response.ok(), 'Library snapshot read must succeed').toBe(true)),
+        ]);
+        await expect(page.getByText('Sync unavailable. Your changes remain on this device. Refresh your library to try again.', { exact: true })).toHaveCount(0);
         const desktop = (page.viewportSize()?.width ?? 0) >= 1024;
         await page.getByRole('button', { name: desktop ? 'Ask these notes' : 'Ask', exact: true }).click();
         const composer = page.getByLabel(desktop ? 'Ask a question about the notes in view' : 'Ask a question about these notes', { exact: true });
