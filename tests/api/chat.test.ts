@@ -441,6 +441,23 @@ describe('Chat API', () => {
         expect(streamText).not.toHaveBeenCalled();
     });
 
+    it.each([
+        'What does my library say about Lee’s case for merger, and what did I write disagreeing with it?',
+        'What have I written about patience in my library?',
+        'Which saved books discuss patience?',
+    ])('retrieves evidence through the actual route for %s', async (question) => {
+        const response = await POST(new NextRequest('http://localhost/api/chat', {
+            method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: question }] }),
+        }));
+        expect(response.status).toBe(200);
+        await response.text();
+        expect(embedContentMock).toHaveBeenCalledOnce();
+        expect(retrievePersonalEvidence).toHaveBeenCalledOnce();
+        expect(loadLibrarySourceEvidence).toHaveBeenCalled();
+        expect(selectLibraryEvidence).toHaveBeenCalledOnce();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
     it('uses hybrid context for source ranking questions', async () => {
         process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-6';
 
