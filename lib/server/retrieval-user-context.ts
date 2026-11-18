@@ -1,4 +1,5 @@
 import "server-only";
+import { detectAskIntent, isLibraryAuthorFollowup } from "./retrieval-generation";
 
 type UserContextMessage = { role: "user" | "assistant"; content: string };
 export const FOLLOW_UP_CLARIFICATION = "Which topic, theme, or point should I find support for? Name it in your question so I can check your current saved evidence.";
@@ -10,6 +11,8 @@ const MAX_SEMANTIC_QUESTION_CHARACTERS = 2_000;
 function refersToEarlierTurn(question: string): boolean {
     return /\b(?:last|previous|earlier) (?:answer|response|question|point|theme)\b/i.test(question)
         || /\b(?:current|that|this|same|those|these) (?:themes?|ideas?|points?|topics?|approaches?|claims?|answers?|responses?)\b/i.test(question)
+        || /\b(?:that|this|same|previous|earlier|last) (?:note|reflection|highlight|(?:highlighted )?passage|quotation|quote|extract|entry|record|capture)\b(?!\s+(?:about|on|regarding)\s+\S)/i.test(question)
+        || isLibraryAuthorFollowup(question)
         || (/\b(?:another|contrasting) perspective\b/i.test(question) && !/\b(?:on|about|regarding)\s+\S/i.test(question))
         || /^(?:why\??|how so\??|tell me more[.!?]?|go on[.!?]?|(?:expand|elaborate)(?: on (?:that|this|it))?[.!?]?)$/i.test(question.trim());
 }
@@ -22,7 +25,7 @@ const GENERIC_REQUEST_WORDS = new Set(("a an the i me my mine we us our you your
     + "tell explain summarize summarise summary compare comparison find identify give pull out please help say says said "
     + "notes note highlights highlight highlighted reflections reflection reflected wrote written saved source sources "
     + "library libraries books book items item reading read learned learn personal current all any some most more "
-    + "patterns pattern themes theme ideas idea key strongest strong main single common shared recurring "
+    + "patterns pattern themes theme ideas idea key strongest strong main single common shared recurring list quote quotes exact exactly verbatim two three four "
     + "tensions tension contradictions contradiction overlap set context evidence support supporting matters found appear appears here there").split(/\s+/));
 function namesUserTopic(question: string): boolean {
     return (question.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])
@@ -34,7 +37,10 @@ export function contextualizeUserQuestion(messages: readonly UserContextMessage[
     const userTurns = messages.slice(-20).filter((message) => message.role === "user");
     const currentQuestion = userTurns.at(-1)?.content ?? "";
     const isContextual = refersToEarlierTurn(currentQuestion);
-    const requiresPassageEvidence = isContextual && /\b(support|supports|supporting|cite|source|sources|perspective|theme|idea|compare|contrast|overlap|evidence)\b/i.test(currentQuestion);
+    const inventoryFollowup = isLibraryAuthorFollowup(currentQuestion);
+    const requiresPassageEvidence = isContextual && (
+        /\b(support|supports|supporting|cite|perspective|theme|idea|compare|contrast|overlap|evidence|passage|quote|quotation|extract)\b/i.test(currentQuestion)
+        || (!inventoryFollowup && /\b(sources?)\b/i.test(currentQuestion)));
     const base = { currentQuestion, semanticQuestion: currentQuestion, isContextual, contextMissing: false, requiresPassageEvidence };
     if (!isContextual) return base;
 
@@ -45,7 +51,7 @@ export function contextualizeUserQuestion(messages: readonly UserContextMessage[
         if (prior.length === MAX_PRIOR_USER_TURNS) break;
         prior.unshift(message.content);
         if (!refersToEarlierTurn(message.content)) {
-            foundTopic = namesUserTopic(message.content);
+            foundTopic = namesUserTopic(message.content) || (inventoryFollowup && detectAskIntent(message.content) === "library_metadata");
             break; // Never cross a newer independent question to revive an old topic.
         }
     }
