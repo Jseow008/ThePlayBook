@@ -262,7 +262,7 @@ export function SearchInput({
                         spellCheck={false}
                         className={cn(
                             "w-full h-14 pl-12 pr-12 rounded-xl bg-card border text-foreground placeholder:text-muted-foreground",
-                            "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg",
+                            "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg [--ios-input-font-size:var(--text-lg)]",
                             "[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none",
                             "transition-all duration-200",
                             isFocused ? "border-primary/50" : "border-border"

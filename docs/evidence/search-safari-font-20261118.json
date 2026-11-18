@@ -1,0 +1,56 @@
+{
+  "dateSingapore": "2026-11-18",
+  "baseMain": "4920769c",
+  "worktree": "/Users/j/.codex/workspaces/netflux-search-safari-font",
+  "scope": "Preserve catalog Search intended18px within existing iOS minimum16px guard; no layout/viewport/search behavior changes",
+  "userBaseline": {
+    "platform": "iPhone Safari, iOS26.6",
+    "at100PercentPageZoom": "User confirms no enlargement",
+    "originalZoomPercent": "Not supplied; screenshots fit approximately85% but unconfirmed"
+  },
+  "implementation": {
+    "globalGuard": "font-size:max(16px,var(--ios-input-font-size,16px))!important",
+    "searchOptIn": "--ios-input-font-size:var(--text-lg)",
+    "otherInputs": "No opt-in, fallback16px unchanged"
+  },
+  "checks": {
+    "focusedTests": 74,
+    "lint": "pass",
+    "typecheck": "pass",
+    "productionBuild": "pass, Sharp7routes and criticalCSS checks pass",
+    "controlledCss": {
+      "scope": "Built CSS with iOS supports condition forced active in Chrome, not real iOS",
+      "original": {
+        "searchPx": 16,
+        "otherControlPx": 16,
+        "heightPx": 56
+      },
+      "candidate": {
+        "searchPx": 18,
+        "otherControlPx": 16,
+        "heightPx": 56
+      }
+    },
+    "browser": {
+      "widths": [
+        320,
+        390,
+        1440
+      ],
+      "searchPx": 18,
+      "heightPx": 56,
+      "inputFits320": true,
+      "viewport": "width=device-width,initial-scale=1,viewport-fit=cover",
+      "syntheticTypingAndSubmit": "Exact query and type=book/category=Business present after submission",
+      "clear": "Input cleared; URL update not awaited before tab close, covered by focused component tests"
+    }
+  },
+  "limitations": [
+    "Real iPhone candidate focus/keyboard/pinch test still pending",
+    "Local build uses loopback placeholder Supabase config with no DB running; expected catalog/Browse/sitemap fetch errors, no live data claims",
+    "Chrome CSS simulation validates cascade, not iOS keyboard behavior",
+    "No production writes, paid resources or provider calls",
+    "Existing Sentry deprecation/localstorage build warnings unchanged"
+  ],
+  "cleanup": "Browser viewport restored and test tab closed"
+}
