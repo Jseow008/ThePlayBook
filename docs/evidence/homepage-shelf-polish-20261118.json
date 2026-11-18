@@ -1,0 +1,131 @@
+{
+  "date": "2026-11-18",
+  "branch": "codex/homepage-shelf-polish",
+  "base": "7f4a3254052e96c4c1b0de69bcb27e58c5f8e340",
+  "approved_scope": "Desktop/mobile homepage shelf clarity, mobile topics and targets, controls on existing scrolling engine, card click fix. Explicitly excludes all How it works changes.",
+  "source_sha256": {
+    "app/globals.css": "b68c374134ff0d07ea5251df4fd3f176af78421c057e8a0f28033be9555e62ba",
+    "components/ui/landing/LandingHeroSections.tsx": "67df72934eaa8721307d9b01bff0c42f5ac9f24a59b17aa50ab4aa4d6446163e",
+    "components/ui/landing/LandingPageSections.tsx": "6bb7a2099fa715413d1f20c680d2ccdc22c484ed6c89f63d1197d56a4a340f7f",
+    "tests/components/LandingHeroSections.test.tsx": "42b10c7e715807422557a7f7fd06c89f242104086ee6dd759cbc10193827a4bb",
+    "tests/components/LandingPage.test.tsx": "c218f73f97f953ac18584396ab03a7195100bde540c0f28b714af0af171c1e5e",
+    "tests/e2e/home.spec.ts": "107898c5365a1345da7af003422fd0bee0349ddd370d215310e834f4781ce554"
+  },
+  "preservation_checks": {
+    "how_it_works_and_final_sections": true,
+    "storyboard_assets": true,
+    "category_requests_cache_reset": true,
+    "non_looping_category_row": true,
+    "carousel_speed_delay_threshold": true,
+    "original_three_loop_groups": true,
+    "hero_copy_font_behavior": true,
+    "card_dimensions_and_breakpoints": true
+  },
+  "interaction_fix": {
+    "before": "Mouse-down rebased the loop and captured pointer immediately. A traced click landed on one link and released on another; no navigation.",
+    "after": "Keep the original target until the existing 6px drag threshold. Only then rebase and capture. Real drag suppresses mouse click-through, keyboard activation stays available.",
+    "baseline_browser_regression": "Failed before correction; final desktop sample passed click, pause/step/resume and drag; final mouse cases also verify Enter after drag."
+  },
+  "validation": {
+    "components": {
+      "passed": 20,
+      "files": 5
+    },
+    "browser_matrix": {
+      "scheduled": 54,
+      "applicable_cases_passed_after_affected_rechecks": 46,
+      "platform_only_skips": 8,
+      "projects": {
+        "desktop-chromium": [
+          1440,
+          900
+        ],
+        "mobile-se": [
+          375,
+          667
+        ],
+        "mobile-iphone": [
+          390,
+          844
+        ],
+        "mobile-landscape": [
+          844,
+          390
+        ],
+        "tablet-portrait": [
+          768,
+          1024
+        ],
+        "tablet-landscape": [
+          1024,
+          768
+        ]
+      },
+      "initial_run": {
+        "passed": 43,
+        "failed": 3,
+        "skipped": 8
+      },
+      "affected_rechecks": [
+        "Desktop Browse readiness: 1/1 passed",
+        "SE and tablet-portrait containment: 2/2 passed",
+        "Final keyboard-after-drag assertions: desktop and tablet-landscape 2/2 passed",
+        "After mobile category-label wrapping polish: SE and iPhone containment 2/2 passed"
+      ],
+      "native_swipe": "SE and iPhone cases passed; other widths deliberately inapplicable"
+    },
+    "lint": "Full ESLint/policy/ratchet suite passed; final touched TSX/tests ESLint passed with zero warnings. CSS validated by production build.",
+    "types": "Standalone typecheck and final production build TypeScript checks passed",
+    "production_build": "Normal next build passed, including seven Sharp production traces and initial critical CSS",
+    "production_visual": {
+      "viewports": [
+        [
+          1440,
+          900
+        ],
+        [
+          390,
+          844
+        ],
+        [
+          320,
+          740
+        ]
+      ],
+      "screenshots": "/Users/j/.codex/visualizations/2026/11/16/01a1e492-c1de-7b51-89ae-8eb0d4aa0f9e/homepage-implemented/",
+      "phone_control_heights": [
+        44,
+        44,
+        44,
+        44,
+        44,
+        44
+      ],
+      "phone_card_dimensions": [
+        172,
+        258
+      ],
+      "desktop_card_dimensions": [
+        248,
+        368
+      ],
+      "phone_document_width_matches_viewport": true,
+      "fonts": "loaded",
+      "visible_covers": "loaded from the unchanged cover route",
+      "keyboard_tab": "Browse all \u2192 first featured preview link",
+      "topics": "Actual Health & Fitness response 200 with 16 reads, scoped Browse href, All reset; original API implementation unchanged"
+    }
+  },
+  "failed_attempts_and_limits": [
+    "Deferring capture alone did not fix activation; traced loop normalization too, then moved both behind the drag threshold. Debug event listeners removed.",
+    "Initial matrix had one cold Browse navigation timeout and two genuine local in-memory rate-limit 429 failures; affected cases reran successfully after a clean local server restart. No timeout/assertion relaxation.",
+    "An extra production-mode console-guard run could not pass with missing local Redis and baseline localhost Vercel analytics/CSP warnings. Supplied an isolated Redis REST fixture through process-trusted local TLS; actual production category and cover flows succeeded. Standard development-mode browser error guards passed. No app security change or claim that localhost telemetry warnings were eliminated.",
+    "One targeted ESLint command included unsupported CSS and failed on the ignored-file warning; corrected to supported TSX/test inputs, with CSS checked by the normal build.",
+    "Physical iOS/Android and Safari not tested; no authenticated capture/retrieval or production deployment monitoring in scope."
+  ],
+  "database_api_provider_changes": false,
+  "production_data_writes": false,
+  "agents": 1,
+  "paid_generation_calls": 0,
+  "exact_codex_token_usage": "unavailable"
+}

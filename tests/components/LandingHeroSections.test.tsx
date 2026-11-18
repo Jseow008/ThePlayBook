@@ -22,12 +22,12 @@ vi.mock("@/components/ui/Logo", () => ({
 }));
 
 describe("Landing hero", () => {
-  it("expands the compact header controls without changing their visible sizing classes", () => {
+  it("gives the mobile sign-in action a visible 44px target", () => {
     render(<LandingHeader />);
 
     expect(screen.getByRole("link", { name: "Netflux" })).toHaveClass("touch-target-44");
     expect(screen.getByRole("link", { name: "Sign In" })).toHaveClass("touch-target-44");
-    expect(screen.getByRole("link", { name: "Sign In" })).toHaveClass("px-3", "py-1.5");
+    expect(screen.getByRole("link", { name: "Sign In" })).toHaveClass("min-h-11", "text-sm");
   });
 
   it("shows only the two-line landing proposition", () => {

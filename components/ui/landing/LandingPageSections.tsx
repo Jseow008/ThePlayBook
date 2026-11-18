@@ -10,6 +10,8 @@ import {
   BookOpen,
   Headphones,
   Maximize2,
+  Pause,
+  Play,
   X,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
@@ -227,7 +229,7 @@ function FeaturedReadCard({
 
       {item.author ? (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center bg-gradient-to-b from-black/80 via-black/35 to-transparent px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-10">
-          <p className="break-words text-center text-[9px] font-medium uppercase leading-relaxed tracking-[0.12em] text-white/90 drop-shadow-md md:text-[11px] md:tracking-[0.15em]">
+          <p className="break-words text-center text-[10px] font-medium uppercase leading-relaxed tracking-[0.12em] text-white/90 drop-shadow-md md:text-[11px] md:tracking-[0.15em]">
             {item.author}
           </p>
         </div>
@@ -243,11 +245,11 @@ function FeaturedReadCard({
 
           <div className="space-y-0.5">
             {item.category ? (
-              <p className="line-clamp-1 text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:text-[10px] md:tracking-widest">
+              <p className="line-clamp-2 text-[10px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/80 drop-shadow-md md:line-clamp-1 md:text-[11px] md:tracking-widest">
                 {item.category}
               </p>
             ) : null}
-            <p className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/62 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest">
+            <p className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[11px] font-medium uppercase leading-relaxed tracking-[0.08em] text-white/80 drop-shadow-md md:gap-x-1.5 md:text-xs md:tracking-wider">
               <span>{item.type}</span>
               {durationLabel ? (
                 <span className="flex items-center gap-1.5 whitespace-nowrap">
@@ -377,10 +379,26 @@ export function FeaturedReadsSection({
       <FadeIn className="mx-auto mb-1 flex max-w-7xl items-center gap-3 px-6 sm:gap-6">
         {visibleCategories.length > 0 ? (
           <div className="min-w-0 flex-1">
+            <select
+              aria-label="Explore library topics"
+              value={activeCategory ?? ""}
+              onChange={(event) => {
+                if (event.target.value) void showCategory(event.target.value);
+                else showAllItems();
+              }}
+              className="focus-ring landing-topic-select min-h-11 w-full min-w-0 rounded-full border border-white/15 bg-zinc-900 px-4 text-base text-zinc-200 sm:hidden"
+            >
+              <option value="">All topics</option>
+              {visibleCategories.map((category) => (
+                <option key={category.category} value={category.category}>
+                  {category.category}
+                </option>
+              ))}
+            </select>
             <div
               role="tablist"
               aria-label="Explore library domains"
-              className="landing-domain-nav scrollbar-hide flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]"
+              className="landing-domain-nav scrollbar-hide hidden gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex"
             >
               <button
                 type="button"
@@ -388,7 +406,7 @@ export function FeaturedReadsSection({
                 aria-selected={activeCategory === null}
                 onClick={showAllItems}
                 className={cn(
-                  "focus-ring touch-target-44 landing-domain-chip shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
+                  "focus-ring touch-target-44 landing-domain-chip min-h-11 shrink-0 rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors",
                   activeCategory === null
                     ? "landing-domain-chip-active"
                     : "border-white/10 bg-white/[0.025] text-zinc-400 hover:border-white/20 hover:text-white"
@@ -405,7 +423,7 @@ export function FeaturedReadsSection({
                   aria-label={`${category.category}, ${category.count} reads`}
                   onClick={() => void showCategory(category.category)}
                   className={cn(
-                    "focus-ring touch-target-44 landing-domain-chip shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
+                    "focus-ring touch-target-44 landing-domain-chip min-h-11 shrink-0 rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors",
                     activeCategory === category.category
                       ? "landing-domain-chip-active"
                       : "border-white/10 bg-white/[0.025] text-zinc-400 hover:border-white/20 hover:text-white"
@@ -420,9 +438,11 @@ export function FeaturedReadsSection({
 
         <Link prefetch={false}
           href={browseHref}
-          className="focus-ring touch-target-44 landing-soft-action group ml-auto inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-2 py-2 text-xs font-medium text-zinc-300 transition-colors hover:text-white sm:text-sm"
+          aria-label={activeCategory ? `Browse ${activeCategory}` : "Browse all"}
+          className="focus-ring touch-target-44 landing-soft-action group ml-auto inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full px-2 py-2 text-sm font-medium text-zinc-300 transition-colors hover:text-white"
         >
-          <span className="max-w-28 truncate sm:max-w-none">
+          <span className="sm:hidden">{activeCategory ? "View topic" : "Browse all"}</span>
+          <span className="hidden sm:inline">
             {activeCategory ? `Browse ${activeCategory}` : "Browse all"}
           </span>
           <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
@@ -434,8 +454,8 @@ export function FeaturedReadsSection({
           className="landing-featured-shelf relative mx-auto flex w-full max-w-7xl flex-col gap-5 overflow-hidden pb-8 pt-4 md:gap-6"
           aria-busy={isLoadingCategory}
         >
-          <div className="landing-featured-edge landing-featured-edge-left pointer-events-none absolute inset-y-0 left-0 z-10 w-16" />
-          <div className="landing-featured-edge landing-featured-edge-right pointer-events-none absolute inset-y-0 right-0 z-10 w-16" />
+          <div className="landing-featured-edge landing-featured-edge-left pointer-events-none absolute inset-y-0 left-0 z-10 w-3 sm:w-4 md:w-6" />
+          <div className="landing-featured-edge landing-featured-edge-right pointer-events-none absolute inset-y-0 right-0 z-10 w-3 sm:w-4 md:w-6" />
           <div
             key={activeCategory ?? "all"}
             className={cn(
@@ -497,6 +517,35 @@ function FeaturedReadsStaticRow({ items }: { items: ContentItem[] }) {
   );
 }
 
+function FeaturedReadsControls({ onPrevious, onNext, paused, onTogglePlayback }: {
+  onPrevious: () => void;
+  onNext: () => void;
+  paused?: boolean;
+  onTogglePlayback?: () => void;
+}) {
+  const controlClass = "focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.025] px-3 py-2 text-xs font-medium text-zinc-300 transition-colors hover:border-white/25 hover:text-white sm:text-sm";
+
+  return (
+    <div className="landing-featured-controls relative z-20 flex flex-wrap items-center justify-between gap-2 px-4 pt-1 sm:px-6">
+      <span className="text-xs text-zinc-400"><span className="sm:pointer-fine:hidden">Swipe to explore</span><span className="hidden sm:pointer-fine:inline">Drag to explore</span></span>
+      <div className="ml-auto flex items-center gap-2">
+        {onTogglePlayback ? (
+          <button type="button" aria-label={paused ? "Play featured reads" : "Pause featured reads"} aria-controls="landing-featured-reads-carousel" onClick={onTogglePlayback} className={cn(controlClass, "motion-reduce:hidden")}>
+            {paused ? <Play className="size-3.5" aria-hidden="true" /> : <Pause className="size-3.5" aria-hidden="true" />}
+            {paused ? "Play" : "Pause"}
+          </button>
+        ) : null}
+        <button type="button" aria-label="Previous featured reads" aria-controls="landing-featured-reads-carousel" onClick={onPrevious} className={cn(controlClass, "hidden sm:pointer-fine:inline-flex")}>
+          <ChevronLeft className="size-4" aria-hidden="true" /><span className="hidden sm:inline">Previous</span>
+        </button>
+        <button type="button" aria-label="Next featured reads" aria-controls="landing-featured-reads-carousel" onClick={onNext} className={cn(controlClass, "hidden sm:pointer-fine:inline-flex")}>
+          <span className="hidden sm:inline">Next</span><ChevronRight className="size-4" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function FeaturedReadsMarqueeRow({ items }: { items: ContentItem[] }) {
   const baseMultiplier = Math.max(
     1,
@@ -514,6 +563,8 @@ function FeaturedReadsMarqueeRow({ items }: { items: ContentItem[] }) {
   const autoplayFrameRef = useRef<number | null>(null);
   const autoplayResumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAutoplayPausedRef = useRef(false);
+  const isManuallyPausedRef = useRef(false);
+  const [isManuallyPaused, setIsManuallyPaused] = useState(false);
   const isAutoplayInViewRef = useRef(false);
   const isReducedMotionRef = useRef(false);
   const lastAutoplayFrameTimeRef = useRef<number | null>(null);
@@ -621,6 +672,7 @@ function FeaturedReadsMarqueeRow({ items }: { items: ContentItem[] }) {
     && !isReducedMotionRef.current
     && !isDraggingRef.current
     && !isAutoplayPausedRef.current
+    && !isManuallyPausedRef.current
   ), [items.length]);
 
   const runAutoplayFrame = useCallback((timestamp: number) => {
@@ -791,14 +843,13 @@ function FeaturedReadsMarqueeRow({ items }: { items: ContentItem[] }) {
   }
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (event.pointerType !== "mouse" || event.button !== 0) {
+    if (event.pointerType !== "mouse" || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
       return;
     }
 
     const element = event.currentTarget;
     clearAutoplayResumeTimeout();
     clearAutoplayFrame();
-    prepareForDrag(element);
     isDraggingRef.current = true;
     dragStateRef.current = {
       pointerId: event.pointerId,
@@ -807,8 +858,6 @@ function FeaturedReadsMarqueeRow({ items }: { items: ContentItem[] }) {
       moved: false,
     };
     suppressClickRef.current = false;
-    element.setPointerCapture?.(event.pointerId);
-    event.preventDefault();
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
@@ -820,6 +869,10 @@ function FeaturedReadsMarqueeRow({ items }: { items: ContentItem[] }) {
     const deltaX = event.clientX - dragState.startX;
     if (!dragState.moved && Math.abs(deltaX) >= FEATURED_READS_DRAG_THRESHOLD_PX) {
       dragState.moved = true;
+      // Rebasing before a drag swaps loop copies beneath an ordinary click.
+      prepareForDrag(event.currentTarget);
+      dragState.startScrollLeft = event.currentTarget.scrollLeft;
+      event.currentTarget.setPointerCapture?.(event.pointerId);
     }
 
     if (!dragState.moved) {
@@ -862,24 +915,42 @@ function FeaturedReadsMarqueeRow({ items }: { items: ContentItem[] }) {
     normalizeScrollPosition(element);
   }
 
-  return (
-    <div
-      className="relative flex w-full overflow-hidden"
-      onClickCapture={(event) => {
-        if (!suppressClickRef.current) {
-          return;
-        }
+  function togglePlayback() {
+    isManuallyPausedRef.current = !isManuallyPausedRef.current;
+    setIsManuallyPaused(isManuallyPausedRef.current);
+    if (isManuallyPausedRef.current) clearAutoplayFrame();
+    else startAutoplay();
+  }
 
-        suppressClickRef.current = false;
-        event.preventDefault();
-        event.stopPropagation();
-      }}
-    >
+  function moveByCard(direction: number) {
+    const element = scrollRef.current;
+    const group = middleLoopRef.current;
+    const card = group?.firstElementChild;
+    if (!element || !group || !card) return;
+    pauseAutoplay();
+    const gap = parseFloat(getComputedStyle(group).columnGap) || 0;
+    shiftScrollPosition(element, direction * (card.getBoundingClientRect().width + gap));
+    resumeAutoplayLater();
+  }
+
+  return (
+    <div className="relative flex w-full flex-col overflow-hidden">
       <div
         ref={scrollRef}
+        id="landing-featured-reads-carousel"
         aria-label="Popular reads"
         data-testid="featured-reads-carousel"
-        className="landing-featured-row landing-featured-row-primary scrollbar-hide flex w-full overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 sm:px-6 md:pb-4 md:pt-4 [scrollbar-width:none] md:cursor-grab"
+        className="landing-featured-row landing-featured-row-primary scrollbar-hide flex w-full select-none overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 sm:px-6 md:pb-4 md:pt-4 [scrollbar-width:none] md:cursor-grab"
+        onClickCapture={(event) => {
+          if (!suppressClickRef.current || event.detail === 0) {
+            suppressClickRef.current = false;
+            return;
+          }
+          suppressClickRef.current = false;
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        onDragStart={(event) => event.preventDefault()}
         onMouseEnter={pauseAutoplay}
         onMouseLeave={resumeAutoplayLater}
         onFocus={pauseAutoplay}
@@ -891,6 +962,9 @@ function FeaturedReadsMarqueeRow({ items }: { items: ContentItem[] }) {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
+        onPointerLeave={() => {
+          if (dragStateRef.current && !dragStateRef.current.moved) clearDragState();
+        }}
         onScroll={handleScroll}
       >
         <div className="flex w-max items-stretch gap-4 sm:gap-6">
@@ -940,6 +1014,9 @@ function FeaturedReadsMarqueeRow({ items }: { items: ContentItem[] }) {
           </div>
         </div>
       </div>
+      {items.length > 1 ? (
+        <FeaturedReadsControls paused={isManuallyPaused} onTogglePlayback={togglePlayback} onPrevious={() => moveByCard(-1)} onNext={() => moveByCard(1)} />
+      ) : null}
     </div>
   );
 }
