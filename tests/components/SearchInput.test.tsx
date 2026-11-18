@@ -56,6 +56,41 @@ describe("SearchInput", () => {
         );
     });
 
+    it("keeps recent searches selectable after Clear immediately refocuses a blurred input", () => {
+        vi.useFakeTimers();
+        vi.mocked(window.localStorage.getItem).mockReturnValue(JSON.stringify(["Deep Work"]));
+        render(<SearchInput initialQuery="Deep Work" type="book" />);
+        const input = screen.getByRole("searchbox");
+        const clear = screen.getByRole("button", { name: "Clear search" });
+
+        act(() => { input.focus(); });
+        // A native pointer click focuses Clear before its click handler refocuses the input.
+        act(() => { clear.focus(); });
+        fireEvent.click(clear);
+        expect(input).toHaveFocus();
+        expect(input).toHaveValue("");
+        expect(routerReplaceMock).toHaveBeenCalledWith("/search?type=book");
+
+        act(() => { vi.advanceTimersByTime(250); });
+        expect(input).toHaveFocus();
+        const recent = screen.getByRole("button", { name: "Deep Work" });
+        fireEvent.click(recent);
+        expect(routerPushMock).toHaveBeenCalledWith("/search?q=Deep+Work&type=book");
+    });
+
+    it("still delays closing on genuine blur so a recent search can be selected", () => {
+        vi.useFakeTimers();
+        vi.mocked(window.localStorage.getItem).mockReturnValue(JSON.stringify(["Deep Work"]));
+        render(<><SearchInput /><button type="button">Outside</button></>);
+        const input = screen.getByRole("searchbox");
+        act(() => { input.focus(); });
+        act(() => { screen.getByRole("button", { name: "Outside" }).focus(); });
+        act(() => { vi.advanceTimersByTime(199); });
+        expect(screen.getByRole("button", { name: "Deep Work" })).toBeVisible();
+        act(() => { vi.advanceTimersByTime(1); });
+        expect(screen.queryByText("Recent Searches")).not.toBeInTheDocument();
+    });
+
     it("preserves the selected type when clearing an active query", () => {
         render(<SearchInput initialQuery="Deep Work" type="book" />);
 

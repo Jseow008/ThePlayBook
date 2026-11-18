@@ -58,12 +58,16 @@ export function SearchInput({
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
+    const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const latestQueryRef = useRef(initialQuery);
     const isFocusedRef = useRef(false);
     const pendingSearchQueryRef = useRef<string | null>(null);
     const draftQueryRef = useRef<string | null>(null);
 
-    useEffect(() => () => setSearchDraftQuery(null), []);
+    useEffect(() => () => {
+        if (blurTimerRef.current !== null) clearTimeout(blurTimerRef.current);
+        setSearchDraftQuery(null);
+    }, []);
 
     // Load recent searches from localStorage
     useEffect(() => {
@@ -235,12 +239,20 @@ export function SearchInput({
                             setQuery(e.target.value);
                         }}
                         onFocus={() => {
+                            if (blurTimerRef.current !== null) {
+                                clearTimeout(blurTimerRef.current);
+                                blurTimerRef.current = null;
+                            }
                             isFocusedRef.current = true;
                             setIsFocused(true);
                         }}
                         onBlur={() => {
                             isFocusedRef.current = false;
-                            setTimeout(() => setIsFocused(false), 200);
+                            if (blurTimerRef.current !== null) clearTimeout(blurTimerRef.current);
+                            blurTimerRef.current = setTimeout(() => {
+                                blurTimerRef.current = null;
+                                setIsFocused(false);
+                            }, 200);
                         }}
                         placeholder={placeholder}
                         autoFocus={autoFocus}
