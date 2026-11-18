@@ -233,11 +233,17 @@
     ]
   },
   "productionSearchDocuments": "All three Religion & Spirituality books retain one metadata search document each.",
-  "applicationReleaseStatus": "PR #383 blocked by required Security Validation dependency audit; not merged or deployed.",
+  "applicationReleaseStatus": "Security-policy PR #385 merged; category PR #383 incorporates it and awaits final required checks.",
   "ci": {
     "catalogSearchEvidence": "passed on implementation commit a02fbfb0",
     "validate": "initial run found three outdated SearchPage taxonomy assertions; corrected and all 67 affected tests pass locally",
-    "securityValidation": "fails npm production audit for existing transitive picomatch advisory GHSA-fc5q-39xc-vjpf; npm latest 4.0.7 is affected, no patched release listed",
+    "securityValidation": "Original dependency-audit blocker resolved by merged PR #385, main commit 59bb9603. Its required Security Validation and validate checks passed. Category PR checks rerun after incorporating that main commit.",
     "advisory": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf"
+  },
+  "auditException": {
+    "pr": 385,
+    "advisory": "GHSA-fc5q-39xc-vjpf",
+    "expiresAt": "2026-12-02T00:00:00.000Z",
+    "scope": "Two reviewed Sentry/Rollup Picomatch paths and installed versions; other high/critical findings fail."
   }
 }

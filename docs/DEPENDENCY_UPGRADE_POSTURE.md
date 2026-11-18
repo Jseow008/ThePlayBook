@@ -12,6 +12,16 @@ Netflux runs on current framework and runtime packages. Upgrade work should stay
 - Tier 2 and tooling packages: review monthly, and always review during a Next.js or React major upgrade.
 - Low-use or heavy dependencies: audit under `docs/RESPONSIVE_FUTURE_PROOFING.md` item 15, not as part of routine upgrade posture.
 
+## Time-limited Picomatch advisory exception
+
+On 18 November 2026 the owner requested a temporary advisory exception after supplying the Snyk revocation of CVE-2026-112366. GitHub still reports GHSA-fc5q-39xc-vjpf against every published Picomatch version through 4.0.7. Snyk records the maintainer dispute and marks its advisory revoked. [Snyk advisory](https://security.snyk.io/vuln/SNYK-JS-PICOMATCH-21248802), [GitHub advisory](https://github.com/advisories/GHSA-fc5q-39xc-vjpf)
+
+`npm run security:audit` runs the normal production npm audit at the high-severity threshold, then evaluates the exact exception in `scripts/security-audit-exceptions.json`. It expires at 00:00 UTC on 2 December 2026. The exception is limited to the reviewed Picomatch 4.0.4 copies beneath Rollup CommonJS and pluginutils, reached through Sentry 10.75.2. The reviewed build code compiles configuration-controlled include/exclude patterns. Repository application code has no Picomatch call accepting request data. This is the basis for accepting the disputed advisory in these paths.
+
+Other high/critical advisories, an escalated critical finding, additional dependency paths, changed reviewed package versions, an expired exception, or invalid/failed scanner output fail the gate. Inherited npm findings for Sentry/Rollup are traced to their original advisories, so another high-severity source still blocks. Moderate findings retain the existing high-threshold treatment. Removing or extending this exception requires a fresh source and dependency-path review recorded in a PR. When the advisory is withdrawn or an official fix is adopted, remove the exception and reassess the wrapper.
+
+The prototype local fork was discarded after the owner supplied the revocation evidence. This release changes the audit policy for one documented advisory; the application dependency versions and Sentry integration remain at their reviewed versions.
+
 ## Tier 1 Packages
 
 These packages affect the app runtime, rendering model, API integrations, test gate, or framework compatibility. Track them in every upgrade posture review.

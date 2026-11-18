@@ -1,0 +1,24 @@
+{
+  "advisory": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf",
+  "package": "picomatch",
+  "approvedOn": "2026-11-18",
+  "expiresAt": "2026-12-02T00:00:00.000Z",
+  "reason": "Owner-requested temporary exception. Snyk revoked CVE-2026-112366 after the maintainer disputed it. These reviewed dependencies compile repository-controlled Sentry/Rollup build filters; application requests do not supply these glob patterns.",
+  "nodes": [
+    "node_modules/@rollup/plugin-commonjs/node_modules/picomatch",
+    "node_modules/@rollup/pluginutils/node_modules/picomatch"
+  ],
+  "reviewedVersions": {
+    "node_modules/@sentry/nextjs": "10.75.2",
+    "node_modules/@rollup/plugin-commonjs": "28.0.1",
+    "node_modules/@rollup/pluginutils": "5.4.0",
+    "node_modules/@rollup/plugin-commonjs/node_modules/picomatch": "4.0.4",
+    "node_modules/@rollup/pluginutils/node_modules/picomatch": "4.0.4"
+  },
+  "references": [
+    "https://security.snyk.io/vuln/SNYK-JS-PICOMATCH-21248802",
+    "https://github.com/micromatch/picomatch/issues/234#issuecomment-6956459091",
+    "https://github.com/micromatch/picomatch/issues/247",
+    "https://github.com/advisories/GHSA-fc5q-39xc-vjpf"
+  ]
+}
