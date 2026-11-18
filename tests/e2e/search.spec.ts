@@ -62,13 +62,14 @@ test.describe('/search', () => {
         await expect(page).toHaveURL((url) => url.pathname === '/search'
             && url.searchParams.get('q') === 'faith'
             && url.searchParams.get('type') === 'book'
-            && !url.searchParams.has('category'));
+            && url.searchParams.get('category') === 'Religion & Spirituality');
 
         const narrow = page.getByRole('combobox', { name: 'Topics', exact: true });
         const isNarrow = await narrow.isVisible();
         const picker = isNarrow ? narrow : page.getByRole('combobox', { name: 'More topics' });
-        await expect(picker.locator('option')).toHaveCount(isNarrow ? 19 : 13);
-        await expect(picker.locator('option', { hasText: 'Religion & Spirituality' })).toHaveCount(0);
+        await expect(picker.locator('option')).toHaveCount(isNarrow ? 20 : 14);
+        await expect(picker.locator('option', { hasText: 'Religion & Spirituality' })).toHaveCount(1);
+        await expect(picker).toHaveValue('Religion & Spirituality');
         if (isNarrow) {
             expect((await picker.boundingBox())?.height).toBeGreaterThanOrEqual(44);
         }
@@ -81,7 +82,7 @@ test.describe('/search', () => {
         await page.reload();
         await expect(picker).toHaveValue('Christianity');
         await page.goBack();
-        await expect(picker).toHaveValue('');
+        await expect(picker).toHaveValue('Religion & Spirituality');
     });
 
     test('preserves category when switching type filters', async ({ page }) => {

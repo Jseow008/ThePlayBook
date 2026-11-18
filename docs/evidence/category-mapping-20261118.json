@@ -1,0 +1,249 @@
+{
+  "date": "2026-11-18",
+  "productionProject": "xmuqsgfxuaaophxnwure",
+  "scope": "19-category application taxonomy and a guarded category-only transaction for 20 published records",
+  "productionMutationStatus": "applied and independently verified",
+  "schemaChanges": "none; no migration or db push is part of this change",
+  "migrationParity": {
+    "localCount": 122,
+    "productionCount": 122,
+    "latest": "20261115100520"
+  },
+  "readOnlyProductionPreflight": {
+    "capturedAt": "2026-11-18T09:02:27.741Z",
+    "mode": "read-only SELECT preflight",
+    "publishedRows": 522,
+    "changedRows": 20,
+    "christianityRows": 21,
+    "sqlSha256": "d9776cc7b3bff4a09276c80743323b1319e98ef95f4a09f92b3933b12e59db54",
+    "expectedTotals": [
+      {
+        "category": "Business",
+        "count": 72
+      },
+      {
+        "category": "Personal Development",
+        "count": 57
+      },
+      {
+        "category": "Psychology",
+        "count": 54
+      },
+      {
+        "category": "Health & Fitness",
+        "count": 43
+      },
+      {
+        "category": "Money & Investments",
+        "count": 41
+      },
+      {
+        "category": "Economics",
+        "count": 31
+      },
+      {
+        "category": "Politics & Society",
+        "count": 31
+      },
+      {
+        "category": "Science & Environment",
+        "count": 32
+      },
+      {
+        "category": "Technology & the Future",
+        "count": 25
+      },
+      {
+        "category": "Philosophy",
+        "count": 21
+      },
+      {
+        "category": "Productivity",
+        "count": 19
+      },
+      {
+        "category": "Religion & Spirituality",
+        "count": 3
+      },
+      {
+        "category": "Relationships & Communication",
+        "count": 21
+      },
+      {
+        "category": "Careers & Work",
+        "count": 14
+      },
+      {
+        "category": "Biography & Memoir",
+        "count": 10
+      },
+      {
+        "category": "Management & Leadership",
+        "count": 10
+      },
+      {
+        "category": "History",
+        "count": 9
+      },
+      {
+        "category": "Learning & Creativity",
+        "count": 8
+      },
+      {
+        "category": "Christianity",
+        "count": 21
+      }
+    ],
+    "backupRows": 20
+  },
+  "localTransactionChecks": {
+    "engine": "17.6",
+    "syntheticRows": 522,
+    "checks": [
+      "20 category updates and exact 19-category totals",
+      "idempotent retry updates zero records",
+      "reading revisions, annotations, narration and summary metadata preserved",
+      "category drift fails before mutation",
+      "publication drift fails before mutation",
+      "totals drift rolls back all 20 updates",
+      "unrelated metadata change rolls back the transaction"
+    ]
+  },
+  "applicationChecks": {
+    "targetedTests": 67,
+    "targetedLint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed, including Sharp trace and critical CSS checks",
+    "browserTests": {
+      "desktop": "passed",
+      "mobile": "passed",
+      "checks": "19-topic picker, distinct Christianity/Religion selection, reload and Back, real Knowing God search result, no page overflow"
+    }
+  },
+  "limitations": [
+    "Local SQL proof uses a synthetic 522-row PostgreSQL 17.6 schema with the current annotated-text guard, not the complete hosted schema.",
+    "Disposable hosted schema/security/type comparison and seven-check candidate application smoke suite were skipped under the explicitly accepted release exception recorded in PR #383 before the production mutation.",
+    "Full source content and stored summary JSON category metadata are not rewritten."
+  ],
+  "privateBackup": {
+    "rows": 20,
+    "fileMode": "0600",
+    "checksumVerified": true,
+    "location": "owner-only Codex backup directory"
+  },
+  "failedAttempts": [
+    "Initial build with symlinked dependencies failed Turbopack root resolution; cloning dependencies into the isolated worktree resolved it.",
+    "Initial category-picker browser checks passed but exposed a missing local cursor signing key; an isolated local key was added and both browser cases plus a real search result were verified again.",
+    "Initial full CI found three stale SearchPage expectations missed by the first focused test selection. Updated the retired-label case, 19-topic option list, and Christianity alias expectation; all 67 affected tests pass locally."
+  ],
+  "agents": 1,
+  "releaseException": {
+    "acceptedAt": "2026-11-18",
+    "ownerReply": "Accept the exception and apply PR #383",
+    "recordedBeforeMutation": true,
+    "pr": "https://github.com/Jseow008/ThePlayBook/pull/383",
+    "scope": "Skip disposable hosted schema/security/type comparison and seven-check application verification for this data-only release; local checks remain narrower."
+  },
+  "productionResult": {
+    "verifiedAt": "2026-11-18T09:11:00.189Z",
+    "publishedRows": 522,
+    "categories": 19,
+    "exactAssignmentsMatched": 522,
+    "updatedRows": 20,
+    "protectedMetadataUnchanged": 20,
+    "christianity": 21,
+    "religionAndSpirituality": 3,
+    "totals": [
+      {
+        "category": "Business",
+        "count": 72
+      },
+      {
+        "category": "Personal Development",
+        "count": 57
+      },
+      {
+        "category": "Psychology",
+        "count": 54
+      },
+      {
+        "category": "Health & Fitness",
+        "count": 43
+      },
+      {
+        "category": "Money & Investments",
+        "count": 41
+      },
+      {
+        "category": "Economics",
+        "count": 31
+      },
+      {
+        "category": "Politics & Society",
+        "count": 31
+      },
+      {
+        "category": "Science & Environment",
+        "count": 32
+      },
+      {
+        "category": "Technology & the Future",
+        "count": 25
+      },
+      {
+        "category": "Philosophy",
+        "count": 21
+      },
+      {
+        "category": "Productivity",
+        "count": 19
+      },
+      {
+        "category": "Religion & Spirituality",
+        "count": 3
+      },
+      {
+        "category": "Relationships & Communication",
+        "count": 21
+      },
+      {
+        "category": "Careers & Work",
+        "count": 14
+      },
+      {
+        "category": "Biography & Memoir",
+        "count": 10
+      },
+      {
+        "category": "Management & Leadership",
+        "count": 10
+      },
+      {
+        "category": "History",
+        "count": 9
+      },
+      {
+        "category": "Learning & Creativity",
+        "count": 8
+      },
+      {
+        "category": "Christianity",
+        "count": 21
+      }
+    ]
+  },
+  "productionSearchDocuments": "All three Religion & Spirituality books retain one metadata search document each.",
+  "applicationReleaseStatus": "Security-policy PR #385 merged; category PR #383 incorporates it and awaits final required checks.",
+  "ci": {
+    "catalogSearchEvidence": "passed on implementation commit a02fbfb0",
+    "validate": "initial run found three outdated SearchPage taxonomy assertions; corrected and all 67 affected tests pass locally",
+    "securityValidation": "Original dependency-audit blocker resolved by merged PR #385, main commit 59bb9603. Its required Security Validation and validate checks passed. Category PR checks rerun after incorporating that main commit.",
+    "advisory": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf"
+  },
+  "auditException": {
+    "pr": 385,
+    "advisory": "GHSA-fc5q-39xc-vjpf",
+    "expiresAt": "2026-12-02T00:00:00.000Z",
+    "scope": "Two reviewed Sentry/Rollup Picomatch paths and installed versions; other high/critical findings fail."
+  }
+}
