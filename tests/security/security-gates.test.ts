@@ -41,7 +41,7 @@ describe("security gate CI configuration", () => {
 
     it("adds explicit npm security scripts", () => {
         expect(packageJson.scripts?.["security:audit"]).toBe(
-            "npm audit --omit=dev --audit-level=high",
+            "node scripts/security-audit.mjs",
         );
         expect(packageJson.scripts?.["security:supabase-advisors"]).toBe(
             "node scripts/check-supabase-security-advisors.mjs",
