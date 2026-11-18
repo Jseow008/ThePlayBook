@@ -86,3 +86,15 @@ it('reports skipped coverage and rejects empty or missing browser evidence', () 
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+it('configures the disposable restricted snapshot worker before build and browser tests', () => {
+  const steps = ci.jobs.validate.steps;
+  const setup = steps.findIndex(({ name }) => name === 'Configure disposable snapshot worker');
+  expect(setup).toBeGreaterThan(steps.findIndex(({ name }) => name === 'Export local Supabase environment'));
+  expect(setup).toBeLessThan(steps.findIndex(({ name }) => name === 'Build'));
+  expect(steps[setup].run).toBe('node scripts/configure-ci-snapshot-worker.mjs');
+  expect(steps[setup].env.SUPABASE_LOCAL).toBe('1');
+  expect(applies(steps[setup], 'success', { run_full: 'true' })).toBe(true);
+  expect(applies(steps[setup], 'success', { run_full: 'false' })).toBe(false);
+  expect(applies(steps[setup], 'failure', {})).toBe(true);
+});
