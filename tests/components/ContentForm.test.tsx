@@ -181,7 +181,7 @@ describe("ContentForm", () => {
         expect(screen.getByRole("option", { name: "Money & Investments" })).toBeInTheDocument();
         expect(screen.getByRole("option", { name: "Christianity" })).toBeInTheDocument();
         expect(screen.getByRole("option", { name: "Health & Fitness" })).toBeInTheDocument();
-        expect(screen.queryByRole("option", { name: "Religion & Spirituality" })).not.toBeInTheDocument();
+        expect(screen.getByRole("option", { name: "Religion & Spirituality" })).toBeInTheDocument();
         expect(screen.queryByRole("option", { name: "Parenting" })).not.toBeInTheDocument();
         expect(screen.queryByRole("option", { name: "Mindset" })).not.toBeInTheDocument();
         expect(screen.queryByRole("option", { name: "Christian" })).not.toBeInTheDocument();

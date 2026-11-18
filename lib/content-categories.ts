@@ -1,5 +1,5 @@
 export const CONTENT_CATEGORY_ALIASES = {
-    Christian: "Religion & Spirituality",
+    Christian: "Christianity",
     Finance: "Money & Investments",
     Health: "Health & Nutrition",
     Mindset: "Personal Development",
@@ -31,6 +31,7 @@ export const CANONICAL_CONTENT_CATEGORIES = [
     "Productivity",
     "Psychology",
     "Relationships & Communication",
+    "Religion & Spirituality",
     "Science & Environment",
     "Technology & the Future",
 ] as const;
