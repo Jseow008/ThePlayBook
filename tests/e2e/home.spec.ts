@@ -75,14 +75,34 @@ test('landing shelf controls preserve explicit pause and resume', async ({ page 
         return;
     }
 
+    await page.mouse.move(0, 0);
+    const beforeAutoplay = await carousel.evaluate(element => element.scrollLeft);
+    await expect.poll(() => carousel.evaluate(element => element.scrollLeft)).not.toBe(beforeAutoplay);
+
     await pause.click();
     const play = page.getByRole('button', { name: 'Play featured reads', exact: true });
     await expect(play).toBeVisible();
     const initial = await carousel.evaluate(element => element.scrollLeft);
-    await page.getByRole('button', { name: 'Next featured reads', exact: true }).click();
-    await expect.poll(() => carousel.evaluate(element => element.scrollLeft)).not.toBe(initial);
-    await page.getByRole('button', { name: 'Previous featured reads', exact: true }).click();
-    await expect.poll(() => carousel.evaluate(element => element.scrollLeft)).toBe(initial);
+    const next = page.getByRole('button', { name: 'Next featured reads', exact: true, includeHidden: true });
+    const previous = page.getByRole('button', { name: 'Previous featured reads', exact: true, includeHidden: true });
+    const hasDesktopControls = await page.evaluate(() =>
+        window.matchMedia('(min-width: 640px) and (pointer: fine)').matches);
+    if (hasDesktopControls) {
+        await expect(page.getByText('Drag to explore', { exact: true })).toBeVisible();
+        await expect(next).toBeVisible();
+        await expect(previous).toBeVisible();
+        await next.click();
+        await expect.poll(() => carousel.evaluate(element => element.scrollLeft)).not.toBe(initial);
+        await previous.click();
+        await expect.poll(() => carousel.evaluate(element => element.scrollLeft)).toBe(initial);
+    } else {
+        await expect(page.getByText('Swipe to explore', { exact: true })).toBeVisible();
+        await expect(next).toBeHidden();
+        await expect(previous).toBeHidden();
+    }
+    // Interaction resume timers must never override an explicit pause.
+    await page.waitForTimeout(2200);
+    expect(await carousel.evaluate(element => element.scrollLeft)).toBe(initial);
     await expect(play).toBeVisible();
 
     await play.click();

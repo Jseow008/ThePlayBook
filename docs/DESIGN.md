@@ -64,9 +64,10 @@ library title/kicker and decorative hero rules are removed. On narrow screens,
 a native Topics selector exposes the same curated topics while Browse stays
 available; from `sm` upward the horizontal topic track remains. Sign In, Topics,
 Browse and shelf controls have visible 44px mobile targets. The moving shelf adds
-explicit Pause/Play and Previous/Next controls alongside its existing autoplay,
-drag, native touch and reduced-motion behavior. A chosen pause persists until
-Play is selected. Loop rebasing and pointer capture begin only after the mouse
+explicit Pause/Play alongside its existing autoplay, drag, native touch and
+reduced-motion behavior. Previous/Next controls appear from `sm` only with a
+fine primary pointer; phones and touch-first tablets use swipe. A chosen pause
+persists until Play is selected. Loop rebasing and pointer capture begin only after the mouse
 crosses the drag threshold so ordinary card clicks retain their link target.
 Narrower edge fades and stronger small card labels improve shelf readability.
 Landing-only fluid type sizing and restrained charcoal/gold shading keep the

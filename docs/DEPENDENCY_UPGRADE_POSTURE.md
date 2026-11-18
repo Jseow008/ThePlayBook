@@ -48,6 +48,13 @@ These packages are lower-cadence posture checks, but breaking changes can still 
 - `ffmpeg-static` is a native/server-side dependency. Keep it out of client bundles and verify route tracing when audio processing changes.
 - `@dnd-kit/*` is isolated to admin/editor drag-and-drop. Keep it out of public route interaction paths when possible.
 - `postcss` is pinned through `package.json` overrides. Remove or change the override only with a concrete compatibility reason.
+- `@sentry/bundler-plugin-core` uses a scoped `glob` override at `14.0.6` to
+  address GHSA-3g3m-2fjr-6pw4 and bring its matcher onto patched `minimatch`
+  `11.0.9` (GHSA-g3hv-75wg-m249). Sentry itself stays at `10.75.2`; verify
+  its build integration and file globbing when changing or removing this pin.
+  The separate `picomatch` GHSA-fc5q-39xc-vjpf has no published patched version
+  as of 18 November 2026. PR #384 remains held with auto-merge disabled until
+  an upstream remedy is available and verified; the audit gate is unchanged.
 
 ## Verification Order For Framework Upgrades
 

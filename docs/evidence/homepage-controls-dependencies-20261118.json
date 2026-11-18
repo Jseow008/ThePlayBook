@@ -1,0 +1,127 @@
+{
+  "date": "2026-11-18",
+  "branch": "codex/homepage-shelf-polish",
+  "parent_commit": "12e7698b43c996f3052b1efd34668e48870cca27",
+  "scope": "Remove arrows on phones and coarse-pointer devices, preserve desktop controls and original autoplay, fix published dependency advisories; hold merge for unpatched picomatch per user decision.",
+  "source_sha256": {
+    "components/ui/landing/LandingPageSections.tsx": "592aa7c5f2604d1c67175cfd18b4a68a253495c0babf9ba8559d88b14779ddcc",
+    "tests/e2e/home.spec.ts": "5860f21b66135321ff7cf4dbfc17f6f80e9e0a19fb511426f05a3992b66157c0",
+    "package.json": "5b6d835b2e6ea56199746a1edbbd13f19832df1ebcb32f031778dd791803a1f7",
+    "package-lock.json": "c4a78bad183a62b8424d9e85de01587f69f8b931edae1bac956c3313669f23e9"
+  },
+  "preserved_from_parent": {
+    "marquee_engine": true,
+    "how_it_works_and_final_sections": true,
+    "featured_cards": true
+  },
+  "controls": {
+    "arrows": "Visible only at min-width 640px with a fine primary pointer. Hidden on narrow phones and coarse-pointer devices including landscape phones and touch tablets.",
+    "playback": "Autoplay remains on by default; Pause/Play retained; explicit pause survives interaction timers.",
+    "cue": "Swipe to explore on touch/narrow surfaces; Drag to explore with desktop controls."
+  },
+  "dependencies": {
+    "sentry_unchanged": "10.75.2",
+    "scoped_override": "@sentry/bundler-plugin-core -> glob 14.0.6",
+    "glob_matcher": "minimatch 11.0.9",
+    "resolved_advisories": [
+      "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4",
+      "https://github.com/advisories/GHSA-g3hv-75wg-m249"
+    ],
+    "remaining_advisory": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf",
+    "production_audit_before": {
+      "moderate": 4,
+      "high": 4,
+      "total": 8
+    },
+    "production_audit_after": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 4,
+      "critical": 0,
+      "total": 4
+    },
+    "remaining_chain": [
+      "@rollup/plugin-commonjs",
+      "@rollup/pluginutils",
+      "@sentry/nextjs",
+      "picomatch"
+    ],
+    "upstream_status": "Registry latest picomatch 4.0.7 is affected; no published patched release. Upstream proposals remain unmerged at review.",
+    "user_decision": "Keep security gate intact; hold merge until upstream fix is available. Auto-merge disabled.",
+    "compatibility_smoke": "Resolved Sentry glob returned all three landing TSX source matches; pre-aborted traversal rejected with AbortError.",
+    "tree_inspection": "npm ls still reports the pre-existing fdir optional peer mismatch for picomatch 2.3.2, reproduced before and after this scoped update. Sentry SDK and Rollup dependencies unchanged."
+  },
+  "validation": {
+    "install": "npm ci --no-audit passed; audit run separately and remains failing for the known unpatched advisory.",
+    "focused_components": {
+      "files_passed": 2,
+      "tests_passed": 16
+    },
+    "full_unit": {
+      "files_passed": 287,
+      "files_skipped": 16,
+      "tests_passed": 2547,
+      "tests_skipped": 324,
+      "capacity_harness_passed": 34
+    },
+    "lint": "passed incl policies/ratchets",
+    "typecheck": "passed",
+    "dependency_posture": "passed",
+    "controls_sample": {
+      "passed": 2,
+      "projects": [
+        "desktop-chromium",
+        "mobile-iphone"
+      ]
+    },
+    "browser_matrix": {
+      "scheduled": 48,
+      "initial_passed": 38,
+      "initial_failed": 2,
+      "platform_skips": 8,
+      "affected_rechecks_passed": 2,
+      "applicable_passed_after_rechecks": 40,
+      "projects": [
+        "desktop-chromium",
+        "mobile-se",
+        "mobile-iphone",
+        "mobile-landscape",
+        "tablet-portrait",
+        "tablet-landscape"
+      ],
+      "coverage": "Default autoplay, manual pause beyond resume delay, resume, desktop arrows, absence of arrows on phone/touch tablet, drag/swipe cue, simple click/tap, drag without navigation, keyboard after drag, Browse all, layout containment and console guard.",
+      "failures": [
+        "Desktop click timed out at existing 5s navigation assertion. Diagnostic trace showed correct RSC request within about 45ms of input; response remained pending during cold development compilation. Warm-route recheck passed without code/assertion/timeout changes.",
+        "Final tablet-landscape containment hit image 429 from accumulated local in-memory limit. Fresh local-server recheck passed without assertion changes."
+      ]
+    },
+    "production_build": "passed with PLAYWRIGHT_TEST=0, including seven Sharp route traces and initial critical CSS",
+    "visual_review": {
+      "desktop": [
+        1440,
+        900
+      ],
+      "phone": [
+        390,
+        844
+      ],
+      "source": "Local dev build, actual catalog/covers, autoplay enabled (Pause shown).",
+      "screenshots": [
+        "desktop-controls-refined-1440.png",
+        "mobile-controls-refined-390.png"
+      ]
+    },
+    "setup_limitations": [
+      "Initial sample could not reach UI due local ENOSPC; removed only this worktree generated build caches and reran.",
+      "Unbounded full unit startup interrupted during disk recovery; bounded four-worker full run completed.",
+      "No physical phones/Safari or production deployment verification claimed.",
+      "First build inherited PLAYWRIGHT_TEST=1 from local test settings and compiled into .next-playwright; post-build trace check expected .next and failed. Normal production-mode build passed after explicitly setting PLAYWRIGHT_TEST=0; no check changes."
+    ]
+  },
+  "release": {
+    "pr": 384,
+    "auto_merge": false,
+    "hold": "Await upstream picomatch remedy; no audit suppression, forced downgrade, temporary fork, patch or gate bypass."
+  }
+}

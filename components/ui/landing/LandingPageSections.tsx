@@ -527,7 +527,7 @@ function FeaturedReadsControls({ onPrevious, onNext, paused, onTogglePlayback }:
 
   return (
     <div className="landing-featured-controls relative z-20 flex flex-wrap items-center justify-between gap-2 px-4 pt-1 sm:px-6">
-      <span className="text-xs text-zinc-400"><span className="sm:hidden">Swipe to explore</span><span className="hidden sm:inline">Drag to explore</span></span>
+      <span className="text-xs text-zinc-400"><span className="sm:pointer-fine:hidden">Swipe to explore</span><span className="hidden sm:pointer-fine:inline">Drag to explore</span></span>
       <div className="ml-auto flex items-center gap-2">
         {onTogglePlayback ? (
           <button type="button" aria-label={paused ? "Play featured reads" : "Pause featured reads"} aria-controls="landing-featured-reads-carousel" onClick={onTogglePlayback} className={cn(controlClass, "motion-reduce:hidden")}>
@@ -535,10 +535,10 @@ function FeaturedReadsControls({ onPrevious, onNext, paused, onTogglePlayback }:
             {paused ? "Play" : "Pause"}
           </button>
         ) : null}
-        <button type="button" aria-label="Previous featured reads" aria-controls="landing-featured-reads-carousel" onClick={onPrevious} className={controlClass}>
+        <button type="button" aria-label="Previous featured reads" aria-controls="landing-featured-reads-carousel" onClick={onPrevious} className={cn(controlClass, "hidden sm:pointer-fine:inline-flex")}>
           <ChevronLeft className="size-4" aria-hidden="true" /><span className="hidden sm:inline">Previous</span>
         </button>
-        <button type="button" aria-label="Next featured reads" aria-controls="landing-featured-reads-carousel" onClick={onNext} className={controlClass}>
+        <button type="button" aria-label="Next featured reads" aria-controls="landing-featured-reads-carousel" onClick={onNext} className={cn(controlClass, "hidden sm:pointer-fine:inline-flex")}>
           <span className="hidden sm:inline">Next</span><ChevronRight className="size-4" aria-hidden="true" />
         </button>
       </div>
