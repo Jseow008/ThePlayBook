@@ -1,6 +1,6 @@
 # Category Taxonomy
 
-Status: The approved catalog model has 19 topics. Production application is pending the recorded release decision.
+Status: The approved catalog model has 19 topics. Production data matches the mapping; the application rollout is pending required PR checks.
 
 Netflux uses canonical category labels for content rows, admin publishing, search, and landing-page topic links. Categories are intentionally broad because the product promise is knowledge without limits or rigid domain boundaries. Categories are still stored as text in `content_item.category`; the app-level canonical source is `lib/content-categories.ts`.
 
@@ -16,7 +16,7 @@ The earlier production category-only update reclassified 343 records in place, p
 
 The approved 18 November mapping covers 522 published summaries, comprising 375 books and 147 podcasts. `scripts/approved-category-mapping-20261118.sql` applies the 20 remaining category changes in a single transaction. It checks each record's identity, publication state, and previous or already-applied target category, preserves all content fields except category and its update timestamp, and validates the exact final published totals. A mismatch rolls back the transaction. Re-running an applied plan updates no records.
 
-This is a data-only operation with no schema migration or migration-history change. The production plan, backup, validation evidence, and hosted-verification exception decision must be recorded before it runs. The owner requested proceeding without a temporary hosted project; the specific release exception and exact production mutation still require approval under `docs/OPS.md` section 2.2.
+This is a data-only operation with no schema migration or migration-history change. The owner explicitly accepted the hosted-verification exception and exact production transaction in PR #383 before it ran, under `docs/OPS.md` section 2.2. On 18 November the 20 updates committed, and independent reads verified all 522 assignments, every category total, and unchanged protected metadata on all 20 affected records. The application PR is blocked by an existing transitive dependency security advisory; required checks remain in force.
 
 Religion & Spirituality contains *The Power of Now*, *The Untethered Soul*, and *The Four Agreements*. Christianity contains the existing 19 books and 2 podcasts. Historical category fields inside summary JSON remain source metadata; `content_item.category` is the current category.
 
