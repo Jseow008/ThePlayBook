@@ -51,6 +51,75 @@ test('landing library Browse all navigates to browse', async ({ page }) => {
     await expect(page).toHaveURL(/\/browse/);
 });
 
+test('landing featured card opens its preview on a simple click', async ({ page, isMobile }) => {
+    await page.goto('/');
+    const card = page.getByTestId('featured-reads-group-b').getByRole('link').first();
+    await expect(card).toBeVisible();
+    const href = await card.getAttribute('href');
+    expect(href).toMatch(/^\/preview\//);
+
+    if (isMobile) await card.tap();
+    else await card.click();
+
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+    await expect(page.locator('h1')).toBeVisible();
+});
+
+test('landing shelf controls preserve explicit pause and resume', async ({ page }) => {
+    await page.goto('/');
+    const carousel = page.getByTestId('featured-reads-carousel');
+    await expect(carousel).toBeVisible();
+    const pause = page.getByRole('button', { name: 'Pause featured reads', exact: true });
+    if (await page.getByTestId('featured-reads-group-b').getByRole('link').count() < 2) {
+        await expect(pause).toHaveCount(0);
+        return;
+    }
+
+    await pause.click();
+    const play = page.getByRole('button', { name: 'Play featured reads', exact: true });
+    await expect(play).toBeVisible();
+    const initial = await carousel.evaluate(element => element.scrollLeft);
+    await page.getByRole('button', { name: 'Next featured reads', exact: true }).click();
+    await expect.poll(() => carousel.evaluate(element => element.scrollLeft)).not.toBe(initial);
+    await page.getByRole('button', { name: 'Previous featured reads', exact: true }).click();
+    await expect.poll(() => carousel.evaluate(element => element.scrollLeft)).toBe(initial);
+    await expect(play).toBeVisible();
+
+    await play.click();
+    await page.mouse.move(0, 0);
+    await expect(pause).toBeVisible();
+    await expect.poll(() => carousel.evaluate(element => element.scrollLeft)).not.toBe(initial);
+});
+
+test('landing mouse drag scrolls without opening a card', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Native touch swipes are covered by responsive-surfaces-public.spec.ts.');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    const carousel = page.getByTestId('featured-reads-carousel');
+    await expect(carousel).toBeVisible();
+    const box = await carousel.boundingBox();
+    expect(box).not.toBeNull();
+    if (!box) throw new Error('Missing carousel bounds');
+    const x = box.x + Math.min(box.width * 0.6, 350);
+    const y = box.y + 100;
+    await page.mouse.move(x, y);
+    const initial = await carousel.evaluate(element => element.scrollLeft);
+    const navigated = page.waitForURL(/\/preview\//, { timeout: 700 }).then(() => true, () => false);
+    await page.mouse.down();
+    await page.mouse.move(x - 120, y, { steps: 6 });
+    await page.mouse.up();
+
+    await expect.poll(() => carousel.evaluate(element => element.scrollLeft)).not.toBe(initial);
+    expect(await navigated).toBe(false);
+    await expect(page).toHaveURL(/\/$/);
+
+    const card = page.getByTestId('featured-reads-group-b').getByRole('link').first();
+    const href = await card.getAttribute('href');
+    await card.focus();
+    await card.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+});
+
 test('public layout chrome is excluded on landing and present on browse', async ({ page }) => {
     await page.goto('/');
 

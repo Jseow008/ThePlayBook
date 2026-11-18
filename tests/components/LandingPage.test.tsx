@@ -374,6 +374,36 @@ describe("LandingPage featured reads carousel", () => {
     expect(carousel.scrollLeft).toBeGreaterThan(beforeFocus);
   });
 
+  it("keeps an explicit pause across hover and idle resumes until Play is chosen", () => {
+    const carousel = renderLandingPage();
+    act(() => vi.advanceTimersByTime(1000));
+    fireEvent.click(screen.getByRole("button", { name: "Pause featured reads" }));
+    const pausedAt = carousel.scrollLeft;
+
+    fireEvent.mouseEnter(carousel);
+    fireEvent.mouseLeave(carousel);
+    act(() => vi.advanceTimersByTime(4000));
+    expect(carousel.scrollLeft).toBe(pausedAt);
+
+    fireEvent.click(screen.getByRole("button", { name: "Play featured reads" }));
+    act(() => vi.advanceTimersByTime(1000));
+    expect(carousel.scrollLeft).toBeGreaterThan(pausedAt);
+  });
+
+  it("only captures a mouse pointer once movement becomes a drag", () => {
+    const carousel = renderLandingPage();
+    const capture = vi.fn();
+    carousel.setPointerCapture = capture;
+    const down = createEvent.pointerDown(carousel, { button: 0, clientX: 200, pointerId: 1 });
+    Object.defineProperty(down, "pointerType", { value: "mouse" });
+    expect(fireEvent(carousel, down)).toBe(true);
+    expect(capture).not.toHaveBeenCalled();
+    fireEvent.pointerMove(carousel, { clientX: 197, pointerId: 1 });
+    expect(capture).not.toHaveBeenCalled();
+    fireEvent.pointerMove(carousel, { clientX: 180, pointerId: 1 });
+    expect(capture).toHaveBeenCalledTimes(1);
+  });
+
   it("lets desktop users drag the carousel horizontally", () => {
     const carousel = renderLandingPage();
 
@@ -464,7 +494,7 @@ describe("LandingPage featured reads carousel", () => {
       pointerType: "mouse",
     });
 
-    expect(fireEvent.click(cardLink)).toBe(false);
+    expect(fireEvent.click(cardLink, { detail: 1 })).toBe(false);
   });
 
   it("rebases seamlessly when scrolling past the forward seam", () => {
@@ -546,5 +576,16 @@ describe("LandingPage domain filters", () => {
     expect(screen.queryByTestId("featured-reads-group-a")).not.toBeInTheDocument();
     expect(screen.getAllByText("Psychology read 1")).toHaveLength(1);
     expect(screen.getByText("Showing the available Psychology reads without repetition.")).toBeInTheDocument();
+
+    const topics = screen.getByRole("combobox", { name: "Explore library topics" });
+    expect(topics).toHaveValue("Psychology");
+    fireEvent.change(topics, { target: { value: "" } });
+    expect(screen.getByRole("tab", { name: "All" })).toHaveAttribute("aria-selected", "true");
+    await act(async () => {
+      fireEvent.change(topics, { target: { value: "Psychology" } });
+    });
+    expect(topics).toHaveValue("Psychology");
+    expect(screen.getByRole("tab", { name: "Psychology, 35 reads" })).toHaveAttribute("aria-selected", "true");
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

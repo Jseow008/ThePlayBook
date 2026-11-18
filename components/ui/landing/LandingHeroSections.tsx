@@ -30,7 +30,7 @@ export function LandingHeader() {
           </Link>
           <Link prefetch={false}
             href="/login"
-            className="focus-ring touch-target-44 inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-1.5 text-xs font-semibold text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] hover:shadow-[0_10px_24px_-16px_rgba(255,255,255,0.5)] sm:px-4 sm:py-2 sm:text-sm"
+            className="focus-ring touch-target-44 inline-flex min-h-11 items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-2 text-sm font-semibold text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] hover:shadow-[0_10px_24px_-16px_rgba(255,255,255,0.5)] sm:min-h-0"
           >
             Sign In
           </Link>
