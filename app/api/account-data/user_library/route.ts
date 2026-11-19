@@ -52,6 +52,8 @@ export async function GET(request: NextRequest) {
         const page = await timing.measure("library", () => getLiveLibraryPage(user.id, after, limit));
         const finalRow = page.rows.at(-1);
         return NextResponse.json({
+            accountId: user.id,
+            boundary: page.boundary,
             data: page.rows,
             pageInfo: {
                 hasNextPage: page.hasNextPage,
