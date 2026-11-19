@@ -37,6 +37,7 @@ export function normalizePage(page?: string) {
 }
 
 export function buildSearchHref({
+    inside,
     query,
     category,
     type,
@@ -44,6 +45,7 @@ export function buildSearchHref({
     page,
     cursor,
 }: {
+    inside?: boolean;
     query?: string;
     category?: string;
     type?: string;
@@ -53,6 +55,7 @@ export function buildSearchHref({
 }) {
     const params = new URLSearchParams();
 
+    if (inside) params.set("inside", "1");
     if (query?.trim()) {
         params.set("q", query.trim());
     }
@@ -82,12 +85,14 @@ export function buildSearchHref({
 }
 
 export async function RecentCatalog({
+    inside,
     categoryLabel,
     categoryValues,
     type,
     page,
     preloadedPage,
 }: {
+    inside?: boolean;
     categoryLabel?: string;
     categoryValues?: string[];
     type?: ContentType;
@@ -108,7 +113,7 @@ export async function RecentCatalog({
                 resultCount={items.length}
                 filtersCount={Number(Boolean(categoryLabel)) + Number(Boolean(type))}
                 outcome={result.failed ? "failed" : items.length > 0 ? "results" : "no_results"}
-                searchKey={buildSearchHref({ category: categoryLabel, type, sort: "recent", page })}
+                searchKey={buildSearchHref({ inside, category: categoryLabel, type, sort: "recent", page })}
                 trackLegacyEvents={false}
             />
             <div className="mb-6 flex items-center gap-2">
@@ -123,6 +128,7 @@ export async function RecentCatalog({
                 <>
                     <ContentGrid items={items} />
                     <CatalogPagination
+                        inside={inside}
                         currentPage={page}
                         totalPages={totalPages}
                         category={categoryLabel}
@@ -146,11 +152,13 @@ export async function RecentCatalog({
 }
 
 export async function PopularCatalog({
+    inside,
     categoryLabel,
     categoryValues,
     type,
     preloadedItems,
 }: {
+    inside?: boolean;
     categoryLabel?: string;
     categoryValues?: string[];
     type?: ContentType;
@@ -170,7 +178,7 @@ export async function PopularCatalog({
                 resultCount={items.length}
                 filtersCount={Number(Boolean(categoryLabel)) + Number(Boolean(type))}
                 outcome={result.failed ? "failed" : items.length > 0 ? "results" : "no_results"}
-                searchKey={buildSearchHref({ category: categoryLabel, type, sort: "popular" })}
+                searchKey={buildSearchHref({ inside, category: categoryLabel, type, sort: "popular" })}
                 trackLegacyEvents={false}
             />
             {result.failed ? (
@@ -187,7 +195,7 @@ export async function PopularCatalog({
                 <div className="py-12 text-center text-muted-foreground">
                     <p>{type === "video" ? "No popular videos match these filters yet." : "No popular content matches these filters yet."}</p>
                     {(categoryLabel || type) ? (
-                        <Link prefetch={false} href={buildSearchHref({ sort: "popular" })} className="focus-ring mt-4 inline-flex rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium transition-colors hover:bg-secondary/50 hover:text-foreground">
+                        <Link prefetch={false} href={buildSearchHref({ inside, sort: "popular" })} className="focus-ring mt-4 inline-flex rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium transition-colors hover:bg-secondary/50 hover:text-foreground">
                             Clear all filters
                         </Link>
                     ) : null}
@@ -230,6 +238,19 @@ function SearchSnippet({ result }: { result: CatalogSearchResult }) {
     );
 }
 
+function getSearchPassage(result: CatalogSearchResult | null) {
+    if (!result?.passageId) return undefined;
+    const { highlights, text } = result.snippet;
+    const [first, ...others] = highlights;
+    if (!first) return { id: result.passageId, match: "" };
+    let end = first.end;
+    for (const next of others) {
+        if (text.slice(end, next.start).trim()) break;
+        end = next.end;
+    }
+    return { id: result.passageId, match: text.slice(first.start, end).replace(/\s+/g, " ").trim() };
+}
+
 export function ContentGrid({ items }: { items: Array<ContentItem | CatalogSearchResult> }) {
     return (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 md:gap-6 lg:grid-cols-4 xl:grid-cols-4">
@@ -239,6 +260,7 @@ export function ContentGrid({ items }: { items: Array<ContentItem | CatalogSearc
                     <div key={item.id} data-search-result-position={index + 1} className="@container min-w-0 space-y-2">
                         <ContentCard
                             item={toContentCardData(item)}
+                            passage={getSearchPassage(searchResult)}
                             navigationMode="read"
                             titleDensity="app-compact"
                             priority={index === 0}
@@ -252,12 +274,14 @@ export function ContentGrid({ items }: { items: Array<ContentItem | CatalogSearc
 }
 
 function CatalogPagination({
+    inside,
     currentPage,
     totalPages,
     query,
     category,
     type,
 }: {
+    inside?: boolean;
     currentPage: number;
     totalPages: number;
     query?: string;
@@ -271,7 +295,7 @@ function CatalogPagination({
     return (
         <nav aria-label="Catalog pagination" className="mt-10 flex items-center justify-center gap-4">
             <Link prefetch={false}
-                href={currentPage > 1 ? buildSearchHref({ query, category, type, page: currentPage - 1 }) : "#"}
+                href={currentPage > 1 ? buildSearchHref({ inside, query, category, type, page: currentPage - 1 }) : "#"}
                 aria-disabled={currentPage <= 1}
                 className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${
                     currentPage > 1
@@ -286,7 +310,7 @@ function CatalogPagination({
                 Page {currentPage} of {totalPages}
             </span>
             <Link prefetch={false}
-                href={currentPage < totalPages ? buildSearchHref({ query, category, type, page: currentPage + 1 }) : "#"}
+                href={currentPage < totalPages ? buildSearchHref({ inside, query, category, type, page: currentPage + 1 }) : "#"}
                 aria-disabled={currentPage >= totalPages}
                 className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${
                     currentPage < totalPages
@@ -317,6 +341,7 @@ function buildRequestHref({ query, type }: { query?: string; type?: string }) {
 }
 
 export async function SearchResults({
+    inside,
     query,
     categoryLabel,
     categoryValues,
@@ -324,6 +349,7 @@ export async function SearchResults({
     cursor,
     preloadedResponse,
 }: {
+    inside?: boolean;
     query?: string;
     categoryLabel?: string;
     categoryValues?: string[];
@@ -336,10 +362,11 @@ export async function SearchResults({
     const normalizedCategoryValues = categoryValues?.filter(Boolean) ?? [];
     const hasQuery = trimmedQuery.length > 0;
     const filtersCount = Number(normalizedCategoryValues.length > 0) + Number(Boolean(normalizedType));
-    const searchKey = buildSearchHref({ query, category: categoryLabel, type: normalizedType, cursor });
+    const searchKey = buildSearchHref({ inside, query, category: categoryLabel, type: normalizedType, cursor });
 
     try {
         const response = await (preloadedResponse ?? searchCatalog({
+            inside,
             query: trimmedQuery,
             categories: normalizedCategoryValues,
             type: normalizedType ?? null,
@@ -347,6 +374,7 @@ export async function SearchResults({
         }));
 
         return renderSearchResults({
+            inside,
             results: response.results,
             pageInfo: response.pageInfo,
             outcome: response.outcome,
@@ -381,7 +409,7 @@ export async function SearchResults({
                     <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{message}</p>
                     {requestId ? <p className="mt-3 text-xs text-muted-foreground">Reference: {requestId}</p> : null}
                     <Link prefetch={false}
-                        href={buildSearchHref({ query, category: categoryLabel, type: normalizedType })}
+                        href={buildSearchHref({ inside, query, category: categoryLabel, type: normalizedType })}
                         className="focus-ring mt-5 inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                         Retry search
@@ -393,6 +421,7 @@ export async function SearchResults({
 }
 
 function renderSearchResults({
+    inside,
     results,
     pageInfo,
     outcome,
@@ -405,6 +434,7 @@ function renderSearchResults({
     filtersCount,
     searchKey,
 }: {
+    inside?: boolean;
     results: CatalogSearchResult[];
     pageInfo: { nextCursor: string | null; previousCursor: string | null; page: number };
     outcome: "results" | "no_results" | "input_empty";
@@ -439,7 +469,7 @@ function renderSearchResults({
             {results.length > 0 ? (
                 <>
                     <ContentGrid items={results} />
-                    <SearchCursorPagination query={query} category={categoryLabel} type={normalizedType} pageInfo={pageInfo} />
+                    <SearchCursorPagination inside={inside} query={query} category={categoryLabel} type={normalizedType} pageInfo={pageInfo} />
                 </>
             ) : (
                 <div className="text-center py-2 md:py-20 animate-in fade-in zoom-in-95 duration-300">
@@ -452,7 +482,7 @@ function renderSearchResults({
                     <p className="text-sm md:text-base text-muted-foreground max-w-sm mx-auto mb-3 md:mb-6">
                         {outcome === "input_empty"
                             ? "Try a more specific word or phrase."
-                            : "We couldn't find anything matching that title, author, category, or filter."}
+                            : inside ? "No matching title, author or passage in these filters." : "No matching title or author. Select Search inside summaries to look for a passage."}
                     </p>
                     <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                         {outcome !== "input_empty" && hasQuery ? (
@@ -465,7 +495,7 @@ function renderSearchResults({
                             </Link>
                         ) : null}
                         <Link prefetch={false}
-                            href={filtersCount > 0 ? buildSearchHref({ query }) : "/search"}
+                            href={filtersCount > 0 ? buildSearchHref({ inside, query }) : "/search"}
                             className="focus-ring inline-flex items-center gap-2 rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
                         >
                             {filtersCount > 0 ? "Clear all filters" : "Clear search"}
@@ -478,11 +508,13 @@ function renderSearchResults({
 }
 
 function SearchCursorPagination({
+    inside,
     query,
     category,
     type,
     pageInfo,
 }: {
+    inside?: boolean;
     query?: string;
     category?: string;
     type?: ContentType;
@@ -493,7 +525,7 @@ function SearchCursorPagination({
     return (
         <nav aria-label="Search result pagination" className="mt-10 flex items-center justify-center gap-4">
             <Link prefetch={false}
-                href={pageInfo.previousCursor ? buildSearchHref({ query, category, type, cursor: pageInfo.previousCursor }) : "#"}
+                href={pageInfo.previousCursor ? buildSearchHref({ inside, query, category, type, cursor: pageInfo.previousCursor }) : "#"}
                 aria-disabled={!pageInfo.previousCursor}
                 className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${pageInfo.previousCursor ? "bg-secondary/30 text-foreground hover:bg-secondary/50" : "pointer-events-none text-muted-foreground opacity-40"}`}
             >
@@ -502,7 +534,7 @@ function SearchCursorPagination({
             </Link>
             <span className="text-sm text-muted-foreground">Page {pageInfo.page}</span>
             <Link prefetch={false}
-                href={pageInfo.nextCursor ? buildSearchHref({ query, category, type, cursor: pageInfo.nextCursor }) : "#"}
+                href={pageInfo.nextCursor ? buildSearchHref({ inside, query, category, type, cursor: pageInfo.nextCursor }) : "#"}
                 aria-disabled={!pageInfo.nextCursor}
                 className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${pageInfo.nextCursor ? "bg-secondary/30 text-foreground hover:bg-secondary/50" : "pointer-events-none text-muted-foreground opacity-40"}`}
             >

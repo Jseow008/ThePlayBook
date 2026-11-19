@@ -1,7 +1,7 @@
 /**
  * Search Page
  * 
- * Full-text search across content titles, authors, and categories.
+ * Search titles and authors, optionally including passages.
  * Supports filtering by category and type.
  */
 
@@ -33,13 +33,14 @@ import {
 } from "./search-components";
 
 interface SearchPageProps {
-    searchParams: Promise<{ q?: string; category?: string; type?: string; sort?: string; page?: string; cursor?: string }>;
+    searchParams: Promise<{ q?: string; category?: string; type?: string; sort?: string; page?: string; cursor?: string; inside?: string }>;
 }
 
 const MORE_SEARCH_TOPICS = CANONICAL_CONTENT_CATEGORIES.filter((topic) => !CURATED_SEARCH_TOPICS.includes(topic));
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-    const { q: query, category, type, sort, page, cursor } = await searchParams;
+    const { q: query, category, type, sort, page, cursor, inside: scope } = await searchParams;
+    const inside = scope === "1";
     const selectedType = normalizeType(type);
     const selectedTypeParam = selectedType ?? undefined;
     const selectedSort = normalizeCatalogSort(sort);
@@ -48,13 +49,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const selectedTopicLabel = isContentCategory(normalizedCategory) ? normalizedCategory : undefined;
 
     if (category && !selectedTopicLabel) {
-        redirect(buildSearchHref({ query, type: selectedTypeParam, sort: selectedSort }));
+        redirect(buildSearchHref({ inside, query, type: selectedTypeParam, sort: selectedSort }));
     }
 
     const hasContentSearch = (query?.trim().length ?? 0) > 0;
 
     const preloadedSearchResponse = hasContentSearch && !selectedTopicLabel
-        ? searchCatalog({ query: query?.trim() ?? "", categories: [], type: selectedType ?? null, cursor: cursor ?? null })
+        ? searchCatalog({ inside, query: query?.trim() ?? "", categories: [], type: selectedType ?? null, cursor: cursor ?? null })
         : undefined;
     const preloadedRecentPage = !hasContentSearch && selectedSort === "recent" && !selectedTopicLabel
         ? getRecentCatalogPage({ categoryValues: [], type: selectedType, page: selectedPage })
@@ -90,10 +91,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 {/* Smart Search Input */}
                 <div className="max-w-4xl w-full mb-4 md:mb-5 relative z-20">
                     <SearchInput
+                        inside={inside}
                         initialQuery={query || ""}
                         category={selectedTopicLabel}
                         type={selectedTypeParam}
-                        placeholder={selectedTopicLabel ? `Search in ${selectedTopicLabel}...` : "Search titles, authors, categories or passages..."}
+                        placeholder={selectedTopicLabel ? `Search in ${selectedTopicLabel}...` : inside ? "Search titles, authors or passages..." : "Search by title or author..."}
                     />
                 </div>
 
@@ -113,6 +115,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                         filterValue={choice}
                                         aria-current={isActive ? "true" : undefined}
                                         href={buildSearchHref({
+                                            inside,
                                             query,
                                             category: selectedTopicLabel,
                                             type: choice,
@@ -150,6 +153,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             filterParam="category"
                             aria-current={!selectedTopicLabel ? "true" : undefined}
                             href={buildSearchHref({
+                                inside,
                                 query,
                                 type: selectedTypeParam,
                                 sort: selectedSort,
@@ -172,6 +176,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                     filterValue={topic}
                                     aria-current={isActive ? "true" : undefined}
                                     href={buildSearchHref({
+                                        inside,
                                         query,
                                         category: topic,
                                         type: selectedTypeParam,
@@ -209,6 +214,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 filterParam="sort"
                                 filterValue="recent"
                                 href={buildSearchHref({
+                                    inside,
                                     category: selectedTopicLabel,
                                     type: selectedTypeParam,
                                     sort: "recent",
@@ -226,6 +232,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 filterParam="sort"
                                 filterValue="popular"
                                 href={buildSearchHref({
+                                    inside,
                                     category: selectedTopicLabel,
                                     type: selectedTypeParam,
                                     sort: "popular",
@@ -247,6 +254,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 {hasContentSearch ? (
                     <Suspense fallback={<ResultsSkeleton />}>
                         <SearchResults
+                            inside={inside}
                             query={query}
                             categoryLabel={selectedTopicLabel}
                             categoryValues={selectedTopicValues}
@@ -258,6 +266,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 ) : selectedSort === "recent" ? (
                     <Suspense fallback={<ResultsSkeleton />}>
                         <RecentCatalog
+                            inside={inside}
                             categoryLabel={selectedTopicLabel}
                             categoryValues={selectedTopicValues}
                             type={selectedType}
@@ -268,6 +277,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 ) : (
                     <Suspense fallback={<ResultsSkeleton />}>
                         <PopularCatalog
+                            inside={inside}
                             categoryLabel={selectedTopicLabel}
                             categoryValues={selectedTopicValues}
                             type={selectedType}

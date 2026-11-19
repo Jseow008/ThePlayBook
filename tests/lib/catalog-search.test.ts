@@ -52,7 +52,7 @@ describe("catalog search server contract", () => {
         const result = await searchCatalog({ query: "searchable" });
 
         expect(rpc).toHaveBeenCalledOnce();
-        expect(rpc).toHaveBeenCalledWith("search_catalog", expect.objectContaining({ p_query: "searchable" }));
+        expect(rpc).toHaveBeenCalledWith("search_catalog_scoped", expect.objectContaining({ p_query: "searchable" }));
         expect(result.results[0]).toMatchObject({ title: row.title, snippet: { text: "A searchable result" } });
         expect(JSON.stringify(result)).not.toContain("private-field-sentinel");
     });
@@ -85,6 +85,10 @@ describe("catalog search server contract", () => {
         expect(firstPage.pageInfo.nextCursor).toEqual(expect.any(String));
 
         await expect(searchCatalog({
+            query: "searchable", inside: true, categories: ["Technology"], type: "article",
+            cursor: firstPage.pageInfo.nextCursor,
+        })).rejects.toMatchObject({ code: "CURSOR_INVALID" });
+        await expect(searchCatalog({
             query: "different query",
             categories: ["Technology"],
             type: "article",
@@ -104,7 +108,7 @@ describe("catalog search server contract", () => {
 
         await searchCatalog({ query: "searchable", cursor: firstPage.pageInfo.nextCursor });
 
-        expect(rpc).toHaveBeenLastCalledWith("search_catalog", expect.objectContaining({
+        expect(rpc).toHaveBeenLastCalledWith("search_catalog_scoped", expect.objectContaining({
             p_after_rank: "0.1250000149011612",
         }));
     });

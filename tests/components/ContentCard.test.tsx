@@ -100,6 +100,12 @@ describe("ContentCard", () => {
         mockGetProgress.mockReturnValue(null);
     });
 
+    it("links a passage result to its section with an encoded excerpt", () => {
+        render(<ContentCard item={item} navigationMode="read" passage={{ id: "section-id", match: "A & B" }} />);
+        const link = screen.getByRole("link", { name: "Read Deep Work" });
+        expect(link).toHaveAttribute("href", `/read/${item.id}/deep-work?passage=section-id&match=A+%26+B`);
+    });
+
     it.each([true, false])("opens the reader without prior progress (user state %s)", (enableUserState) => {
         render(<ContentCard item={item} navigationMode="read" enableUserState={enableUserState} />);
         expect(screen.getByRole("link", { name: "Read Deep Work" })).toHaveAttribute("href", `/read/${item.id}/deep-work`);

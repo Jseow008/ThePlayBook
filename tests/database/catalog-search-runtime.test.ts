@@ -31,7 +31,7 @@ function percentile(samples: number[], percentileValue: number) {
 }
 
 function planUsesSearchIndex(plan: unknown) {
-    return JSON.stringify(plan).includes("catalog_search_document_vector_idx");
+    return JSON.stringify(plan).match(/catalog_search_document_vector_idx|content_item_catalog_names_idx/) !== null;
 }
 
 function planHasSequentialScan(plan: unknown) {
@@ -164,6 +164,25 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
             ["Withdrawn Catalog Signal"],
         );
         expect(withdrawn.rows).toEqual([]);
+    });
+
+    it("requires opt-in for section text and returns the matching segment for the reader", async () => {
+        const lookup = async (query: string, inside: boolean) => (await db.query(
+            "SELECT content_id, passage_id FROM public.search_catalog_scoped($1,$2,NULL,NULL,NULL,NULL,NULL,NULL,21)",
+            [query, inside],
+        )).rows;
+        expect(await lookup("zebra compass", false)).toEqual([]);
+        expect(await lookup("zebra compass", true)).toContainEqual({ content_id: contentSegment, passage_id: segment });
+        expect(await lookup("Ada Searcher", false)).toContainEqual({ content_id: contentExact, passage_id: null });
+        expect(await lookup("Exact Catalog Signal", false)).toContainEqual({ content_id: contentExact, passage_id: null });
+        expect(await lookup("durable catalog finding", false)).toEqual([]);
+        expect(await lookup("durable catalog finding", true)).toContainEqual({ content_id: contentExact, passage_id: "overview" });
+        expect(await lookup("Technology", false)).toEqual([]);
+        const signature = "public.search_catalog_scoped(text,boolean,text[],public.content_type,numeric,uuid,numeric,uuid,integer)";
+        for (const role of ["anon", "authenticated"]) {
+            const { rows } = await db.query("SELECT has_function_privilege($1,$2,'EXECUTE') AS allowed", [role, signature]);
+            expect(rows[0].allowed).toBe(false);
+        }
     });
 
     it("denies direct browser execution and requires the signed server role", async () => {
@@ -370,54 +389,7 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
             },
             { id: "empty-result", query: "absent tungsten search token", maxRank: null, expectedCapability: "no_results" },
         ];
-        // This mirrors the result-producing statement inside the deployed
-        // public.search_catalog function. PostgreSQL reports only a Function
-        // Scan when explaining PL/pgSQL, so the evidence records both the
-        // actual RPC wrapper plan and this natural component plan. The latter
-        // exposes ranking, category/type filters, eligibility, and DISTINCT
-        // ON deduplication to the planner without changing the production
-        // implementation or its measured execution path.
-        const componentPlanQuery = `
-            WITH inputs AS (
-                SELECT
-                    websearch_to_tsquery('english', $1) AS terms,
-                    $2::text[] AS categories,
-                    $3::public.content_type AS content_type
-            ),
-            ranked_documents AS (
-                SELECT
-                    d.content_id,
-                    d.segment_id,
-                    d.source_order,
-                    ts_rank_cd('{0.05,0.15,0.40,1.00}', d.search_vector, inputs.terms, 32)::real AS rank
-                FROM public.catalog_search_document AS d
-                CROSS JOIN inputs
-                WHERE d.search_vector @@ inputs.terms
-            ),
-            best_documents AS (
-                SELECT DISTINCT ON (r.content_id)
-                    r.content_id,
-                    r.segment_id,
-                    r.source_order,
-                    r.rank,
-                    r.rank::numeric AS rank_key
-                FROM ranked_documents AS r
-                ORDER BY r.content_id, r.rank DESC, r.source_order ASC, r.segment_id ASC NULLS FIRST
-            ),
-            eligible_results AS (
-                SELECT b.content_id, b.rank_key
-                FROM best_documents AS b
-                INNER JOIN public.content_item AS ci ON ci.id = b.content_id
-                CROSS JOIN inputs
-                WHERE ci.status = 'verified'
-                  AND ci.deleted_at IS NULL
-                  AND (coalesce(cardinality(inputs.categories), 0) = 0 OR ci.category = ANY(inputs.categories))
-                  AND (inputs.content_type IS NULL OR ci.type = inputs.content_type)
-            )
-            SELECT e.content_id
-            FROM eligible_results AS e
-            ORDER BY e.rank_key DESC, e.content_id ASC
-            LIMIT 21`;
+        const searchesInside = (item: BenchmarkQueryCase) => Boolean(item.expectedBody || item.id === "broad-concept");
         const client = await db.connect();
         let committed = false;
 
@@ -425,7 +397,7 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
             // The fixture is inserted into the disposable database only. It
             // deliberately bypasses maintenance triggers during bulk setup,
             // then writes the same server-owned projection those triggers
-            // produce. Querying still goes through public.search_catalog.
+            // produce. Querying still goes through public.search_catalog_scoped.
             await client.query("BEGIN");
             await client.query("SET LOCAL session_replication_role = 'replica'");
             // Rebuilding the two reviewed indexes once mirrors a bulk index
@@ -530,10 +502,22 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
 
             const functionDefinition = await client.query<FunctionDefinitionRow>(
                 `SELECT pg_get_functiondef(
-                    'public.search_catalog(text, text[], public.content_type, numeric, uuid, numeric, uuid, integer)'::regprocedure
+                    'public.search_catalog_scoped(text, boolean, text[], public.content_type, numeric, uuid, numeric, uuid, integer)'::regprocedure
                 ) AS definition`,
             );
             const deployedSearchDefinition = functionDefinition.rows[0]!.definition;
+            // Explain the deployed statement itself with first-page inputs. EXPLAIN
+            // on the PL/pgSQL wrapper alone reports only a Function Scan.
+            const start = deployedSearchDefinition.indexOf("WITH ranked_documents AS");
+            expect(start).toBeGreaterThan(-1);
+            const componentPlanQuery = deployedSearchDefinition.slice(start).split("LIMIT v_limit;")[0]
+                .replaceAll("v_terms", "websearch_to_tsquery('english', $1)")
+                .replaceAll("v_names", "websearch_to_tsquery('simple', $1)")
+                .replaceAll("p_categories", "$2::text[]")
+                .replaceAll("p_type", "$3::public.content_type")
+                .replaceAll("p_inside", "$4::boolean")
+                .replace(/p_(after|before)_rank/g, "NULL::numeric")
+                .replace(/p_(after|before)_content_id/g, "NULL::uuid") + " LIMIT 21";
             for (const requiredClause of [
                 "ts_rank_cd('{0.05,0.15,0.40,1.00}'",
                 "SELECT DISTINCT ON (r.content_id)",
@@ -547,8 +531,8 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
 
             const runDatabaseSearch = async (queryCase: BenchmarkQueryCase) => client.query<CatalogRow>(
                 `SELECT content_id, title, snippet_headline
-                 FROM public.search_catalog($1, $2::text[], $3::public.content_type, NULL, NULL, NULL, NULL, 21)`,
-                [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null],
+                 FROM public.search_catalog_scoped($1, $4::boolean, $2::text[], $3::public.content_type, NULL, NULL, NULL, NULL, 21)`,
+                [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null, searchesInside(queryCase)],
             );
             const plans: Record<string, {
                 functionPlan: unknown;
@@ -588,6 +572,7 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
             ]);
             const runRouteSearch = async (queryCase: BenchmarkQueryCase) => {
                 const params = new URLSearchParams({ q: queryCase.query });
+                if (searchesInside(queryCase)) params.set("inside", "1");
                 if (queryCase.category) params.set("category", queryCase.category);
                 if (queryCase.type) params.set("type", queryCase.type);
                 return GET(new NextRequest(`http://localhost/api/catalog/search?${params.toString()}`));
@@ -601,19 +586,19 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
                 const functionPlan = await client.query<ExplainRow>(
                     `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
                      SELECT content_id, result_rank
-                     FROM public.search_catalog($1, $2::text[], $3::public.content_type, NULL, NULL, NULL, NULL, 21)`,
-                    [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null],
+                     FROM public.search_catalog_scoped($1, $4::boolean, $2::text[], $3::public.content_type, NULL, NULL, NULL, NULL, 21)`,
+                    [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null, searchesInside(queryCase)],
                 );
                 const componentNatural = await client.query<ExplainRow>(
                     `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${componentPlanQuery}`,
-                    [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null],
+                    [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null, searchesInside(queryCase)],
                 );
                 // This is diagnostic evidence only. Timings and release
                 // thresholds below use the natural production planner.
                 await client.query("SET enable_seqscan = off");
                 const forcedIndexDiagnostic = await client.query<ExplainRow>(
                     `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${componentPlanQuery}`,
-                    [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null],
+                    [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null, searchesInside(queryCase)],
                 );
                 await client.query("RESET enable_seqscan");
                 const natural = componentNatural.rows[0]!["QUERY PLAN"];
@@ -691,7 +676,7 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
                     planner: "natural plans are the release evidence; forced-index plans are retained only as diagnostics",
                 },
                 deployedSearchFunction: {
-                    signature: "public.search_catalog(text, text[], public.content_type, numeric, uuid, numeric, uuid, integer)",
+                    signature: "public.search_catalog_scoped(text, boolean, text[], public.content_type, numeric, uuid, numeric, uuid, integer)",
                     definitionSha256: createHash("sha256").update(deployedSearchDefinition).digest("hex"),
                     verifiedClauses: ["ranking", "deduplication", "eligibility", "category filter", "type filter"],
                 },
