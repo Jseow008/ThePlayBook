@@ -1,6 +1,7 @@
 "use client";
 
-import { Search, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { SearchBox } from "@/components/ui/SearchBox";
 import { cn } from "@/lib/utils";
 
 interface LibraryToolbarProps {
@@ -40,8 +41,8 @@ export function LibraryToolbar({
         <div className={cn("flex flex-col gap-2.5 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-3", compact && "py-0", className)}>
             {/* Search */}
             {showSearch && <div className="relative w-full lg:w-64 group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground group-focus-within:text-foreground transition-colors" />
-                <input
+                <SearchBox
+                    searchIconClassName="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground group-focus-within:text-foreground transition-colors"
                     type="text"
                     aria-label={searchLabel}
                     placeholder={searchPlaceholder}

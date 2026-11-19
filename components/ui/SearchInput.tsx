@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, Clock } from "lucide-react";
+import { X, Clock } from "lucide-react";
+import { SearchBox } from "@/components/ui/SearchBox";
 import { cn } from "@/lib/utils";
 import { beginSearchJourney, resolveSearchQueryHref, setSearchDraftQuery } from "@/lib/search-journey-measurement";
 
@@ -227,8 +228,14 @@ export function SearchInput({
         <div className="relative w-full">
             <form onSubmit={handleSubmit}>
                 <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground pointer-events-none" />
-                    <input
+                    <SearchBox
+                        searchIconClassName="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground pointer-events-none"
+                        clear={{
+                            label: "Clear search",
+                            onClick: handleClear,
+                            buttonClassName: "absolute right-4 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors",
+                            iconClassName: "size-5",
+                        }}
                         ref={inputRef}
                         type="search"
                         value={query}
@@ -262,22 +269,12 @@ export function SearchInput({
                         spellCheck={false}
                         className={cn(
                             "w-full h-14 pl-12 pr-12 rounded-xl bg-card border text-foreground placeholder:text-muted-foreground",
-                            "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg [--ios-input-font-size:var(--text-lg)]",
+                            "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg",
                             "[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none",
                             "transition-all duration-200",
                             isFocused ? "border-primary/50" : "border-border"
                         )}
                     />
-                    {query && (
-                        <button
-                            type="button"
-                            onClick={handleClear}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
-                            aria-label="Clear search"
-                        >
-                            <X className="size-5" />
-                        </button>
-                    )}
                 </div>
             </form>
 

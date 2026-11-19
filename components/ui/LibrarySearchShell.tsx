@@ -3,7 +3,7 @@
 import { Suspense, useMemo, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search, X } from "lucide-react";
+import { SearchBox } from "@/components/ui/SearchBox";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { AudioListenLink } from "@/components/ui/AudioListenLink";
 import { LibraryGridSkeleton, LIBRARY_CARD_GRID_CLASS } from "@/components/ui/LibraryLoadingStates";
@@ -71,8 +71,14 @@ function LibrarySearchContent({ children }: { children: ReactNode }) {
             )}
             <div className="mx-auto w-full max-w-7xl px-6 pt-5 lg:px-16 lg:pt-8">
                 <div className="relative max-w-md">
-                    <Search aria-hidden="true" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
+                    <SearchBox
+                        searchIconClassName="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                        clear={{
+                            label: "Clear library search",
+                            onClick: () => setQuery(""),
+                            buttonClassName: "absolute right-1 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            iconClassName: "size-4",
+                        }}
                         type="text"
                         role="searchbox"
                         aria-label="Search your entire library"
@@ -81,16 +87,6 @@ function LibrarySearchContent({ children }: { children: ReactNode }) {
                         onChange={(event) => setQuery(event.target.value)}
                         className="h-11 w-full rounded-full border border-border/60 bg-secondary/40 pl-10 pr-11 text-sm text-foreground placeholder:text-muted-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     />
-                    {query && (
-                        <button
-                            type="button"
-                            aria-label="Clear library search"
-                            onClick={() => setQuery("")}
-                            className="absolute right-1 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                            <X aria-hidden="true" className="size-4" />
-                        </button>
-                    )}
                 </div>
             </div>
             {isSearching ? (

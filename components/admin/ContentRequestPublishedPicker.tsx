@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { SearchBox } from "@/components/ui/SearchBox";
 import type { PublishedContentOption } from "@/lib/server/content-requests";
 
 function formatTypeLabel(type: string) {
@@ -46,8 +46,8 @@ export function ContentRequestPublishedPicker({
     return (
         <div className="grid min-w-0 gap-2">
             <div className="relative min-w-0">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <input
+                <SearchBox
+                    searchIconClassName="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                     type="search"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
