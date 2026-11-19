@@ -26,7 +26,7 @@ export class LibrarySnapshotClientError extends Error {
     }
 }
 
-function retryAfterMs(response: Response) {
+export function retryAfterMs(response: Response) {
     const value = response.headers.get("Retry-After");
     if (!value) return undefined;
     const seconds = /^\d+$/.test(value) ? Number(value) * 1000 : Date.parse(value) - Date.now();

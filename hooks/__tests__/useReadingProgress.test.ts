@@ -77,6 +77,10 @@ vi.mock("sonner", () => ({
     toast: { error: toastErrorMock, info: vi.fn(), dismiss: toastDismissMock },
 }));
 
+vi.mock("@/lib/live-library-client", () => ({
+    fetchLibraryForHydration: (_accountId: string, ...args: Parameters<typeof fetchCompleteLibrarySnapshot>) =>
+        fetchCompleteLibrarySnapshot(...args),
+}));
 vi.mock("@/lib/account-data-client", () => ({
     LibrarySnapshotClientError: class LibrarySnapshotClientError extends Error {
         constructor(message: string, readonly code = "SNAPSHOT_UNAVAILABLE", readonly status?: number, readonly retryAfterMs?: number) { super(message); }

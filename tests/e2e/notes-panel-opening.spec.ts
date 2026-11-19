@@ -50,19 +50,13 @@ test('Notes opening retains a pending response and its context', async ({ page, 
         // Exercise real hydration; configuration failures must fail the test,
         // not be hidden by a toast handler that interrupts composer actions.
         // Observe early responses without spending a later phase's timeout
-        // during document loading or snapshot creation.
-        const snapshotCreated = captureResponse(page, response =>
-            new URL(response.url()).pathname === '/api/account-data/snapshots'
-            && response.request().method() === 'POST', 'Snapshot creation');
+        // during document loading.
         const libraryLoaded = captureResponse(page, response =>
-            /^\/api\/account-data\/snapshots\/[^/]+\/user_library$/.test(new URL(response.url()).pathname),
-            'Library hydration');
+            new URL(response.url()).pathname === '/api/account-data/user_library', 'Library hydration');
         try {
             await page.goto('/notes');
-            expect((await snapshotCreated.wait(30_000)).ok(), 'Snapshot creation must succeed').toBe(true);
-            expect((await libraryLoaded.wait(30_000)).ok(), 'Library snapshot read must succeed').toBe(true);
+            expect((await libraryLoaded.wait(30_000)).ok(), 'Live library read must succeed').toBe(true);
         } finally {
-            snapshotCreated.dispose();
             libraryLoaded.dispose();
         }
         await expect(page.getByText('Sync unavailable. Your changes remain on this device. Refresh your library to try again.', { exact: true })).toHaveCount(0);
