@@ -1,0 +1,666 @@
+{
+  "date": "2026-11-19",
+  "candidateProjectRef": "jdfxjwhzhmbjqbhknbam",
+  "productionProjectRef": "xmuqsgfxuaaophxnwure",
+  "candidateSecurity": {
+    "lints": [
+      {
+        "name": "rls_enabled_no_policy",
+        "title": "RLS Enabled No Policy",
+        "level": "INFO",
+        "facing": "EXTERNAL",
+        "categories": [
+          "SECURITY"
+        ],
+        "description": "Detects cases where row level security (RLS) has been enabled on a table but no RLS policies have been created.",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy",
+        "count": 12,
+        "findings": [
+          {
+            "detail": "Table \\`private.account_write_budget\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "account_write_budget",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          },
+          {
+            "detail": "Table \\`private.ai_spend_daily_totals\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "ai_spend_daily_totals",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          },
+          {
+            "detail": "Table \\`private.ai_spend_guest_daily_totals\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "ai_spend_guest_daily_totals",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          },
+          {
+            "detail": "Table \\`private.ai_spend_operations\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "ai_spend_operations",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          },
+          {
+            "detail": "Table \\`private.ai_spend_policy\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "ai_spend_policy",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          },
+          {
+            "detail": "Table \\`private.capture_write_budget\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "capture_write_budget",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          },
+          {
+            "detail": "Table \\`private.notes_replay_attempts\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "notes_replay_attempts",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          },
+          {
+            "detail": "Table \\`private.notes_replay_questions\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "notes_replay_questions",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          },
+          {
+            "detail": "Table \\`private.notes_replay_stages\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "notes_replay_stages",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          },
+          {
+            "detail": "Table \\`private.personal_evidence_chunk\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "personal_evidence_chunk",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          },
+          {
+            "detail": "Table \\`private.personal_evidence_index\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "personal_evidence_index",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          },
+          {
+            "detail": "Table \\`private.personal_evidence_provider_state\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "personal_evidence_provider_state",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.900Z"
+          }
+        ]
+      }
+    ]
+  },
+  "productionSecurity": {
+    "lints": [
+      {
+        "name": "rls_enabled_no_policy",
+        "title": "RLS Enabled No Policy",
+        "level": "INFO",
+        "facing": "EXTERNAL",
+        "categories": [
+          "SECURITY"
+        ],
+        "description": "Detects cases where row level security (RLS) has been enabled on a table but no RLS policies have been created.",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy",
+        "count": 12,
+        "findings": [
+          {
+            "detail": "Table \\`private.account_write_budget\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "account_write_budget",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          },
+          {
+            "detail": "Table \\`private.ai_spend_daily_totals\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "ai_spend_daily_totals",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          },
+          {
+            "detail": "Table \\`private.ai_spend_guest_daily_totals\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "ai_spend_guest_daily_totals",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          },
+          {
+            "detail": "Table \\`private.ai_spend_operations\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "ai_spend_operations",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          },
+          {
+            "detail": "Table \\`private.ai_spend_policy\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "ai_spend_policy",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          },
+          {
+            "detail": "Table \\`private.capture_write_budget\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "capture_write_budget",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          },
+          {
+            "detail": "Table \\`private.notes_replay_attempts\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "notes_replay_attempts",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          },
+          {
+            "detail": "Table \\`private.notes_replay_questions\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "notes_replay_questions",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          },
+          {
+            "detail": "Table \\`private.notes_replay_stages\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "notes_replay_stages",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          },
+          {
+            "detail": "Table \\`private.personal_evidence_chunk\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "personal_evidence_chunk",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          },
+          {
+            "detail": "Table \\`private.personal_evidence_index\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "personal_evidence_index",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          },
+          {
+            "detail": "Table \\`private.personal_evidence_provider_state\\` has RLS enabled, but no policies exist",
+            "metadata": {
+              "name": "personal_evidence_provider_state",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:22:13.520Z"
+          }
+        ]
+      }
+    ]
+  },
+  "candidatePerformance": {
+    "lints": [
+      {
+        "name": "unused_index",
+        "title": "Unused Index",
+        "level": "INFO",
+        "facing": "EXTERNAL",
+        "categories": [
+          "PERFORMANCE"
+        ],
+        "description": "Detects if an index has never been used and may be a candidate for removal.",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index",
+        "count": 41,
+        "findings": [
+          {
+            "detail": "Index \\`idx_homepage_section_order\\` on table \\`public.homepage_section\\` has not been used",
+            "metadata": {
+              "name": "homepage_section",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_feedback_content_id\\` on table \\`public.content_feedback\\` has not been used",
+            "metadata": {
+              "name": "content_feedback",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_reading_activity_activity_date\\` on table \\`public.reading_activity\\` has not been used",
+            "metadata": {
+              "name": "reading_activity",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_item_category\\` on table \\`public.content_item\\` has not been used",
+            "metadata": {
+              "name": "content_item",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_item_status\\` on table \\`public.content_item\\` has not been used",
+            "metadata": {
+              "name": "content_item",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_item_type\\` on table \\`public.content_item\\` has not been used",
+            "metadata": {
+              "name": "content_item",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`content_item_embedding_idx\\` on table \\`public.content_item\\` has not been used",
+            "metadata": {
+              "name": "content_item",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_item_series_id\\` on table \\`public.content_item\\` has not been used",
+            "metadata": {
+              "name": "content_item",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_item_series_id_order\\` on table \\`public.content_item\\` has not been used",
+            "metadata": {
+              "name": "content_item",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_item_verified_published_at\\` on table \\`public.content_item\\` has not been used",
+            "metadata": {
+              "name": "content_item",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`content_update_source_idx\\` on table \\`public.content_item\\` has not been used",
+            "metadata": {
+              "name": "content_item",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_reading_activity_activity_date\\` on table \\`public.content_reading_activity\\` has not been used",
+            "metadata": {
+              "name": "content_reading_activity",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_reading_activity_content_date\\` on table \\`public.content_reading_activity\\` has not been used",
+            "metadata": {
+              "name": "content_reading_activity",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_reader_daily_activity_date\\` on table \\`public.content_reader_daily\\` has not been used",
+            "metadata": {
+              "name": "content_reader_daily",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_reader_daily_content_date\\` on table \\`public.content_reader_daily\\` has not been used",
+            "metadata": {
+              "name": "content_reader_daily",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_request_votes_request_id\\` on table \\`public.content_request_votes\\` has not been used",
+            "metadata": {
+              "name": "content_request_votes",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`ai_message_usage_feature_created_at_idx\\` on table \\`public.ai_message_usage\\` has not been used",
+            "metadata": {
+              "name": "ai_message_usage",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_requests_board_order\\` on table \\`public.content_requests\\` has not been used",
+            "metadata": {
+              "name": "content_requests",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_requests_published_content_id\\` on table \\`public.content_requests\\` has not been used",
+            "metadata": {
+              "name": "content_requests",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_email_subscription_created_at\\` on table \\`public.email_subscription\\` has not been used",
+            "metadata": {
+              "name": "email_subscription",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_email_subscription_status\\` on table \\`public.email_subscription\\` has not been used",
+            "metadata": {
+              "name": "email_subscription",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_email_subscription_source\\` on table \\`public.email_subscription\\` has not been used",
+            "metadata": {
+              "name": "email_subscription",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_reader_visitor_daily_activity_date\\` on table \\`public.content_reader_visitor_daily\\` has not been used",
+            "metadata": {
+              "name": "content_reader_visitor_daily",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_reader_visitor_daily_content_date\\` on table \\`public.content_reader_visitor_daily\\` has not been used",
+            "metadata": {
+              "name": "content_reader_visitor_daily",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`segment_embedding_gemini_embedding_idx\\` on table \\`public.segment_embedding_gemini\\` has not been used",
+            "metadata": {
+              "name": "segment_embedding_gemini",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_user_highlights_segment_id\\` on table \\`public.user_highlights\\` has not been used",
+            "metadata": {
+              "name": "user_highlights",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_user_highlights_user_segment_anchor_range\\` on table \\`public.user_highlights\\` has not been used",
+            "metadata": {
+              "name": "user_highlights",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_profiles_role\\` on table \\`public.profiles\\` has not been used",
+            "metadata": {
+              "name": "profiles",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_profiles_is_internal\\` on table \\`public.profiles\\` has not been used",
+            "metadata": {
+              "name": "profiles",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`story_image_job_content_id_idx\\` on table \\`public.story_image_job\\` has not been used",
+            "metadata": {
+              "name": "story_image_job",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`story_image_job_ready_queue_idx\\` on table \\`public.story_image_job\\` has not been used",
+            "metadata": {
+              "name": "story_image_job",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`story_image_job_stale_processing_idx\\` on table \\`public.story_image_job\\` has not been used",
+            "metadata": {
+              "name": "story_image_job",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_request_notifications_status_queue\\` on table \\`public.content_request_notifications\\` has not been used",
+            "metadata": {
+              "name": "content_request_notifications",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_content_request_notifications_request_id\\` on table \\`public.content_request_notifications\\` has not been used",
+            "metadata": {
+              "name": "content_request_notifications",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`idx_account_data_snapshots_resume_session\\` on table \\`snapshot_private.account_data_snapshots\\` has not been used",
+            "metadata": {
+              "name": "account_data_snapshots",
+              "type": "table",
+              "schema": "snapshot_private"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`catalog_search_document_vector_idx\\` on table \\`public.catalog_search_document\\` has not been used",
+            "metadata": {
+              "name": "catalog_search_document",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`catalog_search_document_segment_idx\\` on table \\`public.catalog_search_document\\` has not been used",
+            "metadata": {
+              "name": "catalog_search_document",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`ai_spend_operations_retention\\` on table \\`private.ai_spend_operations\\` has not been used",
+            "metadata": {
+              "name": "ai_spend_operations",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`ai_spend_operations_guest_retention\\` on table \\`private.ai_spend_operations\\` has not been used",
+            "metadata": {
+              "name": "ai_spend_operations",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`content_replacement_target_idx\\` on table \\`public.content_replacement\\` has not been used",
+            "metadata": {
+              "name": "content_replacement",
+              "type": "table",
+              "schema": "public"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          },
+          {
+            "detail": "Index \\`notes_replay_attempt_age\\` on table \\`private.notes_replay_attempts\\` has not been used",
+            "metadata": {
+              "name": "notes_replay_attempts",
+              "type": "table",
+              "schema": "private"
+            },
+            "observed_at": "2026-11-19T06:21:46.796Z"
+          }
+        ]
+      },
+      {
+        "name": "auth_db_connections_absolute",
+        "title": "Auth DB Connection Strategy is not Percentage",
+        "level": "INFO",
+        "facing": "EXTERNAL",
+        "categories": [
+          "PERFORMANCE"
+        ],
+        "description": "Using a percentage based allocation connection strategy for Auth can help to improve the server's performance when increasing instance size.",
+        "remediation": "https://supabase.com/docs/guides/deployment/going-into-prod",
+        "count": 1,
+        "findings": [
+          {
+            "detail": "Your project's Auth server is configured to use at most 10 connections. Increasing the instance size without manually adjusting this number will not improve the performance of the Auth server. Switch to a percentage based connection allocation strategy instead.",
+            "metadata": {
+              "type": "auth",
+              "entity": "Auth"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "review": "No ERROR/WARN findings. The 12 security INFO notices concern private tables deliberately without end-user policies; same 12 notices occur in production and five runtime ACL/RLS checks passed. Unused indexes on a fresh synthetic database and absolute Auth connection INFO are informational; no schema/index/policy changes made."
+}
