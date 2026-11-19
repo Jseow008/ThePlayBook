@@ -4,6 +4,7 @@ import { useNoteDraft } from "@/hooks/useNoteDraft";
 import { NoteDraftStatus } from "@/components/reader/NoteDraftStatus";
 import { SavedNoteCopyButton } from "@/components/notes/SavedNoteCopyButton";
 import { NotesTimestamp } from "@/components/notes/NotesTimestamp";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ResilientImage } from "@/components/ui/ResilientImage";
@@ -603,6 +604,7 @@ function NoteEditorOverlay({
         containerRef: dialogRef,
         initialFocusRef: textareaRef,
         onEscape: isSaving ? undefined : onClose,
+        isolateBackground: true,
         scrollLock: { lockDocumentElement: true },
     });
 
@@ -615,7 +617,7 @@ function NoteEditorOverlay({
     const colorClasses = HIGHLIGHT_COLOR_CLASSES[draftColor];
     const segmentTitle = item.segment?.title?.trim() || null;
 
-    return (
+    return createPortal(
         <div className={cn("fixed inset-0", OVERLAY_LAYER_CLASS.panel)}>
             <button
                 type="button"
@@ -758,7 +760,8 @@ function NoteEditorOverlay({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }
 
@@ -787,6 +790,7 @@ function ReflectionEditorOverlay({
         containerRef: dialogRef,
         initialFocusRef: textareaRef,
         onEscape: isSaving ? undefined : onClose,
+        isolateBackground: true,
         scrollLock: { lockDocumentElement: true },
     });
 
@@ -794,7 +798,7 @@ function ReflectionEditorOverlay({
         return null;
     }
 
-    return (
+    return createPortal(
         <div className={cn("fixed inset-0", OVERLAY_LAYER_CLASS.panel)}>
             <button
                 type="button"
@@ -863,7 +867,8 @@ function ReflectionEditorOverlay({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }
 
