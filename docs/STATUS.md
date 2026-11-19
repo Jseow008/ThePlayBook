@@ -1,3 +1,7 @@
+## 2026-11-20 — Search cards open the reader
+
+Branch `codex/search-reader-cards` in `/tmp/netflux-search-reader`, base `092908c6`. The Search catalog grid uses direct reader links and drops the separate Listen link. At 390 and 1440 px, verified 20 reader card links for “God” and opened Knowing God. All 86 focused tests passed. Search scope and passage targeting await design review. Next step is the gated PR merge.
+
 ## 2026-11-19 — Search, request prefill and accessible controls
 
 Branch `codex/search-handoffs-and-accessibility` in `/tmp/netflux-p2-approved` starts at `3e15d1b1`. This batch covers P2 issues 4, 7, 8 (Book and Video prefill), and 9. Passage linking, Browse navigation density, and additional request formats remain deferred.

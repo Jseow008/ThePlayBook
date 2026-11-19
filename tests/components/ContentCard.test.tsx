@@ -100,6 +100,11 @@ describe("ContentCard", () => {
         mockGetProgress.mockReturnValue(null);
     });
 
+    it.each([true, false])("opens the reader without prior progress (user state %s)", (enableUserState) => {
+        render(<ContentCard item={item} navigationMode="read" enableUserState={enableUserState} />);
+        expect(screen.getByRole("link", { name: "Read Deep Work" })).toHaveAttribute("href", `/read/${item.id}/deep-work`);
+    });
+
     it.each(["mouse", "keyboard"])("prefetches card links only after %s intent", (intent) => {
         render(<ContentCard item={item} enableUserState={false} showDesktopQuickActions />);
         const links = screen.getAllByRole("link");
