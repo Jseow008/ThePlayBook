@@ -477,7 +477,11 @@ describe("FocusFeed", () => {
     it("reports a cover completed in the background only after its card is visible again", async () => {
         render(<FocusFeed />);
         const card = (await screen.findAllByTestId("focus-feed-card"))[0]!;
-        const impressionObserver = observerInstances.find((observer) => observer.thresholds.length === 3)!;
+        const impressionObserver = await waitFor(() => {
+            const observer = observerInstances.find((instance) => instance.thresholds.length === 3);
+            expect(observer?.observe).toHaveBeenCalledWith(card);
+            return observer!;
+        });
         act(() => impressionObserver.trigger(card, 0.85));
         const originalVisibility = Object.getOwnPropertyDescriptor(document, "visibilityState");
         try {

@@ -1,5 +1,6 @@
 "use client";
 
+import { fetchLibraryForHydration } from "@/lib/live-library-client";
 import {
     createContext,
     createElement,
@@ -35,7 +36,6 @@ import { guestLibrarySources, bindGuestSource, consumeGuestSource, releaseGuestB
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import {
     clearLibrarySnapshotIdempotencyKey,
-    fetchCompleteLibrarySnapshot,
     getLibrarySnapshotIdempotencyKey,
     LibrarySnapshotClientError,
 } from "@/lib/account-data-client";
@@ -638,7 +638,7 @@ function useReadingProgressController(initialUser?: User | null) {
         mutationGeneration: number,
         signal: AbortSignal,
     ) => {
-        const snapshot = await fetchCompleteLibrarySnapshot(getLibrarySnapshotIdempotencyKey(currentUser.id), () => {
+        const snapshot = await fetchLibraryForHydration(currentUser.id, getLibrarySnapshotIdempotencyKey(currentUser.id), () => {
             if (runId === hydrateRunRef.current) setSnapshotBuilding(true);
         }, signal);
 
