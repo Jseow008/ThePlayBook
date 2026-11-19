@@ -40,15 +40,29 @@ describe("LoginPage", () => {
         getUserMock.mockResolvedValue({ data: { user: null }, error: null });
     });
 
-    it("sends the Back link to browse while preserving next for auth", async () => {
+    it.each([
+        undefined, "/notes?ask=1", "/ask", "/profile", "/admin", "/auth/callback",
+        "//example.com/read/123", "https://example.com/preview/123",
+    ])("falls back to Browse from sign-in with next=%s", async (next) => {
         const page = await LoginPage({
-            searchParams: Promise.resolve({ next: "/notes?ask=1" }),
+            searchParams: Promise.resolve({ next }),
         });
 
         render(page);
 
         expect(screen.getByRole("link", { name: /back/i })).toHaveAttribute("href", "/browse");
-        expect(screen.getByTestId("auth-form")).toHaveAttribute("data-next-url", "/notes?ask=1");
+    });
+
+    it.each([
+        ["/read/123/summary?source=library#audio-player", "/read/123/summary?source=library#audio-player"],
+        ["/preview/123#top", "/preview/123#top"],
+        ["/read/123?resumeReflection=1&source=library#top", "/read/123?source=library#top"],
+        ["/notes?ask=1", "/browse"],
+    ])("returns from %s to %s while preserving next for auth", async (next, back) => {
+        render(await LoginPage({ searchParams: Promise.resolve({ next }) }));
+
+        expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute("href", back);
+        expect(screen.getByTestId("auth-form")).toHaveAttribute("data-next-url", next);
     });
 
     it("redirects authenticated users to the normalized next target", async () => {
