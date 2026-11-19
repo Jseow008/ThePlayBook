@@ -1,9 +1,10 @@
 import { INTERACTIVE_AI_MODEL, INTERACTIVE_AI_PROVIDER_OPTIONS } from "@/lib/server/interactive-ai";
-import { withChatDeadline } from "@/lib/server/chat-deadline";
+import { CHAT_DEADLINE_MS, withChatDeadline } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse, reserveAiProviderCall } from "@/lib/server/ai-spending";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { issueEvidenceCitations, resolvePersonalQuotationReference } from "@/lib/server/evidence-citation";
-import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
+import { renderEvidenceExtractsWithRanges } from "@/lib/server/evidence-extract-response";
+import { generateEvidenceComparison, isEvidenceComparison, prependEvidenceComparison } from "@/lib/server/evidence-comparison";
 import { MAX_LIBRARY_CONTEXT_CHARS, getOutputTokenCap, detectAskIntent, shouldBoostCompletedForIntent, buildRetrievalFallbackText, LIBRARY_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
 import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
 import { afterResponse } from "@/lib/server/after-response";
@@ -11,7 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { Output, streamText } from "ai";
 import { LIBRARY_CLARIFICATION_FOLLOWUPS, LIBRARY_NO_EVIDENCE_FOLLOWUPS } from "@/lib/library-followups";
-import { LibraryAnswerOutputSchema, LIBRARY_FOLLOWUP_INSTRUCTIONS, libraryAnswerStreamResponse } from "@/lib/server/library-followup-output";
+import { LibraryAnswerOutputSchema, libraryAnswerSystemPrompt, libraryAnswerStreamResponse } from "@/lib/server/library-followup-output";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
 
 async function handlePost(req: NextRequest, signal: AbortSignal) {
     const requestId = getRequestId();
+    const requestDeadline = performance.now() + CHAT_DEADLINE_MS;
 
     try {
         // --- Auth ---
@@ -274,7 +276,9 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             if (failure) return failure;
         }
         signal.throwIfAborted();
-        const retrievalSignal = AbortSignal.any([signal, AbortSignal.timeout(35_000)]);
+        const retrievalTimeoutMs = 35_000;
+        const retrievalDeadline = performance.now() + retrievalTimeoutMs;
+        const retrievalSignal = AbortSignal.any([signal, AbortSignal.timeout(retrievalTimeoutMs)]);
         const quoteField = exactPersonalQuoteField(userQuery);
         if (quoteField && isBarePersonalRecordReference(userQuery)) {
             try {
@@ -361,18 +365,21 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
                 const rankedSources = await rankLibrarySourceSpans({ sources, userId: user.id, queryEmbedding, signal });
                 const selected = await selectLibraryEvidence({ personal, sources: rankedSources, question: userQuery,
                     semanticQuestion: questionContext.semanticQuestion, signal, includeFollowups: true });
-                // Embedding and selection may be slow: revalidate both classes at the final delivery boundary.
-                await recheckPersonalEvidenceCandidates({ supabase, userId: user.id, scope: ALL_PERSONAL_EVIDENCE,
-                    candidates: selected.personal.items.map((item) => item.evidence), signal });
-                const freshSources = await loadLibrarySourceEvidence({ supabase, userId: user.id, queryEmbedding,
-                    boostCompleted: shouldBoostCompletedForIntent(intent, userQuery), signal });
-                if (selected.sources.some((source) => !freshSources.some((fresh) => fresh.id === source.id && fresh.fingerprint === source.fingerprint))) {
-                    throw new Error("Source evidence changed during retrieval");
-                }
-                await assertActivePersonalRetrievalSession({ supabase, scope: ALL_PERSONAL_EVIDENCE, signal });
-                const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
-                signal.throwIfAborted();
-                if (authError || currentUser?.id !== user.id) throw new Error("RETRIEVAL_AUTH_CHANGED");
+                // Recheck the selection before use and again if an optional comparison waits on Luna.
+                const revalidateSelection = async () => {
+                    await recheckPersonalEvidenceCandidates({ supabase, userId: user.id, scope: ALL_PERSONAL_EVIDENCE,
+                        candidates: selected.personal.items.map((item) => item.evidence), signal });
+                    const freshSources = await loadLibrarySourceEvidence({ supabase, userId: user.id, queryEmbedding,
+                        boostCompleted: shouldBoostCompletedForIntent(intent, userQuery), signal });
+                    if (selected.sources.some((source) => !freshSources.some((fresh) => fresh.id === source.id && fresh.fingerprint === source.fingerprint))) {
+                        throw new Error("Source evidence changed during retrieval");
+                    }
+                    await assertActivePersonalRetrievalSession({ supabase, scope: ALL_PERSONAL_EVIDENCE, signal });
+                    const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+                    signal.throwIfAborted();
+                    if (authError || currentUser?.id !== user.id) throw new Error("RETRIEVAL_AUTH_CHANGED");
+                };
+                await revalidateSelection();
                 if (selected.exactQuote !== null && !selected.quotedEvidenceId) throw new Error("Quoted evidence identity missing");
                 if (selected.exactQuote !== null) return retrievalTextResponse(selected.exactQuote, "ui", issueEvidenceCitations({ userId: user.id, personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.quotedEvidenceId ? [selected.quotedEvidenceId] : [], exactQuote: true }), true, selected.selection?.followUpQuestions ?? []);
                 if (selected.quoteTooLarge) return retrievalTextResponse("The matching stored passage is too long to quote completely here. Open the source to read its full text.", "ui", [], false, []);
@@ -380,9 +387,19 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
                     if (intent !== "reading_advisor") return retrievalTextResponse(LIBRARY_NO_EVIDENCE, "ui", [], false, LIBRARY_NO_EVIDENCE_FOLLOWUPS);
                     retrievalStatus = "no_match";
                 } else {
-                    const text = renderEvidenceExtracts({
+                    const extracts = renderEvidenceExtractsWithRanges({
                         personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.evidenceIds,
                     });
+                    let text = extracts.text;
+                    if (isEvidenceComparison(userQuery) && selected.contextText) {
+                        const answer = await generateEvidenceComparison({
+                            surface: "library", system: buildLibraryEvidencePrompt("", selected.contextText, intent),
+                            question: questionContext.semanticQuestion, maxOutputTokens: getOutputTokenCap(intent), signal,
+                            deadlineAt: Math.min(requestDeadline, retrievalDeadline),
+                        });
+                        await revalidateSelection();
+                        text = prependEvidenceComparison(extracts, answer).text;
+                    }
                     if (messages.filter((message) => message.role === "user").length === 1) {
                         afterResponse(() => captureServerAnalyticsEvent({ event: "ai_chat_started", distinctId: user.id,
                             insertId: `ai_chat_started:library:${user.id}:${requestId}`,
@@ -429,7 +446,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             maxRetries: 0,
             model: aiModel,
             providerOptions: INTERACTIVE_AI_PROVIDER_OPTIONS,
-            system: `${systemPrompt}\n\nReturn JSON with answer as the FIRST field, then followUpQuestions. Complete the answer before writing any questions.\n${LIBRARY_FOLLOWUP_INSTRUCTIONS}`,
+            system: libraryAnswerSystemPrompt(systemPrompt),
             output: Output.object({ schema: LibraryAnswerOutputSchema }),
             messages: [{ role: "user", content: questionContext.semanticQuestion }],
             abortSignal: signal,

@@ -4,7 +4,8 @@ import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResp
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
 import { renderEvidenceExtractsWithRanges } from "@/lib/server/evidence-extract-response";
-import { NOTES_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
+import { generateEvidenceComparison, isEvidenceComparison, prependEvidenceComparison } from "@/lib/server/evidence-comparison";
+import { getNotesOutputTokenCap, NOTES_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
 import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
@@ -15,13 +16,15 @@ import { rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { admitAiUsage, getQuotaExceededMessage } from "@/lib/server/ai-usage-quota";
 import { PersonalEvidenceScopeSchema } from "@/lib/personal-evidence";
-import { retrievePersonalEvidence, PersonalEvidenceIndexNotReady } from "@/lib/server/personal-retrieval";
+import { buildPersonalEvidencePrompt, retrievePersonalEvidence, PersonalEvidenceIndexNotReady } from "@/lib/server/personal-retrieval";
 import { retrievalTextResponse } from "@/lib/server/retrieval-response";
 import { contextualizeUserQuestion, FOLLOW_UP_CLARIFICATION } from "@/lib/server/retrieval-user-context";
 import { assertActiveChatSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
 import { PersonalEvidenceSelectionError } from "@/lib/server/personal-evidence-selector";
 
 import { withNotesReplayRequest } from "@/lib/server/notes-replay";
+import { notesComparisonActivity } from "@/lib/server/notes-comparison-outcome";
+import { focusNotesComparison } from "@/lib/server/notes-comparison-context";
 
 export const maxDuration = 60;
 
@@ -237,12 +240,14 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         }
 
         signal.throwIfAborted();
+        const isComparison = isEvidenceComparison(lastMessage.content);
         let evidence;
         try {
             evidence = await retrievePersonalEvidence({
                 supabase, userId: user.id, scope, question: lastMessage.content,
                 semanticQuestion: questionContext.semanticQuestion, signal,
                 embeddingQuestion: questionContext.embeddingQuestion,
+                ...(isComparison ? { requiredComparisonActivity: notesComparisonActivity(lastMessage.content) } : {}),
             });
         } catch (error) {
             const spendingFailure = aiSpendingFailureResponse(error);
@@ -266,7 +271,18 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         }
 
         signal.throwIfAborted();
-        const rendered = renderEvidenceExtractsWithRanges({ personal: evidence.items });
+        const extracts = renderEvidenceExtractsWithRanges({ personal: evidence.items });
+        const comparison = isComparison && evidence.contextText
+            ? await generateEvidenceComparison({
+                surface: "notes", system: buildPersonalEvidencePrompt({
+                    ...evidence, contextText: focusNotesComparison(lastMessage.content, evidence),
+                }),
+                question: questionContext.semanticQuestion, maxOutputTokens: getNotesOutputTokenCap(lastMessage.content), signal,
+            })
+            : null;
+        // The replay wrapper revalidates every selected capture and the live
+        // session after synthesis, before it stores or delivers the combined reply.
+        const rendered = prependEvidenceComparison(extracts, comparison);
         if (messages.filter((message) => message.role === "user").length === 1) {
             afterResponse(() => captureServerAnalyticsEvent({
                 event: "ai_chat_started", distinctId: user.id,

@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "date": "2026-11-19",
+  "candidateCodeCommit": "736f8a7c20719286da6abc739965be4ae7d2d695",
+  "includedMainCommit": "f9c5f13268dd472aab1ad360aa9fd7781ad114ce",
+  "candidateHash": "947e80453b3921a3cac03dea13d3df1be73a2af4aabed487015670b81ec3dca9",
+  "planHashes": {
+    "pilot": "f1a4e599774a6476021ed5eb54b1a3ff79c566c9d6ed261a8c9b481b7d821c1d",
+    "authorControl": "888f15bd93e6b86ea9cc4754a3f205c31de9d3a183bb218dd39a4ac5ab662daf"
+  },
+  "modelConfig": {
+    "version": "personal-evidence-selector-model-v4",
+    "promptVersion": "personal-evidence-selector-v4",
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "maxOutputTokens": 1600,
+    "maxRetries": 0,
+    "temperature": "provider default",
+    "reasoningEffort": "none",
+    "forceReasoning": true,
+    "store": false,
+    "responseAdapter": "explicit-final-phase-v1"
+  },
+  "promptTextUnchanged": true,
+  "hostedGatePassed": true,
+  "productionUnchanged": true,
+  "productionUnchangedMeaning": "This verification only read production metadata. It did not apply the migration or deploy the candidate.",
+  "productionProjectRef": "xmuqsgfxuaaophxnwure",
+  "candidateProjectRef": "tgdlbuimhoxlzbmvejxd",
+  "branchId": "7eb0612e-f0ff-4ca1-98fd-c72f96631dfa",
+  "region": "ap-south-1",
+  "chatChecks": [
+    "library",
+    "notes",
+    "author"
+  ],
+  "codeHashes": {
+    "app/api/chat/author/route.ts": "c775d91b855e74280ceee2ed0335b3f1b73482a8242c77d7c3895ceac375670b",
+    "app/api/chat/notes/route.ts": "07e7f942f383bb30a08c04f7279462b192faf0f732c3a2c1122805b371cc189d",
+    "app/api/chat/route.ts": "b1354e8d76383adf8a1f4f77806c8615d61049112aed78e4abeca506c723274e",
+    "app/api/library/highlights/[id]/route.ts": "c208e7f3f53a43f3a2361a794016c8f19cce67424b3698413400458e90a789df",
+    "app/api/library/highlights/route.ts": "710c62eca965be5007859e785654fc2484f504a680a8787beb1b71fe50ce8684",
+    "app/api/library/reflections/[id]/route.ts": "6bbbaf6d3ed21c0c8a3a0b318110344599f51a0595a399578c86806d93a1a0b7",
+    "app/api/library/reflections/route.ts": "5f63db3b2d672a7154a035df2c484511b30c28a572ea5c3e806078e7c27dafa2",
+    "lib/server/ai-spending.ts": "20c4471e27191ba61b2f562720877b528f736c7878b8acb32d838921d77fb5dc",
+    "lib/server/author-evidence.ts": "efb7a33ddb471af4ce2c2d987e5745a5bb1d7050bbb9d3c64457e58a095e4834",
+    "lib/server/evidence-citation.ts": "55998099ba3b452a8235b2a483392eb0c863f7c1d96d013c06c4ea476f436445",
+    "lib/server/evidence-comparison.ts": "0a2b99ec6b0d0916edc1583489fa718f3e6d87e87db7069e7c8e97e247d358e4",
+    "lib/server/health.ts": "5853d068f31a4ebf5828262237e5bc81a62d7b611639b4293e5a57e1b984a2db",
+    "lib/server/interactive-ai.ts": "e445e9e4c5ee3043893a8fedc130f4e63e6526eca2bbfb0fd50a6dee353d67ef",
+    "lib/server/library-evidence.ts": "16edb1e433e574d5ef43d8333c881c6f57b04afc4b75bb2e926d9319cfea2eaf",
+    "lib/server/library-followup-output.ts": "705d385c7f964a4339cbfc8f3e2cb8852b56ed4dca053ac622d007578c3abaaf",
+    "lib/server/luna-final-phase.ts": "2b0dd64411eeae2eba9e41c65a4c594e784c6e7c44ea17bb09355ea0a4fc7636",
+    "lib/server/notes-comparison-context.ts": "3f474c5cd700561edf8b5a3d6d43e1b3774f982f1ac9bddaeb8ecdbca8de3b5d",
+    "lib/server/notes-comparison-outcome.ts": "f00156f692408d5e96ab466099ef138b7d64795d7380b991293015df5c85d8e1",
+    "lib/server/notes-replay.ts": "55a780bcd9663ec3fda1913865ea2fc1f197628730f612bc0d26feb1bb77783a",
+    "lib/server/personal-evidence-indexer.ts": "ac6195f9fb2a7fee337b8b7de2f1607a29641ab5dead5ae1713dc8f036d2b10e",
+    "lib/server/personal-evidence-selector.ts": "932385f8eb4ae3ae77f39cd7a1f2f7fa6ad79f014979915fa33009d83b699696",
+    "lib/server/personal-retrieval.ts": "05f3e67803c1ede6174b86d1b99755f8cc6857bb68e39d7e24f24b2ee0e4b695",
+    "lib/server/retrieval-generation.ts": "b1cb3925420a90c3d7eff44e26459255dcf05d22f0d86380202d60c351ab98b4",
+    "lib/server/retrieval-user-context.ts": "69e98557eff76d625e266e557432249b961d13e1a20b95ac966277d754ffcc33",
+    "lib/server/wake-personal-evidence-worker.ts": "589adf10c2562738b7b099449fd1736b457ba0a4ee9c63e5b6330be96af12eef",
+    "supabase/migrations/20261119100630_notes_comparison_replay_stage.sql": "60db9bfe23a82b9d91d213d81aaf99596c94120ece33c6ba92767146ca7d6cc5"
+  },
+  "databaseGate": {
+    "cleanCandidateMigrationLedgerEntries": 123,
+    "baselineSchemaCategoriesMatched": 14,
+    "changedSchemaCategories": [
+      "constraint_definition",
+      "function_definition"
+    ],
+    "generatedPublicTypesExactAfterPlatformMetadataNormalization": true,
+    "aclChecksPassed": 5,
+    "db002HighlightPreservationPassed": true,
+    "newAdvisorWarningsOrErrors": 0,
+    "replayAssertionsPassed": 10,
+    "replayRetry": "One hosted replay test exceeded the runner’s 5s budget. Its unchanged assertions passed alone with 15s allowed for hosted round trips.",
+    "productionBackupCompletedAt": "2026-11-18T23:54:03.201Z",
+    "reviewedProductionDryRun": [
+      "20261119100630_notes_comparison_replay_stage.sql"
+    ]
+  },
+  "applicationSmoke": {
+    "startTime": "2026-11-19T10:53:15.689Z",
+    "duration": 4773.78,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0,
+    "buildPassed": true
+  },
+  "qualification": [
+    {
+      "id": "H-N-FOCUS",
+      "chat": "notes",
+      "firstTextMs": 7875,
+      "totalMs": 7876,
+      "citationsResolved": 2,
+      "result": "Compared both time-saving setup changes. The unrelated marker detail appears only in the saved extract. Both citation links resolve."
+    },
+    {
+      "id": "H-L2",
+      "chat": "library",
+      "firstTextMs": 9899,
+      "totalMs": 9899,
+      "citationsResolved": 2,
+      "result": "Distinguished the source claim about interrupted supply from the saved disagreement and repair concern. Citation links resolve."
+    },
+    {
+      "id": "H-N-QUOTE",
+      "chat": "notes",
+      "firstTextMs": 4430,
+      "totalMs": 4430,
+      "citationsResolved": 1,
+      "result": "Returned the complete saved reflection exactly, including the marker detail. Citation resolves."
+    },
+    {
+      "id": "H-A-LEDGER",
+      "chat": "author",
+      "firstTextMs": 4600,
+      "totalMs": 4945,
+      "citationsResolved": 0,
+      "result": "Explained that rain entered the downstairs room, the reason given in the author source."
+    }
+  ],
+  "providerAudit": {
+    "capUsd": 10,
+    "conservativePriorUpperUsd": 4.696515,
+    "conservativeHostedIncrementUsd": 0.008358175,
+    "conservativeCumulativeUpperUsd": 4.704873175,
+    "lunaDispatches": 7,
+    "embeddingDispatches": 14
+  },
+  "fixtureCleanupVerified": true,
+  "fixtureCleanup": {
+    "ownedAccounts": 7,
+    "syntheticSources": 2,
+    "remaining": {
+      "users": 0,
+      "sessions": 0,
+      "evidence_index": 0,
+      "library": 0,
+      "reflections": 0,
+      "highlights": 0,
+      "content": 0,
+      "segments": 0
+    }
+  },
+  "candidateDeletionVerified": true,
+  "testServicesStopped": true,
+  "privateCredentialsScrubbed": true,
+  "limitations": [
+    "Hosted backing services used synthetic sources and accounts. The production-mode app ran on isolated local HTTPS.",
+    "The candidate review did not change or exercise the released production application."
+  ]
+}

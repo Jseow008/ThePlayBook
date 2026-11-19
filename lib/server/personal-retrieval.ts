@@ -1,5 +1,6 @@
 import "server-only";
 import { measureAskNotesPhase } from "./ask-notes-timing";
+import { hasNotesComparisonActivity } from "./notes-comparison-outcome";
 
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -82,6 +83,7 @@ export async function retrievePersonalEvidence(options: {
     queryEmbedding?: number[];
     implicitHighlightQuote?: boolean;
     deferSelection?: boolean;
+    requiredComparisonActivity?: readonly string[];
     selectionGenerator?: PersonalEvidenceSelectionGenerator;
 }) {
     const signal = AbortSignal.any([options.signal, AbortSignal.timeout(PERSONAL_RETRIEVAL_TIMEOUT_MS)]);
@@ -123,12 +125,15 @@ export async function retrievePersonalEvidence(options: {
         if (!relevant.length) throw new Error("Indexed evidence has no answer span");
         return { evidence, spans, score: Math.max(...relevant.map((span) => span.score)), exactQuote: null };
     }).sort((a, b) => b.score - a.score || a.evidence.evidenceId.localeCompare(b.evidence.evidenceId));
+    const activity = options.requiredComparisonActivity;
+    const eligible = !quoteField && activity?.length
+        ? ranked.filter(item => hasNotesComparisonActivity(item, activity)) : ranked;
     const selection = options.deferSelection ? null : await measureAskNotesPhase("selection", () => selectPersonalEvidence({
-        question: semanticQuestion, candidates: personalSelectionCandidates(ranked), exactQuote: Boolean(quoteField),
+        question: semanticQuestion, candidates: personalSelectionCandidates(eligible), exactQuote: Boolean(quoteField),
         signal, generate: options.selectionGenerator,
     }));
     const formatted = selection
-        ? formatRankedPersonalEvidence(materializePersonalSelection(ranked, selection.ids, quoteField))
+        ? formatRankedPersonalEvidence(materializePersonalSelection(eligible, selection.ids, quoteField))
         : { items: ranked, contextText: "", omittedByLimit: 0, omittedByContext: 0, contextBytes: 0 };
     await measureAskNotesPhase("revalidate_evidence", () => recheckPersonalEvidenceCandidates({ ...options, candidates: formatted.items.map((item) => item.evidence), signal }));
     const current = await measureAskNotesPhase("revalidate_search", search);
@@ -143,7 +148,7 @@ export async function retrievePersonalEvidence(options: {
         ...formatted, candidateCount: result.total_records, quoteField, selection,
         stats: { rankingMode: "semantic" as const, complete: true as const, candidateCount: result.total_records,
             chunkCount: result.matches.length, cacheHits: 0, embeddedInputs: options.queryEmbedding ? 0 : 1,
-            embeddingBatches: options.queryEmbedding ? 0 : 1, eligibleCount: selected.length, selectedCount: formatted.items.length,
+            embeddingBatches: options.queryEmbedding ? 0 : 1, eligibleCount: eligible.length, selectedCount: formatted.items.length,
             omittedByLimit: formatted.omittedByLimit, omittedByContext: formatted.omittedByContext,
             contextBytes: formatted.contextBytes, contextByteLimit: 4_000, similarityThreshold: 0.55 },
     };

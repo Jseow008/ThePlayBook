@@ -59,12 +59,14 @@ database('persisted Notes replay ownership and unchanged accounting', () => {
         const owner={...input,ownerNonce:claims.find(x=>x.state==='owner').ownerNonce};
         const admissions=await boundedCopies(Array.from({length:8},()=>admit(owner)));
         expect(admissions.values.length).toBeGreaterThan(0);expect(admissions.values.every(x=>x.allowed)).toBe(true);
+        await expect(reserve(owner,'comparison')).rejects.toMatchObject({code:'22023'});
+        expect(await counts()).toEqual({...before,usage:before.usage+1});
         const stageOutcomes:Record<string,number>={};
-        for(const stage of ['embedding','selection']) {
+        for(const stage of ['embedding','selection','comparison']) {
             const reservations=await boundedCopies(Array.from({length:8},()=>reserve(owner,stage)));
             expect(reservations.values.filter(x=>x.dispatch)).toHaveLength(1);stageOutcomes[stage]=reservations.lockTimeouts;
         }
-        expect(await counts()).toEqual({usage:before.usage+1,spend:before.spend+2,total:before.total+200});
+        expect(await counts()).toEqual({usage:before.usage+1,spend:before.spend+3,total:before.total+300});
         expect(await rpc('finish',{...owner,cache:{opaque:'synthetic'},cacheBytes:50})).toEqual({published:true});
         const after=await counts(), completed=await boundedCopies(Array.from({length:8},()=>rpc('claim',input))),copies=completed.values;
         expect(copies.length).toBeGreaterThan(0);expect(copies.every(x=>x.state==='completed'&&x.cache.opaque==='synthetic'&&!x.ownerNonce)).toBe(true);
@@ -82,17 +84,22 @@ database('persisted Notes replay ownership and unchanged accounting', () => {
     });
     it('intentional retry is distinct; late original settles but cannot publish over it',async()=>{
         const input=base(), claim=await rpc('claim',input), original={...input,ownerNonce:claim.ownerNonce};
-        await admit(original); await reserve(original);
+        await admit(original); await reserve(original); await reserve(original,'selection');
+        expect(await reserve(original,'comparison')).toMatchObject({dispatch:true});
         const next={...input,attemptId:newNotesReplayAttemptId(),retryOf:input.attemptId};
         const retry={...next,ownerNonce:(await rpc('claim',next)).ownerNonce};
-        await admit(retry); await reserve(retry);
+        await admit(retry); await reserve(retry); await reserve(retry,'selection');
+        expect(await reserve(retry,'comparison')).toMatchObject({dispatch:true});
+        expect((await reserve(original,'comparison')).state).toBe('superseded');
         expect((await rpc('claim',{...next,attemptId:newNotesReplayAttemptId(),retryOf:input.attemptId})).state).toBe('conflict');
         expect((await rpc('finish',{...retry,cache:{opaque:'retry'},cacheBytes:30})).published).toBe(true);
         expect((await rpc('finish',{...original,cache:{opaque:'old'},cacheBytes:30})).state).toBe('superseded');
         const before=await counts();
         expect(await rpc('settle',{...original,stage:'embedding',inputTokens:10,outputTokens:0,costMicrousd:20})).toEqual({recorded:true});
         expect(await rpc('settle',{...original,stage:'embedding',inputTokens:10,outputTokens:0,costMicrousd:20})).toEqual({recorded:true});
-        expect((await counts()).total).toBe(before.total-80);
+        expect(await rpc('settle',{...original,stage:'comparison',inputTokens:12,outputTokens:4,costMicrousd:35})).toEqual({recorded:true});
+        expect(await rpc('settle',{...original,stage:'comparison',inputTokens:12,outputTokens:4,costMicrousd:35})).toEqual({recorded:true});
+        expect((await counts()).total).toBe(before.total-145);
         expect((await rpc('claim',next)).cache.opaque).toBe('retry');
     });
     it('recovers explicitly when an intermediate retry never reached the server',async()=>{
