@@ -3,6 +3,11 @@ vi.mock("@/lib/supabase/admin", () => ({ getAdminClient: () => ({ rpc: spendingR
 vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn(), aiNetworkIdentifier: vi.fn(() => 'a'.repeat(64)) }));
 vi.mock("@/lib/server/evidence-citation", () => ({ issueEvidenceCitations: vi.fn(() => [{ label: "Test passage", href: "/evidence#fixture" }]), resolvePersonalQuotationReference: vi.fn() }));
 import { resolvePersonalQuotationReference } from '@/lib/server/evidence-citation';
+import { generateEvidenceComparison } from '@/lib/server/evidence-comparison';
+vi.mock('@/lib/server/evidence-comparison', async (importOriginal) => ({
+    ...await importOriginal<typeof import('@/lib/server/evidence-comparison')>(),
+    generateEvidenceComparison: vi.fn().mockResolvedValue(null),
+}));
 import { captureServerAnalyticsEvent } from '@/lib/server/analytics';
 import { selectedPersonalEvidence } from '../helpers/selected-personal-evidence';
 import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
@@ -741,6 +746,19 @@ describe('Chat API', () => {
         expect((await response.json()).error.code).toBe('RETRIEVAL_UNAVAILABLE');
         expect(admitAiUsage).toHaveBeenCalledTimes(1);
         expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it('does not publish a completed comparison if evidence changes during synthesis', async () => {
+        vi.mocked(generateEvidenceComparison).mockResolvedValueOnce('A generated comparison based on old evidence.');
+        vi.mocked(recheckPersonalEvidenceCandidates).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('Evidence changed'));
+        const response = await POST(new NextRequest('http://localhost/api/chat', {
+            method: 'POST',
+            body: JSON.stringify({ messages: [{ role: 'user', content: 'Compare the notes I saved about focus.' }] }),
+        }));
+        expect(generateEvidenceComparison).toHaveBeenCalledOnce();
+        expect(recheckPersonalEvidenceCandidates).toHaveBeenCalledTimes(2);
+        expect(response.status).toBe(503);
+        expect((await response.json()).error.code).toBe('RETRIEVAL_UNAVAILABLE');
     });
 
     it('streams exact personal quotations using the real UI stream protocol without a model call', async () => {

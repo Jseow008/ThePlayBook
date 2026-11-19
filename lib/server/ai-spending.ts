@@ -80,8 +80,13 @@ const unscopedReservation: Reservation = { record: async () => {} };
 
 export async function reserveAiProviderCall(options: {
     provider: string; model: string; maxOutputTokens: number; inputs?: number; signal?: AbortSignal;
+    notesStage?: "comparison";
 }): Promise<Reservation> {
     const scope = scopes.getStore();
+    const replay = notesReplayOwner();
+    if (options.notesStage && (scope?.feature !== "ask-notes" || !replay || options.provider !== "openai")) {
+        throw new AiSpendingError("unavailable");
+    }
     if (!scope) return unscopedReservation;
     const price = prices[`${options.provider}:${options.model}`];
     const inputs = options.inputs ?? 1;
@@ -98,8 +103,7 @@ export async function reserveAiProviderCall(options: {
     const reservePrice = price.longContext ?? price;
     const reserved = Math.ceil((price.context * inputs * reservePrice.input + options.maxOutputTokens * reservePrice.output) / 1000);
     const operationId = newAiSpendOperationId();
-    const replay = notesReplayOwner();
-    const stage = options.provider === "google" ? "embedding" : "selection";
+    const stage = options.notesStage ?? (options.provider === "google" ? "embedding" : "selection");
     try {
         if (replay && scope.feature !== "ask-notes") throw new AiSpendingError("unavailable");
         const reservation = replay ? { data: await notesReplayRpc("reserve", { ...replay, stage, operationId,
