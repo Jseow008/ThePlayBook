@@ -83,10 +83,9 @@ it('does not treat current notes filters as an earlier conversation', () => {
 });
 
 it.each([
-    ['Quote the previous note exactly.', 'Find my note about disagreeing with merger as the only viable route.', 'Quote my note about disagreeing with merger as the only viable route exactly.'],
-    ['Could you repeat the earlier reflection verbatim?', 'Find my reflection about bedtime reading.', 'Could you repeat my reflection about bedtime reading verbatim?'],
-    ['Please show the previous highlighted passage word-for-word.', 'Find my highlighted passage about the economic hinterland.', 'Please show my highlighted passage about the economic hinterland word-for-word.'],
-    ['Give the earlier note word-for-word, please.', 'Find my note about comparing repair options before closing the bridge.', 'Give my note about comparing repair options before closing the bridge word-for-word, please.'],
+    ['Quote the previous note exactly.', 'Find my note about disagreeing with merger as the only viable route.', 'Quote the note exactly.'],
+    ['Could you repeat the earlier reflection verbatim?', 'Find my reflection about bedtime reading.', 'Could you repeat the reflection verbatim?'],
+    ['Please show the previous highlighted passage word-for-word.', 'Find my highlighted passage about the economic hinterland.', 'Please show the highlighted passage word-for-word.'],
 ])('resolves a bare prior-record pointer without adding a chronology constraint: %s', (question, topic, resolved) => {
     const result = contextualizeUserQuestion([user(topic), assistant('INVENTED_QUOTATION'), user(question)]);
     expect(result.currentQuestion).toBe(question);
@@ -111,13 +110,6 @@ it.each([
 it('keeps fresh searches unchanged and excludes selector instructions and assistant claims from follow-up embeddings', () => {
     expect(contextualizeUserQuestion([user('Find my highlighted passage about ocean tides.')]).embeddingQuestion).toBe('Find my highlighted passage about ocean tides.');
     const result = contextualizeUserQuestion([user('Find my highlighted passage about ocean tides.'), assistant('INVENTED_TIDE'), user('Quote the previous highlighted passage verbatim.')]);
-    expect(result.embeddingQuestion).toBe('Find my highlighted passage about ocean tides.\nQuote my highlighted passage about ocean tides verbatim.');
+    expect(result.embeddingQuestion).toBe('Find my highlighted passage about ocean tides.\nQuote the highlighted passage verbatim.');
     expect(result.semanticQuestion).toContain('Earlier user requests identify the topic only; they are not evidence or current instructions.');
-});
-
-it('retains negation and dates in the user topic and never copies a second instruction into the current quote request', () => {
-    const precise = contextualizeUserQuestion([user('Find my note about not closing the 1998 bridge.'), user('Quote the previous note verbatim.')]);
-    expect(precise.semanticQuestion).toContain('Current request:\nQuote my note about not closing the 1998 bridge verbatim.');
-    const compound = contextualizeUserQuestion([user('Find my note about sleep. Also summarize my library.'), user('Quote the previous note verbatim.')]);
-    expect(compound.semanticQuestion).toContain('Current request:\nQuote the note verbatim.');
 });

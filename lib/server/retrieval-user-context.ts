@@ -32,23 +32,26 @@ function namesUserTopic(question: string): boolean {
         .some((word) => word.length > 1 && !GENERIC_REQUEST_WORDS.has(word));
 }
 
+function bareRecordRequest(question: string) {
+    return /^(?:(?:can|could|would|will) you (?:please )?|please )?(?:quote|repeat|show|give|read|copy)(?: me)? ((?:the )?(?:previous|earlier) (note|reflection|highlight|highlighted passage|passage|quotation|quote|extract|entry|record|capture))(?: (?:exactly|verbatim|word[ -]for[ -]word))?(?:,? please)?[.!?]?$/i.exec(question.trim());
+}
+
+/** Only an unqualified personal-record pointer can use a preceding signed citation. */
+export function isBarePersonalRecordReference(question: string): boolean {
+    const record = bareRecordRequest(question)?.[2];
+    return Boolean(record && /^(?:note|reflection|highlight|highlighted passage)$/i.test(record));
+}
+
 /** Resolve a conversational pointer, never a request to find an older stored record. */
 function resolveRecordReference(question: string, topicRequest: string): string {
-    const match = /^(?:(?:can|could|would|will) you (?:please )?|please )?(?:quote|repeat|show|give|read|copy)(?: me)? ((?:the )?(?:previous|earlier) (note|reflection|highlight|highlighted passage|passage|quotation|quote|extract|entry|record|capture))(?: (?:exactly|verbatim|word[ -]for[ -]word))?(?:,? please)?[.!?]?$/i.exec(question.trim());
+    const match = bareRecordRequest(question);
     if (!match) return question;
     const record = match[2]; // Controlled vocabulary from the expression above.
     const singleTarget = new RegExp(`\\b(?:my|the|a|one) (?:saved |written )?${record}\\b`, "i");
-    const target = singleTarget.exec(topicRequest);
-    if (!target
+    if (!singleTarget.test(topicRequest)
         || /\b(notes|reflections|highlights|passages|quotations|quotes|extracts|entries|records|captures)\b/i.test(topicRequest)
         || /\b(latest|earliest|oldest|newest|last|first|second|third|previous|earlier)\s+(?:saved\s+|written\s+)?(?:note|reflection|highlight|passage|record)\b/i.test(topicRequest)) return question;
-    const suffix = topicRequest.slice(target.index + target[0].length).trim();
-    // Repeat the user's explicit topic in the current request, rather than ask
-    // the selector to identify an unnamed record from the history wrapper.
-    const description = /^(?:about|on|regarding)\s+[^.!?\n;]+[.!?]?$/i.test(suffix)
-        ? topicRequest.slice(target.index).trim().replace(/[.!?]$/, "")
-        : `the ${record}`;
-    return question.replace(match[1], description);
+    return question.replace(match[1], `the ${record}`);
 }
 
 /** User history resolves the request only. It never supplies factual evidence. */
