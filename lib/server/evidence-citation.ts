@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import type { CitationLink, CitationResolution } from "@/lib/evidence-citation";
 import { ExportPassageSchema } from "@/lib/evidence-citation";
-import type { RankedPersonalEvidence } from "@/lib/server/personal-evidence-ranking";
+import { formatRankedPersonalEvidence, type RankedPersonalEvidence } from "@/lib/server/personal-evidence-ranking";
 import type { LibrarySourceEvidence } from "@/lib/server/library-evidence";
 import { loadSelectedPersonalEvidence, PersonalEvidenceRetrievalError } from "@/lib/server/personal-evidence-candidates";
 
@@ -105,6 +105,49 @@ function passages(reference: Reference, fields?: Partial<Record<Reference["spans
             before: full === undefined ? "" : full.slice(Math.max(0, span.start - 400), span.start),
             after: full === undefined ? "" : full.slice(span.end, span.end + 400) };
     });
+}
+
+/** The citation proves record identity only; quoted text is always loaded afresh through RLS. */
+export async function resolvePersonalQuotationReference(options: {
+    messages: readonly { role: string; parts?: unknown[] }[];
+    field: "noteBody" | "reflectionText" | "highlightedText";
+    userId: string; supabase: Pick<SupabaseClient<Database>, "from">; signal: AbortSignal;
+}): Promise<RankedPersonalEvidence | null | undefined> {
+    const previous = options.messages.at(-2);
+    if (previous?.role !== "assistant" || !Array.isArray(previous.parts)) return undefined;
+    const parts = previous.parts.filter((part): part is { type: string; data: unknown } =>
+        Boolean(part && typeof part === "object" && "type" in part && part.type === "data-citations" && "data" in part));
+    if (parts.length === 0) return undefined;
+    if (parts.length !== 1 || !Array.isArray(parts[0].data) || parts[0].data.length === 0 || parts[0].data.length > 8) return null;
+    const references = new Map<string, Reference>();
+    for (const citation of parts[0].data) {
+        if (!citation || typeof citation !== "object" || typeof citation.href !== "string" || !citation.href.startsWith("/evidence#")) return null;
+        const reference = open(citation.href.slice("/evidence#".length), options.userId);
+        if (!reference) return null;
+        if (reference.type !== "source_segment" && reference.spans.some((span) => span.field === options.field)) {
+            references.set(`${reference.type}:${reference.id}`, reference);
+        }
+    }
+    if (references.size !== 1) return null; // Never guess among multiple previously selected records.
+    const reference = [...references.values()][0];
+    if (reference.type === "source_segment") return null;
+    let current;
+    try {
+        [current] = await loadSelectedPersonalEvidence({ supabase: options.supabase, userId: options.userId,
+            scope: { version: 1, itemType: "all" }, selected: [{ type: reference.type, id: reference.id }], signal: options.signal });
+    } catch (error) {
+        if (error instanceof PersonalEvidenceRetrievalError && error.code === "STALE_EVIDENCE") return null;
+        throw error;
+    }
+    if (!current || current.userId !== options.userId || current.contentItemId !== reference.contentItemId
+        || current.fingerprint !== reference.fingerprint) return null;
+    const text = current.type === "highlight"
+        ? options.field === "noteBody" ? current.noteBody : options.field === "highlightedText" ? current.highlightedText : null
+        : options.field === "reflectionText" ? current.reflectionText : null;
+    if (!text?.trim()) return null;
+    const item: RankedPersonalEvidence = { evidence: current, exactQuote: text, score: 1,
+        spans: [{ field: options.field, start: 0, end: text.length, text, score: 1 }] };
+    return formatRankedPersonalEvidence([item]).items[0];
 }
 
 /** Ordinary authenticated RLS client only. The encrypted reference never grants access. */

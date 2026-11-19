@@ -30,9 +30,19 @@ export function getAnthropicModelName(intent: AskIntent) {
     return RETIRED_ANTHROPIC_MODEL_REPLACEMENTS[configuredModel] || configuredModel;
 }
 
+/** Inventory references still require fresh metadata, never an earlier assistant list. */
+export function isLibraryAuthorFollowup(query: string): boolean {
+    return /\bwhich of (?:those|these|the)(?: (?:two|three|four|\d+))? (?:books?|titles?|items?|sources?) (?:is|are|was|were) (?:written )?by\b/i.test(query)
+        || /\bwhich of them (?:is|are|was|were) (?:written )?by\b/i.test(query);
+}
+
 export function detectAskIntent(query: string): AskIntent {
     const normalized = query.toLowerCase();
-    if (/\b(highlights?|notes?|reflections?|i wrote|i reflected|i highlighted)\b/.test(normalized)) return "hybrid";
+    // Personal recall needs stored evidence even when the question also names
+    // the library. Question forms such as "did I write" are not "I wrote".
+    if (/\b(highlights?|notes?|reflections?|annotations?)\b/.test(normalized)
+        || /\bi(?:['’]ve| have| had)? (?:wrote|written|noted|recorded|reflected|highlighted)\b/.test(normalized)
+        || /\b(?:did|have|had) i (?:write|written|note|noted|record|recorded|reflect|reflected|highlight|highlighted)\b/.test(normalized)) return "hybrid";
     const advisorPatterns = [
         /\brecommend\b/,
         /\brecommendation\b/,
@@ -57,6 +67,8 @@ export function detectAskIntent(query: string): AskIntent {
         /\bfinish(?:ed)?\b/,
         /\bhow many\b/,
         /\bwhich authors?\b/,
+        /\bwho (?:wrote|is the author)\b/,
+        /\bwhich (?:saved )?(?:books?|titles?|items?|sources?) (?:is|are) (?:written )?by\b/,
         /\blist\b/,
         /\bwhat books?\b/,
         /\bmy library\b/,
@@ -66,6 +78,8 @@ export function detectAskIntent(query: string): AskIntent {
         /\bin progress\b/,
     ];
     const synthesisPatterns = [
+        // Naming the library is a scope, not proof of an inventory request.
+        /\b(?:say|says|said|discuss|discusses|describe|describes|explain|explains|argue|argues|teach|teaches)\b/,
         /\btheme\b/,
         /\bthemes\b/,
         /\bcompare\b/,
@@ -90,7 +104,7 @@ export function detectAskIntent(query: string): AskIntent {
         return "reading_advisor";
     }
 
-    const metadataHits = metadataPatterns.filter((pattern) => pattern.test(normalized)).length;
+    const metadataHits = metadataPatterns.filter((pattern) => pattern.test(normalized)).length + Number(isLibraryAuthorFollowup(query));
     const synthesisHits = synthesisPatterns.filter((pattern) => pattern.test(normalized)).length;
 
     if (metadataHits > 0 && synthesisHits === 0) {

@@ -44,7 +44,6 @@ import {
     clearRecentRecommendations,
 } from "@/lib/recommendation-memory";
 
-const LIBRARY_SNAPSHOT_TOAST_ID = "library-snapshot-attention";
 
 /**
  * Reading progress data stored in localStorage
@@ -797,7 +796,6 @@ function useReadingProgressController(initialUser?: User | null) {
             syncBlockedRef.current = false;
             setSyncNeedsAttention(false);
             toast.dismiss("library-sync-attention");
-            toast.dismiss(LIBRARY_SNAPSHOT_TOAST_ID);
         }
 
         if (!didRunLegacyMigrationRef.current) {
@@ -859,7 +857,6 @@ function useReadingProgressController(initialUser?: User | null) {
                     setHydrationStatus("ready");
                     setHydrationIssue(null);
                     setSnapshotBuilding(false);
-                    toast.dismiss(LIBRARY_SNAPSHOT_TOAST_ID);
                     retryAfterRef.current = 0;
                     if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
                     retryTimerRef.current = null;
@@ -903,14 +900,6 @@ function useReadingProgressController(initialUser?: User | null) {
                     logLibrarySyncDiagnostic("refresh_failed", {
                         responseCode: error instanceof LibrarySnapshotClientError ? error.code : "SNAPSHOT_FAILED",
                         installedRevision: null,
-                    });
-                    toast.error(kind === "rate_limited"
-                        ? "Library requests are limited. Your changes remain on this device; sync will retry when allowed."
-                        : kind === "preparing"
-                            ? "Your library is still preparing. Your changes remain on this device."
-                            : "Sync unavailable. Your changes remain on this device. Refresh your library to try again.", {
-                        id: LIBRARY_SNAPSHOT_TOAST_ID, duration: Infinity,
-                        action: kind === "rate_limited" ? undefined : { label: "Refresh library", onClick: () => refreshLibraryRef.current() },
                     });
                 }
                 logRecoverableCloudSync("Fetch complete library snapshot failed", error, {
@@ -1012,7 +1001,6 @@ function useReadingProgressController(initialUser?: User | null) {
             activeWritesRef.current.forEach(controller => controller.abort());
             setJournalVersion(value => value + 1);
             toast.dismiss("library-sync-attention");
-            toast.dismiss(LIBRARY_SNAPSHOT_TOAST_ID);
             setHydrationStatus("ready");
             if (userRef.current && !hasResetReceipt) {
                 window.setTimeout(() => refreshLibraryRef.current(), 0);

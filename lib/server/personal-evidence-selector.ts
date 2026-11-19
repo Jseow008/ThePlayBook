@@ -52,6 +52,8 @@ export type PersonalEvidenceSelectionOutput = {
     }>;
 };
 export type PersonalEvidenceSelectionRequest = {
+    /** Admission metadata only, never added to model instructions. */
+    questionCharacters?: 20_000;
     system: string;
     prompt: string;
     schema: z.ZodType<PersonalEvidenceSelectionOutput>;
@@ -84,6 +86,7 @@ export type PersonalEvidenceSelectionModelConfig = {
     readonly forceReasoning?: true; readonly store?: false; readonly responseAdapter?: string;
 };
 export type CanonicalPersonalEvidenceSelectionRequest = {
+    questionCharacters?: 20_000;
     promptVersion: string;
     system: string;
     prompt: string;
@@ -231,12 +234,14 @@ export function derivePersonalEvidenceSelectionIds(output: unknown, request: Pic
 }
 /** Shared by production, captured requests and offline provider evaluation. */
 export function buildPersonalEvidenceSelectionRequest(options: {
+    questionCharacters?: 20_000;
     question: string;
     candidates: readonly PersonalEvidenceSelectionCandidate[];
     exactQuote?: boolean;
     includeFollowups?: boolean;
 }) {
-    if (typeof options.question !== "string" || !options.question.trim() || options.question.length > PERSONAL_EVIDENCE_SELECTOR_LIMITS.questionCharacters
+    if ((options.questionCharacters !== undefined && options.questionCharacters !== 20_000)
+        || typeof options.question !== "string" || !options.question.trim() || options.question.length > (options.questionCharacters ?? PERSONAL_EVIDENCE_SELECTOR_LIMITS.questionCharacters)
         || !Array.isArray(options.candidates) || (options.exactQuote !== undefined && typeof options.exactQuote !== "boolean")
         || (options.includeFollowups !== undefined && typeof options.includeFollowups !== 'boolean')) throw new PersonalEvidenceSelectionError("INVALID_INPUT");
     if (options.candidates.length > PERSONAL_EVIDENCE_SELECTOR_LIMITS.candidates) throw new PersonalEvidenceSelectionError("CANDIDATE_LIMIT");
@@ -263,9 +268,11 @@ export function buildPersonalEvidenceSelectionRequest(options: {
         ...(options.includeFollowups ? { includeFollowups: true } : {}) });
     const system = options.includeFollowups ? `${SYSTEM}\n\nLibrary response envelope: return the complete original assessment as the FIRST field, selection. Only after completing selection, add followUpQuestions. Selection rules, relevance verdicts, and evidence IDs remain exactly as specified above.\n${LIBRARY_FOLLOWUP_INSTRUCTIONS}\nFor these questions, use ONLY the fields of direct-verdict candidates retained in selection. Do not use internal assessment prose as evidence. With directly supported evidence, suggest one or two useful next searches when feasible. If selection has no direct verdict, return an empty followUpQuestions array. Optional questions are lower priority than completing the evidence selection.` : SYSTEM;
     const request = { system, prompt, schema, maxOutputTokens: PERSONAL_EVIDENCE_SELECTOR_LIMITS.maxOutputTokens,
+        ...(options.questionCharacters ? { questionCharacters: options.questionCharacters } : {}),
         ...(options.includeFollowups ? { includeFollowups: true } : {}) };
     const coreContract = selectionOutputContract(candidateIds, maximum);
     const canonical: CanonicalPersonalEvidenceSelectionRequest = {
+        ...(options.questionCharacters ? { questionCharacters: options.questionCharacters } : {}),
         promptVersion: PERSONAL_EVIDENCE_SELECTOR_PROMPT_VERSION, system, prompt,
         maxOutputTokens: request.maxOutputTokens, outputSchema: options.includeFollowups
             ? { ...coreContract, version: `${coreContract.version}+library-followups-v1` } : coreContract,
@@ -273,11 +280,11 @@ export function buildPersonalEvidenceSelectionRequest(options: {
     return { request, canonical, candidateBytes, candidates };
 }
 export function canonicalPersonalEvidenceSelectionRequest(request: Pick<PersonalEvidenceSelectionRequest, "system" | "prompt" | "maxOutputTokens">
-    & Partial<Pick<CanonicalPersonalEvidenceSelectionRequest, "promptVersion" | "outputSchema">>): CanonicalPersonalEvidenceSelectionRequest {
+    & Partial<Pick<CanonicalPersonalEvidenceSelectionRequest, "promptVersion" | "outputSchema" | "questionCharacters">>): CanonicalPersonalEvidenceSelectionRequest {
     let input: { question: string; candidates: PersonalEvidenceSelectionCandidate[]; exactQuote?: boolean; includeFollowups?: boolean };
     try { input = JSON.parse(request.prompt) as typeof input; } catch { throw new PersonalEvidenceSelectionError("INVALID_INPUT"); }
     if (!input || typeof input !== "object") throw new PersonalEvidenceSelectionError("INVALID_INPUT");
-    const rebuilt = buildPersonalEvidenceSelectionRequest(input).canonical;
+    const rebuilt = buildPersonalEvidenceSelectionRequest({ ...input, questionCharacters: request.questionCharacters }).canonical;
     if (request.system !== rebuilt.system || request.prompt !== rebuilt.prompt || request.maxOutputTokens !== rebuilt.maxOutputTokens
         || (request.promptVersion !== undefined && request.promptVersion !== rebuilt.promptVersion)
         || (request.outputSchema !== undefined && JSON.stringify(request.outputSchema) !== JSON.stringify(rebuilt.outputSchema))) throw new PersonalEvidenceSelectionError("INVALID_INPUT");
@@ -316,6 +323,7 @@ function awaitWithAbort<T>(operation: Promise<T>, signal: AbortSignal): Promise<
  * authorization; the caller must still recheck selected evidence before delivery.
  */
 export async function selectPersonalEvidence(options: {
+    questionCharacters?: 20_000;
     question: string;
     candidates: readonly PersonalEvidenceSelectionCandidate[];
     exactQuote?: boolean;

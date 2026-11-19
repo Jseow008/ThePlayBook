@@ -242,6 +242,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             evidence = await retrievePersonalEvidence({
                 supabase, userId: user.id, scope, question: lastMessage.content,
                 semanticQuestion: questionContext.semanticQuestion, signal,
+                embeddingQuestion: questionContext.embeddingQuestion,
             });
         } catch (error) {
             const spendingFailure = aiSpendingFailureResponse(error);

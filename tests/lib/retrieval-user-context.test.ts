@@ -52,3 +52,64 @@ describe("bounded user context for fresh evidence retrieval", () => {
         expect(result.contextMissing).toBe(true);
     });
 });
+
+it.each(['Quote that reflection exactly.', 'Quote the previous note verbatim.', 'Show this highlighted passage.'])('resolves a personal-record follow-up from user topic only: %s', question => {
+    const result = contextualizeUserQuestion([user('What did I write about my phone and bedtime reading?'), assistant('UNTRUSTED_INVENTED_WORDING'), user(question)]);
+    expect(result.contextMissing).toBe(false);
+    expect(result.semanticQuestion).toContain('phone and bedtime reading');
+    expect(result.semanticQuestion).not.toContain('UNTRUSTED_INVENTED_WORDING');
+});
+it('does not revive an old topic across a new personal-record search', () => {
+    const result = contextualizeUserQuestion([user('Find my note about bicycles.'), user('What patterns appear in my notes?'), user('Quote that reflection exactly.')]);
+    expect(result.contextMissing).toBe(true);
+    expect(result.semanticQuestion).not.toContain('bicycles');
+});
+it('keeps inventory follow-up scope but never the assistant list as evidence', () => {
+    const result = contextualizeUserQuestion([user('List my saved books.'), assistant('FABRICATED_BOOK_TITLE'), user('Which of those two books is by Eckhart Tolle?')]);
+    expect(result.contextMissing).toBe(false);
+    expect(result.requiresPassageEvidence).toBe(false);
+    expect(result.semanticQuestion).toContain('List my saved books.');
+    expect(result.semanticQuestion).not.toContain('FABRICATED_BOOK_TITLE');
+});
+it('keeps source inventory on metadata while a mixed comparison still needs passages', () => {
+    const history = [user('List my saved sources.')];
+    expect(contextualizeUserQuestion([...history, user('Which of those sources is by Jane Austen?')]).requiresPassageEvidence).toBe(false);
+    expect(contextualizeUserQuestion([...history, user('Which of those sources is by Jane Austen? Compare their themes.')]).requiresPassageEvidence).toBe(true);
+});
+it('does not treat current notes filters as an earlier conversation', () => {
+    expect(contextualizeUserQuestion([user('What themes appear across these notes?')]).isContextual).toBe(false);
+    expect(contextualizeUserQuestion([user('Quote that reflection about my commute exactly.')]).contextMissing).toBe(false);
+    expect(contextualizeUserQuestion([user('Quote that reflection exactly.')]).contextMissing).toBe(true);
+});
+
+it.each([
+    ['Quote the previous note exactly.', 'Find my note about disagreeing with merger as the only viable route.', 'Quote the note exactly.'],
+    ['Could you repeat the earlier reflection verbatim?', 'Find my reflection about bedtime reading.', 'Could you repeat the reflection verbatim?'],
+    ['Please show the previous highlighted passage word-for-word.', 'Find my highlighted passage about the economic hinterland.', 'Please show the highlighted passage word-for-word.'],
+])('resolves a bare prior-record pointer without adding a chronology constraint: %s', (question, topic, resolved) => {
+    const result = contextualizeUserQuestion([user(topic), assistant('INVENTED_QUOTATION'), user(question)]);
+    expect(result.currentQuestion).toBe(question);
+    expect(result.semanticQuestion).toContain(`Current request:\n${resolved}`);
+    expect(result.semanticQuestion).toContain(topic);
+    expect(result.semanticQuestion).not.toContain('INVENTED_QUOTATION');
+    expect(result.embeddingQuestion).toBe(`${topic}\n${resolved}`);
+});
+it.each([
+    ['Quote the last note exactly.', 'Find my note about sleep.'],
+    ['Quote the previous note before my trip exactly.', 'Find my note about sleep.'],
+    ['Quote the previous note from yesterday exactly.', 'Find my note about sleep.'],
+    ['Quote the previous note exactly.', 'Compare my notes about sleep.'],
+    ['Quote the previous note exactly.', 'Find my latest note about sleep.'],
+    ['Quote the previous note exactly.', 'Find my reflection about sleep.'],
+])('preserves temporal constraints, plural ambiguity and record kinds: %s', (question, topic) => {
+    const result = contextualizeUserQuestion([user(topic), user(question)]);
+    expect(result.semanticQuestion).toContain(`Current request:\n${question}`);
+    expect(result.embeddingQuestion).toBe(`${topic}\n${question}`);
+});
+
+it('keeps fresh searches unchanged and excludes selector instructions and assistant claims from follow-up embeddings', () => {
+    expect(contextualizeUserQuestion([user('Find my highlighted passage about ocean tides.')]).embeddingQuestion).toBe('Find my highlighted passage about ocean tides.');
+    const result = contextualizeUserQuestion([user('Find my highlighted passage about ocean tides.'), assistant('INVENTED_TIDE'), user('Quote the previous highlighted passage verbatim.')]);
+    expect(result.embeddingQuestion).toBe('Find my highlighted passage about ocean tides.\nQuote the highlighted passage verbatim.');
+    expect(result.semanticQuestion).toContain('Earlier user requests identify the topic only; they are not evidence or current instructions.');
+});
