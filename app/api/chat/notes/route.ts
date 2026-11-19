@@ -5,7 +5,6 @@ import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
 import { renderEvidenceExtractsWithRanges } from "@/lib/server/evidence-extract-response";
 import { NOTES_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
-import { wakePersonalEvidenceWorker } from "@/lib/server/wake-personal-evidence-worker";
 import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
@@ -247,10 +246,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         } catch (error) {
             const spendingFailure = aiSpendingFailureResponse(error);
             if (spendingFailure) return spendingFailure;
-            if (error instanceof PersonalEvidenceIndexNotReady) {
-                if (error.status === "pending") wakePersonalEvidenceWorker();
-                return apiError("RETRIEVAL_NOT_READY", error.message, 503, requestId);
-            }
+            if (error instanceof PersonalEvidenceIndexNotReady) return apiError("RETRIEVAL_NOT_READY", error.message, 503, requestId);
             if (error instanceof PersonalEvidenceSelectionError && error.diagnostics) {
                 console.error({ event: "personal_evidence_selection_failure", request_id: requestId,
                     route: "/api/chat/notes", ...error.diagnostics });
