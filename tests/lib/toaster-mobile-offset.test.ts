@@ -8,9 +8,9 @@ describe("getToasterMobileOffset", () => {
         });
     });
 
-    it("clears the compact mobile bottom navigation on browse", () => {
+    it("clears the standard mobile bottom navigation on browse", () => {
         expect(getToasterMobileOffset("/browse")).toEqual({
-            bottom: "calc(var(--mobile-bottom-nav-compact-height) + max(0.75rem, var(--safe-area-bottom)) + 0.75rem)",
+            bottom: "calc(var(--mobile-bottom-nav-height) + max(0.75rem, var(--safe-area-bottom)) + 0.75rem)",
         });
     });
 

@@ -27,14 +27,6 @@ const landingPolicy = {
     viewportMode: "standalone",
 } satisfies RouteChromePolicy;
 
-const browsePolicy = {
-    mobileHeader: "compact",
-    mobileBottomNav: "compact",
-    mobileBottomPadding: "compact",
-    desktopSidebarPadding: true,
-    viewportMode: "standard",
-} satisfies RouteChromePolicy;
-
 const readPolicy = {
     mobileHeader: "default",
     mobileBottomNav: "none",
@@ -81,12 +73,6 @@ const routeChromePolicyRules = [
         pattern: "/",
         matches: (pathname: string) => pathname === "/",
         policy: landingPolicy,
-    },
-    {
-        name: "browse",
-        pattern: "/browse",
-        matches: (pathname: string) => pathname === "/browse",
-        policy: browsePolicy,
     },
     {
         name: "read",
