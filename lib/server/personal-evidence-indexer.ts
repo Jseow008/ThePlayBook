@@ -47,7 +47,7 @@ const defaultRpc: IndexRpc = async (name, args, signal) => {
 function identity(claim: Claim) {
     return { p_evidence_type: claim.evidence_type, p_evidence_id: claim.evidence_id, p_revision: claim.revision, p_lease_token: claim.lease_token };
 }
-export async function processPersonalEvidenceIndex(options: { signal?: AbortSignal; rpc?: IndexRpc; embed?: IndexEmbedder; timeoutMs?: number } = {}) {
+export async function processPersonalEvidenceIndex(options: { seed?: boolean; signal?: AbortSignal; rpc?: IndexRpc; embed?: IndexEmbedder; timeoutMs?: number } = {}) {
     const rpc = options.rpc ?? defaultRpc;
     const apiKey = process.env.GEMINI_API_KEY;
     if (!options.embed && !apiKey) throw new Error("Personal index provider configuration missing");
@@ -66,7 +66,7 @@ export async function processPersonalEvidenceIndex(options: { signal?: AbortSign
     if (admission === null) return { ...result, stopReason: "worker_busy_or_provider_cooldown" };
     const lease = WorkerLeaseSchema.parse(admission);
     try {
-        await call("seed_personal_evidence_index", { p_limit: 500 });
+        if (options.seed !== false) await call("seed_personal_evidence_index", { p_limit: 500 });
         while (result.claimed < 20) {
             if (signal.aborted || Date.now() - startedAt >= timeoutMs - 1_000) {
                 result.stopReason = "deadline_or_cancelled";
