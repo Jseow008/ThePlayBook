@@ -37,6 +37,12 @@ describe("bounded personal evidence index worker", () => {
         expect(rpc.mock.calls.filter(([name]) => name === "claim_personal_evidence_index").every(([, args]) => args.p_worker_token === workerLease.worker_token)).toBe(true);
         expect(rpc.mock.lastCall?.slice(0, 2)).toEqual(["release_personal_evidence_worker", { p_worker_token: workerLease.worker_token }]);
     });
+    it("processes already queued captures without a full backfill on a wakeup", async () => {
+        const rpc = database();
+        const result = await processPersonalEvidenceIndex({ seed: false, rpc, embed: async texts => texts.map(vector) });
+        expect(result.completed).toBe(1);
+        expect(rpc.mock.calls.map(([name]) => name)).not.toContain("seed_personal_evidence_index");
+    });
     it("continues bounded claims without exceeding twenty records per invocation", async () => {
         const rpc = database();
         rpc.mockImplementation(async name => ({ data: name === "acquire_personal_evidence_worker" ? workerLease : name === "claim_personal_evidence_index" ? [claim(), claim("two")] : true, error: null }));

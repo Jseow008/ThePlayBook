@@ -1,3 +1,4 @@
+import { wakePersonalEvidenceWorker } from "@/lib/server/wake-personal-evidence-worker";
 import { captureWriteFailure } from "@/lib/server/capture-write-errors";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -84,6 +85,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             });
         });
 
+        wakePersonalEvidenceWorker();
         return NextResponse.json({ data: reflection });
     } catch (error) {
         logApiError({ requestId, route: "PATCH /api/library/reflections/[id]", message: "Unexpected error updating reflection", error });
