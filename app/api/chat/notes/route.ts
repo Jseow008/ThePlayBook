@@ -24,6 +24,7 @@ import { PersonalEvidenceSelectionError } from "@/lib/server/personal-evidence-s
 
 import { withNotesReplayRequest } from "@/lib/server/notes-replay";
 import { notesComparisonActivity } from "@/lib/server/notes-comparison-outcome";
+import { focusNotesComparison } from "@/lib/server/notes-comparison-context";
 
 export const maxDuration = 60;
 
@@ -273,7 +274,9 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         const extracts = renderEvidenceExtractsWithRanges({ personal: evidence.items });
         const comparison = isComparison && evidence.contextText
             ? await generateEvidenceComparison({
-                surface: "notes", system: buildPersonalEvidencePrompt(evidence),
+                surface: "notes", system: buildPersonalEvidencePrompt({
+                    ...evidence, contextText: focusNotesComparison(lastMessage.content, evidence),
+                }),
                 question: questionContext.semanticQuestion, maxOutputTokens: getNotesOutputTokenCap(lastMessage.content), signal,
             })
             : null;
