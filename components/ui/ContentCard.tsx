@@ -41,7 +41,7 @@ interface ContentCardProps {
     hideProgressBar?: boolean;
     hideBookmark?: boolean;
     enableUserState?: boolean;
-    navigationMode?: "preview" | "resume";
+    navigationMode?: "preview" | "resume" | "read";
     titleDensity?: "default" | "app-compact";
     /** Size-aware title limits, enabled for shared cover cards by default. */
     showMoreTitleLines?: boolean;
@@ -96,8 +96,8 @@ function hasUsableProgress(progress: ReturnType<typeof useReadingProgress>["getP
     );
 }
 
-function getContentCardHref(item: ContentItem, navigationMode: "preview" | "resume", hasProgress: boolean) {
-    if (navigationMode === "resume" && hasProgress) {
+function getContentCardHref(item: ContentItem, navigationMode: ContentCardProps["navigationMode"], hasProgress: boolean) {
+    if (navigationMode === "read" || (navigationMode === "resume" && hasProgress)) {
         return buildReadPath(item);
     }
 
@@ -128,7 +128,7 @@ export const ContentCard = memo(function ContentCard({
     ...props
 }: ContentCardProps) {
     if (!enableUserState) {
-        return <BaseContentCard {...props} />;
+        return <BaseContentCard {...props} href={getContentCardHref(props.item, props.navigationMode, false)} />;
     }
 
     return <InteractiveContentCard {...props} />;
