@@ -1237,7 +1237,7 @@ describe("useReadingProgress", () => {
         view.unmount();
     });
 
-    it("clears the snapshot limit warning after automatic recovery", async () => {
+    it("reports the snapshot limit inline and recovers without an overlay", async () => {
         currentAuthUser = { id: "user-a" };
         vi.mocked(fetchCompleteLibrarySnapshot).mockRejectedValueOnce(
             new LibrarySnapshotClientError("Limited", "RATE_LIMITED", 429, 400),
@@ -1245,16 +1245,9 @@ describe("useReadingProgress", () => {
 
         const view = renderHook(() => useReadingProgress(), { wrapper });
         await waitFor(() => expect(view.result.current.hydrationIssue?.kind).toBe("rate_limited"));
-        expect(toastErrorMock).toHaveBeenCalledWith(
-            expect.stringContaining("Library requests are limited"),
-            expect.objectContaining({ id: "library-snapshot-attention", duration: Infinity }),
-        );
-
-        toastDismissMock.mockClear();
+        expect(toastErrorMock).not.toHaveBeenCalled();
         await waitFor(() => expect(view.result.current.hydrationStatus).toBe("ready"), { timeout: 2000 });
         expect(view.result.current.hydrationIssue).toBeNull();
-        expect(toastDismissMock).toHaveBeenCalledWith("library-snapshot-attention");
-        expect(toastDismissMock).not.toHaveBeenCalledWith("library-sync-attention");
         view.unmount();
     });
 

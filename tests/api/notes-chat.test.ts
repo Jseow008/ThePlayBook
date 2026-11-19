@@ -457,6 +457,7 @@ describe("Notes chat API", () => {
         expect(retrieval.question).toBe(question);
         expect(retrieval.semanticQuestion).toContain("sleep deprivation");
         expect(retrieval.semanticQuestion).not.toContain("SECRET_DELETED_PASSAGE");
+        expect(retrieval.embeddingQuestion).toBe(`Explain my notes about sleep deprivation.\n${question}`);
         expect(streamText).not.toHaveBeenCalled();
     });
     it("asks for an assistant-only theme before quota debit or provider work", async () => {

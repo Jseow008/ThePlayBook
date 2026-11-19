@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import type { RankedPersonalEvidence } from "@/lib/server/personal-evidence-ranking";
-import { issueEvidenceCitations, resolveEvidenceCitation } from "@/lib/server/evidence-citation";
+import { issueEvidenceCitations, resolveEvidenceCitation, resolvePersonalQuotationReference } from "@/lib/server/evidence-citation";
 import { loadSelectedPersonalEvidence, PersonalEvidenceRetrievalError } from "@/lib/server/personal-evidence-candidates";
 import { retrievalTextResponse } from "@/lib/server/retrieval-response";
 import { CitationResolutionSchema, getMessageCitations } from "@/lib/evidence-citation";
@@ -30,6 +30,60 @@ const tokenFor = (item = selected()) => issueEvidenceCitations({ userId, persona
 const resolve = async (token: string, owner = userId) => CitationResolutionSchema.parse(await resolveEvidenceCitation({ token, userId: owner, supabase: client, signal: new AbortController().signal }));
 beforeEach(() => { vi.stubEnv("ACCOUNT_DATA_CURSOR_SECRET", "citation-test-secret-only-32-characters-long"); vi.clearAllMocks(); rows = []; vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([selected().evidence]); });
 afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
+
+describe("fresh exact quotations from preceding signed references", () => {
+    const quote = (tokens = [tokenFor()], owner = userId, field: "noteBody" | "reflectionText" | "highlightedText" = "noteBody") =>
+        resolvePersonalQuotationReference({ messages: [{ role: "user" }, { role: "assistant", parts: [
+            { type: "text", text: "INVENTED ASSISTANT WORDING" },
+            { type: "data-citations", data: tokens.map(token => ({ href: `/evidence#${token}` })) },
+        ] }, { role: "user" }], userId: owner, field, supabase: client, signal: new AbortController().signal });
+    it("loads the full current stored field, not assistant text or an earlier excerpt", async () => {
+        const result = await quote();
+        expect(result?.exactQuote).toBe(text);
+        expect(result?.spans).toEqual([{ field: "noteBody", start: 0, end: text.length, text, score: 1 }]);
+        expect(loadSelectedPersonalEvidence).toHaveBeenCalledWith(expect.objectContaining({ userId, scope: { version: 1, itemType: "all" }, selected: [{ type: "highlight", id }] }));
+    });
+    it("rejects forged, expired, foreign and wrong-field references before reading records", async () => {
+        const token = tokenFor();
+        expect(await quote([`A${token.slice(1, -1)}B`])).toBeNull();
+        expect(await quote([token], contentItemId)).toBeNull();
+        expect(await quote([token], userId, "reflectionText")).toBeNull();
+        vi.useFakeTimers(); vi.setSystemTime(Date.now() + 86_400_001);
+        expect(await quote([token])).toBeNull();
+        expect(loadSelectedPersonalEvidence).not.toHaveBeenCalled();
+    });
+    it("clarifies multiple eligible records rather than choosing the first", async () => {
+        const other = selected(); other.evidence = { ...other.evidence, id: contentItemId, evidenceId: `highlight:${contentItemId}` };
+        expect(await quote([tokenFor(), tokenFor(other)])).toBeNull();
+        expect(loadSelectedPersonalEvidence).not.toHaveBeenCalled();
+    });
+    it("never reconstructs changed, deleted or non-owned fields from a token", async () => {
+        const token = tokenFor();
+        vi.mocked(loadSelectedPersonalEvidence).mockResolvedValueOnce([{ ...selected().evidence, fingerprint: "changed" }]);
+        expect(await quote([token])).toBeNull();
+        vi.mocked(loadSelectedPersonalEvidence).mockRejectedValueOnce(new PersonalEvidenceRetrievalError("STALE_EVIDENCE"));
+        expect(await quote([token])).toBeNull();
+        vi.mocked(loadSelectedPersonalEvidence).mockResolvedValueOnce([{ ...selected().evidence, userId: contentItemId }]);
+        expect(await quote([token])).toBeNull();
+        const empty = selected().evidence;
+        if (empty.type === "highlight") empty.noteBody = null;
+        vi.mocked(loadSelectedPersonalEvidence).mockResolvedValueOnce([empty]);
+        expect(await quote([token])).toBeNull();
+    });
+    it("uses only the immediately preceding assistant and keeps operational failure distinct", async () => {
+        expect(await resolvePersonalQuotationReference({ messages: [{ role: "assistant", parts: [{ type: "data-citations", data: [{ href: `/evidence#${tokenFor()}` }] }] }, { role: "user" }, { role: "user" }], userId, field: "noteBody", supabase: client, signal: new AbortController().signal })).toBeUndefined();
+        expect(loadSelectedPersonalEvidence).not.toHaveBeenCalled();
+        vi.mocked(loadSelectedPersonalEvidence).mockRejectedValueOnce(new PersonalEvidenceRetrievalError("UNAVAILABLE"));
+        await expect(quote()).rejects.toThrow();
+    });
+    it("does not accept an oversized citation set or multiple citation parts", async () => {
+        expect(await quote(Array.from({ length: 9 }, () => tokenFor()))).toBeNull();
+        expect(await resolvePersonalQuotationReference({ messages: [{ role: "user" }, { role: "assistant", parts: [
+            { type: "data-citations", data: [{ href: `/evidence#${tokenFor()}` }] }, { type: "data-citations", data: [] },
+        ] }, { role: "user" }], userId, field: "noteBody", supabase: client, signal: new AbortController().signal })).toBeNull();
+        expect(loadSelectedPersonalEvidence).not.toHaveBeenCalled();
+    });
+});
 
 describe("response-scoped evidence references", () => {
     it("resolves exact UTF-16 slices with literal context", async () => {
