@@ -61,3 +61,17 @@ The harness revokes sessions, waits for browser API requests to settle, and dele
 only IDs it created. Independently verify cleanup, stop only the owned local
 server, and retain all failures and unknown-cost allowances. This evaluation does
 not replace required hosted release gates or authorize production promotion.
+
+For a follow-up candidate, add a separate frozen `ui` list and run `pilot-ui`
+after the API pilot. UI cases may declare a viewport width and earlier user
+questions; the harness sends those questions through the real interface before
+testing the follow-up. It never injects the supplied assistant paraphrase as a
+stored quotation. Submission uses the existing keyboard Enter behavior; this
+does not establish touch-tap behavior.
+
+For a loopback production-build server using simulated Vercel ingress, set
+`AI_ACCEPTANCE_LOCAL_INGRESS=1` on the harness. Its test IP headers are restricted
+to the already-required loopback origin. This is not proof of hosted ingress or
+production performance. A local candidate evaluation does not refresh the
+separate disposable-hosted provenance gate; preserve old evidence unchanged and
+obtain new hosted evidence before claiming that gate passes.

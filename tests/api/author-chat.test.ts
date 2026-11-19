@@ -2,6 +2,8 @@ const { spendingRpc } = vi.hoisted(() => ({ spendingRpc: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ getAdminClient: () => ({ rpc: spendingRpc }) }));
 import { AuthApiError, AuthSessionMissingError } from "@supabase/supabase-js";
 vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn(), aiNetworkIdentifier: vi.fn(() => 'a'.repeat(64)) }));
+import { checkAuthorEvidence } from '@/lib/server/author-evidence';
+vi.mock('@/lib/server/author-evidence', () => ({ checkAuthorEvidence: vi.fn() }));
 import { POST } from '@/app/api/chat/author/route';
 import { NextRequest } from 'next/server';
 import { vi } from 'vitest';
@@ -79,6 +81,8 @@ describe('Author Chat API', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(checkAuthorEvidence).mockReset();
+        vi.mocked(checkAuthorEvidence).mockResolvedValue(null);
         spendingRpc.mockImplementation((name, args) => ({ abortSignal: async () => ({ data: name === "reserve_ai_spend"
             ? { allowed: true, operationId: args.p_operation_id, reservedMicrousd: args.p_reserved_microusd }
             : { recorded: true }, error: null }) }));
@@ -98,6 +102,24 @@ describe('Author Chat API', () => {
             data: [{ title: 'Intro', markdown_body: 'Segment body', order_index: 0 }],
             error: null,
         });
+    });
+
+    it('returns a source-bound refusal without generating unsupported claims', async () => {
+        vi.mocked(checkAuthorEvidence).mockResolvedValueOnce('The source does not state a reason for that, so I cannot establish why.');
+        const response = await POST(new NextRequest('http://localhost/api/chat/author', {
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody),
+        }));
+        expect(response.status).toBe(200);
+        expect(await response.text()).toContain('does not state a reason');
+        expect(streamText).not.toHaveBeenCalled();
+    });
+    it('fails closed when source checking is unavailable', async () => {
+        vi.mocked(checkAuthorEvidence).mockRejectedValueOnce(new Error('unavailable'));
+        const response = await POST(new NextRequest('http://localhost/api/chat/author', {
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody),
+        }));
+        expect(response.status).toBe(503);
+        expect(streamText).not.toHaveBeenCalled();
     });
 
     it.each([

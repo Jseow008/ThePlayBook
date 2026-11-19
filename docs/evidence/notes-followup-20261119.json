@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-19",
+  "branch": "codex/fix-chat-followup-grounding",
+  "parentPr": 389,
+  "model": "gpt-6-luna",
+  "reasoningEffort": "none",
+  "promptTextUnchanged": true,
+  "productionUnchanged": true,
+  "candidateHash": "b55ce66a83cdd69e019f798c891140522a9727c6bf963806447b9ef66c2a8cc3",
+  "planHash": "9072990a67c9b570e1169ae2daffe9458d97f7569e224bdb4ca677940c5a2b2f",
+  "rootCause": "The selector received the correct merger note but treated previous as an unproved record-identity constraint and returned not_established. Bare conversational record references are now resolved to the prior user-named topic before retrieval; assistant claims are excluded, raw questions and explicit temporal/filter constraints are preserved.",
+  "development": {
+    "passed": 5,
+    "total": 6,
+    "originalMiss": "D-N1 passed: exact stored note and available citation",
+    "otherPositive": "D-N2 passed: exact stored reflection and available citation",
+    "negativeControls": "D-N4 book-filter miss and D-N5 missing-topic clarification passed",
+    "library": "D-L1 author inventory follow-up passed",
+    "failure": "D-N3 highlighted-passage retrieval returned no candidates before selection",
+    "highlightDiagnosis": {
+      "threshold": 0.55,
+      "originalQueryCosine": 0.5341011669010096,
+      "resolvedQueryCosine": 0.5300834367142218,
+      "interpretation": "Independent embedding probe against the exact fixture passage falls below the unchanged threshold with both queries. No answer rerun, threshold change or held-out tuning."
+    },
+    "freshTwelveRun": false,
+    "freshTwelveHoldReason": "Six-case development gate did not pass; frozen unseen set retained"
+  },
+  "ui": {
+    "passed": 2,
+    "total": 2,
+    "viewportWidths": [390, 1440],
+    "actualPriorTurnWarmups": 2,
+    "exactQuotesAndCitations": true,
+    "pageErrors": 0,
+    "submission": "keyboard Enter; touch-tap behavior not qualified",
+    "origin": "loopback production build; local preview ingress headers, not hosted deployment proof"
+  },
+  "targetPositiveFirstTextMs": [7063.835625, 4912.698125000003, 5014.699999988079, 5676.899999976158],
+  "verification": {
+    "focused": {"passed": 165, "files": 6},
+    "fullUnit": {"passed": 2632, "skipped": 324, "failed": 1},
+    "remainingFailure": "Existing luna-evidence-provenance.test.ts binding requires fresh hosted qualification of changed code; historical Nov14 evidence was not rewritten or waived",
+    "acceptanceHarness": {"passed": 6},
+    "capacityHarness": {"passed": 34},
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed including Sharp traces and critical CSS",
+    "hostedGatePassed": false
+  },
+  "budget": {
+    "capUsd": 5,
+    "repricedPriorUpperUsdIncludingDiagnostic": 0.611848,
+    "newJournalUpperUsd": 0.00998282,
+    "cumulativeUpperUsd": 0.62183082,
+    "newJournalOpenAiCalls": 7,
+    "newJournalEmbeddingCalls": 17,
+    "newJournalUsagePricedOpenAiUsd": 0.00168842,
+    "newJournalOpenAiInputTokens": 11309,
+    "newJournalOpenAiOutputTokens": 880,
+    "newJournalCachedReadTokens": 1432,
+    "newJournalCacheWriteTokens": 9856,
+    "correction": "Response usage included cache-write tokens omitted by the earlier test estimate. Audit now accounts for duration-specific writes and reserves the highest Standard full-context 12h-write tariff. Historical missing usage remains a conservative allowance, including one unknown call at USD0.5253. This upper estimate is not an invoice charge.",
+    "pricingSource": "https://developers.openai.com/api/docs/pricing"
+  },
+  "cleanup": {"taskOwnedAccounts": 6, "independentSqlAllOwnedRowsZero": true, "serverStopped": true},
+  "hostedInfrastructure": "No billable branch created; prior USD0.01344/hour plus usage decision remains unanswered",
+  "evidenceDirectory": "output/notes-followup-20261119",
+  "releaseHold": "No merge/deploy. Highlight retrieval development failure and fresh hosted provenance remain unresolved. Leave PR344 and PR347 untouched."
+}

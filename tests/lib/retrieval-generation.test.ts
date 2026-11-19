@@ -68,3 +68,12 @@ describe("Notes generation model selection", () => {
         expect(getNotesAnthropicModelName("Compare the interpretations.")).toBe("claude-sonnet-4-6");
     });
 });
+
+describe('inventory follow-up authority', () => {
+    it.each(['Which of those two books is by Eckhart Tolle?', 'Which of these titles are written by Jane Austen?', 'Which of them is by Jane Austen?', 'Which of those sources is by Jane Austen?'])('routes %s to fresh metadata', question => {
+        expect(detectAskIntent(question)).toBe('library_metadata');
+    });
+    it('still retrieves content for a mixed author and theme request', () => {
+        expect(detectAskIntent('Which of those two books is by Jane Austen? Compare the themes.')).toBe('hybrid');
+    });
+});

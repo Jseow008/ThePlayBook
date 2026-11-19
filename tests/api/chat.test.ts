@@ -1,7 +1,8 @@
 const { spendingRpc } = vi.hoisted(() => ({ spendingRpc: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ getAdminClient: () => ({ rpc: spendingRpc }) }));
 vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn(), aiNetworkIdentifier: vi.fn(() => 'a'.repeat(64)) }));
-vi.mock("@/lib/server/evidence-citation", () => ({ issueEvidenceCitations: vi.fn(() => [{ label: "Test passage", href: "/evidence#fixture" }]) }));
+vi.mock("@/lib/server/evidence-citation", () => ({ issueEvidenceCitations: vi.fn(() => [{ label: "Test passage", href: "/evidence#fixture" }]), resolvePersonalQuotationReference: vi.fn() }));
+import { resolvePersonalQuotationReference } from '@/lib/server/evidence-citation';
 import { captureServerAnalyticsEvent } from '@/lib/server/analytics';
 import { selectedPersonalEvidence } from '../helpers/selected-personal-evidence';
 import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
@@ -137,6 +138,7 @@ describe('Chat API', () => {
         vi.mocked(rankLibrarySourceSpans).mockResolvedValue([]);
         vi.mocked(recheckPersonalEvidenceCandidates).mockReset();
         vi.mocked(recheckPersonalEvidenceCandidates).mockResolvedValue([]);
+        vi.mocked(resolvePersonalQuotationReference).mockReset();
         vi.mocked(loadLibrarySourceEvidence).mockReset();
         vi.mocked(loadLibrarySourceEvidence).mockResolvedValue([]);
         vi.mocked(selectLibraryEvidence).mockReset();
@@ -625,9 +627,43 @@ describe('Chat API', () => {
         expect(retrieval.question).toBe(question);
         expect(retrieval.semanticQuestion).toContain('sleep deprivation');
         expect(retrieval.semanticQuestion).not.toContain('SECRET_DELETED_PASSAGE');
-        expect(embedContentMock).toHaveBeenCalledWith(expect.objectContaining({ contents: retrieval.semanticQuestion }));
+        expect(retrieval.embeddingQuestion).toBe(`Explain my saved ideas about sleep deprivation.\n${question}`);
+        expect(embedContentMock).toHaveBeenCalledWith(expect.objectContaining({ contents: retrieval.embeddingQuestion }));
         expect(selectLibraryEvidence).toHaveBeenCalledWith(expect.objectContaining({ question, semanticQuestion: retrieval.semanticQuestion }));
         expect(streamText).not.toHaveBeenCalled();
+    });
+    it('quotes a revalidated preceding personal record without an embedding or model call', async () => {
+        const item = selectedPersonalEvidence(); item.exactQuote = item.evidence.type === 'highlight' ? item.evidence.noteBody : null;
+        vi.mocked(resolvePersonalQuotationReference).mockResolvedValue(item);
+        const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({
+            messages: [{ role: 'user', content: 'Find my note about focus.' }, { role: 'assistant', parts: [{ type: 'text', text: 'An excerpt' }, { type: 'data-citations', data: [{ href: '/evidence#signed' }] }] }, { role: 'user', content: 'Give the earlier note word-for-word, please.' }],
+        }) }));
+        expect(response.status).toBe(200);
+        expect(await response.text()).toContain(item.exactQuote);
+        expect(recheckPersonalEvidenceCandidates).toHaveBeenCalledWith(expect.objectContaining({ candidates: [item.evidence] }));
+        expect(assertActivePersonalRetrievalSession).toHaveBeenCalled();
+        expect(embedContentMock).not.toHaveBeenCalled(); expect(retrievePersonalEvidence).not.toHaveBeenCalled(); expect(selectLibraryEvidence).not.toHaveBeenCalled();
+    });
+    it.each(['Quote the previous note from 1998 exactly.', 'Quote the previous note about investing exactly.'])('does not let a prior citation bypass a new constraint: %s', async question => {
+        const item = selectedPersonalEvidence(); item.exactQuote = 'PRIVATE QUOTE';
+        vi.mocked(resolvePersonalQuotationReference).mockResolvedValue(item);
+        const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({ messages: [
+            { role: 'user', content: 'Find my note about focus.' }, { role: 'assistant', parts: [{ type: 'text', text: 'Prior record' }, { type: 'data-citations', data: [{ href: '/evidence#signed' }] }] }, { role: 'user', content: question },
+        ] }) }));
+        expect(await response.text()).not.toContain('PRIVATE QUOTE');
+        expect(resolvePersonalQuotationReference).not.toHaveBeenCalled();
+        expect(embedContentMock).toHaveBeenCalled();
+    });
+    it.each(['stale', 'revoked'] as const)('does not deliver a prior quote after %s revalidation', async failure => {
+        const item = selectedPersonalEvidence(); item.exactQuote = 'PRIVATE QUOTE';
+        vi.mocked(resolvePersonalQuotationReference).mockResolvedValue(failure === 'stale' ? null : item);
+        if (failure === 'revoked') vi.mocked(assertActivePersonalRetrievalSession).mockRejectedValueOnce(new Error('Session revoked'));
+        const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({ messages: [
+            { role: 'user', content: 'Find my note about focus.' }, { role: 'assistant', content: 'Prior text.' }, { role: 'user', content: 'Quote the previous note exactly.' },
+        ] }) }));
+        const body = await response.text(); expect(body).not.toContain('PRIVATE QUOTE');
+        expect(response.status).toBe(failure === 'stale' ? 200 : 503);
+        expect(embedContentMock).not.toHaveBeenCalled();
     });
     it('asks for a missing follow-up topic without calling a provider or debiting usage', async () => {
         const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({

@@ -30,6 +30,12 @@ export function getAnthropicModelName(intent: AskIntent) {
     return RETIRED_ANTHROPIC_MODEL_REPLACEMENTS[configuredModel] || configuredModel;
 }
 
+/** Inventory references still require fresh metadata, never an earlier assistant list. */
+export function isLibraryAuthorFollowup(query: string): boolean {
+    return /\bwhich of (?:those|these|the)(?: (?:two|three|four|\d+))? (?:books?|titles?|items?|sources?) (?:is|are|was|were) (?:written )?by\b/i.test(query)
+        || /\bwhich of them (?:is|are|was|were) (?:written )?by\b/i.test(query);
+}
+
 export function detectAskIntent(query: string): AskIntent {
     const normalized = query.toLowerCase();
     // Personal recall needs stored evidence even when the question also names
@@ -98,7 +104,7 @@ export function detectAskIntent(query: string): AskIntent {
         return "reading_advisor";
     }
 
-    const metadataHits = metadataPatterns.filter((pattern) => pattern.test(normalized)).length;
+    const metadataHits = metadataPatterns.filter((pattern) => pattern.test(normalized)).length + Number(isLibraryAuthorFollowup(query));
     const synthesisHits = synthesisPatterns.filter((pattern) => pattern.test(normalized)).length;
 
     if (metadataHits > 0 && synthesisHits === 0) {
