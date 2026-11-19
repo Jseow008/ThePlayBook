@@ -1,3 +1,4 @@
+import { wakePersonalEvidenceWorker } from "@/lib/server/wake-personal-evidence-worker";
 import { captureWriteFailure } from "@/lib/server/capture-write-errors";
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -288,6 +289,7 @@ export async function POST(request: NextRequest) {
             await Promise.all([highlightEvent, noteEvent]);
         });
 
+        wakePersonalEvidenceWorker();
         return NextResponse.json({ data, disposition: "created" });
     } catch (error) {
         logApiError({ requestId, route: "POST /api/library/highlights", message: "Unexpected error", error });

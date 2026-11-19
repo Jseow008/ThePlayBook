@@ -1,3 +1,4 @@
+import { wakePersonalEvidenceWorker } from "@/lib/server/wake-personal-evidence-worker";
 import { captureWriteFailure } from "@/lib/server/capture-write-errors";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -297,6 +298,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
                 parsed.data.expected ? "The saved note changed or is no longer available. Recheck it before saving; your draft is kept." : "Highlight not found.",
                 parsed.data.expected ? 409 : 404, requestId);
         }
+        if (parsed.data.note_body !== undefined || highlighted_text !== undefined) wakePersonalEvidenceWorker();
         return NextResponse.json({ success: true, data });
     } catch (error) {
         logApiError({ requestId, route: "PATCH /api/library/highlights/[id]", message: "Unexpected error", error });

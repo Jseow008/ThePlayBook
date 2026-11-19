@@ -26,7 +26,6 @@ async function main() {
     assert(buildId, "Build the production application before this journey");
     const output = required("JOURNEY_EVIDENCE_PATH");
     const admin = createClient(api, required("SUPABASE_SERVICE_KEY"), { auth: { persistSession: false, autoRefreshToken: false } });
-    const cronSecret = required("CRON_SECRET");
     const db = new Pool({ connectionString: database });
     const browser = await chromium.launch();
     const email = `journey-${randomUUID()}@example.com`;
@@ -95,10 +94,10 @@ async function main() {
         await expect.poll(async () => (await db.query("SELECT count(*)::int AS n FROM public.user_reflections WHERE user_id=$1 AND reflection_text=$2", [userId, reflection])).rows[0].n).toBe(1);
         completed();
         begin("real personal-evidence indexing");
-        const indexed = await page.request.get("/api/admin/personal-evidence/process", { headers: { authorization: `Bearer ${cronSecret}` }, timeout: 60_000 });
-        assert.equal(indexed.status(), 200, "Actual indexing worker must succeed");
-        const indexedBody = await indexed.json();
-        assert.equal(indexedBody.data.completed, 1, "Worker must index the browser-created reflection");
+        await expect.poll(async () => (await db.query(
+            "SELECT state FROM private.personal_evidence_index WHERE user_id=$1 AND evidence_type='reflection'",
+            [userId],
+        )).rows[0]?.state, { timeout: 60_000 }).toBe("ready");
         completed();
         begin("logout and later fresh session");
         await page.goto("/settings");
