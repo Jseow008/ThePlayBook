@@ -30,7 +30,7 @@ export function decodeStream(body) {
 }
 const sha = value => createHash('sha256').update(value).digest('hex');
 const required = name => { assert(process.env[name], `Missing ${name}`); return process.env[name]; };
-const files = ['lib/server/author-evidence.ts','lib/server/retrieval-user-context.ts','lib/server/interactive-ai.ts','lib/server/retrieval-generation.ts','app/api/chat/route.ts','app/api/chat/notes/route.ts','app/api/chat/author/route.ts','lib/server/personal-evidence-selector.ts','lib/server/library-evidence.ts'];
+const files = ['lib/server/author-evidence.ts','lib/server/retrieval-user-context.ts','lib/server/interactive-ai.ts','lib/server/retrieval-generation.ts','app/api/chat/route.ts','app/api/chat/notes/route.ts','app/api/chat/author/route.ts','lib/server/personal-evidence-selector.ts','lib/server/library-evidence.ts','lib/server/personal-retrieval.ts'];
 export function acceptanceCases(plan, stage) {
     if (stage === 'pilot') return plan.pilot;
     if (stage === 'pilot-ui') return plan.ui;

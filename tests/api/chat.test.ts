@@ -625,7 +625,8 @@ describe('Chat API', () => {
         expect(retrieval.question).toBe(question);
         expect(retrieval.semanticQuestion).toContain('sleep deprivation');
         expect(retrieval.semanticQuestion).not.toContain('SECRET_DELETED_PASSAGE');
-        expect(embedContentMock).toHaveBeenCalledWith(expect.objectContaining({ contents: retrieval.semanticQuestion }));
+        expect(retrieval.embeddingQuestion).toBe(`Explain my saved ideas about sleep deprivation.\n${question}`);
+        expect(embedContentMock).toHaveBeenCalledWith(expect.objectContaining({ contents: retrieval.embeddingQuestion }));
         expect(selectLibraryEvidence).toHaveBeenCalledWith(expect.objectContaining({ question, semanticQuestion: retrieval.semanticQuestion }));
         expect(streamText).not.toHaveBeenCalled();
     });

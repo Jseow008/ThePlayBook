@@ -1,0 +1,331 @@
+{
+  "date": "2026-11-19",
+  "branch": "codex/fix-chat-followup-grounding",
+  "pr": 391,
+  "parentPr": 389,
+  "model": "gpt-6-luna",
+  "reasoningEffort": "none",
+  "promptTextUnchanged": true,
+  "modelSettingsUnchanged": true,
+  "productionUnchanged": true,
+  "candidateHash": "b73be4f9bbadd6d072d2bd21657b8b9a1d685dad6d557378fdc285d25e103dd2",
+  "planHash": "2d86a48b7d61a4459b671813d7a58fa2cdc526ffe01359602693ca3b4cc06e44",
+  "candidateIdentityExpandedToInclude": "lib/server/personal-retrieval.ts",
+  "rootCause": "The same contextual question was used for vector search and Luna selection. Instructions intended to keep selection grounded diluted the topic in the search embedding, rejecting a relevant highlighted passage before Luna received it.",
+  "diagnostic": {
+    "method": "Controlled development embedding probe, no answer or held-out rerun",
+    "threshold": 0.55,
+    "wrappedOriginalCosine": 0.5341011669010096,
+    "wrappedResolvedCosineFromPriorDiagnostic": 0.5300834367142218,
+    "userOnlyResolvedCosine": 0.5621629710921505
+  },
+  "fix": "Search embeds bounded complete prior user requests plus the resolved current request, without the selector instruction wrapper. The existing full semanticQuestion and all Luna prompts remain unchanged. Raw latest question controls quotation mode. Current owner, scope, date constraints and 0.55 threshold remain unchanged. Applies to Notes retrieval and the Library shared embedding.",
+  "results": {
+    "development": {
+      "passed": 6,
+      "total": 6
+    },
+    "fresh": {
+      "passed": 12,
+      "total": 12,
+      "byChat": {
+        "library": 2,
+        "notes": 8,
+        "author": 2
+      },
+      "questionsUnchangedFromPreviouslyUnrunPlan": true
+    },
+    "ui": {
+      "passed": 3,
+      "total": 3,
+      "viewportWidths": [
+        390,
+        1440
+      ],
+      "actualWarmups": 3,
+      "pageErrors": 0,
+      "submission": "keyboard Enter; touch-tap not qualified",
+      "origin": "loopback production build with local ingress headers; not hosted deployment proof"
+    },
+    "highlightFirstTextMs": [
+      {
+        "id": "D-N3",
+        "ms": 5281.903208000003
+      },
+      {
+        "id": "R-N3",
+        "ms": 5774.265792000006
+      },
+      {
+        "id": "UI-H3",
+        "ms": 5279.699999988079
+      }
+    ],
+    "manualReview": "All 21 assessed outputs reviewed against frozen expectations and stored fixtures/public source snapshot. Exact quotes and available citations passed; negative scope/topic/year controls rejected unavailable evidence; author unsupported motive refused and clock-time distinction grounded.",
+    "cases": [
+      {
+        "id": "D-N1",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 7682.223915999999,
+        "totalMs": 7689.344041,
+        "exact": true,
+        "citationsAvailable": true
+      },
+      {
+        "id": "D-N2",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 5180.862834,
+        "totalMs": 5181.632834,
+        "exact": true,
+        "citationsAvailable": true
+      },
+      {
+        "id": "D-N3",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 5281.903208000003,
+        "totalMs": 5284.741625000002,
+        "exact": true,
+        "citationsAvailable": true
+      },
+      {
+        "id": "D-N4",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 1928.089583999994,
+        "totalMs": 1929.354416999995,
+        "exact": null,
+        "citationsAvailable": null
+      },
+      {
+        "id": "D-N5",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 1111.0193749999962,
+        "totalMs": 1114.0109589999993,
+        "exact": null,
+        "citationsAvailable": null
+      },
+      {
+        "id": "D-L1",
+        "chat": "library",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 2343.616624999995,
+        "totalMs": 2820.2081249999974,
+        "exact": null,
+        "citationsAvailable": null
+      },
+      {
+        "id": "R-L1",
+        "chat": "library",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 7321.0803750000005,
+        "totalMs": 7321.477542,
+        "exact": true,
+        "citationsAvailable": true
+      },
+      {
+        "id": "R-L2",
+        "chat": "library",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 1791.216375,
+        "totalMs": 2314.433208999999,
+        "exact": null,
+        "citationsAvailable": null
+      },
+      {
+        "id": "R-N1",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 5120.455000000002,
+        "totalMs": 5121.2876670000005,
+        "exact": true,
+        "citationsAvailable": true
+      },
+      {
+        "id": "R-N2",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 5543.229083999999,
+        "totalMs": 5543.866459000004,
+        "exact": true,
+        "citationsAvailable": true
+      },
+      {
+        "id": "R-N3",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 5774.265792000006,
+        "totalMs": 5775.109500000006,
+        "exact": true,
+        "citationsAvailable": true
+      },
+      {
+        "id": "R-N4",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 1900.6261670000022,
+        "totalMs": 1901.1642090000023,
+        "exact": null,
+        "citationsAvailable": null
+      },
+      {
+        "id": "R-N5",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 1085.8195829999968,
+        "totalMs": 1086.328207999999,
+        "exact": null,
+        "citationsAvailable": null
+      },
+      {
+        "id": "R-N6",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 2322.2620839999945,
+        "totalMs": 2322.9842089999947,
+        "exact": null,
+        "citationsAvailable": null
+      },
+      {
+        "id": "R-N7",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 4898.421083000001,
+        "totalMs": 4898.694208000008,
+        "exact": null,
+        "citationsAvailable": null
+      },
+      {
+        "id": "R-N8",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 4929.033750000002,
+        "totalMs": 4929.211791000009,
+        "exact": null,
+        "citationsAvailable": null
+      },
+      {
+        "id": "R-A1",
+        "chat": "author",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 3744.834333000006,
+        "totalMs": 3745.239916999999,
+        "exact": null,
+        "citationsAvailable": null
+      },
+      {
+        "id": "R-A2",
+        "chat": "author",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 3993.7167920000065,
+        "totalMs": 5988.232334,
+        "exact": null,
+        "citationsAvailable": null
+      },
+      {
+        "id": "UI-N1",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 4905.300000011921,
+        "totalMs": 4915.200000047684,
+        "exact": true,
+        "citationsAvailable": true
+      },
+      {
+        "id": "UI-N2",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 5762.300000011921,
+        "totalMs": 5770.800000011921,
+        "exact": true,
+        "citationsAvailable": true
+      },
+      {
+        "id": "UI-H3",
+        "chat": "notes",
+        "verdict": "pass",
+        "score": 2,
+        "firstTextMs": 5279.699999988079,
+        "totalMs": 5288.199999988079,
+        "exact": true,
+        "citationsAvailable": true
+      }
+    ]
+  },
+  "checks": {
+    "focused": {
+      "passed": 185,
+      "files": 7
+    },
+    "fullUnit": {
+      "passed": 2634,
+      "skipped": 324,
+      "failed": 1
+    },
+    "remainingFailure": "Existing luna-evidence-provenance.test.ts requires fresh hosted qualification of stacked changed code. Historical Nov14 evidence was not rewritten or waived.",
+    "acceptanceHarness": {
+      "passed": 6
+    },
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed including Sharp trace and critical CSS",
+    "hostedGatePassed": false
+  },
+  "budget": {
+    "capUsd": 5,
+    "priorUpperUsd": 0.621831,
+    "newUpperUsd": 0.02487564,
+    "cumulativeUpperUsd": 0.64670664,
+    "openAiCalls": 20,
+    "embeddingRequests": 42,
+    "usagePricedOpenAiUsd": 0.00429324,
+    "inputTokens": 34428,
+    "outputTokens": 2426,
+    "note": "Includes cache writes, controlled diagnostic, all current/previous runs and conservative retained unknown/embedding allowances. Not an invoice charge."
+  },
+  "cleanup": {
+    "ownedAccounts": 10,
+    "revokedAndDeleted": true,
+    "independentSql": {
+      "auth.users": 0,
+      "auth.sessions": 0,
+      "private.personal_evidence_index": 0,
+      "user_library": 0,
+      "user_reflections": 0,
+      "user_highlights": 0
+    },
+    "serverStopped": true
+  },
+  "releaseHold": "No merge, auto-merge or deployment. Fresh hosted provenance remains required; separate temporary infrastructure consent is unanswered. No billable branch/project created. PR344/347 untouched.",
+  "efficiency": {
+    "agents": 1,
+    "semanticRetries": 0,
+    "codexTokens": "unavailable",
+    "startedAt": "2026-11-19T05:39:28.832Z",
+    "endedAt": "2026-11-19T05:43:18.634Z"
+  },
+  "evidenceDirectory": "output/highlight-search-20261119"
+}

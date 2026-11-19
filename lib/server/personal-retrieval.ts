@@ -77,6 +77,7 @@ export async function retrievePersonalEvidence(options: {
     scope: PersonalEvidenceScope;
     question: string;
     semanticQuestion?: string;
+    embeddingQuestion?: string;
     signal: AbortSignal;
     queryEmbedding?: number[];
     implicitHighlightQuote?: boolean;
@@ -89,7 +90,7 @@ export async function retrievePersonalEvidence(options: {
     const quoteField = detected === "highlightedText" && options.scope.itemType === "reflection" ? "reflectionText"
         : detected === "highlightedText" && options.scope.itemType === "note" ? "noteBody" : detected;
     const semanticQuestion = options.semanticQuestion ?? options.question;
-    const queryEmbedding = options.queryEmbedding ?? (await measureAskNotesPhase("embedding", () => createGooglePersonalEvidenceEmbedder(process.env.GEMINI_API_KEY ?? "")([semanticQuestion], { signal })))[0];
+    const queryEmbedding = options.queryEmbedding ?? (await measureAskNotesPhase("embedding", () => createGooglePersonalEvidenceEmbedder(process.env.GEMINI_API_KEY ?? "")([options.embeddingQuestion ?? semanticQuestion], { signal })))[0];
     if (queryEmbedding?.length !== PERSONAL_EMBEDDING_DIMENSIONS || !queryEmbedding.every(Number.isFinite) || Math.hypot(...queryEmbedding) === 0) {
         throw new Error("Invalid personal retrieval query embedding");
     }

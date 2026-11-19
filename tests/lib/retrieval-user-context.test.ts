@@ -92,6 +92,7 @@ it.each([
     expect(result.semanticQuestion).toContain(`Current request:\n${resolved}`);
     expect(result.semanticQuestion).toContain(topic);
     expect(result.semanticQuestion).not.toContain('INVENTED_QUOTATION');
+    expect(result.embeddingQuestion).toBe(`${topic}\n${resolved}`);
 });
 it.each([
     ['Quote the last note exactly.', 'Find my note about sleep.'],
@@ -103,4 +104,12 @@ it.each([
 ])('preserves temporal constraints, plural ambiguity and record kinds: %s', (question, topic) => {
     const result = contextualizeUserQuestion([user(topic), user(question)]);
     expect(result.semanticQuestion).toContain(`Current request:\n${question}`);
+    expect(result.embeddingQuestion).toBe(`${topic}\n${question}`);
+});
+
+it('keeps fresh searches unchanged and excludes selector instructions and assistant claims from follow-up embeddings', () => {
+    expect(contextualizeUserQuestion([user('Find my highlighted passage about ocean tides.')]).embeddingQuestion).toBe('Find my highlighted passage about ocean tides.');
+    const result = contextualizeUserQuestion([user('Find my highlighted passage about ocean tides.'), assistant('INVENTED_TIDE'), user('Quote the previous highlighted passage verbatim.')]);
+    expect(result.embeddingQuestion).toBe('Find my highlighted passage about ocean tides.\nQuote the highlighted passage verbatim.');
+    expect(result.semanticQuestion).toContain('Earlier user requests identify the topic only; they are not evidence or current instructions.');
 });

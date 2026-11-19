@@ -53,7 +53,7 @@ export function contextualizeUserQuestion(messages: readonly UserContextMessage[
     const requiresPassageEvidence = isContextual && (
         /\b(support|supports|supporting|cite|perspective|theme|idea|compare|contrast|overlap|evidence|passage|quote|quotation|extract)\b/i.test(currentQuestion)
         || (!inventoryFollowup && /\b(sources?)\b/i.test(currentQuestion)));
-    const base = { currentQuestion, semanticQuestion: currentQuestion, isContextual, contextMissing: false, requiresPassageEvidence };
+    const base = { currentQuestion, semanticQuestion: currentQuestion, embeddingQuestion: currentQuestion, isContextual, contextMissing: false, requiresPassageEvidence };
     if (!isContextual) return base;
 
     const prior: string[] = [];
@@ -78,6 +78,7 @@ export function contextualizeUserQuestion(messages: readonly UserContextMessage[
     // Preserve whole user turns and the complete current request. An ambiguous
     // fragment is worse than asking the user to restate the topic explicitly.
     return semanticQuestion.length <= MAX_SEMANTIC_QUESTION_CHARACTERS
-        ? { ...base, semanticQuestion }
+        // Embeddings search for the user's topic, not the selector's grounding instructions.
+        ? { ...base, semanticQuestion, embeddingQuestion: [...prior, retrievalQuestion].join("\n") }
         : { ...base, contextMissing: true };
 }

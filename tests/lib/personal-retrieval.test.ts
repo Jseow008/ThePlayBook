@@ -4,6 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadSelectedPersonalEvidence, recheckPersonalEvidenceCandidates } from '@/lib/server/personal-evidence-candidates';
 import { retrievePersonalEvidence, PersonalEvidenceIndexNotReady } from '@/lib/server/personal-retrieval';
 import type { PersonalEvidenceCandidate } from '@/lib/personal-evidence';
+import { createGooglePersonalEvidenceEmbedder } from '@/lib/server/personal-evidence-ranking';
+vi.mock('@/lib/server/personal-evidence-ranking', async (importOriginal) => ({
+    ...await importOriginal<typeof import('@/lib/server/personal-evidence-ranking')>(),
+    createGooglePersonalEvidenceEmbedder: vi.fn(),
+}));
 vi.mock('@/lib/server/personal-evidence-candidates', () => ({ loadSelectedPersonalEvidence: vi.fn(), recheckPersonalEvidenceCandidates: vi.fn() }));
 const scope = { version: 1, itemType: 'all' } as const;
 const id = '11111111-1111-4111-8111-111111111111';
@@ -30,6 +35,21 @@ beforeEach(() => {
 });
 
 describe('indexed personal retrieval orchestration', () => {
+    it('embeds only search text while preserving the complete selector question and admission threshold', async () => {
+        const embed = vi.fn(async () => [request('unused').queryEmbedding]);
+        vi.mocked(createGooglePersonalEvidenceEmbedder).mockReturnValue(embed);
+        abortSignal.mockResolvedValue({ data: ready([match()]), error: null });
+        vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([reflection]);
+        const semanticQuestion = 'Earlier user requests are not evidence. Current request: quote the reflection.';
+        const embeddingQuestion = 'Find my reflection about ocean tides.\nQuote the reflection.';
+        await retrievePersonalEvidence({ ...request('Quote the reflection.'), queryEmbedding: undefined, semanticQuestion, embeddingQuestion,
+            selectionGenerator: async (selectionRequest) => {
+                expect(JSON.parse(selectionRequest.prompt).question).toBe(semanticQuestion);
+                return { output: structuralSelectionOutput([`reflection:${id}`]) };
+            } });
+        expect(embed).toHaveBeenCalledWith([embeddingQuestion], expect.objectContaining({ signal: expect.any(AbortSignal) }));
+        expect(rpc).toHaveBeenCalledWith('match_personal_evidence', expect.objectContaining({ p_min_similarity: .55, p_scope: scope }));
+    });
     it('measures actual retrieval and authorization phases without changing results', async () => {
         abortSignal.mockResolvedValue({ data: ready([match()]), error: null });
         vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([reflection]);

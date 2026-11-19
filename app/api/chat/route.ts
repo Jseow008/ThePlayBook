@@ -293,7 +293,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
                 retrievalSignal.throwIfAborted();
                 return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { retryOptions: { attempts: 1 } } }).models.embedContent({
                     model: EMBEDDING_MODEL,
-                    contents: questionContext.semanticQuestion,
+                    contents: questionContext.embeddingQuestion,
                     config: { outputDimensionality: EMBEDDING_DIMENSIONS, abortSignal: retrievalSignal },
                 });
             })().then(
@@ -332,6 +332,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
                 const personal = await retrievePersonalEvidence({
                     supabase, userId: user.id, scope: ALL_PERSONAL_EVIDENCE,
                     question: userQuery, semanticQuestion: questionContext.semanticQuestion,
+                    embeddingQuestion: questionContext.embeddingQuestion,
                     queryEmbedding, signal, implicitHighlightQuote: false, deferSelection: true,
                 });
                 // Query current source membership after personal ranking, so a reset,
