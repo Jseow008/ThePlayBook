@@ -2,7 +2,7 @@ import { INTERACTIVE_AI_MODEL, INTERACTIVE_AI_PROVIDER_OPTIONS } from "@/lib/ser
 import { withChatDeadline } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse, reserveAiProviderCall } from "@/lib/server/ai-spending";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
-import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
+import { issueEvidenceCitations, resolvePersonalQuotationReference } from "@/lib/server/evidence-citation";
 import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
 import { MAX_LIBRARY_CONTEXT_CHARS, getOutputTokenCap, detectAskIntent, shouldBoostCompletedForIntent, buildRetrievalFallbackText, LIBRARY_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
 import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
@@ -21,11 +21,11 @@ import { admitAiUsage, getQuotaExceededMessage } from "@/lib/server/ai-usage-quo
 import { GoogleGenAI } from "@google/genai";
 import { buildLibraryMetadataContext, type LibraryItemRow } from "@/lib/server/library-snapshot";
 
-import { retrievePersonalEvidence, PersonalEvidenceIndexNotReady, ALL_PERSONAL_EVIDENCE } from "@/lib/server/personal-retrieval";
+import { retrievePersonalEvidence, exactPersonalQuoteField, PersonalEvidenceIndexNotReady, ALL_PERSONAL_EVIDENCE } from "@/lib/server/personal-retrieval";
 import { loadLibrarySourceEvidence, rankLibrarySourceSpans, selectLibraryEvidence, buildLibraryEvidencePrompt } from "@/lib/server/library-evidence";
 import { recheckPersonalEvidenceCandidates } from "@/lib/server/personal-evidence-candidates";
 import { retrievalTextResponse } from "@/lib/server/retrieval-response";
-import { contextualizeUserQuestion, FOLLOW_UP_CLARIFICATION } from "@/lib/server/retrieval-user-context";
+import { contextualizeUserQuestion, isBarePersonalRecordReference, FOLLOW_UP_CLARIFICATION } from "@/lib/server/retrieval-user-context";
 
 export const maxDuration = 60; // Allow 60s max for AI response
 
@@ -275,6 +275,23 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         }
         signal.throwIfAborted();
         const retrievalSignal = AbortSignal.any([signal, AbortSignal.timeout(35_000)]);
+        const quoteField = exactPersonalQuoteField(userQuery);
+        if (quoteField && isBarePersonalRecordReference(userQuery)) {
+            try {
+                const item = await resolvePersonalQuotationReference({ messages: parsed.data.messages, field: quoteField,
+                    userId: user.id, supabase, signal: retrievalSignal });
+                if (item === null) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, "ui", [], false, LIBRARY_CLARIFICATION_FOLLOWUPS);
+                if (item) {
+                    await recheckPersonalEvidenceCandidates({ supabase, userId: user.id, scope: ALL_PERSONAL_EVIDENCE,
+                        candidates: [item.evidence], signal: retrievalSignal });
+                    await assertActivePersonalRetrievalSession({ supabase, scope: ALL_PERSONAL_EVIDENCE, signal: retrievalSignal });
+                    return retrievalTextResponse(item.exactQuote!, "ui", issueEvidenceCitations({ userId: user.id, personal: [item], exactQuote: true }), true);
+                }
+            } catch (error) {
+                logApiError({ requestId, route: "/api/chat", message: "Prior quotation could not be revalidated", error });
+                return apiError("RETRIEVAL_UNAVAILABLE", "Your saved evidence could not be verified. Please retry.", 503, requestId);
+            }
+        }
         const libraryPromise = supabase
             .from("user_library")
             .select(`
@@ -293,7 +310,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
                 retrievalSignal.throwIfAborted();
                 return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { retryOptions: { attempts: 1 } } }).models.embedContent({
                     model: EMBEDDING_MODEL,
-                    contents: questionContext.semanticQuestion,
+                    contents: questionContext.embeddingQuestion,
                     config: { outputDimensionality: EMBEDDING_DIMENSIONS, abortSignal: retrievalSignal },
                 });
             })().then(
@@ -332,6 +349,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
                 const personal = await retrievePersonalEvidence({
                     supabase, userId: user.id, scope: ALL_PERSONAL_EVIDENCE,
                     question: userQuery, semanticQuestion: questionContext.semanticQuestion,
+                    embeddingQuestion: questionContext.embeddingQuestion,
                     queryEmbedding, signal, implicitHighlightQuote: false, deferSelection: true,
                 });
                 // Query current source membership after personal ranking, so a reset,

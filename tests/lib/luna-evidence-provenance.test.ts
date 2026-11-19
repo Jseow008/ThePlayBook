@@ -7,11 +7,14 @@ const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 const read = (p: string) => readFileSync(p, "utf8");
 describe("Luna recorded decisions remain bound to evaluated requests and adapter", () => {
     it("binds current none settings to fresh hosted qualification, not historical low responses", () => {
-        const evidence = JSON.parse(read("docs/evidence/luna-none-hosted-20261114.json"));
+        const evidence = JSON.parse(read("docs/evidence/luna-none-hosted-20261119.json"));
         expect(evidence.modelConfig).toEqual(PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG);
         expect(evidence.hostedGatePassed).toBe(true);
         expect(evidence.productionUnchanged).toBe(true);
         expect(evidence.chatChecks).toEqual(expect.arrayContaining(["library", "notes", "author"]));
+        expect(evidence.candidateProjectRef).not.toBe(evidence.productionProjectRef);
+        expect(evidence.fixtureCleanupVerified).toBe(true);
+        expect(evidence.candidateDeletionVerified).toBe(true);
         for (const [path, digest] of Object.entries(evidence.codeHashes)) expect(sha(read(path))).toBe(digest);
     });
     it("preserves every historical low-reasoning response without relabeling it as none", () => {

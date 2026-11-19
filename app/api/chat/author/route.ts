@@ -14,6 +14,8 @@ import { rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { admitAiUsage, getQuotaExceededMessage } from "@/lib/server/ai-usage-quota";
 import { retrievalTextResponse } from "@/lib/server/retrieval-response";
+import { checkAuthorEvidence } from "@/lib/server/author-evidence";
+import { contextualizeUserQuestion, FOLLOW_UP_CLARIFICATION } from "@/lib/server/retrieval-user-context";
 
 export const maxDuration = 60;
 
@@ -388,6 +390,21 @@ Rules:
         }
 
         signal.throwIfAborted();
+        const questionContext = contextualizeUserQuestion(allMessages);
+        if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, "ui");
+        let unsupported: string | null;
+        try {
+            unsupported = await checkAuthorEvidence({ contentId, title: contentTitle, contextText,
+                question: questionContext.semanticQuestion, currentQuestion: questionContext.currentQuestion, signal });
+        } catch (error) {
+            const failure = aiSpendingFailureResponse(error);
+            if (failure) return failure;
+            signal.throwIfAborted();
+            // Never treat a failed relevance check as an authorized answer.
+            return apiError("RETRIEVAL_UNAVAILABLE", "The source could not be checked completely. Please try again.", 503, requestId);
+        }
+        if (unsupported) return retrievalTextResponse(unsupported, "ui");
+
         // --- Stream ---
         const reservation = await reserveAiProviderCall({
             provider: selectedProvider, model: selectedModel,
