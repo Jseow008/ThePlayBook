@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { ProtectedNavLink } from "@/components/ui/ProtectedNavLink";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
     BookmarkSimpleIcon,
@@ -144,6 +145,7 @@ export function NetfluxSidebar() {
             {/* Logo */}
             <Link prefetch={false}
                 href="/browse"
+                aria-label="Browse Netflux"
                 className={cn(
                     "flex items-center h-16 px-4 border-b border-border transition-all duration-300",
                     isExpanded ? "justify-start gap-3" : "justify-center"
@@ -323,7 +325,7 @@ export function NetfluxSidebar() {
                 </div>
 
                 <div className="space-y-1 pt-2">
-                    <Link prefetch={false}
+                    <ProtectedNavLink prefetch={false}
                         href={notesItem.href}
                         title={!isExpanded ? notesItem.label : undefined}
                         className={cn(
@@ -347,7 +349,7 @@ export function NetfluxSidebar() {
                         >
                             {notesItem.label}
                         </span>
-                    </Link>
+                    </ProtectedNavLink>
                 </div>
 
                 <div className="mt-4 mx-4 border-t border-border" />
@@ -373,7 +375,7 @@ export function NetfluxSidebar() {
                             />
                         </button>
                     ) : (
-                        <Link prefetch={false}
+                        <ProtectedNavLink prefetch={false}
                             href="/ask"
                             title="Ask"
                             className={cn(
@@ -382,12 +384,12 @@ export function NetfluxSidebar() {
                             )}
                         >
                             <ChatCircleDotsIcon className={cn("size-5 flex-shrink-0", isAskSectionActive && "text-primary")} weight="duotone" />
-                        </Link>
+                        </ProtectedNavLink>
                     )}
 
                     {isExpanded && isAskOpen && (
                         <div className="ml-4 space-y-1">
-                            <Link prefetch={false}
+                            <ProtectedNavLink prefetch={false}
                                 href="/ask"
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
@@ -398,9 +400,9 @@ export function NetfluxSidebar() {
                             >
                                 <BooksIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
                                 <span className="text-sm whitespace-nowrap flex-1">Library</span>
-                            </Link>
+                            </ProtectedNavLink>
 
-                            <Link prefetch={false}
+                            <ProtectedNavLink prefetch={false}
                                 href="/notes?ask=1"
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
@@ -411,7 +413,7 @@ export function NetfluxSidebar() {
                             >
                                 <NotebookIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
                                 <span className="text-sm whitespace-nowrap flex-1">Current Notes</span>
-                            </Link>
+                            </ProtectedNavLink>
                         </div>
                     )}
                 </div>

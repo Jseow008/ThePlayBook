@@ -85,6 +85,29 @@ describe("app navigation", () => {
         };
     });
 
+    it.each([MobileBottomNav, NetfluxSidebar])("preserves the guest Search when opening Notes", (Navigation) => {
+        pathnameState.value = "/search";
+        searchParamsState.value = "q=God&type=book&cursor=a%2Bb";
+        authUserState.value = null;
+        render(<Navigation />);
+        const href = screen.getByRole("link", { name: "Notes" }).getAttribute("href")!;
+        const login = new URL(href, "https://example.org");
+        expect(login.pathname).toBe("/login");
+        expect(login.searchParams.get("next")).toBe("/notes");
+        expect(login.searchParams.get("backTo")).toBe("/search?" + searchParamsState.value);
+    });
+
+    it("sends signed-in searchers directly to Notes", () => {
+        pathnameState.value = "/search";
+        render(<MobileBottomNav />);
+        expect(screen.getByRole("link", { name: "Notes" })).toHaveAttribute("href", "/notes");
+    });
+
+    it("names the collapsed sidebar logo", () => {
+        render(<NetfluxSidebar />);
+        expect(screen.getByRole("link", { name: "Browse Netflux" })).toHaveAttribute("href", "/browse");
+    });
+
     it("expands the signed-out header link touch target", () => {
         authUserState.value = null;
 

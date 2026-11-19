@@ -51,6 +51,21 @@ describe("LoginPage", () => {
         expect(screen.getByTestId("auth-form")).toHaveAttribute("data-next-url", "/notes?ask=1");
     });
 
+    it("returns guests to the complete Search URL while keeping Notes as the sign-in destination", async () => {
+        const backTo = "/search?q=God&type=book&category=Faith&cursor=abc%2B1";
+        render(await LoginPage({ searchParams: Promise.resolve({ next: "/notes", backTo }) }));
+
+        expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute("href", backTo);
+        expect(screen.getByTestId("auth-form")).toHaveAttribute("data-next-url", "/notes");
+    });
+
+    it.each(["https://example.org/search", "//example.org/search", "/settings", "/searching"])(
+        "falls back to Browse for an invalid Back destination %s", async (backTo) => {
+            render(await LoginPage({ searchParams: Promise.resolve({ next: "/notes", backTo }) }));
+            expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute("href", "/browse");
+        },
+    );
+
     it("redirects authenticated users to the normalized next target", async () => {
         getUserMock.mockResolvedValue({
             data: { user: { id: "user-1" } },
@@ -58,7 +73,7 @@ describe("LoginPage", () => {
         });
 
         await expect(LoginPage({
-            searchParams: Promise.resolve({ next: "/settings" }),
+            searchParams: Promise.resolve({ next: "/settings", backTo: "/search?q=God" }),
         })).rejects.toThrow("NEXT_REDIRECT:/settings");
         expect(redirectMock).toHaveBeenCalledWith("/settings");
     });

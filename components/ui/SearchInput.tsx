@@ -49,7 +49,7 @@ export function SearchInput({
     initialQuery = "",
     category,
     type,
-    placeholder = "Search by title, author, or category...",
+    placeholder = "Search titles, authors, categories or passages...",
     autoFocus = false
 }: SearchInputProps) {
     const router = useRouter();

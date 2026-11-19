@@ -93,7 +93,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         initialQuery={query || ""}
                         category={selectedTopicLabel}
                         type={selectedTypeParam}
-                        placeholder={selectedTopicLabel ? `Search in ${selectedTopicLabel}...` : "Search by title, author, or category..."}
+                        placeholder={selectedTopicLabel ? `Search in ${selectedTopicLabel}...` : "Search titles, authors, categories or passages..."}
                     />
                 </div>
 

@@ -161,6 +161,11 @@ describe("settings data export delivery", () => {
         return { ...result, downloadButton };
     }
 
+    it("names the icon-only display name save button", async () => {
+        await renderAuthenticatedSettings();
+        expect(screen.getByRole("button", { name: "Save display name" })).toBeInTheDocument();
+    });
+
     it("includes a replay app tour link for a guest", async () => {
         state.currentUser = null;
         render(<SettingsPage />);

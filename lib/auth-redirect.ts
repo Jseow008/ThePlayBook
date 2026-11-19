@@ -59,11 +59,13 @@ export function normalizeLoginNextPath(
     }
 }
 
-export function buildLoginHref(nextPath: string | null | undefined) {
+export function buildLoginHref(nextPath: string | null | undefined, backTo?: string) {
     const normalizedNext = normalizeLoginNextPath(nextPath);
     const searchParams = new URLSearchParams({
         next: normalizedNext,
     });
+
+    if (backTo) searchParams.set("backTo", backTo);
 
     return `/login?${searchParams.toString()}`;
 }

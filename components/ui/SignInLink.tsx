@@ -18,7 +18,7 @@ export function SignInLink({ children, ...props }: SignInLinkProps) {
     return (
         <Link
             {...props}
-            href={buildLoginHref(currentPath)}
+            href={buildLoginHref(currentPath, pathname === "/search" ? currentPath : undefined)}
         >
             {children}
         </Link>

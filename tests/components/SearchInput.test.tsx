@@ -27,7 +27,7 @@ describe("SearchInput", () => {
 
         render(<SearchInput />);
 
-        const input = screen.getByPlaceholderText("Search by title, author, or category...");
+        const input = screen.getByPlaceholderText("Search titles, authors, categories or passages...");
         fireEvent.focus(input);
 
         await waitFor(() => {
@@ -43,7 +43,7 @@ describe("SearchInput", () => {
 
         render(<SearchInput />);
 
-        const input = screen.getByPlaceholderText("Search by title, author, or category...");
+        const input = screen.getByPlaceholderText("Search titles, authors, categories or passages...");
         fireEvent.focus(input);
 
         const recentSearchButton = await screen.findByRole("button", { name: /^deep work$/i });
@@ -106,7 +106,7 @@ describe("SearchInput", () => {
 
         render(<SearchInput />);
 
-        const input = screen.getByPlaceholderText("Search by title, author, or category...");
+        const input = screen.getByPlaceholderText("Search titles, authors, categories or passages...");
         fireEvent.focus(input);
 
         await screen.findByText("Recent Searches");
@@ -268,7 +268,7 @@ describe("SearchInput", () => {
 
         render(<SearchInput />);
 
-        const input = screen.getByPlaceholderText("Search by title, author, or category...");
+        const input = screen.getByPlaceholderText("Search titles, authors, categories or passages...");
         fireEvent.focus(input);
 
         await waitFor(() => {

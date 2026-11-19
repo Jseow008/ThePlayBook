@@ -34,13 +34,15 @@ function parseApiError(response: Response) {
 
 export function RequestBoard({
     initialInput = "",
+    initialType = "",
 }: {
     initialInput?: string;
+    initialType?: "book" | "video" | "";
 }) {
     const user = useAuthUser();
     const [input, setInput] = useState(initialInput);
     const [author, setAuthor] = useState("");
-    const [contentType, setContentType] = useState<ContentType | "">("");
+    const [contentType, setContentType] = useState<ContentType | "">(initialType);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionState, setSubmissionState] = useState<SubmissionState>(null);
     const editRevision = useRef(0);
@@ -54,7 +56,7 @@ export function RequestBoard({
             editRevision.current += 1;
             if (typeof saved.input === "string") setInput(saved.input);
             if (typeof saved.author === "string") setAuthor(saved.author);
-            if (saved.contentType === "book" || saved.contentType === "video") setContentType(saved.contentType);
+            if (saved.contentType === "" || saved.contentType === "book" || saved.contentType === "video") setContentType(saved.contentType);
         } catch {
             // An unavailable or malformed browser draft leaves the initial form intact.
         }

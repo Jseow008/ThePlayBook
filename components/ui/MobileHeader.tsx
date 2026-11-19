@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { ProtectedNavLink } from "@/components/ui/ProtectedNavLink";
 import { ChatCircleDotsIcon } from "@phosphor-icons/react";
 import { UserNav } from "@/components/ui/UserNav";
 import { Logo } from "@/components/ui/Logo";
@@ -67,7 +68,7 @@ export function MobileHeader({
                 <Logo width={compact ? 74 : 80} height={compact ? 22 : 24} priority />
             </Link>
             <div className="flex items-center gap-3">
-                <Link prefetch={false}
+                <ProtectedNavLink prefetch={false}
                     href="/ask"
                     aria-label="Ask AI"
                     title="Ask AI"
@@ -75,7 +76,7 @@ export function MobileHeader({
                 >
                     <ChatCircleDotsIcon className="size-4" weight="duotone" aria-hidden="true" />
                     <span>Ask AI</span>
-                </Link>
+                </ProtectedNavLink>
                 <UserNav />
             </div>
         </header>
