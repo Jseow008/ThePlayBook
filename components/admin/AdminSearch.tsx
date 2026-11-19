@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, X } from "lucide-react";
+import { SearchBox } from "@/components/ui/SearchBox";
 import { useState, useEffect, useRef, useTransition } from "react";
 
 function normalizeQuery(value: string) {
@@ -105,10 +105,14 @@ export function AdminSearch({
 
     return (
         <div className="relative w-full sm:max-w-sm xl:max-w-xs">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-zinc-400" />
-            </div>
-            <input
+            <SearchBox
+                searchIconClassName="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 pointer-events-none"
+                clear={{
+                    label: "Clear search",
+                    onClick: clearSearch,
+                    buttonClassName: "absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground",
+                    iconClassName: "h-4 w-4",
+                }}
                 type="text"
                 value={query}
                 onChange={(e) => handleSearch(e.target.value)}
@@ -118,19 +122,9 @@ export function AdminSearch({
                 onBlur={() => {
                     isFocusedRef.current = false;
                 }}
-                className="block w-full pl-10 pr-10 py-2 border border-input rounded-lg bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                className="block w-full pl-10 pr-10 py-2 border border-input rounded-lg bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all search-box-preserve-ios-height [--search-box-line-height:var(--text-sm--line-height)]"
                 placeholder="Search content..."
             />
-            {query && (
-                <button
-                    type="button"
-                    onClick={clearSearch}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
-                    aria-label="Clear search"
-                >
-                    <X className="h-4 w-4" />
-                </button>
-            )}
         </div>
     );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { SearchBox } from "@/components/ui/SearchBox";
 import type { PublishedContentOption } from "@/lib/server/content-requests";
 
 type Preview = {
@@ -54,8 +55,8 @@ export function ReplaceContentPanel({ contentId, options }: { contentId: string;
                 Reading and listening positions stay with their original version.
             </p>
             <label htmlFor="replacement-search" className="mt-4 block text-sm font-medium text-zinc-900">Find the kept summary</label>
-            <input id="replacement-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900" placeholder="Search by title or author" />
+            <SearchBox id="replacement-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 search-box-preserve-ios-height [--search-box-line-height:1.5]" placeholder="Search by title or author" />
             <label htmlFor="replacement-summary" className="mt-3 block text-sm font-medium text-zinc-900">Kept summary</label>
             <select id="replacement-summary" value={replacementId} disabled={busy}
                 onChange={(event) => { setReplacementId(event.target.value); setPreview(null); }}

@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ResilientImage } from "@/components/ui/ResilientImage";
+import { SearchBox } from "@/components/ui/SearchBox";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -20,7 +21,6 @@ import {
     Filter,
     Highlighter,
     Loader2,
-    Search,
     SlidersHorizontal,
     Trash2,
     X,
@@ -1541,12 +1541,12 @@ export function BrainClientPage({ initialPage, initialReflections, initialAskOpe
                             <div className="rounded-2xl border border-white/10 bg-background/92 p-3 shadow-[0_18px_36px_-30px_rgba(0,0,0,0.7)] backdrop-blur-sm">
                                 <div className="flex flex-col gap-2.5">
                                     <label className="relative">
-                                        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                        <input
+                                        <SearchBox
+                                            searchIconClassName="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                                             type="text"
                                             placeholder="Search notes, highlights, sources, sections"
                                             value={searchQuery}
-                                                maxLength={160}
+                                            maxLength={160}
                                             onChange={(event) => setSearchQuery(event.target.value)}
                                             className="h-10 w-full rounded-xl border border-white/10 bg-card/35 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary"
                                         />
@@ -1708,12 +1708,12 @@ export function BrainClientPage({ initialPage, initialReflections, initialAskOpe
                             )}>
                                 <div className={cn("flex flex-col transition-all duration-200", isFilterBarCompact ? "gap-2.5" : "gap-3")}>
                                 <label className="relative">
-                                    <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                    <input
+                                    <SearchBox
+                                        searchIconClassName="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                                         type="text"
                                         placeholder="Search notes, highlights, sources, sections"
                                         value={searchQuery}
-                                                maxLength={160}
+                                        maxLength={160}
                                         onChange={(event) => setSearchQuery(event.target.value)}
                                         className={cn(
                                             "w-full rounded-xl border border-white/10 bg-card/35 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/70 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
