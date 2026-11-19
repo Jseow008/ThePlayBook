@@ -1041,31 +1041,38 @@ export async function getLiveLibraryPage(
 ) {
     const client = await getPool().connect();
     try {
-        return await withRestrictedWorkerTransaction(client, accountId, async () => {
+        return await withRestrictedWorkerSnapshotTransaction(client, accountId, async () => {
             const result = await client.query<{
-            content_id: string;
-            is_bookmarked: boolean | null;
-            progress: Record<string, unknown> | null;
-            last_interacted_at: string | null;
-            library_updated_at: string;
-            library_revision: number;
-        }>(
-            `SELECT content_id, is_bookmarked, progress, last_interacted_at,
-                    library_updated_at::text AS library_updated_at, library_revision
-             FROM public.user_library
-             WHERE user_id = $1
-               AND (
-                   $2::timestamptz IS NULL
-                   OR library_updated_at < $2::timestamptz
-                   OR (library_updated_at = $2::timestamptz AND content_id > $3::uuid)
-               )
-             ORDER BY library_updated_at DESC, content_id ASC
-             LIMIT $4`,
-            [accountId, after?.updatedAt ?? null, after?.contentId ?? null, pageSize + 1],
-        );
+                content_id: string;
+                is_bookmarked: boolean | null;
+                progress: Record<string, unknown> | null;
+                last_interacted_at: string | null;
+                library_updated_at: string;
+                library_revision: number;
+            }>(
+                `SELECT content_id, is_bookmarked, progress, last_interacted_at,
+                        library_updated_at::text AS library_updated_at, library_revision
+                 FROM public.user_library
+                 WHERE user_id = $1
+                   AND (
+                       $2::timestamptz IS NULL
+                       OR library_updated_at < $2::timestamptz
+                       OR (library_updated_at = $2::timestamptz AND content_id > $3::uuid)
+                   )
+                 ORDER BY library_updated_at DESC, content_id ASC
+                 LIMIT $4`,
+                [accountId, after?.updatedAt ?? null, after?.contentId ?? null, pageSize + 1],
+            );
             const hasNextPage = result.rows.length > pageSize;
             const rows = result.rows.slice(0, pageSize);
-            return { rows, hasNextPage };
+            // The revision and the rows must describe the same MVCC snapshot.
+            const state = await client.query<{ reset_epoch: string; current_revision: string }>(
+                "SELECT reset_epoch, current_revision FROM public.account_library_state WHERE user_id = $1", [accountId],
+            );
+            return { rows, hasNextPage, boundary: {
+                resetEpoch: Number(state.rows[0]?.reset_epoch ?? 0),
+                boundaryLibraryRevision: Number(state.rows[0]?.current_revision ?? 0),
+            } };
         });
     } finally {
         await releaseRestrictedWorker(client);
