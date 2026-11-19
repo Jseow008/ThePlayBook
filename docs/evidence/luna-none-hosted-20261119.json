@@ -1,0 +1,371 @@
+{
+  "version": "luna-none-hosted-qualification-v2",
+  "date": "2026-11-19",
+  "candidateCodeCommit": "97cc8795f615e9234c1827227808d6bbf389e80c",
+  "candidateHash": "32f612d4c43f847c86790dfc989fda8b211366c32f89928d66b736e43697d876",
+  "planHash": "21334cfdf6e439a8f45623f6a7ccd5e4678309c648de76b83b867795764c0ff5",
+  "modelConfig": {
+    "version": "personal-evidence-selector-model-v4",
+    "promptVersion": "personal-evidence-selector-v4",
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "maxOutputTokens": 1600,
+    "maxRetries": 0,
+    "temperature": "provider default",
+    "reasoningEffort": "none",
+    "forceReasoning": true,
+    "store": false,
+    "responseAdapter": "explicit-final-phase-v1"
+  },
+  "promptTextUnchanged": true,
+  "hostedGatePassed": true,
+  "productionUnchanged": true,
+  "productionUnchangedMeaning": "No production deployment/database/config changes during this pre-release qualification; later authorized release will have separate evidence.",
+  "productionProjectRef": "xmuqsgfxuaaophxnwure",
+  "candidateProjectRef": "jdfxjwhzhmbjqbhknbam",
+  "branchId": "61554186-5977-4107-9deb-edf611cc5bf0",
+  "region": "ap-south-1",
+  "chatChecks": [
+    "library",
+    "notes",
+    "author"
+  ],
+  "codeHashes": {
+    "lib/server/interactive-ai.ts": "e445e9e4c5ee3043893a8fedc130f4e63e6526eca2bbfb0fd50a6dee353d67ef",
+    "lib/server/personal-evidence-selector.ts": "932385f8eb4ae3ae77f39cd7a1f2f7fa6ad79f014979915fa33009d83b699696",
+    "lib/server/luna-final-phase.ts": "2b0dd64411eeae2eba9e41c65a4c594e784c6e7c44ea17bb09355ea0a4fc7636",
+    "lib/server/library-followup-output.ts": "b1902f26f164e3999faae05b649a14b37091369de8a4772c7d71d5d042cf06d1",
+    "app/api/chat/route.ts": "2dcd76ca295dd7603d41282b5e12d6a90c2b85e6ca6ea09c53843917c9d8823c",
+    "app/api/chat/notes/route.ts": "e746c9a1e73069ba9bd940e49e782fe132607433a35fea6181e7d976d87ad0c6",
+    "app/api/chat/author/route.ts": "c775d91b855e74280ceee2ed0335b3f1b73482a8242c77d7c3895ceac375670b",
+    "lib/server/health.ts": "5853d068f31a4ebf5828262237e5bc81a62d7b611639b4293e5a57e1b984a2db",
+    "lib/server/retrieval-user-context.ts": "69e98557eff76d625e266e557432249b961d13e1a20b95ac966277d754ffcc33",
+    "lib/server/retrieval-generation.ts": "b1cb3925420a90c3d7eff44e26459255dcf05d22f0d86380202d60c351ab98b4",
+    "lib/server/author-evidence.ts": "efb7a33ddb471af4ce2c2d987e5745a5bb1d7050bbb9d3c64457e58a095e4834",
+    "lib/server/personal-retrieval.ts": "32a9880b9f5ce7f964d742407c85a4e1ebb3b0546a2380fff64843365577b90d",
+    "lib/server/library-evidence.ts": "16edb1e433e574d5ef43d8333c881c6f57b04afc4b75bb2e926d9319cfea2eaf",
+    "lib/server/evidence-citation.ts": "55998099ba3b452a8235b2a483392eb0c863f7c1d96d013c06c4ea476f436445"
+  },
+  "databaseGate": {
+    "applicationOnly": true,
+    "newMigrations": [],
+    "freshBranchAppliedMigrations": 122,
+    "migrationVersionAndNameParity": true,
+    "schemaCategoriesMatched": [
+      "column_definition",
+      "constraint_definition",
+      "enum_definition",
+      "extension_definition",
+      "function_acl",
+      "function_definition",
+      "index_definition",
+      "policy_definition",
+      "relation_acl",
+      "relation_comment",
+      "relation_definition",
+      "storage_bucket_definition",
+      "trigger_definition",
+      "view_definition"
+    ],
+    "productionReadOnlyDryRunUpToDate": true,
+    "productionMigrationsPushed": false,
+    "fullResetReplay": "Not repeated: no schema/migration change, fresh branch migration replay and schema parity verified.",
+    "aclRlsChecks": {
+      "function": "passed",
+      "admin": "passed",
+      "analytics": "passed",
+      "embeddings": "passed",
+      "storage": "passed"
+    },
+    "advisorEvidence": "luna-none-hosted-advisors-20261119.json"
+  },
+  "applicationSmoke": {
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "tlsIngress": "specific trusted self-signed local TLS to production build against disposable hosted DB",
+    "adminRbacAndDetailedHealth": true
+  },
+  "qualification": {
+    "development": {
+      "passed": 2,
+      "total": 2,
+      "mode": "actual UI with actual preceding turns"
+    },
+    "fresh": {
+      "passed": 6,
+      "total": 6,
+      "byChat": {
+        "library": 2,
+        "notes": 2,
+        "author": 2
+      }
+    },
+    "ui": {
+      "passed": 3,
+      "total": 3,
+      "viewportWidths": [
+        1440,
+        390
+      ],
+      "actualPriorTurnWarmups": 3,
+      "pageErrors": 0,
+      "submission": "keyboard Enter; touch-tap not qualified"
+    },
+    "assertions": [
+      {
+        "id": "HD-L",
+        "feature": "library",
+        "question": "Give the earlier note word-for-word, please.",
+        "text": "I disagree that closing the bridge is the only viable route. I want to compare repair options before committing.",
+        "firstTextMs": 1004.8000000119209,
+        "totalMs": 1004.8000000119209,
+        "checks": {
+          "http": true,
+          "stream": true,
+          "exact": true,
+          "citation": true,
+          "privacy": null
+        },
+        "citationsAvailable": true
+      },
+      {
+        "id": "HD-N",
+        "feature": "notes",
+        "question": "Please show the previous highlighted passage word-for-word.",
+        "text": "In the fictional port of Lumen, inland farms form its economic hinterland. Pears and plums from these farms supply the riverside market. A bridge connects the market with the farms, so closing the bridge interrupts their supply.",
+        "firstTextMs": 5707.5,
+        "totalMs": 5707.600000023842,
+        "checks": {
+          "http": true,
+          "stream": true,
+          "exact": true,
+          "citation": true,
+          "privacy": null
+        },
+        "citationsAvailable": true
+      },
+      {
+        "id": "HF-L1",
+        "feature": "library",
+        "question": "Which of those two sources was written by Marin Vale?",
+        "text": "Lumen Trade Notes was written by Marin Vale.",
+        "firstTextMs": 2813.886042,
+        "totalMs": 3287.0567919999994,
+        "checks": {
+          "http": true,
+          "stream": true,
+          "exact": null,
+          "citation": null,
+          "privacy": null
+        },
+        "citationsAvailable": null
+      },
+      {
+        "id": "HF-L2",
+        "feature": "library",
+        "question": "Please show the earlier note verbatim.",
+        "text": "I disagree that closing the bridge is the only viable route. I want to compare repair options before committing.",
+        "firstTextMs": 8022.555708,
+        "totalMs": 8023.419290999998,
+        "checks": {
+          "http": true,
+          "stream": true,
+          "exact": true,
+          "citation": true,
+          "privacy": null
+        },
+        "citationsAvailable": true
+      },
+      {
+        "id": "HF-N1",
+        "feature": "notes",
+        "question": "Quote my note about comparing repair options before closing the bridge from 1998 exactly.",
+        "text": "I couldn’t find enough relevant evidence in your current notes scope to answer that. Try a more specific question or adjust the filters.",
+        "firstTextMs": 5025.8842079999995,
+        "totalMs": 5026.4251660000045,
+        "checks": {
+          "http": true,
+          "stream": true,
+          "exact": null,
+          "citation": null,
+          "privacy": null
+        },
+        "citationsAvailable": null
+      },
+      {
+        "id": "HF-N2",
+        "feature": "notes",
+        "question": "Please read the earlier reflection word for word.",
+        "text": "I will put my phone on the kitchen charger at nine and read a paper book before going to bed.",
+        "firstTextMs": 5790.7408330000035,
+        "totalMs": 5791.293916000002,
+        "checks": {
+          "http": true,
+          "stream": true,
+          "exact": true,
+          "citation": true,
+          "privacy": null
+        },
+        "citationsAvailable": true
+      },
+      {
+        "id": "HF-A1",
+        "feature": "author",
+        "question": "What caused the blue ledger to be moved upstairs?",
+        "text": "I moved the blue ledger upstairs because rain was entering the downstairs room.",
+        "firstTextMs": 4406.659083000006,
+        "totalMs": 4766.971875000003,
+        "checks": {
+          "http": true,
+          "stream": true,
+          "exact": null,
+          "citation": null,
+          "privacy": null
+        },
+        "citationsAvailable": null
+      },
+      {
+        "id": "HF-A2",
+        "feature": "author",
+        "question": "What process do you recommend for trading cryptocurrency?",
+        "text": "I can explore the arguments and applications of this source, but the supplied text does not establish an answer to that question.",
+        "firstTextMs": 4079.7656669999997,
+        "totalMs": 4080.164834000003,
+        "checks": {
+          "http": true,
+          "stream": true,
+          "exact": null,
+          "citation": null,
+          "privacy": null
+        },
+        "citationsAvailable": null
+      },
+      {
+        "id": "HFU-L",
+        "feature": "library",
+        "question": "Would you repeat the earlier note verbatim?",
+        "text": "I disagree that closing the bridge is the only viable route. I want to compare repair options before committing.",
+        "firstTextMs": 933.1999999880791,
+        "totalMs": 933.3000000119209,
+        "checks": {
+          "http": true,
+          "stream": true,
+          "exact": true,
+          "citation": true,
+          "privacy": null
+        },
+        "citationsAvailable": true
+      },
+      {
+        "id": "HFU-N",
+        "feature": "notes",
+        "question": "Could you copy the earlier highlighted passage verbatim?",
+        "text": "In the fictional port of Lumen, inland farms form its economic hinterland. Pears and plums from these farms supply the riverside market. A bridge connects the market with the farms, so closing the bridge interrupts their supply.",
+        "firstTextMs": 4760.899999976158,
+        "totalMs": 4761,
+        "checks": {
+          "http": true,
+          "stream": true,
+          "exact": true,
+          "citation": true,
+          "privacy": null
+        },
+        "citationsAvailable": true
+      },
+      {
+        "id": "HFU-A",
+        "feature": "author",
+        "question": "What made you choose the oak shelf for the compass?",
+        "text": "I can explore the arguments and applications of this source, but the supplied text does not establish an answer to that question.",
+        "firstTextMs": 3249,
+        "totalMs": 3249,
+        "checks": {
+          "http": true,
+          "stream": true,
+          "exact": null,
+          "citation": null,
+          "privacy": null
+        },
+        "citationsAvailable": null
+      }
+    ],
+    "manualReviews": [
+      "pilot-review.json",
+      "fresh-review.json",
+      "ui-review.json"
+    ]
+  },
+  "providerAudit": {
+    "openaiRequests": 35,
+    "allLunaNoneHttp200": true,
+    "usage": {
+      "inputTokens": 55904,
+      "cachedReadTokens": 15606,
+      "cacheWriteTokens": 38500,
+      "outputTokens": 4450
+    },
+    "usagePricedOpenaiUsd": 0.00737336,
+    "googleRequests": 80,
+    "priorCumulativeUpperUsd": 0.646707,
+    "currentUpperUsd": 0.04853816,
+    "cumulativeUpperUsd": 0.69524516,
+    "capUsd": 5,
+    "note": "Includes setup failures, original qualification, diagnostic and failed query-only attempt; cache-aware pricing and unknown/Google allowances. Hosting separate; not invoice cost."
+  },
+  "fixtureCleanupVerified": true,
+  "fixtureCleanup": {
+    "ownedAccounts": 21,
+    "syntheticSources": 2,
+    "adminSessionsRevoked": true,
+    "remaining": {
+      "users": 0,
+      "sessions": 0,
+      "evidence_index": 0,
+      "library": 0,
+      "reflections": 0,
+      "highlights": 0,
+      "content": 0,
+      "segments": 0
+    }
+  },
+  "candidateDeletionVerified": true,
+  "candidateDeletion": {
+    "at": "2026-11-19T06:48:01.961Z",
+    "verifiedBy": "Supabase list_branches returned production main only after delete_branch success"
+  },
+  "testServicesStopped": true,
+  "privateCredentialsScrubbed": true,
+  "failedAttempts": [
+    {
+      "run": "initial-api-preflight",
+      "reason": "New branch DNS propagation; failed before account/provider creation."
+    },
+    {
+      "run": "smoke-http-redis and preflight-http-redis",
+      "reason": "6/7 smoke and no Luna questions: local HTTP Redis test transport rejected by current HTTPS-only production requirement. Fixed test transport, retained failures."
+    },
+    {
+      "run": "initial pilot-ui HU-L",
+      "reason": "2/3: Library prior-note follow-up returned no evidence after valid preceding note response; no deployment."
+    },
+    {
+      "run": "library-diagnostic",
+      "reason": "Unchanged diagnostic succeeded with correct topic/candidate; not counted as qualification."
+    },
+    {
+      "run": "topic-resolution pilot",
+      "reason": "1/2: repeating topic in current request did not resolve Library case; fresh set not run. Approach reverted before final signed-reference implementation."
+    }
+  ],
+  "limitations": [
+    "Local production build/TLS against actual disposable hosted Supabase, real OpenAI/Gemini and dedicated real Redis. Vercel production ingress and Upstash hosted transport require targeted post-deployment verification.",
+    "Synthetic fixtures only; no production users/content/secrets copied into candidate database. Paid-provider keys loaded privately for testing and temporary local copies scrubbed.",
+    "Targeted semantic checks, not broad model accuracy or production p95 benchmark. Historical Nov14/low-reasoning evidence preserved.",
+    "Password-authenticated synthetic sessions/admin UI smoke; outbound passwordless email delivery not tested.",
+    "Signed reference shortcut applies only to a bare personal-record quotation in Library. Invalid/expired/changed/ambiguous references clarify. Missing citation data retains existing user-topic retrieval."
+  ],
+  "evidenceDirectory": "output/chat-hosted-20261119",
+  "finalEvidenceDirectory": "output/chat-hosted-20261119/signed-reference"
+}
