@@ -1,3 +1,7 @@
+## 2026-11-20 — Align Browse mobile navigation (issue 6)
+
+Branch `codex/browse-mobile-nav-alignment`, worktree `/tmp/netflux-browse-nav`, base `3afd49bf`. Browse now inherits the standard route policy. At 390 × 844, Chrome measured identical 56 px headers, 80 × 24 px logos, button positions and 72 px bottom bars across signed-in Browse, Search and Notes, and across guest Browse and Search. With a simulated 34 px bottom inset the last Browse control cleared the bar by 32 px. Measurements waited for the account control to finish loading. The disposable member was deleted. All 58 focused tests and the route shell documentation check passed. Next step is gated PR merge.
+
 ## 2026-11-19 — Search, request prefill and accessible controls
 
 Branch `codex/search-handoffs-and-accessibility` in `/tmp/netflux-p2-approved` starts at `3e15d1b1`. This batch covers P2 issues 4, 7, 8 (Book and Video prefill), and 9. Passage linking, Browse navigation density, and additional request formats remain deferred.
