@@ -210,10 +210,23 @@ function SearchSnippet({ result }: { result: CatalogSearchResult }) {
     if (cursor < result.snippet.text.length) parts.push({ text: result.snippet.text.slice(cursor), highlighted: false });
 
     return (
-        <p className="line-clamp-3 px-1 text-sm leading-6 text-muted-foreground">
-            {parts.map((part, index) => part.highlighted
-                ? <mark key={index} className="rounded bg-primary/20 px-0.5 text-foreground">{part.text}</mark>
-                : <span key={index}>{part.text}</span>)}
+        <p className="break-words line-clamp-3 px-1 text-sm leading-6 text-muted-foreground">
+            {parts.map((part, index) => {
+                if (part.highlighted) {
+                    return <mark key={index} className="rounded bg-primary/20 px-0.5 text-foreground">{part.text}</mark>;
+                }
+                // Preserve the full excerpt on wide cards and keep the match in view on narrow ones.
+                if (index === 0 && ranges.length > 0 && part.text.length > 24) {
+                    const shortLead = part.text.slice(-24).replace(/^\S*\s*/, "");
+                    return (
+                        <span key={index}>
+                            <span className="@min-[18rem]:hidden">… {shortLead}</span>
+                            <span className="hidden @min-[18rem]:inline">{part.text}</span>
+                        </span>
+                    );
+                }
+                return <span key={index}>{part.text}</span>;
+            })}
         </p>
     );
 }
@@ -224,7 +237,7 @@ export function ContentGrid({ items }: { items: Array<ContentItem | CatalogSearc
             {items.map((item, index) => {
                 const searchResult = "snippet" in item ? item : null;
                 return (
-                    <div key={item.id} data-search-result-position={index + 1} className="min-w-0 space-y-2">
+                    <div key={item.id} data-search-result-position={index + 1} className="@container min-w-0 space-y-2">
                         <ContentCard
                             item={toContentCardData(item)}
                             titleDensity="app-compact"

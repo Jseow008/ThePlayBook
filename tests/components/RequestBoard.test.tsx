@@ -48,13 +48,15 @@ describe("RequestBoard sign-in return", () => {
         vi.stubGlobal("fetch", fetchMock);
     });
 
-    it.each(["book", "video", "podcast"])("requires an explicit format after a %s Search handoff", async (type) => {
+    it.each([
+        ["book", "book"], ["video", "video"], ["podcast", ""], ["article", ""], ["unknown", ""], [undefined, ""],
+    ] as const)("prefills only supported formats for a %s Search handoff", async (type, expected) => {
         render(await RequestsPage({ searchParams: Promise.resolve({ prefill: "Requested source", type }) }));
 
         const format = screen.getByRole("combobox", { name: "Format" });
-        expect(format).toHaveValue("");
+        expect(format).toHaveValue(expected);
         expect(screen.getByRole("option", { name: "Please Select" })).toHaveValue("");
-        expect(format).toBeInvalid();
+        expect((format as HTMLSelectElement).validity.valid).toBe(Boolean(expected));
         expect(screen.getByPlaceholderText("Paste a URL or type a title by author")).toHaveValue("Requested source");
         expect(fetchMock).not.toHaveBeenCalled();
     });
@@ -79,7 +81,7 @@ describe("RequestBoard sign-in return", () => {
             ok: true,
             json: async () => ({ data: { duplicate: false } }),
         });
-        render(<RequestBoard />);
+        render(<RequestBoard initialType="video" />);
 
         await waitFor(() => {
             expect(screen.getByPlaceholderText("Paste a URL or type a title by author")).toHaveValue("A requested book");

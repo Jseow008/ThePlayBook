@@ -1,3 +1,9 @@
+## 2026-11-19 — Search, request prefill and accessible controls
+
+Branch `codex/search-handoffs-and-accessibility` in `/tmp/netflux-p2-approved` starts at `3e15d1b1`. This batch covers P2 issues 4, 7, 8 (Book and Video prefill), and 9. Passage linking, Browse navigation density, and additional request formats remain deferred.
+
+Local Chrome against the public catalog showed the first highlight inside all 20 “God” snippets at 320, 390, 768, and 1440 px. From a filtered second page, opening Notes then choosing Back restored the URL and first result. With a member session the same login URL continued to Notes. All four format handoffs preserved the title, and only Book and Video filled Format. Keyboard activation of the named sidebar logo opened Browse. The named mobile Save control persisted a display-name edit across reload. The disposable member was removed and its profile cleanup verified. The first local catalog attempt needed a development cursor-signing secret. TypeScript, lint and policy checks, and 83 focused component tests passed. Submit the verified branch through the required PR checks.
+
 ## 2026-11-19 — Notes test response-phase timing correction
 
 Branch `codex/notes-test-timing`, worktree `/Users/j/.codex/workspaces/netflux-notes-test-timing`, fresh main `d14004d9`. User authorized test-only timing fix, existing limits and website unchanged; no waiting for running CI. Prior one-run diagnostic44336760019 reproduced read dispatch29.221s into an observer deadline armed before navigation; library budget was nearly exhausted before request start. Temporary diagnostic branch was removed, no fix there.

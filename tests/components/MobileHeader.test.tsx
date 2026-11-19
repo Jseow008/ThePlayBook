@@ -7,8 +7,11 @@ const { pathnameState } = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({
+    useSearchParams: () => new URLSearchParams(),
     usePathname: () => pathnameState.value,
 }));
+
+vi.mock("@/hooks/useAuthUser", () => ({ useAuthUser: () => null }));
 
 vi.mock("next/link", () => ({
     default: ({

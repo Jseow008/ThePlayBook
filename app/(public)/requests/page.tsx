@@ -9,8 +9,13 @@ export default async function RequestsPage({
 }) {
     const resolvedSearchParams = await searchParams;
 
+    const type = resolvedSearchParams?.type;
+    const initialType = type === "book" || type === "video" ? type : "";
+
     return (
         <RequestBoard
+            key={JSON.stringify([resolvedSearchParams?.prefill, initialType])}
+            initialType={initialType}
             initialInput={resolvedSearchParams?.prefill ?? ""}
         />
     );

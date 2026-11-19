@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ProtectedNavLink } from "@/components/ui/ProtectedNavLink";
 import { usePathname } from "next/navigation";
 import {
     BooksIcon,
@@ -58,12 +59,13 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                     compact ? "h-16" : "h-[4.25rem]"
                 )}>
                     {navItems.map((item) => {
+                        const NavLink = item.href === "/notes" ? ProtectedNavLink : Link;
                         const isLibrary = item.href === "/library/my-list";
                         const isCurrentLibrary = isLibrary && isLibraryActive;
                         const isActive = isCurrentLibrary || pathname === item.href;
 
                         return (
-                            <Link prefetch={false}
+                            <NavLink prefetch={false}
                                 key={item.href}
                                 href={isCurrentLibrary ? pathname : item.href}
                                 // Stay on the current Library view without changing its URL or scroll.
@@ -91,7 +93,7 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                                 <span className="max-w-full truncate text-[11px] font-medium leading-none">
                                     {item.label}
                                 </span>
-                            </Link>
+                            </NavLink>
                         );
                     })}
                 </div>

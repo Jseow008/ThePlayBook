@@ -572,6 +572,7 @@ export default function SettingsPage() {
                                         </div>
                                         <button
                                             onClick={handleSaveProfile}
+                                            aria-label="Save display name"
                                             disabled={isSavingProfile || displayName === (user.user_metadata?.full_name || "")}
                                             className="h-10 px-4 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground font-medium text-sm transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >

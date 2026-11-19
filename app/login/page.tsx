@@ -29,6 +29,8 @@ export default async function LoginPage({
     const params = await searchParams;
     const error = typeof params.error === "string" ? params.error : undefined;
     const next = normalizeLoginNextPath(typeof params.next === "string" ? params.next : undefined);
+    const backPath = normalizeLoginNextPath(typeof params.backTo === "string" ? params.backTo : undefined);
+    const backHref = backPath.split(/[?#]/, 1)[0] === "/search" ? backPath : DEFAULT_LOGIN_REDIRECT_PATH;
     const supabase = await createClient();
     const { user } = resolveAuthUserResult(await supabase.auth.getUser());
 
@@ -39,7 +41,7 @@ export default async function LoginPage({
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
             <Link
-                href={DEFAULT_LOGIN_REDIRECT_PATH}
+                href={backHref}
                 className="absolute top-8 left-8 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
