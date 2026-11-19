@@ -7,7 +7,7 @@ const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 const read = (p: string) => readFileSync(p, "utf8");
 describe("Luna recorded decisions remain bound to evaluated requests and adapter", () => {
     it("binds current none settings to fresh hosted qualification, not historical low responses", () => {
-        const evidence = JSON.parse(read("docs/evidence/luna-none-hosted-20261119.json"));
+        const evidence = JSON.parse(read("docs/evidence/luna-none-comparison-hosted-20261119.json"));
         expect(evidence.modelConfig).toEqual(PERSONAL_EVIDENCE_SELECTOR_LUNA_MODEL_CONFIG);
         expect(evidence.hostedGatePassed).toBe(true);
         expect(evidence.productionUnchanged).toBe(true);
