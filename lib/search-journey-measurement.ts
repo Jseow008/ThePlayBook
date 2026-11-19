@@ -46,6 +46,7 @@ function routeKey(url: URL) {
     const sort = url.searchParams.get("sort");
     const page = Number.parseInt(url.searchParams.get("page") ?? "1", 10);
     const cursor = url.searchParams.get("cursor");
+    if (url.searchParams.get("inside") === "1") params.set("inside", "1");
     if (query) params.set("q", query);
     if (category) params.set("category", category);
     if (type && type !== "all") params.set("type", type);
@@ -83,7 +84,7 @@ function filterKind(current: URL, target: URL): FilterKind {
     return "other";
 }
 
-export function resolveSearchFilterHref(href: string, filterParam: SearchFilterParam, value?: string) {
+export function resolveSearchFilterHref(href: string, filterParam: SearchFilterParam | "inside", value?: string) {
     if (typeof window === "undefined") return href;
 
     const renderedTarget = new URL(href, window.location.origin);

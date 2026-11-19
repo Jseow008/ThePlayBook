@@ -1,3 +1,7 @@
+## 2026-11-20 — Catalog search scope and passage navigation
+
+Branch `codex/catalog-passage-scope` in `/tmp/netflux-passage` starts at PR #401 commit `0ea629c7`. Title and author search is the default. The opt-in also searches reader sections and the Big Idea. Passage cards carry a public reader destination, independently of saved highlights. On disposable local Supabase, Chrome at 390 and 1440 px verified both scope settings, normal title and author links, browser Back, and scrolling to and temporarily highlighting the correct phrase across inline formatting. A first runtime benchmark exceeded the author-search latency limit. An indexed name search passed the subsequent 110,000-document benchmark. The production dry-run listed only `20261120010000_catalog_search_scope.sql`. Before release, record the hosted rehearsal or explicit exception, apply the reviewed migration, then merge and verify production.
+
 ## 2026-11-20 — Search cards open the reader
 
 Branch `codex/search-reader-cards` in `/tmp/netflux-search-reader`, base `092908c6`. The Search catalog grid uses direct reader links and drops the separate Listen link. At 390 and 1440 px, verified 20 reader card links for “God” and opened Knowing God. All 86 focused tests passed. Search scope and passage targeting await design review. Next step is the gated PR merge.

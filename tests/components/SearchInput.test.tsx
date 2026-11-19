@@ -22,12 +22,19 @@ describe("SearchInput", () => {
         window.history.replaceState(null, "", "/");
     });
 
+    it("enables passage search with the current query and filters and drops the old cursor", () => {
+        window.history.replaceState(null, "", "/search?q=God&type=book&cursor=old");
+        render(<SearchInput initialQuery="God" type="book" inside={false} />);
+        fireEvent.click(screen.getByRole("checkbox", { name: "Search inside summaries" }));
+        expect(routerPushMock).toHaveBeenCalledWith("/search?inside=1&q=God&type=book", { scroll: false });
+    });
+
     it("shows recent searches on focus when local storage has entries", async () => {
         vi.mocked(window.localStorage.getItem).mockReturnValue(JSON.stringify(["Deep Work", "Atomic Habits"]));
 
         render(<SearchInput />);
 
-        const input = screen.getByPlaceholderText("Search titles, authors, categories or passages...");
+        const input = screen.getByPlaceholderText("Search by title or author...");
         fireEvent.focus(input);
 
         await waitFor(() => {
@@ -43,7 +50,7 @@ describe("SearchInput", () => {
 
         render(<SearchInput />);
 
-        const input = screen.getByPlaceholderText("Search titles, authors, categories or passages...");
+        const input = screen.getByPlaceholderText("Search by title or author...");
         fireEvent.focus(input);
 
         const recentSearchButton = await screen.findByRole("button", { name: /^deep work$/i });
@@ -106,7 +113,7 @@ describe("SearchInput", () => {
 
         render(<SearchInput />);
 
-        const input = screen.getByPlaceholderText("Search titles, authors, categories or passages...");
+        const input = screen.getByPlaceholderText("Search by title or author...");
         fireEvent.focus(input);
 
         await screen.findByText("Recent Searches");
@@ -268,7 +275,7 @@ describe("SearchInput", () => {
 
         render(<SearchInput />);
 
-        const input = screen.getByPlaceholderText("Search titles, authors, categories or passages...");
+        const input = screen.getByPlaceholderText("Search by title or author...");
         fireEvent.focus(input);
 
         await waitFor(() => {

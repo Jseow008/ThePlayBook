@@ -18,6 +18,7 @@ export type CatalogSearchResult = ContentItem & {
         text: string;
         highlights: Array<{ start: number; end: number }>;
     };
+    passageId?: string;
     rank: number;
 };
 
@@ -60,6 +61,7 @@ type SearchRow = {
     quick_mode_json: ContentItem["quick_mode_json"];
     result_rank: number | null;
     cursor_rank: string | null;
+    passage_id: string | null;
     snippet_source: string | null;
     snippet_headline: string | null;
 };
@@ -93,9 +95,9 @@ function cursorSecret() {
     return secret;
 }
 
-function contextHash(query: string, categories: string[], type: ContentType | null) {
+function contextHash(query: string, categories: string[], type: ContentType | null, inside: boolean) {
     return createHmac("sha256", cursorSecret())
-        .update(JSON.stringify({ query, categories, type, version: CURSOR_VERSION }))
+        .update(JSON.stringify({ query, categories, type, inside, version: CURSOR_VERSION }))
         .digest("base64url");
 }
 
@@ -180,6 +182,7 @@ export function parseCatalogSearchHeadline(value: string) {
 
 export async function searchCatalog(input: {
     query: string;
+    inside?: boolean;
     categories?: string[] | null;
     type?: ContentType | null;
     cursor?: string | null;
@@ -187,14 +190,15 @@ export async function searchCatalog(input: {
     const query = normalizeCatalogSearchQuery(input.query);
     const categories = [...new Set((input.categories ?? []).map((category) => category.trim()).filter(Boolean))].sort();
     const type = input.type ?? null;
-    const hash = contextHash(query, categories, type);
+    const hash = contextHash(query, categories, type, input.inside === true);
     const cursor = input.cursor ? decodeCursor(input.cursor, hash, categories, type) : null;
     // Only this fixed public-catalog RPC uses the server credential. Notes
     // search continues to use the account-bound client and its RLS policies.
     const client = getAdminClient() as unknown as {
         rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: SearchRow[] | null; error: { message: string } | null }>;
     };
-    const { data, error } = await client.rpc("search_catalog", {
+    const { data, error } = await client.rpc("search_catalog_scoped", {
+        p_inside: input.inside === true,
         p_query: query,
         p_categories: categories,
         p_type: type,
@@ -261,6 +265,7 @@ export async function searchCatalog(input: {
         isbn: null,
         update_source_id: null,
         reading_revision: null,
+        passageId: row.passage_id ?? undefined,
         rank: row.result_rank,
         snippet: { source: row.snippet_source ?? "Summary", ...parseCatalogSearchHeadline(row.snippet_headline ?? row.title) },
     }));

@@ -7,6 +7,7 @@ const SearchParamsSchema = z.object({
     q: z.string().max(512).optional(),
     category: z.string().trim().max(120).optional(),
     type: z.enum(["book", "podcast", "article"]).optional(),
+    inside: z.literal("1").optional(),
     cursor: z.string().max(2048).optional(),
 });
 
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
 
     try {
         const result = await searchCatalog({
+            inside: parsed.data.inside === "1",
             query: normalizeCatalogSearchQuery(parsed.data.q),
             categories: parsed.data.category ? [parsed.data.category] : [],
             type: parsed.data.type ?? null,

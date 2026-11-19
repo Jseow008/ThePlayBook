@@ -1,5 +1,6 @@
 "use client";
 
+import { findSearchPassageRange } from "./search-passage-range";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -147,6 +148,9 @@ export function ReaderView({ content }: ReaderViewProps) {
     const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
     const isReaderInteractionDesktop = useMediaQuery(VIEWPORT_QUERIES.readerInteractionDesktop);
     const searchParams = useSearchParams();
+    const passageId = searchParams.get("passage");
+    const passageMatch = searchParams.get("match")?.slice(0, 280) ?? "";
+    const isOverviewPassage = passageId === "overview" && Boolean(quickMode?.big_idea);
     const destinationId = searchParams.get("highlightId");
     const destination = useHighlight(destinationId, content.id);
     const highlights = useMemo(() => destination.data && !listedHighlights.some(item => item.id === destination.data?.id)
@@ -448,7 +452,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             return;
         }
 
-        if (searchParams.get("highlightId")) {
+        if (searchParams.get("highlightId") || isOverviewPassage || (passageId && segmentIdSet.has(passageId))) {
             handledReaderEntryRef.current = readerEntryKey;
             return;
         }
@@ -484,6 +488,8 @@ export function ReaderView({ content }: ReaderViewProps) {
             setIsAudioFollowEnabled(true);
         }
     }, [
+        passageId,
+        isOverviewPassage,
         content.audio_url,
         content.id,
         content.segments,
@@ -953,6 +959,34 @@ export function ReaderView({ content }: ReaderViewProps) {
         return true;
     }, []);
 
+    useEffect(() => {
+        if (!readingProgressLoaded || destinationId || !passageId || (!isOverviewPassage && !segmentIdSet.has(passageId))) return;
+        let cancelled = false;
+        let timer: number | undefined;
+        if (!isOverviewPassage) setExpandedSegmentId(passageId);
+        const ready = isOverviewPassage ? Promise.resolve() : waitForSegmentExpansion(passageId);
+        void ready.then(() => {
+            if (cancelled) return;
+            const body = document.querySelector<HTMLElement>(`[data-segment-id="${escapeAttributeSelector(passageId)}"]`);
+            const range = body && findSearchPassageRange(body, passageMatch);
+            if (!range) {
+                if (isOverviewPassage) body?.scrollIntoView({ block: "center" });
+                else scrollSegmentTopIntoView(passageId);
+                return;
+            }
+            window.scrollTo({ top: Math.max(0, range.getBoundingClientRect().top + window.scrollY - 100), behavior: "instant" });
+            if (typeof Highlight !== "undefined" && CSS.highlights) {
+                CSS.highlights.set("search-passage", new Highlight(range));
+                timer = window.setTimeout(() => CSS.highlights.delete("search-passage"), 4000);
+            }
+        });
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timer);
+            window.CSS?.highlights?.delete("search-passage");
+        };
+    }, [destinationId, isOverviewPassage, passageId, passageMatch, readingProgressLoaded, scrollSegmentTopIntoView, waitForSegmentExpansion, segmentIdSet, storageScope]);
+
     const handleHighlightJump = useCallback(async (
         highlightId: string,
         options: { target?: "highlight" | "segment"; preserveVisible?: boolean; isCurrent?: () => boolean } = {}
@@ -1219,7 +1253,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                         <h2 className="text-sm font-bold text-primary uppercase tracking-[0.2em] mb-3">
                             The Big Idea
                         </h2>
-                        <div className={`reader-size-${fontSize} reading-copy reading-copy-default font-medium`}>
+                        <div data-segment-id="overview" className={`reader-size-${fontSize} reading-copy reading-copy-default font-medium`}>
                             {quickMode.big_idea}
                         </div>
                     </div>
