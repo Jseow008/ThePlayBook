@@ -1,5 +1,5 @@
 import { INTERACTIVE_AI_MODEL, INTERACTIVE_AI_PROVIDER_OPTIONS } from "@/lib/server/interactive-ai";
-import { withChatDeadline } from "@/lib/server/chat-deadline";
+import { CHAT_DEADLINE_MS, withChatDeadline } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse, reserveAiProviderCall } from "@/lib/server/ai-spending";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { issueEvidenceCitations, resolvePersonalQuotationReference } from "@/lib/server/evidence-citation";
@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
 
 async function handlePost(req: NextRequest, signal: AbortSignal) {
     const requestId = getRequestId();
+    const requestDeadline = performance.now() + CHAT_DEADLINE_MS;
 
     try {
         // --- Auth ---
@@ -275,7 +276,9 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             if (failure) return failure;
         }
         signal.throwIfAborted();
-        const retrievalSignal = AbortSignal.any([signal, AbortSignal.timeout(35_000)]);
+        const retrievalTimeoutMs = 35_000;
+        const retrievalDeadline = performance.now() + retrievalTimeoutMs;
+        const retrievalSignal = AbortSignal.any([signal, AbortSignal.timeout(retrievalTimeoutMs)]);
         const quoteField = exactPersonalQuoteField(userQuery);
         if (quoteField && isBarePersonalRecordReference(userQuery)) {
             try {
@@ -392,6 +395,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
                         const answer = await generateEvidenceComparison({
                             surface: "library", system: buildLibraryEvidencePrompt("", selected.contextText, intent),
                             question: questionContext.semanticQuestion, maxOutputTokens: getOutputTokenCap(intent), signal,
+                            deadlineAt: Math.min(requestDeadline, retrievalDeadline),
                         });
                         await revalidateSelection();
                         text = prependEvidenceComparison(extracts, answer).text;

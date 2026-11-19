@@ -19,10 +19,17 @@ export async function generateEvidenceComparison(options: {
     question: string;
     maxOutputTokens: number;
     signal: AbortSignal;
+    deadlineAt?: number;
 }): Promise<string | null> {
     const { surface, system, question, maxOutputTokens, signal } = options;
     signal.throwIfAborted();
-    const comparisonSignal = AbortSignal.any([signal, AbortSignal.timeout(15_000)]);
+    // Keep time for the final evidence/session checks and for delivering the
+    // extracts if synthesis cannot finish. Notes retains its original limit.
+    const budget = options.deadlineAt === undefined
+        ? 15_000
+        : Math.min(24_000, Math.floor(options.deadlineAt - performance.now() - 6_000));
+    if (budget < 1_000) return null;
+    const comparisonSignal = AbortSignal.any([signal, AbortSignal.timeout(budget)]);
     try {
         const reservation = await reserveAiProviderCall({
             provider: "openai", model: INTERACTIVE_AI_MODEL, maxOutputTokens,

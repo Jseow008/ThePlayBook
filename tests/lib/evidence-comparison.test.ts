@@ -68,6 +68,23 @@ describe("direct comparisons preserve the original evidence contract", () => {
         }));
     });
 
+    it("uses the remaining Library budget and keeps time for a final recheck", async () => {
+        const clock = vi.spyOn(performance, "now").mockReturnValue(1_000);
+        const timeout = vi.spyOn(AbortSignal, "timeout").mockReturnValue(new AbortController().signal);
+        try {
+            vi.mocked(generateText).mockRejectedValueOnce(new Error("test provider stopped"));
+            await generateEvidenceComparison({ ...comparison, surface: "library", deadlineAt: 29_000 });
+            expect(timeout).toHaveBeenCalledWith(22_000);
+            vi.mocked(reserveAiProviderCall).mockClear();
+            await expect(generateEvidenceComparison({ ...comparison, surface: "library", deadlineAt: 7_500 }))
+                .resolves.toBeNull();
+            expect(reserveAiProviderCall).not.toHaveBeenCalled();
+        } finally {
+            clock.mockRestore();
+            timeout.mockRestore();
+        }
+    });
+
     it("does not publish the fallback when the request has been cancelled", async () => {
         const cancel = new AbortController();
         vi.mocked(generateText).mockImplementationOnce(async () => {

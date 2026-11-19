@@ -23,6 +23,7 @@ import { assertActiveChatSession, ChatSessionValidationError } from "@/lib/serve
 import { PersonalEvidenceSelectionError } from "@/lib/server/personal-evidence-selector";
 
 import { withNotesReplayRequest } from "@/lib/server/notes-replay";
+import { notesComparisonActivity } from "@/lib/server/notes-comparison-outcome";
 
 export const maxDuration = 60;
 
@@ -238,12 +239,14 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         }
 
         signal.throwIfAborted();
+        const isComparison = isEvidenceComparison(lastMessage.content);
         let evidence;
         try {
             evidence = await retrievePersonalEvidence({
                 supabase, userId: user.id, scope, question: lastMessage.content,
                 semanticQuestion: questionContext.semanticQuestion, signal,
                 embeddingQuestion: questionContext.embeddingQuestion,
+                ...(isComparison ? { requiredComparisonActivity: notesComparisonActivity(lastMessage.content) } : {}),
             });
         } catch (error) {
             const spendingFailure = aiSpendingFailureResponse(error);
@@ -268,7 +271,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
 
         signal.throwIfAborted();
         const extracts = renderEvidenceExtractsWithRanges({ personal: evidence.items });
-        const comparison = isEvidenceComparison(lastMessage.content) && evidence.contextText
+        const comparison = isComparison && evidence.contextText
             ? await generateEvidenceComparison({
                 surface: "notes", system: buildPersonalEvidencePrompt(evidence),
                 question: questionContext.semanticQuestion, maxOutputTokens: getNotesOutputTokenCap(lastMessage.content), signal,
