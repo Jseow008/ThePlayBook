@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentPropsWithoutRef } from "react";
+import { Suspense, type ComponentPropsWithoutRef } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useAuthUser } from "@/hooks/useAuthUser";
@@ -17,5 +17,12 @@ function LinkFromSearch({ href, ...props }: Props) {
 
 export function ProtectedNavLink(props: Props) {
     const pathname = usePathname();
-    return pathname === "/search" ? <LinkFromSearch {...props} /> : <Link {...props} />;
+    const link = <Link {...props} />;
+    if (pathname !== "/search") return link;
+
+    return (
+        <Suspense fallback={link}>
+            <LinkFromSearch {...props} />
+        </Suspense>
+    );
 }
