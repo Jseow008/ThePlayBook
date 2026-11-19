@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 import { expect, test } from '@playwright/test';
+import { captureResponse } from './helpers/capture-response';
 
 const apiUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -48,17 +49,22 @@ test('Notes opening retains a pending response and its context', async ({ page, 
         });
         // Exercise real hydration; configuration failures must fail the test,
         // not be hidden by a toast handler that interrupts composer actions.
-        const snapshotCreated = page.waitForResponse(response =>
+        // Observe early responses without spending a later phase's timeout
+        // during document loading or snapshot creation.
+        const snapshotCreated = captureResponse(page, response =>
             new URL(response.url()).pathname === '/api/account-data/snapshots'
-            && response.request().method() === 'POST', { timeout: 30_000 });
-        const libraryLoaded = page.waitForResponse(response =>
+            && response.request().method() === 'POST', 'Snapshot creation');
+        const libraryLoaded = captureResponse(page, response =>
             /^\/api\/account-data\/snapshots\/[^/]+\/user_library$/.test(new URL(response.url()).pathname),
-            { timeout: 30_000 });
-        await Promise.all([
-            page.goto('/notes'),
-            snapshotCreated.then(response => expect(response.ok(), 'Snapshot creation must succeed').toBe(true)),
-            libraryLoaded.then(response => expect(response.ok(), 'Library snapshot read must succeed').toBe(true)),
-        ]);
+            'Library hydration');
+        try {
+            await page.goto('/notes');
+            expect((await snapshotCreated.wait(30_000)).ok(), 'Snapshot creation must succeed').toBe(true);
+            expect((await libraryLoaded.wait(30_000)).ok(), 'Library snapshot read must succeed').toBe(true);
+        } finally {
+            snapshotCreated.dispose();
+            libraryLoaded.dispose();
+        }
         await expect(page.getByText('Sync unavailable. Your changes remain on this device. Refresh your library to try again.', { exact: true })).toHaveCount(0);
         const desktop = (page.viewportSize()?.width ?? 0) >= 1024;
         await page.getByRole('button', { name: desktop ? 'Ask these notes' : 'Ask', exact: true }).click();

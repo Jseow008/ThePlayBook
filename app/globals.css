@@ -258,7 +258,8 @@ body {
     input,
     textarea,
     select {
-      font-size: 16px !important;
+      /* Controls can retain a larger intended size above the iOS readability floor. */
+      font-size: max(16px, var(--ios-input-font-size, 16px)) !important;
     }
   }
 }
