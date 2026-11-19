@@ -967,7 +967,9 @@ export function ReaderView({ content }: ReaderViewProps) {
         const ready = isOverviewPassage ? Promise.resolve() : waitForSegmentExpansion(passageId);
         void ready.then(() => {
             if (cancelled) return;
-            const body = document.querySelector<HTMLElement>(`[data-segment-id="${escapeAttributeSelector(passageId)}"]`);
+            const body = document.querySelector<HTMLElement>(isOverviewPassage
+                ? "[data-reader-overview]"
+                : `[data-segment-id="${escapeAttributeSelector(passageId)}"]`);
             const range = body && findSearchPassageRange(body, passageMatch);
             if (!range) {
                 if (isOverviewPassage) body?.scrollIntoView({ block: "center" });
@@ -1253,7 +1255,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                         <h2 className="text-sm font-bold text-primary uppercase tracking-[0.2em] mb-3">
                             The Big Idea
                         </h2>
-                        <div data-segment-id="overview" className={`reader-size-${fontSize} reading-copy reading-copy-default font-medium`}>
+                        <div data-reader-overview className={`reader-size-${fontSize} reading-copy reading-copy-default font-medium`}>
                             {quickMode.big_idea}
                         </div>
                     </div>
