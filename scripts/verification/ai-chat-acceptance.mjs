@@ -144,7 +144,7 @@ async function main(stage) {
         for(const test of list){
             if(cases.some(x=>x.id===test.id))continue;
             assert.equal(candidateIdentity(),candidateHash,'Code changed during fixed evaluation');
-            assert(auditTotal(auditRows(),prior)+.425<5,'Insufficient remaining budget for another question');
+            assert(auditTotal(auditRows(),prior)+1.06<5,'Insufficient remaining budget for another question');
             const pause=6500-(Date.now()-lastStarted);if(pause>0)await new Promise(r=>setTimeout(r,pause));lastStarted=Date.now();
             const http=process.env.AI_ACCEPTANCE_HTTP!=='0';
             const ui=stage==='pilot-ui'||(stage==='pilot'&&process.env.AI_ACCEPTANCE_PILOT_MODE==='ui'),width=test.width??(test.id==='P-N2'?390:1440);
@@ -168,7 +168,7 @@ async function main(stage) {
                     composerLabel=width===390?'Ask a question about these notes':'Ask a question about the notes in view';sendLabel='Send notes question';
                 }else{const book=plan.publicSources.find(x=>x.id===test.book);await page.goto('/read/'+book.id);await page.getByRole('button',{name:'Discuss ideas',exact:true}).click();composerLabel='Ask '+book.author+' a question';sendLabel='Send message';}
                 for(const previous of (test.history??[]).filter(x=>x.role==='user')){
-                    assert(auditTotal(auditRows(),prior)+.425<5,'Insufficient budget for a real conversation warmup');
+                    assert(auditTotal(auditRows(),prior)+1.06<5,'Insufficient budget for a real conversation warmup');
                     const pending=page.waitForResponse(response=>response.request().method()==='POST'&&new URL(response.url()).pathname===requestPath,{timeout:80000});
                     await sendUi(previous.content);const response=await pending,body=await response.text(),decoded=decodeStream(body);
                     assert.equal(response.status(),200);assert(decoded.text&&!decoded.errors.length,'Conversation warmup failed');

@@ -81,3 +81,26 @@ it('does not treat current notes filters as an earlier conversation', () => {
     expect(contextualizeUserQuestion([user('Quote that reflection about my commute exactly.')]).contextMissing).toBe(false);
     expect(contextualizeUserQuestion([user('Quote that reflection exactly.')]).contextMissing).toBe(true);
 });
+
+it.each([
+    ['Quote the previous note exactly.', 'Find my note about disagreeing with merger as the only viable route.', 'Quote the note exactly.'],
+    ['Could you repeat the earlier reflection verbatim?', 'Find my reflection about bedtime reading.', 'Could you repeat the reflection verbatim?'],
+    ['Please show the previous highlighted passage word-for-word.', 'Find my highlighted passage about the economic hinterland.', 'Please show the highlighted passage word-for-word.'],
+])('resolves a bare prior-record pointer without adding a chronology constraint: %s', (question, topic, resolved) => {
+    const result = contextualizeUserQuestion([user(topic), assistant('INVENTED_QUOTATION'), user(question)]);
+    expect(result.currentQuestion).toBe(question);
+    expect(result.semanticQuestion).toContain(`Current request:\n${resolved}`);
+    expect(result.semanticQuestion).toContain(topic);
+    expect(result.semanticQuestion).not.toContain('INVENTED_QUOTATION');
+});
+it.each([
+    ['Quote the last note exactly.', 'Find my note about sleep.'],
+    ['Quote the previous note before my trip exactly.', 'Find my note about sleep.'],
+    ['Quote the previous note from yesterday exactly.', 'Find my note about sleep.'],
+    ['Quote the previous note exactly.', 'Compare my notes about sleep.'],
+    ['Quote the previous note exactly.', 'Find my latest note about sleep.'],
+    ['Quote the previous note exactly.', 'Find my reflection about sleep.'],
+])('preserves temporal constraints, plural ambiguity and record kinds: %s', (question, topic) => {
+    const result = contextualizeUserQuestion([user(topic), user(question)]);
+    expect(result.semanticQuestion).toContain(`Current request:\n${question}`);
+});

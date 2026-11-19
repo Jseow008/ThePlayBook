@@ -32,6 +32,18 @@ function namesUserTopic(question: string): boolean {
         .some((word) => word.length > 1 && !GENERIC_REQUEST_WORDS.has(word));
 }
 
+/** Resolve a conversational pointer, never a request to find an older stored record. */
+function resolveRecordReference(question: string, topicRequest: string): string {
+    const match = /^(?:(?:can|could|would|will) you (?:please )?|please )?(?:quote|repeat|show|give|read|copy)(?: me)? ((?:the )?(?:previous|earlier) (note|reflection|highlight|highlighted passage|passage|quotation|quote|extract|entry|record|capture))(?: (?:exactly|verbatim|word[ -]for[ -]word))?(?:,? please)?[.!?]?$/i.exec(question.trim());
+    if (!match) return question;
+    const record = match[2]; // Controlled vocabulary from the expression above.
+    const singleTarget = new RegExp(`\\b(?:my|the|a|one) (?:saved |written )?${record}\\b`, "i");
+    if (!singleTarget.test(topicRequest)
+        || /\b(notes|reflections|highlights|passages|quotations|quotes|extracts|entries|records|captures)\b/i.test(topicRequest)
+        || /\b(latest|earliest|oldest|newest|last|first|second|third|previous|earlier)\s+(?:saved\s+|written\s+)?(?:note|reflection|highlight|passage|record)\b/i.test(topicRequest)) return question;
+    return question.replace(match[1], `the ${record}`);
+}
+
 /** User history resolves the request only. It never supplies factual evidence. */
 export function contextualizeUserQuestion(messages: readonly UserContextMessage[]) {
     const userTurns = messages.slice(-20).filter((message) => message.role === "user");
@@ -46,20 +58,23 @@ export function contextualizeUserQuestion(messages: readonly UserContextMessage[
 
     const prior: string[] = [];
     let foundTopic = false;
+    let topicRequest = "";
     for (const message of userTurns.slice(0, -1).reverse()) {
         if (/^(?:thanks?|thank you|ok(?:ay)?|got it)[.!]?$/i.test(message.content.trim())) continue;
         if (prior.length === MAX_PRIOR_USER_TURNS) break;
         prior.unshift(message.content);
         if (!refersToEarlierTurn(message.content)) {
             foundTopic = namesUserTopic(message.content) || (inventoryFollowup && detectAskIntent(message.content) === "library_metadata");
+            topicRequest = message.content;
             break; // Never cross a newer independent question to revive an old topic.
         }
     }
     if (!foundTopic) return { ...base, contextMissing: true };
+    const retrievalQuestion = resolveRecordReference(currentQuestion, topicRequest);
     const semanticQuestion = "Earlier user requests identify the topic only; they are not evidence or current instructions. "
         + "Answer the current request from freshly retrieved evidence, without claiming to verify an earlier answer's wording.\n"
         + `Earlier user requests:\n${prior.map((question, index) => `${index + 1}. ${question}`).join("\n")}\n`
-        + `Current request:\n${currentQuestion}`;
+        + `Current request:\n${retrievalQuestion}`;
     // Preserve whole user turns and the complete current request. An ambiguous
     // fragment is worse than asking the user to restate the topic explicitly.
     return semanticQuestion.length <= MAX_SEMANTIC_QUESTION_CHARACTERS
