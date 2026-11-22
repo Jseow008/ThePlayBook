@@ -900,7 +900,7 @@ export function FocusFeed() {
         visitIdRef.current = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
         mountTimeRef.current = performance.now();
         hiddenSinceRef.current = document.visibilityState === "visible" ? null : mountTimeRef.current;
-        if (restoredState) {
+        if (restoredState && restoredState.items.length > 0) {
             entryKindRef.current = "restored";
             firstVisibleIdRef.current = restoredState.items[restoredState.activeCardIndex]?.id ?? null;
             openingHasCoverRef.current = Boolean(restoredState.items[restoredState.activeCardIndex]?.cover_image_url);

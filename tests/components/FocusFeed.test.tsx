@@ -1028,6 +1028,27 @@ describe("FocusFeed", () => {
         expect(savedState.activeCardIndex).toBe(0);
     });
 
+    it.each([true, false])("fetches fresh Quick Takes when the saved feed is empty (hasMore: %s)", async (hasMore) => {
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: [],
+                activeCardIndex: 0,
+                hasMore,
+                nextCursor: hasMore ? "saved-cursor" : null,
+                seenIds: [focusItems[0]!.id],
+            })
+        );
+
+        render(<FocusFeed />);
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        const request = getFocusRequestBody(0);
+        expect(request.excludeIds).toEqual(readingProgressState.value.completedIds);
+        expect(request.cursor).toBeUndefined();
+        expect(await screen.findByText("Essentialism")).toBeInTheDocument();
+    });
+
     it("falls back to the normal fetch path when restored state is invalid", async () => {
         window.sessionStorage.setItem(
             FOCUS_FEED_RESTORE_STORAGE_KEY,
