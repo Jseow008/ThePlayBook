@@ -456,8 +456,13 @@ describe("FocusFeed", () => {
     it("does not report an opening cover as visible after moving to another card", async () => {
         render(<FocusFeed />);
         const cards = await screen.findAllByTestId("focus-feed-card");
-        const impressionObserver = observerInstances.find((observer) => observer.thresholds.length === 3)!;
-        const navigationObserver = observerInstances.find((observer) => observer.thresholds.length === 5)!;
+        const { impressionObserver, navigationObserver } = await waitFor(() => {
+            const impressionObserver = observerInstances.filter((observer) => observer.thresholds.length === 3).at(-1);
+            const navigationObserver = observerInstances.filter((observer) => observer.thresholds.length === 5).at(-1);
+            expect(impressionObserver?.observe).toHaveBeenCalledWith(cards[0]);
+            expect(navigationObserver?.observe).toHaveBeenCalledWith(cards[1]);
+            return { impressionObserver: impressionObserver!, navigationObserver: navigationObserver! };
+        });
 
         act(() => impressionObserver.trigger(cards[0]!, 0.85));
         act(() => navigationObserver.trigger(cards[1]!));
@@ -1026,6 +1031,27 @@ describe("FocusFeed", () => {
             focusItems[2]!.id,
         ]);
         expect(savedState.activeCardIndex).toBe(0);
+    });
+
+    it.each([true, false])("fetches fresh Quick Takes when the saved feed is empty (hasMore: %s)", async (hasMore) => {
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: [],
+                activeCardIndex: 0,
+                hasMore,
+                nextCursor: hasMore ? "saved-cursor" : null,
+                seenIds: [focusItems[0]!.id],
+            })
+        );
+
+        render(<FocusFeed />);
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        const request = getFocusRequestBody(0);
+        expect(request.excludeIds).toEqual(readingProgressState.value.completedIds);
+        expect(request.cursor).toBeUndefined();
+        expect(await screen.findByText("Essentialism")).toBeInTheDocument();
     });
 
     it("falls back to the normal fetch path when restored state is invalid", async () => {
