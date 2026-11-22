@@ -32,9 +32,10 @@ vi.mock("@/lib/server/public-content", () => ({
     getCategoryStats: statsMock,
 }));
 
+vi.mock("@/lib/supabase/admin", () => ({ getAdminClient: () => ({ rpc: rpcMock }) }));
+
 vi.mock("@/lib/supabase/public-server", () => ({
     createPublicServerClient: () => ({
-        rpc: rpcMock,
         from: fromMock,
     }),
 }));
@@ -99,12 +100,11 @@ describe("Search catalog data cache", () => {
         expect(rpcMock).toHaveBeenCalledTimes(2);
     });
 
-    it("adds audio availability to Popular items before caching them", async () => {
-        recentResult.current = {
+    it("caches the audio availability returned by the Popular ranking", async () => {
+        rpcMock.mockResolvedValue({
             data: [{ id: "popular", audio_url: "https://example.com/audio.mp3" }],
-            count: 1,
             error: null,
-        };
+        });
 
         const first = await getPopularCatalogItems({ type: "book" });
         const second = await getPopularCatalogItems({ type: "book" });
@@ -112,7 +112,7 @@ describe("Search catalog data cache", () => {
         expect(first[0].audio_url).toBe("https://example.com/audio.mp3");
         expect(second).toEqual(first);
         expect(rpcMock).toHaveBeenCalledTimes(1);
-        expect(fromMock).toHaveBeenCalledTimes(1);
+        expect(fromMock).not.toHaveBeenCalled();
     });
 
     it("does not cache a failed database read", async () => {
