@@ -166,7 +166,7 @@ describe("HomeFeed", () => {
 
         const [newOnNetfluxLane] = screen.getAllByTestId("content-lane");
 
-        expect(newOnNetfluxLane).toHaveAttribute("data-view-all-href", "/search");
+        expect(newOnNetfluxLane).toHaveAttribute("data-view-all-href", "/browse/shelf/new");
     });
 
     it("links category shelves to their exact catalog when an additional item exists", () => {
@@ -183,14 +183,14 @@ describe("HomeFeed", () => {
 
         expect(categoryLane).toHaveAttribute(
             "data-view-all-href",
-            "/search?category=Productivity",
+            "/browse/shelf/section-1",
         );
     });
 
     it.each([
-        ["author", "Steven Bartlett", "/search?q=Steven+Bartlett"],
-        ["title", "Diary of a CEO", "/search?q=Diary+of+a+CEO"],
-    ])("links %s shelves to keyword search results", (filterType, filterValue, expectedHref) => {
+        ["author", "Steven Bartlett", "/browse/shelf/section-1"],
+        ["title", "Diary of a CEO", "/browse/shelf/section-1"],
+    ])("links %s shelves to their configured section", (filterType, filterValue, expectedHref) => {
         const keywordSection = {
             ...section,
             filter_type: filterType,
@@ -211,7 +211,7 @@ describe("HomeFeed", () => {
         expect(keywordLane).toHaveAttribute("data-view-all-href", expectedHref);
     });
 
-    it("does not link featured shelves without an equivalent Search filter", () => {
+    it("links featured shelves to their configured section", () => {
         const featuredSection = {
             ...section,
             filter_type: "featured",
@@ -229,7 +229,7 @@ describe("HomeFeed", () => {
 
         const featuredLane = screen.getAllByTestId("content-lane")[1];
 
-        expect(featuredLane).toHaveAttribute("data-view-all-href", "");
+        expect(featuredLane).toHaveAttribute("data-view-all-href", "/browse/shelf/section-1");
     });
 
     it("offers desktop-only catalog search after the final lane and before the footer", () => {

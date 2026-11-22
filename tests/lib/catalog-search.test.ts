@@ -57,6 +57,14 @@ describe("catalog search server contract", () => {
         expect(JSON.stringify(result)).not.toContain("private-field-sentinel");
     });
 
+    it.each(["J. I. Packer", "J.I. Packer"])("matches both indexed spellings for %s", async (query) => {
+        rpc.mockResolvedValueOnce({ data: [], error: null });
+        await searchCatalog({ query });
+        expect(rpc).toHaveBeenCalledWith("search_catalog_scoped", expect.objectContaining({
+            p_query: "J.I. Packer OR J. I. Packer",
+        }));
+    });
+
     it("reports missing cursor configuration without sending a database query", async () => {
         const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
         delete process.env.CATALOG_SEARCH_CURSOR_SECRET;
@@ -166,4 +174,13 @@ describe("catalog search server contract", () => {
         expect(pageTwoAgain.pageInfo.nextCursor).toEqual(expect.any(String));
         expect(pageTwoAgain.pageInfo.previousCursor).toEqual(expect.any(String));
     });
+});
+
+it("preserves an explicit phrase or operator when expanding initials would change the search", async () => {
+    process.env.CATALOG_SEARCH_CURSOR_SECRET = "catalog-search-unit-test-secret";
+    for (const query of ['"J. I. Packer"', "J. I. Packer OR Lewis", "J. I. Packer -theology"]) {
+        rpc.mockResolvedValueOnce({ data: [], error: null });
+        await searchCatalog({ query });
+        expect(rpc).toHaveBeenLastCalledWith("search_catalog_scoped", expect.objectContaining({ p_query: query }));
+    }
 });

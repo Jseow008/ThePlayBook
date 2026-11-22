@@ -56,7 +56,7 @@ export function HomeFeed({
                                 </div>
                             }
                             items={items.slice(0, BROWSE_LANE_ITEM_LIMIT)}
-                            viewAllHref={hasMoreBrowseItems(items) ? "/search" : undefined}
+                            viewAllHref={hasMoreBrowseItems(items) ? "/browse/shelf/new" : undefined}
                             cardTitleDensity="app-compact"
                             showMoreCardTitleLines
                             reduceCardDesktopGradient

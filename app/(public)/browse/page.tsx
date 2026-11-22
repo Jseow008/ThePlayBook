@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { HomeFeed } from "@/components/ui/HomeFeed";
 import { getRequestId, logApiError } from "@/lib/server/api";
-import type { ContentItem, Database, HomepageSection } from "@/types/database";
+import type { ContentItem } from "@/types/database";
 import { APP_NAME } from "@/lib/brand";
 import { COMPACT_SHELF_SKELETON_CARD_CLASS } from "@/components/ui/content-card-standards";
 import {
@@ -13,6 +13,7 @@ import {
     ROOT_OG_IMAGE_ALT,
     serializeJsonLdGraph,
 } from "@/lib/seo";
+import { fetchShelfItems } from "@/lib/server/browse-shelves";
 import { BROWSE_LANE_FETCH_LIMIT } from "@/lib/browse-lanes";
 import { toContentCardData, toHeroCardData } from "@/lib/server/content-card-data";
 
@@ -51,12 +52,8 @@ export const metadata: Metadata = {
     },
 };
 
-const FEED_CARD_SELECT =
-    "id, type, title, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, created_at, published_at";
 const HERO_CARD_SELECT =
     "id, type, title, quick_mode_json, duration_seconds, author, cover_image_url, hero_image_url, category, audio_url, created_at, published_at";
-type HomepageSectionsRpcRow = Database["public"]["Functions"]["get_homepage_sections_with_items"]["Returns"][number];
-
 export default function BrowsePage() {
     const browseJsonLd = [
         {
@@ -124,14 +121,8 @@ async function HomeFeedServer() {
             .is("deleted_at", null)
             .order("published_at", { ascending: false })
             .limit(5),
-        supabase
-            .from("content_item")
-            .select(FEED_CARD_SELECT)
-            .eq("status", "verified")
-            .is("deleted_at", null)
-            .order("published_at", { ascending: false })
-            .limit(BROWSE_LANE_FETCH_LIMIT),
-        supabase.rpc("get_homepage_sections_with_items", { p_limit: BROWSE_LANE_FETCH_LIMIT }),
+        fetchShelfItems(null, BROWSE_LANE_FETCH_LIMIT),
+        supabase.from("homepage_section").select("*").eq("is_active", true).order("order_index").order("id"),
     ]);
 
     if (featuredResult.error) {
@@ -165,28 +156,16 @@ async function HomeFeedServer() {
     const featuredItems = ((featuredResult.data && featuredResult.data.length > 0)
         ? featuredResult.data
         : items.slice(0, 5)) as ContentItem[];
-    const sectionData = sectionsResult.data;
-
-    // Parse the RPC results into the shape expected by the frontend
-    const sections: HomepageSection[] = [];
+    const sections = sectionsResult.data ?? [];
     const sectionItems: Record<string, ContentItem[]> = {};
-
-    if (sectionData) {
-        // The RPC returns { section_id, section_title, filter_type, filter_value, order_index, is_active, items }
-        const rows = sectionData as HomepageSectionsRpcRow[];
-        for (const row of rows) {
-            sections.push({
-                id: row.section_id,
-                title: row.section_title,
-                filter_type: row.filter_type_out,
-                filter_value: row.filter_value_out,
-                order_index: row.order_index_out,
-                is_active: row.is_active_out,
-            } as HomepageSection);
-
-            sectionItems[row.section_id] = ((Array.isArray(row.items) ? row.items : []) as ContentItem[]).map(toContentCardData);
+    await Promise.all(sections.map(async (section) => {
+        const { data, error } = await fetchShelfItems(section, BROWSE_LANE_FETCH_LIMIT);
+        if (error) {
+            logApiError({ requestId, route: "/browse", message: "Failed to fetch Browse shelf", error });
+            return;
         }
-    }
+        sectionItems[section.id] = (data as ContentItem[]).map(toContentCardData);
+    }));
 
     return (
         <HomeFeed
