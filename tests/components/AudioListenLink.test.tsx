@@ -14,7 +14,7 @@ describe("AudioListenLink", () => {
     it("opens the reader's audio player for an item with audio", () => {
         render(<AudioListenLink item={item} />);
 
-        expect(screen.getByRole("link", { name: "Listen to Deep Work" })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: "Open audio player for Deep Work" })).toHaveAttribute(
             "href",
             "/read/item-id/deep-work#audio-player",
         );
