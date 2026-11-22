@@ -55,8 +55,8 @@ describe("PublicLayoutShell", () => {
         expect(screen.queryByTestId("mobile-bottom-nav")).not.toBeInTheDocument();
     });
 
-    it("uses compact mobile chrome on browse", () => {
-        pathnameState.value = "/browse";
+    it.each(["/browse", "/search", "/notes"])("uses standard mobile chrome on %s", (pathname) => {
+        pathnameState.value = pathname;
 
         const { container } = render(
             <PublicLayoutShell>
@@ -66,13 +66,13 @@ describe("PublicLayoutShell", () => {
 
         const main = container.querySelector("main");
 
-        expect(screen.getByTestId("mobile-header")).toHaveAttribute("data-compact", "true");
-        expect(screen.getByTestId("mobile-bottom-nav")).toHaveAttribute("data-compact", "true");
+        expect(screen.getByTestId("mobile-header")).toHaveAttribute("data-compact", "false");
+        expect(screen.getByTestId("mobile-bottom-nav")).toHaveAttribute("data-compact", "false");
         expect(screen.getByText("Browse content")).toBeInTheDocument();
         expect(main).toHaveClass("lg:pl-16");
-        expect(main).toHaveClass("mobile-shell-bottom-padding-compact");
+        expect(main).toHaveClass("mobile-shell-bottom-padding");
         expect(main).toHaveClass("lg:pb-0");
-        expect(main?.firstElementChild).toHaveClass("mobile-header-compact-height");
+        expect(main?.firstElementChild).toHaveClass("mobile-header-height");
         expect(container.firstElementChild).toHaveClass("min-h-dvh");
     });
 

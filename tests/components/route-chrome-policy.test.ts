@@ -9,7 +9,6 @@ describe("getRouteChromePolicy", () => {
     it("exports the documented special policy patterns", () => {
         expect(ROUTE_CHROME_POLICY_RULE_PATTERNS).toEqual([
             "/",
-            "/browse",
             "/read/*",
             "/preview/*",
             "/ask",
@@ -24,16 +23,6 @@ describe("getRouteChromePolicy", () => {
             mobileBottomPadding: "none",
             desktopSidebarPadding: false,
             viewportMode: "standalone",
-        });
-    });
-
-    it("returns compact mobile chrome for browse", () => {
-        expect(getRouteChromePolicy("/browse")).toEqual({
-            mobileHeader: "compact",
-            mobileBottomNav: "compact",
-            mobileBottomPadding: "compact",
-            desktopSidebarPadding: true,
-            viewportMode: "standard",
         });
     });
 
@@ -99,6 +88,7 @@ describe("getRouteChromePolicy", () => {
 
     it.each([
         "/about",
+        "/browse",
         "/library/completed",
         "/library/my-list",
         "/library/reading",
