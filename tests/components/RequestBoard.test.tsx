@@ -49,7 +49,7 @@ describe("RequestBoard sign-in return", () => {
     });
 
     it.each([
-        ["book", "book"], ["video", "video"], ["podcast", ""], ["article", ""], ["unknown", ""], [undefined, ""],
+        ["book", "book"], ["video", "video"], ["podcast", "podcast"], ["article", "article"], ["unknown", ""], [undefined, ""],
     ] as const)("prefills only supported formats for a %s Search handoff", async (type, expected) => {
         render(await RequestsPage({ searchParams: Promise.resolve({ prefill: "Requested source", type }) }));
 
@@ -61,9 +61,9 @@ describe("RequestBoard sign-in return", () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it("restores the entered request after sign-in and clears it only after submission", async () => {
+    it.each(["book", "podcast", "article"])("restores the %s request after sign-in and clears it only after submission", async (format) => {
         const view = render(<RequestBoard />);
-        fireEvent.change(screen.getByRole("combobox", { name: "Format" }), { target: { value: "book" } });
+        fireEvent.change(screen.getByRole("combobox", { name: "Format" }), { target: { value: format } });
         fireEvent.change(screen.getByPlaceholderText("Paste a URL or type a title by author"), { target: { value: "A requested book" } });
         fireEvent.change(screen.getByPlaceholderText("Optional"), { target: { value: "A writer" } });
         fireEvent.click(screen.getByRole("link", { name: "Sign in to submit" }));
@@ -72,7 +72,7 @@ describe("RequestBoard sign-in return", () => {
             returnPath: `${window.location.pathname}${window.location.search}`,
             input: "A requested book",
             author: "A writer",
-            contentType: "book",
+            contentType: format,
         });
 
         view.unmount();
@@ -87,7 +87,7 @@ describe("RequestBoard sign-in return", () => {
             expect(screen.getByPlaceholderText("Paste a URL or type a title by author")).toHaveValue("A requested book");
         });
         expect(screen.getByPlaceholderText("Optional")).toHaveValue("A writer");
-        expect(screen.getByRole("combobox", { name: "Format" })).toHaveValue("book");
+        expect(screen.getByRole("combobox", { name: "Format" })).toHaveValue(format);
         expect(fetchMock).not.toHaveBeenCalled();
 
         fireEvent.click(screen.getByRole("button", { name: "Submit request" }));
@@ -95,7 +95,7 @@ describe("RequestBoard sign-in return", () => {
         expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
             input: "A requested book",
             author: "A writer",
-            content_type: "book",
+            content_type: format,
         });
         await waitFor(() => expect(window.sessionStorage.getItem("netflux_request_draft:v1")).toBeNull());
     });

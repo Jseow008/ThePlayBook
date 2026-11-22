@@ -2,6 +2,13 @@ import type { ContentType } from "@/types/database";
 import { buildCanonicalReadPath } from "@/lib/content-paths";
 import type { ContentRequestBoardItem } from "@/types/content-requests";
 
+export const REQUEST_FORMATS = ["book", "podcast", "article", "video"] as const satisfies readonly ContentType[];
+export type RequestFormat = typeof REQUEST_FORMATS[number];
+
+export function isRequestFormat(value: unknown): value is RequestFormat {
+    return REQUEST_FORMATS.some((format) => value === format);
+}
+
 const TRACKING_PARAMS = new Set([
     "fbclid",
     "gclid",
