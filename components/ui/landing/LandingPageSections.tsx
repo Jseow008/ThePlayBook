@@ -296,8 +296,8 @@ export function FeaturedReadsSection({
   const roundedContentCount = Math.floor(totalContentCount / 100) * 100;
   const popularIdeasCopy =
     roundedContentCount >= 100
-      ? `${roundedContentCount}+ summaries across books, podcasts, articles, and videos.`
-      : "Summaries across books, podcasts, articles, and videos.";
+      ? `${roundedContentCount}+ summaries to explore.`
+      : "Summaries to explore.";
   const browseHref = activeCategory
     ? `/search?category=${encodeURIComponent(activeCategory)}`
     : "/browse";

@@ -174,6 +174,12 @@ describe("settings data export delivery", () => {
         expect(screen.getByRole("link", { name: /replay app tour/i })).toHaveAttribute("href", "/browse?tour=app-v1");
     });
 
+    it("hides sign out for guests", async () => {
+        state.currentUser = null;
+        await act(async () => { render(<SettingsPage />); });
+        expect(screen.queryByRole("button", { name: /sign out/i })).not.toBeInTheDocument();
+    });
+
     it("clears local history and recommendation memory for a guest", async () => {
         state.currentUser = null;
         render(<SettingsPage />);

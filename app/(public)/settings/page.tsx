@@ -427,6 +427,7 @@ export default function SettingsPage() {
             if (error) throw error;
 
             await signOutAction();
+            window.location.replace("/login");
         } catch (err: any) {
             toast.error(err?.message || "Failed to sign out");
             setIsSigningOut(false);
@@ -634,29 +635,31 @@ export default function SettingsPage() {
 
 
                 {/* Account Section */}
-                <section className="space-y-4">
-                    <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider px-2">
-                        Account
-                    </h2>
-                    <div className="bg-card border border-border rounded-xl overflow-hidden divide-y divide-border">
-                        <button
-                            onClick={handleSignOut}
-                            disabled={isSigningOut}
-                            className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors text-left"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary rounded-lg text-muted-foreground">
-                                    <LogOut className="w-5 h-5" />
+                {user && (
+                    <section className="space-y-4">
+                        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider px-2">
+                            Account
+                        </h2>
+                        <div className="bg-card border border-border rounded-xl overflow-hidden divide-y divide-border">
+                            <button
+                                onClick={handleSignOut}
+                                disabled={isSigningOut}
+                                className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors text-left"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-secondary rounded-lg text-muted-foreground">
+                                        <LogOut className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-foreground">Sign Out</p>
+                                        <p className="text-sm text-muted-foreground">Log out of your account</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-medium text-foreground">Sign Out</p>
-                                    <p className="text-sm text-muted-foreground">Log out of your account</p>
-                                </div>
-                            </div>
-                            {isSigningOut && <span className="text-xs text-muted-foreground animate-pulse">Signing out...</span>}
-                        </button>
-                    </div>
-                </section>
+                                {isSigningOut && <span className="text-xs text-muted-foreground animate-pulse">Signing out...</span>}
+                            </button>
+                        </div>
+                    </section>
+                )}
 
                 {/* Data Management Section */}
                 <section className="space-y-4">
