@@ -456,8 +456,13 @@ describe("FocusFeed", () => {
     it("does not report an opening cover as visible after moving to another card", async () => {
         render(<FocusFeed />);
         const cards = await screen.findAllByTestId("focus-feed-card");
-        const impressionObserver = observerInstances.find((observer) => observer.thresholds.length === 3)!;
-        const navigationObserver = observerInstances.find((observer) => observer.thresholds.length === 5)!;
+        const { impressionObserver, navigationObserver } = await waitFor(() => {
+            const impressionObserver = observerInstances.filter((observer) => observer.thresholds.length === 3).at(-1);
+            const navigationObserver = observerInstances.filter((observer) => observer.thresholds.length === 5).at(-1);
+            expect(impressionObserver?.observe).toHaveBeenCalledWith(cards[0]);
+            expect(navigationObserver?.observe).toHaveBeenCalledWith(cards[1]);
+            return { impressionObserver: impressionObserver!, navigationObserver: navigationObserver! };
+        });
 
         act(() => impressionObserver.trigger(cards[0]!, 0.85));
         act(() => navigationObserver.trigger(cards[1]!));
