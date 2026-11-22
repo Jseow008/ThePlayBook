@@ -15,13 +15,9 @@ import { SignInLink } from "@/components/ui/SignInLink";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { cn } from "@/lib/utils";
 import { buildLoginHref } from "@/lib/auth-redirect";
-import type { ContentType } from "@/types/database";
+import { isRequestFormat, REQUEST_FORMATS, type RequestFormat } from "@/lib/content-requests";
 import type { ContentRequestMutationResult } from "@/types/content-requests";
 
-const TYPE_OPTIONS: Array<{ value: ContentType; label: string }> = [
-    { value: "book", label: "Book" },
-    { value: "video", label: "Video" },
-];
 const REQUEST_DRAFT_KEY = "netflux_request_draft:v1";
 
 type SubmissionState = { kind: "new" | "duplicate"; title: string } | null;
@@ -37,12 +33,12 @@ export function RequestBoard({
     initialType = "",
 }: {
     initialInput?: string;
-    initialType?: "book" | "video" | "";
+    initialType?: RequestFormat | "";
 }) {
     const user = useAuthUser();
     const [input, setInput] = useState(initialInput);
     const [author, setAuthor] = useState("");
-    const [contentType, setContentType] = useState<ContentType | "">(initialType);
+    const [contentType, setContentType] = useState<RequestFormat | "">(initialType);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionState, setSubmissionState] = useState<SubmissionState>(null);
     const editRevision = useRef(0);
@@ -56,7 +52,7 @@ export function RequestBoard({
             editRevision.current += 1;
             if (typeof saved.input === "string") setInput(saved.input);
             if (typeof saved.author === "string") setAuthor(saved.author);
-            if (saved.contentType === "" || saved.contentType === "book" || saved.contentType === "video") setContentType(saved.contentType);
+            if (saved.contentType === "" || isRequestFormat(saved.contentType)) setContentType(saved.contentType);
         } catch {
             // An unavailable or malformed browser draft leaves the initial form intact.
         }
@@ -152,7 +148,7 @@ export function RequestBoard({
                                     required
                                     onChange={(event) => {
                                         editRevision.current += 1;
-                                        setContentType(event.target.value as ContentType | "");
+                                        setContentType(event.target.value as RequestFormat | "");
                                         setSubmissionState(null);
                                     }}
                                     className={cn(
@@ -161,9 +157,9 @@ export function RequestBoard({
                                     )}
                                 >
                                     <option value="">Please Select</option>
-                                    {TYPE_OPTIONS.map(({ value, label }) => (
+                                    {REQUEST_FORMATS.map((value) => (
                                         <option key={value} value={value}>
-                                            {label}
+                                            {value[0].toUpperCase() + value.slice(1)}
                                         </option>
                                     ))}
                                 </select>

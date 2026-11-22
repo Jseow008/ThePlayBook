@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
+    REQUEST_FORMATS,
     normalizeText,
     normalizeUrl,
     parseMaybeUrl,
@@ -16,7 +17,7 @@ import type { ContentRequestMutationResult } from "@/types/content-requests";
 const RequestSchema = z.object({
     input: z.string().trim().min(2).max(500),
     author: z.string().trim().max(180).optional().nullable(),
-    content_type: z.enum(["book", "video"]),
+    content_type: z.enum(REQUEST_FORMATS),
 });
 
 const NEW_REQUEST_LIMIT = 5;

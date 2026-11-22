@@ -1,5 +1,7 @@
 import { RequestBoard } from "@/components/requests/RequestBoard";
 
+import { isRequestFormat } from "@/lib/content-requests";
+
 export const dynamic = "force-dynamic";
 
 export default async function RequestsPage({
@@ -10,7 +12,7 @@ export default async function RequestsPage({
     const resolvedSearchParams = await searchParams;
 
     const type = resolvedSearchParams?.type;
-    const initialType = type === "book" || type === "video" ? type : "";
+    const initialType = isRequestFormat(type) ? type : "";
 
     return (
         <RequestBoard
