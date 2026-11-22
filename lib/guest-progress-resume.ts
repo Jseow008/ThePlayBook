@@ -75,15 +75,22 @@ export function combineReadingProgress(
     ));
     const isCompleted = segmentIds.length > 0 && completed.length === segmentIds.length;
 
+    const accountCompleted = new Set(account?.completed);
+    const guestAddedProgress = !account
+        || lastSegmentIndex > (account.maxSegmentIndex ?? account.lastSegmentIndex)
+        || completed.some((id) => !accountCompleted.has(id));
+    const sourceTime = guestAddedProgress ? guest.lastReadAt : account.lastReadAt;
+
     return {
         itemId: guest.itemId,
         completed,
         ...(manuallyIncomplete.length > 0 ? { manuallyIncomplete } : {}),
         lastSegmentIndex,
         maxSegmentIndex: lastSegmentIndex,
-        lastReadAt: new Date().toISOString(),
+        // Merging a snapshot is not itself a reading event.
+        lastReadAt: sourceTime,
         isCompleted,
         totalSegments: segmentIds.length,
-        ...(isCompleted ? { completedAt: account?.completedAt ?? guest.completedAt ?? new Date().toISOString() } : {}),
+        ...(isCompleted ? { completedAt: account?.completedAt ?? guest.completedAt ?? sourceTime } : {}),
     };
 }

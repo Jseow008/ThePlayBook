@@ -1,6 +1,7 @@
 import "server-only";
 
 import { unstable_cache } from "next/cache";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { getCategoryStats } from "@/lib/server/public-content";
 import { SEARCH_CATALOG_CACHE_SECONDS, SEARCH_CATALOG_CACHE_TAG } from "@/lib/server/search-cache-config";
@@ -79,35 +80,16 @@ const getCachedCategoryStats = unstable_cache(
 
 const getCachedPopularItems = unstable_cache(
     async (categoryValues: string[], type: ContentType | null): Promise<ContentItem[]> => {
-        const supabase = createPublicServerClient();
-        const { data, error } = await supabase.rpc("get_trending_content", {
-            p_limit: 20,
+        const { data, error } = await getAdminClient().rpc("get_popular_reading_content", {
             p_type: type ?? undefined,
             p_categories: categoryValues.length > 0 ? categoryValues : undefined,
         });
         if (error) {
             throw error;
         }
-        const items = (data ?? []) as ContentItem[];
-        if (items.length === 0) return items;
-
-        // The trending RPC does not return audio_url. Enrich its small result set
-        // so the Popular view can offer the same Listen action as other searches.
-        const { data: audioRows, error: audioError } = await supabase
-            .from("content_item")
-            .select("id, audio_url")
-            .in("id", items.map((item) => item.id))
-            .eq("status", "verified")
-            .is("deleted_at", null);
-        if (audioError) {
-            console.error("Popular audio availability read failed", audioError);
-            return items;
-        }
-
-        const audioById = new Map((audioRows ?? []).map((row) => [row.id, row.audio_url]));
-        return items.map((item) => ({ ...item, audio_url: audioById.get(item.id) ?? null }));
+        return (data ?? []) as ContentItem[];
     },
-    ["search-popular-v3"],
+    ["search-popular-progress-30d-v1"],
     { revalidate: SEARCH_CATALOG_CACHE_SECONDS, tags: [SEARCH_CATALOG_CACHE_TAG] },
 );
 
