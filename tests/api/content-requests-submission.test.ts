@@ -41,7 +41,7 @@ function request(input: string, content_type = "book") {
         body: JSON.stringify({ input, content_type, author: "Synthetic creator" }),
     });
 }
-it.each(["book", "video"])("saves a URL with selected %s format without external enrichment", async format => {
+it.each(["book", "podcast", "article", "video"])("saves a URL with selected %s format without external enrichment", async format => {
     const response = await POST(request("https://example.test/source?utm_source=test", format));
     expect(response.status).toBe(201);
     expect(submit).toHaveBeenCalledWith("submit_content_request", expect.objectContaining({
