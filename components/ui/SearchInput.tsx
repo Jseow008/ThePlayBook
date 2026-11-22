@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { X, Clock } from "lucide-react";
 import { SearchBox } from "@/components/ui/SearchBox";
 import { cn } from "@/lib/utils";
-import { beginSearchJourney, resolveSearchQueryHref, setSearchDraftQuery } from "@/lib/search-journey-measurement";
+import { beginSearchJourney, resolveSearchFilterHref, resolveSearchQueryHref, setSearchDraftQuery } from "@/lib/search-journey-measurement";
 
 const RECENT_SEARCHES_KEY = "netflux_recent_searches";
 const MAX_RECENT_SEARCHES = 5;
@@ -39,6 +39,7 @@ function parseRecentSearches(rawValue: string | null) {
 
 interface SearchInputProps {
     initialQuery?: string;
+    inside?: boolean;
     category?: string;
     type?: string;
     placeholder?: string;
@@ -47,12 +48,15 @@ interface SearchInputProps {
 
 export function SearchInput({
     initialQuery = "",
+    inside,
     category,
     type,
-    placeholder = "Search titles, authors, categories or passages...",
+    placeholder = "Search by title or author...",
     autoFocus = false
 }: SearchInputProps) {
     const router = useRouter();
+    const [, startTransition] = useTransition();
+    const [searchInside, setSearchInside] = useOptimistic(inside === true);
 
     const [query, setQuery] = useState(initialQuery);
     const [isFocused, setIsFocused] = useState(false);
@@ -128,12 +132,13 @@ export function SearchInput({
         const params = new URLSearchParams();
 
         if (searchQuery.trim()) params.set("q", searchQuery.trim());
+        if (inside) params.set("inside", "1");
         if (category) params.set("category", category);
         if (type && type.toLowerCase() !== "all") params.set("type", type.toLowerCase());
 
         const search = params.toString();
         return search ? `/search?${search}` : "/search";
-    }, [category, type]);
+    }, [inside, category, type]);
 
     // Navigate to search results
     const performSearch = useCallback((
@@ -277,6 +282,20 @@ export function SearchInput({
                     />
                 </div>
             </form>
+            {inside !== undefined && (
+                <label className="mt-1 flex min-h-11 w-fit cursor-pointer items-center gap-2 text-sm">
+                    <input type="checkbox" checked={searchInside} onChange={(event) => {
+                        const href = resolveSearchFilterHref(buildSearchHref(query), "inside", event.target.checked ? "1" : undefined);
+                        beginSearchJourney(href, "filter", "select", "other");
+                        const checked = event.target.checked;
+                        startTransition(() => {
+                            setSearchInside(checked);
+                            router.push(href, { scroll: false });
+                        });
+                    }} />
+                    Search inside summaries
+                </label>
+            )}
 
             {/* Recent Searches Dropdown */}
             {showRecent && (

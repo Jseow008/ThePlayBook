@@ -19,7 +19,7 @@ export function SearchBox({ className, value, searchIconClassName, clear, ...inp
             <input
                 {...inputProps}
                 value={value}
-                className={`[--ios-input-font-size:var(--text-lg)] ${className ?? ""}`}
+                className={`[--ios-input-font-size:20px] ${className ?? ""}`}
             />
             {clear && value && (
                 <button type="button" onClick={clear.onClick} className={clear.buttonClassName} aria-label={clear.label}>

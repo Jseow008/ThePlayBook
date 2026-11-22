@@ -40,7 +40,7 @@ test.describe('/search', () => {
         await page.goto(`/search?q=${searchTerm}&type=book`);
 
         await expect(page.getByRole('heading', { name: 'No results found' })).toBeVisible();
-        await expect(page.getByText("We couldn't find anything matching that title, author, category, or filter.")).toBeVisible();
+        await expect(page.getByText("No matching title or author. Select Search inside summaries to look for a passage.")).toBeVisible();
 
         await page.getByRole('link', { name: 'Clear all filters' }).click();
         await expect(page).toHaveURL((url) => url.pathname === '/search'

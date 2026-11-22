@@ -120,7 +120,7 @@ vi.mock("@/components/ui/SearchInput", () => ({
 }));
 
 vi.mock("@/components/ui/ContentCard", () => ({
-    ContentCard: ({ item }: { item: { title: string } }) => <div>{item.title}</div>,
+    ContentCard: ({ item, navigationMode }: { item: { title: string }; navigationMode?: string }) => <div data-navigation={navigationMode}>{item.title}</div>,
 }));
 
 vi.mock("@/lib/analytics", () => ({
@@ -420,6 +420,7 @@ describe("SearchPage", () => {
         expect(rpcMock).not.toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).not.toHaveBeenCalledWith("get_trending_content", expect.anything());
         expect(searchCatalogMock).toHaveBeenCalledWith({
+            inside: false,
             query: "focus",
             categories: [],
             type,
@@ -445,7 +446,7 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "Clear all filters" })).toHaveAttribute("href", "/search?q=design");
     });
 
-    it("offers Listen only on search results with audio", async () => {
+    it("uses reader cards for audio and text results without a separate Listen link", async () => {
         searchCatalogMock.mockResolvedValueOnce({
             outcome: "results",
             results: [
@@ -466,11 +467,9 @@ describe("SearchPage", () => {
         const results = await runSearchResultsFromPage({ q: "book" });
         await act(async () => { render(results); });
 
-        expect(screen.getByRole("link", { name: "Listen to Audio Book" })).toHaveAttribute(
-            "href",
-            "/read/audio-item/audio-book#audio-player",
-        );
-        expect(screen.queryByRole("link", { name: "Listen to Text Book" })).not.toBeInTheDocument();
+        expect(screen.getByText("Audio Book")).toHaveAttribute("data-navigation", "read");
+        expect(screen.getByText("Text Book")).toHaveAttribute("data-navigation", "read");
+        expect(screen.queryByRole("link", { name: /^Listen/i })).not.toBeInTheDocument();
     });
 
     it("binds the next search page to its opaque cursor and preserves its filters in pagination links", async () => {
@@ -521,7 +520,7 @@ describe("SearchPage", () => {
             "href",
             "/requests?prefill=focus&type=book"
         );
-        expect(screen.getByText("We couldn't find anything matching that title, author, category, or filter.")).toBeInTheDocument();
+        expect(screen.getByText("No matching title or author. Select Search inside summaries to look for a passage.")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Clear all filters" })).toHaveAttribute("href", "/search?q=focus");
     });
 
@@ -724,6 +723,7 @@ describe("SearchPage", () => {
     it("queries a topic even when it is absent from the catalog stats", async () => {
         await runSearchResultsFromPage({ q: "faith", category: "Christianity" });
         expect(searchCatalogMock).toHaveBeenCalledWith({
+            inside: false,
             query: "faith",
             categories: ["Christian", "Christianity"],
             type: null,

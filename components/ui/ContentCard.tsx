@@ -41,7 +41,8 @@ interface ContentCardProps {
     hideProgressBar?: boolean;
     hideBookmark?: boolean;
     enableUserState?: boolean;
-    navigationMode?: "preview" | "resume";
+    passage?: { id: string; match: string };
+    navigationMode?: "preview" | "resume" | "read";
     titleDensity?: "default" | "app-compact";
     /** Size-aware title limits, enabled for shared cover cards by default. */
     showMoreTitleLines?: boolean;
@@ -96,9 +97,13 @@ function hasUsableProgress(progress: ReturnType<typeof useReadingProgress>["getP
     );
 }
 
-function getContentCardHref(item: ContentItem, navigationMode: "preview" | "resume", hasProgress: boolean) {
-    if (navigationMode === "resume" && hasProgress) {
-        return buildReadPath(item);
+function getContentCardHref(item: ContentItem, navigationMode: ContentCardProps["navigationMode"], hasProgress: boolean, passage?: ContentCardProps["passage"]) {
+    if (navigationMode === "read" || (navigationMode === "resume" && hasProgress)) {
+        const path = buildReadPath(item);
+        if (!passage) return path;
+        const params = new URLSearchParams({ passage: passage.id });
+        if (passage.match) params.set("match", passage.match);
+        return path + "?" + params;
     }
 
     return `/preview/${item.id}`;
@@ -128,7 +133,7 @@ export const ContentCard = memo(function ContentCard({
     ...props
 }: ContentCardProps) {
     if (!enableUserState) {
-        return <BaseContentCard {...props} />;
+        return <BaseContentCard {...props} href={getContentCardHref(props.item, props.navigationMode, false, props.passage)} />;
     }
 
     return <InteractiveContentCard {...props} />;
@@ -150,7 +155,7 @@ function InteractiveContentCard(props: ContentCardProps) {
     const hydrated = useSyncExternalStore(subscribeToHydration, getClientHydrationSnapshot, getServerHydrationSnapshot);
     const isBookmarked = hydrated && isInMyList(item.id);
     const progress = hydrated ? getProgress(item.id) : null;
-    const href = getContentCardHref(item, navigationMode, hasUsableProgress(progress));
+    const href = getContentCardHref(item, navigationMode, hasUsableProgress(progress), props.passage);
     const handleToggleBookmark = useCallback(async () => {
         if (!await toggleMyList(item.id)) return;
         toast.success(isBookmarked ? "Removed from Saved" : "Saved to Library");

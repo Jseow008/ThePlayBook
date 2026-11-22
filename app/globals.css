@@ -1502,3 +1502,8 @@ mark[data-highlight-spotlight="true"] {
 .reader-completion-right { right: 2px; }
 .reader-completion-gold { background: #caa969; }
 .reader-completion-dot { width: 3px; height: 3px; border-radius: 50%; }
+
+::highlight(search-passage) {
+  background-color: #ffe58a;
+  color: #201900;
+}

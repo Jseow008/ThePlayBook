@@ -1593,6 +1593,37 @@ export type Database = {
           title: string
         }[]
       }
+      search_catalog_scoped: {
+        Args: {
+          p_after_content_id: string
+          p_after_rank: number
+          p_before_content_id: string
+          p_before_rank: number
+          p_categories: string[]
+          p_inside: boolean
+          p_limit: number
+          p_query: string
+          p_type: Database["public"]["Enums"]["content_type"]
+        }
+        Returns: {
+          audio_url: string
+          author: string
+          category: string
+          content_id: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          cover_image_url: string
+          created_at: string
+          cursor_rank: string
+          duration_seconds: number
+          passage_id: string
+          query_state: string
+          quick_mode_json: Json
+          result_rank: number
+          snippet_headline: string
+          snippet_source: string
+          title: string
+        }[]
+      }
       search_user_highlights: {
         Args: {
           p_after_created_at: string

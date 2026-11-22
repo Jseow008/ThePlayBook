@@ -2,6 +2,14 @@
 
 Branch `codex/browse-mobile-nav-alignment`, worktree `/tmp/netflux-browse-nav`, base `3afd49bf`. Browse now inherits the standard route policy. At 390 × 844, Chrome measured identical 56 px headers, 80 × 24 px logos, button positions and 72 px bottom bars across signed-in Browse, Search and Notes, and across guest Browse and Search. With a simulated 34 px bottom inset the last Browse control cleared the bar by 32 px. Measurements waited for the account control to finish loading. The disposable member was deleted. All 58 focused tests and the route shell documentation check passed. Next step is gated PR merge.
 
+## 2026-11-20 — Catalog search scope and passage navigation
+
+Branch `codex/catalog-passage-scope` in `/tmp/netflux-passage` starts at PR #401 commit `0ea629c7`. Title and author search is the default. The opt-in also searches reader sections and the Big Idea. Passage cards carry a public reader destination, independently of saved highlights. On disposable local Supabase, Chrome at 390 and 1440 px verified both scope settings, normal title and author links, browser Back, and scrolling to and temporarily highlighting the correct phrase across inline formatting. A first runtime benchmark exceeded the author-search latency limit. An indexed name search passed the subsequent 110,000-document benchmark. The production dry-run listed only `20261120010000_catalog_search_scope.sql`. Before release, record the hosted rehearsal or explicit exception, apply the reviewed migration, then merge and verify production.
+
+## 2026-11-20 — Search cards open the reader
+
+Branch `codex/search-reader-cards` in `/tmp/netflux-search-reader`, base `092908c6`. The Search catalog grid uses direct reader links and drops the separate Listen link. At 390 and 1440 px, verified 20 reader card links for “God” and opened Knowing God. All 86 focused tests passed. Search scope and passage targeting await design review. Next step is the gated PR merge.
+
 ## 2026-11-19 — Search, request prefill and accessible controls
 
 Branch `codex/search-handoffs-and-accessibility` in `/tmp/netflux-p2-approved` starts at `3e15d1b1`. This batch covers P2 issues 4, 7, 8 (Book and Video prefill), and 9. Passage linking, Browse navigation density, and additional request formats remain deferred.
