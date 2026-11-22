@@ -64,6 +64,7 @@ export function UserNav() {
         }
 
         await signOutAction();
+        window.location.replace("/login");
     };
 
     const avatarSrc =
