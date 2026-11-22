@@ -80,6 +80,15 @@ export function normalizeCatalogSearchQuery(value: string | undefined) {
     return (value ?? "").trim().replace(/\s+/g, " ").slice(0, 160);
 }
 
+// PostgreSQL indexes adjacent dotted initials as one lexeme and separated
+// initials as individual lexemes. Ask for both spellings of a plain name.
+function catalogNameQuery(query: string) {
+    const match = /^((?:\p{L}\.\s*){2,})\s+([\p{L}][\p{L}'’-]*(?: [\p{L}][\p{L}'’-]*)*)$/u.exec(query);
+    if (!match || /\bOR\b/i.test(query)) return query;
+    const initials = match[1].match(/\p{L}\./gu)!;
+    return `${initials.join("")} ${match[2]} OR ${initials.join(" ")} ${match[2]}`;
+}
+
 function cursorSecret() {
     const secret = process.env.CATALOG_SEARCH_CURSOR_SECRET;
     if (!secret) {
@@ -199,7 +208,7 @@ export async function searchCatalog(input: {
     };
     const { data, error } = await client.rpc("search_catalog_scoped", {
         p_inside: input.inside === true,
-        p_query: query,
+        p_query: catalogNameQuery(query),
         p_categories: categories,
         p_type: type,
         p_after_rank: cursor?.direction === "after" ? cursor.rank : null,

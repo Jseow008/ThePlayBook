@@ -8,20 +8,5 @@ export function hasMoreBrowseItems(items: ContentItem[]) {
 }
 
 export function getBrowseSectionViewAllHref(section: HomepageSection) {
-    const filterValue = section.filter_value.trim();
-    if (!filterValue) {
-        return undefined;
-    }
-
-    const params = new URLSearchParams();
-
-    if (section.filter_type === "category") {
-        params.set("category", filterValue);
-    } else if (section.filter_type === "author" || section.filter_type === "title") {
-        params.set("q", filterValue);
-    } else {
-        return undefined;
-    }
-
-    return `/search?${params.toString()}`;
+    return `/browse/shelf/${section.id}`;
 }
