@@ -89,7 +89,7 @@ describe("LibrarySearchShell", () => {
         expect(screen.getByText("In progress")).toBeInTheDocument();
         expect(screen.getByText("Saved")).toBeInTheDocument();
         expect(screen.getByText("Completed")).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Listen to Thinking Clearly" })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: "Open audio player for Thinking Clearly" })).toHaveAttribute(
             "href",
             "/read/shared/thinking-clearly#audio-player",
         );
