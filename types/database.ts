@@ -1402,6 +1402,24 @@ export type Database = {
           section_title: string
         }[]
       }
+      get_popular_reading_content: {
+        Args: {
+          p_categories?: string[]
+          p_type?: Database["public"]["Enums"]["content_type"]
+        }
+        Returns: {
+          audio_url: string
+          author: string
+          category: string
+          cover_image_url: string
+          created_at: string
+          duration_seconds: number
+          id: string
+          quick_mode_json: Json
+          title: string
+          type: Database["public"]["Enums"]["content_type"]
+        }[]
+      }
       get_random_verified_content: {
         Args: never
         Returns: {

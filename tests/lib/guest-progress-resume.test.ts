@@ -38,6 +38,7 @@ describe("guest progress on sign-in return", () => {
         };
         const merged = combineReadingProgress(guest!, account, segmentIds);
         expect(merged.completed).toEqual(segmentIds);
+        expect(merged.lastReadAt).toBe(guest!.lastReadAt);
         expect(merged.isCompleted).toBe(true);
         expect(merged.completedAt).toBe("2026-10-02T00:00:00.000Z");
         expect(merged.lastSegmentIndex).toBe(1);
