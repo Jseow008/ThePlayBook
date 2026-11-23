@@ -8,6 +8,7 @@ type QueueNarrationJobParams = {
     contentId: string;
     row: NarrationJobRowLike;
     allowReplaceExisting?: boolean;
+    requestedBy?: "auto on publish" | "admin manual";
 };
 
 type QueueNarrationJobResult = {
@@ -35,6 +36,7 @@ export async function queueNarrationJobIfEligible({
     contentId,
     row: _row,
     allowReplaceExisting = false,
+    requestedBy = "auto on publish",
 }: QueueNarrationJobParams): Promise<QueueNarrationJobResult> {
     void _row;
     const currentRow = await loadNarrationRow(supabase, contentId);
@@ -59,6 +61,7 @@ export async function queueNarrationJobIfEligible({
             narration_status: "queued",
             narration_error: null,
             narration_requested_at: now,
+            narration_requested_by: requestedBy,
             narration_started_at: null,
             narration_completed_at: null,
             narration_segments_completed: 0,

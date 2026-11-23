@@ -29,7 +29,6 @@ const allowedAsAnyCounts = new Map([
   ["lib/server/content-requests.ts", 10],
   ["lib/server/launch-readiness.ts", 2],
   ["lib/server/narration-estimate.ts", 2],
-  ["lib/server/narration-processor.ts", 1],
   ["lib/server/user-library-repository.ts", 1],
 ]);
 
