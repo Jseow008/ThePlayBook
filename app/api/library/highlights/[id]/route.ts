@@ -90,17 +90,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             .eq("id", id).eq("user_id", user.id).maybeSingle();
         if (error) return apiError("INTERNAL_ERROR", "Could not load this saved passage. Please retry.", 500, requestId);
         const highlight = data as (Database["public"]["Tables"]["user_highlights"]["Row"] & { content_item: { id: string } | null }) | null;
-        if (highlight && !highlight.content_item) {
-            const source = await supabase.from("content_replacement")
-                .select("source_title").eq("source_id", highlight.content_item_id)
-                .maybeSingle<{ source_title: string }>();
-            if (source.error) throw source.error;
-            if (source.data) {
-                return NextResponse.json({ data: { ...highlight, content_item: {
-                    id: highlight.content_item_id, title: source.data.source_title, author: null, cover_image_url: null,
-                } } }, { headers: { "Cache-Control": "private, no-store" } });
-            }
-        }
         if (!highlight || !highlight.content_item) return apiError("NOT_FOUND", "This saved passage was deleted or is no longer accessible.", 404, requestId);
         return NextResponse.json({ data }, { headers: { "Cache-Control": "private, no-store" } });
     } catch (error) {

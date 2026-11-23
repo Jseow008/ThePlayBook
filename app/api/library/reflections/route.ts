@@ -48,9 +48,7 @@ export async function GET(request: NextRequest) {
             query = query.eq("content_item_id", parsedContentId.data);
         }
 
-        const { data, error } = await query.returns<Array<ReflectionRow & {
-            content_item: { id: string; title: string; author: string | null; cover_image_url: string | null } | null;
-        }>>();
+        const { data, error } = await query;
         if (error) {
             const admissionFailure = captureWriteFailure(error);
             if (admissionFailure) return admissionFailure;
@@ -58,20 +56,7 @@ export async function GET(request: NextRequest) {
             return apiError("INTERNAL_ERROR", "Failed to load reflections.", 500, requestId);
         }
 
-        const rows = data ?? [];
-        const missing = rows.filter(row => !row.content_item).map(row => row.content_item_id);
-        if (!missing.length) return NextResponse.json({ data: rows });
-
-        const replacements = await supabase.from("content_replacement")
-            .select("source_id, source_title").in("source_id", missing).returns<{ source_id: string; source_title: string }[]>();
-        if (replacements.error) throw replacements.error;
-        const titles = new Map(replacements.data.map(row => [row.source_id, row.source_title]));
-        return NextResponse.json({ data: rows.map(row => {
-            const title = titles.get(row.content_item_id);
-            return !row.content_item && title
-                ? { ...row, content_item: { id: row.content_item_id, title, author: null, cover_image_url: null } }
-                : row;
-        }) });
+        return NextResponse.json({ data: data ?? [] });
     } catch (error) {
         logApiError({ requestId, route: "GET /api/library/reflections", message: "Unexpected error loading reflections", error });
         return apiError("INTERNAL_ERROR", "Failed to load reflections.", 500, requestId);

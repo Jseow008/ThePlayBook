@@ -90,7 +90,7 @@ test.describe("replacement continuity", () => {
         expect(retainedNote.rows).toEqual([{ content_item_id: sourceId,segment_id:segmentId,highlighted_text:"Original passage",note_body:noteText }]);
         await page.getByRole("link", { name: "Open annotated version" }).click();
         await expect(page).toHaveURL(new RegExp(`/read/${sourceId}/`));
-        const scopedReflectionResponse = page.waitForResponse((response) => response.url().includes(`/api/library/reflections?content_item_id=${sourceId}`));
+        const scopedReflectionResponse = page.waitForResponse((response) => response.url().includes(`/api/reader/reflections?content_item_id=${sourceId}`));
         await page.goto(`/notes?item=${sourceId}`);
         const scopedReflectionResult = await scopedReflectionResponse;
         expect(scopedReflectionResult.ok()).toBe(true);

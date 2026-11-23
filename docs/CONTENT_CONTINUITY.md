@@ -1218,3 +1218,9 @@ The mobile replacement end-to-end test passed after the fixture selected the not
 card explicitly and used the local database administrator for fixture setup.
 Before production, rehearse the database guard on a disposable hosted database
 and apply it before releasing the personalized reader.
+
+PR #408 validation follow-up to 14b62434: the recorded Luna qualification
+checks the full contents of the library annotation handlers. Restored both
+qualified files and moved the version-aware reads into reader GET routes.
+The provenance test, highlight/access tests, proxy tests and TypeScript pass
+locally. Hosted database rehearsal and production guard remain release prerequisites.

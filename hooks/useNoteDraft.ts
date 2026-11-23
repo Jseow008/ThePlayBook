@@ -42,7 +42,7 @@ export function useNoteDraft(target: Target | null) {
         if (isNew) install({ note_body: source.note_body, color: source.color, updated_at: source.updated_at });
         else void (async () => {
             try {
-                const res = await fetch(`/api/library/highlights/${targetId}`, { cache: "no-store", signal: controller.signal });
+                const res = await fetch(`/api/reader/highlights/${targetId}`, { cache: "no-store", signal: controller.signal });
                 if (!res.ok) throw new Error(res.status === 404 ? "This saved passage is no longer available." : "Could not check the saved note. Retry before saving.");
                 const { data } = await res.json();
                 if (data.user_id !== owner || data.id !== targetId) throw new Error("This saved passage is no longer available.");

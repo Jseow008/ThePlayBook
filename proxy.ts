@@ -256,6 +256,7 @@ export const config = {
         "/api/content-requests/:path*",
         "/api/feedback/:path*",
         "/api/library/:path*",
+        "/api/reader/:path*",
         "/api/notification-preferences/:path*",
         "/profile",
         "/settings",
