@@ -140,6 +140,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             contentId: id,
             row: contentItem,
             allowReplaceExisting: true,
+            requestedBy: "admin manual",
         });
 
         if (queued) {

@@ -220,12 +220,15 @@ export type Database = {
           isbn: string | null
           narration_completed_at: string | null
           narration_error: string | null
+          narration_generated_by: string | null
           narration_progress_at: string | null
           narration_requested_at: string | null
+          narration_requested_by: string | null
           narration_segments_completed: number
           narration_segments_total: number | null
           narration_started_at: string | null
           narration_status: string
+          narration_voice: string | null
           published_at: string | null
           quick_mode_json: Json | null
           reading_revision: string | null
@@ -253,12 +256,15 @@ export type Database = {
           isbn?: string | null
           narration_completed_at?: string | null
           narration_error?: string | null
+          narration_generated_by?: string | null
           narration_progress_at?: string | null
           narration_requested_at?: string | null
+          narration_requested_by?: string | null
           narration_segments_completed?: number
           narration_segments_total?: number | null
           narration_started_at?: string | null
           narration_status?: string
+          narration_voice?: string | null
           published_at?: string | null
           quick_mode_json?: Json | null
           reading_revision?: string | null
@@ -286,12 +292,15 @@ export type Database = {
           isbn?: string | null
           narration_completed_at?: string | null
           narration_error?: string | null
+          narration_generated_by?: string | null
           narration_progress_at?: string | null
           narration_requested_at?: string | null
+          narration_requested_by?: string | null
           narration_segments_completed?: number
           narration_segments_total?: number | null
           narration_started_at?: string | null
           narration_status?: string
+          narration_voice?: string | null
           published_at?: string | null
           quick_mode_json?: Json | null
           reading_revision?: string | null
@@ -1252,6 +1261,7 @@ export type Database = {
           p_content_id: string
           p_expected_started_at: string
           p_segment_timings?: Json
+          p_voice?: string
         }
         Returns: boolean
       }

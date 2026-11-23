@@ -1,5 +1,5 @@
 import { getAdminClient } from "@/lib/supabase/admin";
-import type { GeneratedNarrationSegmentTiming } from "@/lib/server/narration-script";
+import { FISH_AUDIO_VOICE_ID, getNarrationProvider, OPENAI_TTS_VOICE, type GeneratedNarrationSegmentTiming } from "@/lib/server/narration-script";
 import { logApiError } from "@/lib/server/api";
 import { revalidateNarrationContentChanged } from "@/lib/server/revalidation";
 
@@ -60,15 +60,17 @@ async function finalizeNarrationGeneration(params: {
     contentId: string;
     claimStartedAt: string;
     publicUrl: string;
+    voice: string;
     segmentTimings: GeneratedNarrationSegmentTiming[];
 }) {
     const supabase = getAdminClient();
     const completedAt = new Date().toISOString();
-    const { data, error } = await (supabase as any).rpc("admin_finalize_narration_generation", {
+    const { data, error } = await supabase.rpc("admin_finalize_narration_generation", {
         p_content_id: params.contentId,
         p_expected_started_at: params.claimStartedAt,
         p_audio_url: params.publicUrl,
         p_completed_at: completedAt,
+        p_voice: params.voice,
         p_segment_timings: params.segmentTimings
             .filter((segment) => Boolean(segment.id))
             .map((segment) => ({
@@ -113,9 +115,9 @@ function extractGeneratedNarrationStoragePath(publicUrl: string | null | undefin
     }
 }
 
-async function claimNextNarrationJob() {
+async function claimNextNarrationJob(targetContentId?: string) {
     const supabase = getAdminClient();
-    const { data: queuedItems, error: queueError } = await supabase
+    const queue = supabase
         .from("content_item")
         .select("id")
         .eq("status", "verified")
@@ -123,6 +125,7 @@ async function claimNextNarrationJob() {
         .is("deleted_at", null)
         .order("narration_requested_at", { ascending: true })
         .limit(5);
+    const { data: queuedItems, error: queueError } = await (targetContentId ? queue.eq("id", targetContentId) : queue);
 
     if (queueError) {
         throw queueError;
@@ -272,9 +275,9 @@ export async function processNarrationJobs(requestId: string, maxJobs: number = 
     };
 }
 
-export async function processNextNarrationJob(requestId: string) {
+export async function processNextNarrationJob(requestId: string, targetContentId?: string) {
     const supabase = getAdminClient();
-    const claimedJob = await claimNextNarrationJob();
+    const claimedJob = await claimNextNarrationJob(targetContentId);
 
     if (!claimedJob) {
         return { processed: false as const };
@@ -327,6 +330,7 @@ export async function processNextNarrationJob(requestId: string) {
             deleted_at?: string | null;
         }>).filter((segment) => !segment.deleted_at);
 
+        const voice = getNarrationProvider() === "fish" ? `fish:${FISH_AUDIO_VOICE_ID}` : `openai:${OPENAI_TTS_VOICE}`;
         const { generateNarrationAudio } = await import("@/lib/server/ai-narration");
         const { audioBuffer, extension, contentType, segmentTimings } = await generateNarrationAudio({
             title: contentItem.title,
@@ -373,6 +377,7 @@ export async function processNextNarrationJob(requestId: string) {
                 contentId,
                 claimStartedAt,
                 publicUrl,
+                voice,
                 segmentTimings,
             });
         } catch (error) {
