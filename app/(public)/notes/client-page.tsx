@@ -479,7 +479,7 @@ function ReflectionListItem({
     onEdit: (item: ReflectionWithContent) => void;
 }) {
     const href = item.content_item
-        ? buildCanonicalReadPath(item.content_item.id, item.content_item.title)
+        ? `${buildCanonicalReadPath(item.content_item.id, item.content_item.title)}?reflection=1`
         : null;
 
     const content = (

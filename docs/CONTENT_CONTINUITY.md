@@ -6,7 +6,7 @@ A catalog lookup is read-only. Missing, hidden, withdrawn, or failed-to-load sum
 
 An admin replaces a duplicate from its Edit Content page by choosing the kept published summary, previewing counts, and confirming. The source is soft-deleted and preserved as an archive with immutable content, original segment IDs and artifacts. A durable replacement notice links old reader and preview URLs to the kept version. Notices flatten when a kept version is subsequently replaced. Draft or withdrawn destinations are not exposed.
 
-Personal library rows, highlights, notes, reflections, and local audio bookmarks remain associated with their original summary. Existing progress on the kept summary is never overwritten. No segment mapping, percentage approximation, or audio timestamp transfer is inferred. The notice links to original Notes using the account/content-scoped queries for highlights and reflections. This is not a public archive reader.
+Personal library rows, highlights, notes, reflections, and local audio bookmarks remain associated with their original summary. Existing progress on the kept summary is never overwritten. No segment mapping, percentage approximation, or audio timestamp transfer is inferred. The notice links to original Notes using the account/content-scoped queries for highlights and reflections. Signed-in readers with a highlight, attached note, or reflection on a replaced summary can reopen its preserved chapters through the original reader URL. A highlight link opens the saved passage. Browse opens the current edition and offers the latest archived edition the reader annotated. Other readers continue to see the replacement notice.
 
 Replacement checks both preview timestamps under transaction locks and rejects a source with narration in progress. A retry of the same committed replacement is idempotent. Permanent deletion is blocked while personal library/capture records remain; replacement foreign keys also prevent purging either linked edition. There is no new automatic purge or restore operation.
 
@@ -1205,3 +1205,22 @@ At cleanup CI42051778856 validate still running E2E; Security42051778789 passed.
 No unchanged retry, gate waiver or auto-merge enabled. Next action: resolve only
 that narrowly described health exception, then inspect final required checks and
 normal protected release. Never recreate a paid project without approval.
+
+### Annotated original reader · 23 November 2026
+
+Branch `codex/annotated-reader`, based on `bce26b8c`, worktree `/tmp/nf-annotated`.
+Local mobile verification used two published editions. Notes opened the saved
+mark, Browse opened the latest text, and both version links worked. An edited
+original note survived reload. A reflection-only account could return to the
+original. Guests and another signed-in account could not read the archived text.
+The local database regression rejected first annotations on an archived edition.
+The mobile replacement end-to-end test passed after the fixture selected the note
+card explicitly and used the local database administrator for fixture setup.
+Before production, rehearse the database guard on a disposable hosted database
+and apply it before releasing the personalized reader.
+
+PR #408 validation follow-up to 14b62434: the recorded Luna qualification
+checks the full contents of the library annotation handlers. Restored both
+qualified files and moved the version-aware reads into reader GET routes.
+The provenance test, highlight/access tests, proxy tests and TypeScript pass
+locally. Hosted database rehearsal and production guard remain release prerequisites.

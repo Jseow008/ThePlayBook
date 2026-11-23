@@ -87,7 +87,7 @@ export function useHighlight(id: string | null, contentItemId: string) {
         queryKey: ["highlight-target", user?.id, sessionEpoch, contentItemId, id],
         enabled: Boolean(user && id), retry: false,
         queryFn: async ({ signal }): Promise<HighlightWithContent | null> => {
-            const res = await fetch(`/api/library/highlights/${id}`, { signal, cache: "no-store" });
+            const res = await fetch(`/api/reader/highlights/${id}`, { signal, cache: "no-store" });
             if (res.status === 404) return null;
             if (!res.ok) throw new HighlightSearchRequestError(res.status);
             const { data } = await res.json();
@@ -219,7 +219,7 @@ function getHighlightMutationError(errorData: unknown, fallbackMessage: string):
 }
 
 export async function loadHighlightForUpdate(id: string): Promise<UserHighlight> {
-    const response = await fetch(`/api/library/highlights/${id}`, { cache: "no-store" });
+    const response = await fetch(`/api/reader/highlights/${id}`, { cache: "no-store" });
     if (!response.ok) throw new Error("Could not check the saved note. Your unfinished edits are kept; please retry.");
     const { data } = await response.json();
     return data as UserHighlight;

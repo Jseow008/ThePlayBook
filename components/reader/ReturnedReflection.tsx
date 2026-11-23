@@ -30,6 +30,7 @@ export function ReturnedReflection({
         setDismissed(true);
         const params = new URLSearchParams(searchParams.toString());
         params.delete(REFLECTION_RESUME_PARAM);
+        params.delete("reflection");
         router.replace(`${pathname}${params.size ? `?${params.toString()}` : ""}`, { scroll: false });
     };
 
@@ -42,7 +43,7 @@ export function ReturnedReflection({
             isOpen={Boolean(user) && !dismissed}
             isAuthenticated={Boolean(user)}
             existingReflection={reflections[0] ?? null}
-            returningFromSignIn
+            returningFromSignIn={searchParams.get(REFLECTION_RESUME_PARAM) === "1"}
             onClose={close}
             onSaved={() => {}}
         />

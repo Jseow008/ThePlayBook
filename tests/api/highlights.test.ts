@@ -1,3 +1,4 @@
+import { GET as getReaderHighlight } from "@/app/api/reader/highlights/[id]/route";
 import { GET, PATCH, DELETE } from '@/app/api/library/highlights/[id]/route';
 import { NextRequest } from 'next/server';
 import { vi } from 'vitest';
@@ -90,6 +91,15 @@ describe('Highlights API', () => {
             expect(currentBuilder.eq).toHaveBeenCalledWith('user_id', mockUser.id);
             expect(res.headers.get('cache-control')).toBe('private, no-store');
         });
+        it('resolves a retained highlight through its visible replacement notice', async () => {
+            currentBuilder.maybeSingle.mockResolvedValueOnce({ data: { ...currentHighlight, content_item: null }, error: null });
+            overlapBuilder.maybeSingle.mockResolvedValueOnce({ data: { source_title: "Earlier edition" }, error: null });
+            const response = await getReaderHighlight(new NextRequest("http://localhost"), params);
+            expect(response.status).toBe(200);
+            expect((await response.json()).data.content_item.title).toBe("Earlier edition");
+            expect(overlapBuilder.eq).toHaveBeenCalledWith("source_id", currentHighlight.content_item_id);
+        });
+
         it('distinguishes missing or inaccessible targets from request failures', async () => {
             selectMock.mockReset().mockReturnValue(currentBuilder);
             currentBuilder.maybeSingle.mockResolvedValueOnce({ data: null, error: null });

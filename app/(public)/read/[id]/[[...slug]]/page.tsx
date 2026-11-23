@@ -1,6 +1,7 @@
+import { getAnnotatedArchiveReader, getAnnotatedEarlierVersion } from "@/lib/server/annotated-reader";
 import { getContentReplacement } from "@/lib/server/content-replacement";
 import { ContentReplacementNotice } from "@/components/reader/ContentReplacementNotice";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ReaderView } from "@/components/reader/ReaderView";
 import { buildPublicContentDescription, buildPublicContentMetadata, getReadPageData } from "@/lib/server/public-content";
@@ -12,7 +13,8 @@ interface PageProps {
     searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export const revalidate = 300;
+// The public content loader caches published text; version access is per reader.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
     const [{ id, slug }, resolvedSearchParams] = await Promise.all([
@@ -61,6 +63,14 @@ export default async function ReadPage({ params, searchParams }: PageProps) {
     const content = await getReadPageData(id);
 
     if (!content) {
+        const archive = await getAnnotatedArchiveReader(id);
+        if (archive) {
+            const original = archive.content;
+            if (!isCanonicalReadSlug(slug, original.title)) {
+                redirect(buildRedirectTarget(buildCanonicalReadPath(id, original.title), resolvedSearchParams));
+            }
+            return <ReaderView content={original} versionLink={{ original: true, href: buildCanonicalReadPath(archive.replacement.id, archive.replacement.title) }} />;
+        }
         const replacement = await getContentReplacement(id);
         if (replacement) return <ContentReplacementNotice {...replacement} />;
         notFound();
@@ -70,6 +80,7 @@ export default async function ReadPage({ params, searchParams }: PageProps) {
         permanentRedirect(buildRedirectTarget(buildCanonicalReadPath(content.id, content.title), resolvedSearchParams));
     }
 
+    const earlier = await getAnnotatedEarlierVersion(id);
     const readPath = buildCanonicalReadPath(content.id, content.title);
     const readJsonLd = [
         buildArticleJsonLd({
@@ -94,7 +105,7 @@ export default async function ReadPage({ params, searchParams }: PageProps) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: serializeJsonLdGraph(readJsonLd) }}
             />
-            <ReaderView content={content} />
+            <ReaderView content={content} versionLink={earlier ? { original: false, href: buildCanonicalReadPath(earlier.id, earlier.title) } : undefined} />
         </>
     );
 }
