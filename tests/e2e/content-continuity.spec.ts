@@ -29,7 +29,7 @@ test.describe("replacement continuity", () => {
         const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
         if (created.error || !created.data.user) throw created.error ?? new Error("Fixture user missing");
         adminId = created.data.user.id;
-        await db.query("UPDATE public.profiles SET role='admin' WHERE id=$1", [adminId]);
+        await db.query("UPDATE public.profiles SET role='admin', onboarding_state=$2 WHERE id=$1", [adminId, { "app-tour": { version: "v1", status: "completed", updated_at: new Date().toISOString() } }]);
         await db.query(`INSERT INTO public.content_item(id,type,title,status,category,quick_mode_json)
             VALUES ($1,'book',$3,'verified','Productivity',$5), ($2,'book',$4,'verified','Productivity',$5)`,
         [sourceId, keptId, `Original continuity ${sourceId}`, `Updated continuity ${keptId}`, { hook: "Fixture", big_idea: "Fixture", key_takeaways: ["Fixture"] }]);
@@ -74,29 +74,31 @@ test.describe("replacement continuity", () => {
         await page.getByRole("button", { name: "Confirm replacement", exact: true }).click();
         await expect(page).toHaveURL(/\/admin\/content$/);
         // Start with fresh API data, then reload: retained cached metadata must
-        // not hide a broken Notes → replacement notice journey.
+        // not hide a broken Notes → annotated original journey.
         await page.goto(`/notes?item=${sourceId}`);
         const sourceLink = page.getByRole("link", { name: "View source", exact: true });
         await expect(sourceLink).toHaveAttribute("href", new RegExp(`/read/${sourceId}/[^?]+\\?highlightId=${highlightId}$`));
-        await expect(page.getByRole("heading", { name: `Original continuity ${sourceId}`, exact: true })).toBeVisible();
+        await expect(page.getByRole("link", { name: `Note from Original continuity ${sourceId}`, exact: false })).toBeVisible();
         await page.reload();
         await expect(sourceLink).toBeVisible();
         await sourceLink.click();
-        await expect(page.getByRole("heading", { name: "This summary has been replaced" })).toBeVisible();
+        await expect(page.getByText("You’re reading the version you annotated.")).toBeVisible();
+        await expect(page.locator(`mark[data-id="${highlightId}"]`).first()).toBeVisible();
         await page.getByRole("link", { name: "Open updated summary", exact: true }).click();
         await expect(page).toHaveURL(new RegExp(`/read/${keptId}/[^?]+$`));
         const retainedNote = await db.query("SELECT content_item_id,segment_id,highlighted_text,note_body FROM public.user_highlights WHERE id=$1", [highlightId]);
         expect(retainedNote.rows).toEqual([{ content_item_id: sourceId,segment_id:segmentId,highlighted_text:"Original passage",note_body:noteText }]);
-        await page.goto(`/read/${sourceId}`);
+        await page.getByRole("link", { name: "Open annotated version" }).click();
+        await expect(page).toHaveURL(new RegExp(`/read/${sourceId}/`));
         const scopedReflectionResponse = page.waitForResponse((response) => response.url().includes(`/api/library/reflections?content_item_id=${sourceId}`));
-        await page.getByRole("link", { name: "View original notes" }).click();
+        await page.goto(`/notes?item=${sourceId}`);
         const scopedReflectionResult = await scopedReflectionResponse;
         expect(scopedReflectionResult.ok()).toBe(true);
         const scopedReflectionBody = await scopedReflectionResult.json();
         expect(scopedReflectionBody.data.map((reflection: { content_item_id: string }) => reflection.content_item_id)).toEqual([sourceId]);
         await expect(page.getByText("Original retained reflection", { exact: true })).toBeVisible();
         await expect(page.getByText("Unrelated kept reflection", { exact: true })).not.toBeVisible();
-        await page.getByRole("button", { name: "Reflections", exact: true }).first().click();
+        await page.getByRole("button", { name: "Reflections", exact: true }).filter({ visible: true }).first().click();
         await expect(page.getByText("Original retained reflection", { exact: true })).toBeVisible();
         await context.clearCookies();
         await page.addInitScript(({ oldId, targetId, oldSegment }) => {

@@ -52,6 +52,7 @@ import { ReaderSyncStatus } from "./ReaderSyncStatus";
 
 interface ReaderViewProps {
     content: ContentItemWithSegments;
+    versionLink?: { original: boolean; href: string };
 }
 
 
@@ -81,7 +82,7 @@ function wait(ms: number) {
     return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-export function ReaderView({ content }: ReaderViewProps) {
+export function ReaderView({ content, versionLink }: ReaderViewProps) {
     const quickMode = content.quick_mode_json as QuickMode | null;
     const segmentIdSet = useMemo(() => new Set(content.segments.map((segment) => segment.id)), [content.segments]);
     const segmentIds = useMemo(() => content.segments.map((segment) => segment.id), [content.segments]);
@@ -1147,6 +1148,14 @@ export function ReaderView({ content }: ReaderViewProps) {
                     "--reader-audio-viewport-bottom": `${audioMiniPlayerBottomInset}px`,
                 } as React.CSSProperties}
             >
+                {versionLink && (
+                    <aside aria-label="Summary version" className="sticky top-0 z-20 mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-card px-3 py-2 text-sm shadow-sm lg:top-2">
+                        <span>{versionLink.original ? "You’re reading the version you annotated." : "You have notes or highlights on an earlier version."}</span>
+                        <Link prefetch={false} href={versionLink.href} className="focus-ring font-medium text-primary underline underline-offset-4">
+                            {versionLink.original ? "Open updated summary" : "Open annotated version"}
+                        </Link>
+                    </aside>
+                )}
                 {/* Hero Header */}
                 <ReaderHeroHeader
                     contentId={content.id}
@@ -1425,7 +1434,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onClose={() => setShowAuthorChat(false)}
                 />
             )}
-            {searchParams.get(REFLECTION_RESUME_PARAM) === "1" && (
+            {(searchParams.get(REFLECTION_RESUME_PARAM) === "1" || searchParams.get("reflection") === "1") && (
                 <ReturnedReflection
                     contentRevision={content.reading_revision}
                     contentId={content.id}
