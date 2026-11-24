@@ -128,7 +128,8 @@ BEGIN
         -- Content replacement adds one public notice read policy, restricted
         -- to published, available destinations.
         -- Private summary requests remove the retired public-board read policy.
-        ) <> 64
+        -- Contributor credits add one read policy for published content.
+        ) <> 65
 
         UNION ALL
 
@@ -193,6 +194,11 @@ INSERT INTO public.content_item (id, type, title, status, series_id, series_orde
 VALUES
     ('00000000-0000-4000-8000-000000000211', 'book', 'DB-103 Verified Fixture', 'verified', '00000000-0000-4000-8000-000000000201', 1),
     ('00000000-0000-4000-8000-000000000212', 'book', 'DB-103 Draft Fixture', 'draft', '00000000-0000-4000-8000-000000000201', 2);
+
+INSERT INTO public.content_contributor (content_item_id, name, role, position)
+VALUES
+    ('00000000-0000-4000-8000-000000000211', 'Published author', 'author', 1),
+    ('00000000-0000-4000-8000-000000000212', 'Draft author', 'author', 1);
 
 INSERT INTO public.segment (id, item_id, order_index, title, markdown_body)
 VALUES
@@ -293,6 +299,16 @@ SELECT pg_temp.assert_count(
     'anon cannot see draft content'
 );
 SELECT pg_temp.assert_count(
+    $$SELECT 1 FROM public.content_contributor WHERE content_item_id = '00000000-0000-4000-8000-000000000211'$$,
+    1,
+    'anon can see published contributor credits'
+);
+SELECT pg_temp.assert_count(
+    $$SELECT 1 FROM public.content_contributor WHERE content_item_id = '00000000-0000-4000-8000-000000000212'$$,
+    0,
+    'anon cannot see draft contributor credits'
+);
+SELECT pg_temp.assert_count(
     $$SELECT 1 FROM public.segment WHERE item_id IN ('00000000-0000-4000-8000-000000000211', '00000000-0000-4000-8000-000000000212')$$,
     1,
     'anon sees segments only for verified content'
@@ -358,6 +374,16 @@ SELECT pg_temp.assert_count(
     $$SELECT 1 FROM public.content_item WHERE id = '00000000-0000-4000-8000-000000000211'$$,
     1,
     'authenticated user retains public reads'
+);
+SELECT pg_temp.assert_count(
+    $$SELECT 1 FROM public.content_contributor WHERE content_item_id = '00000000-0000-4000-8000-000000000211'$$,
+    1,
+    'authenticated user can see published contributor credits'
+);
+SELECT pg_temp.assert_count(
+    $$SELECT 1 FROM public.content_contributor WHERE content_item_id = '00000000-0000-4000-8000-000000000212'$$,
+    0,
+    'authenticated user cannot see draft contributor credits'
 );
 SELECT pg_temp.assert_count(
     $$SELECT 1 FROM public.profiles WHERE id = '00000000-0000-4000-8000-000000000101'$$,
