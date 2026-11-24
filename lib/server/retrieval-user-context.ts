@@ -12,6 +12,9 @@ function refersToEarlierTurn(question: string): boolean {
     return /\b(?:last|previous|earlier) (?:answer|response|question|point|theme)\b/i.test(question)
         || /\b(?:current|that|this|same|those|these) (?:themes?|ideas?|points?|topics?|approaches?|claims?|answers?|responses?)\b/i.test(question)
         || /\b(?:that|this|same|previous|earlier|last) (?:note|reflection|highlight|(?:highlighted )?passage|quotation|quote|extract|entry|record|capture)\b(?!\s+(?:about|on|regarding)\s+\S)/i.test(question)
+        || /\b(?:that|same|previous|earlier) (?:reading|reading session|study session|exercise|practice|example|argument|distinction|habit)\b(?!\s+(?:about|on|regarding)\s+\S)/i.test(question)
+        || /\b(?:doing|following|applying|practi[cs]ing) (?:that|this)(?=$|[?,.!;:]|\s+(?:after|before|when|during|while|in|at)\b)/i.test(question)
+        || /\b(?:that|this|the same) kind of (?:learner|student|reader|thinker|practice|approach|habit)\b/i.test(question)
         || isLibraryAuthorFollowup(question)
         || (/\b(?:another|contrasting) perspective\b/i.test(question) && !/\b(?:on|about|regarding)\s+\S/i.test(question))
         || /^(?:why\??|how so\??|tell me more[.!?]?|go on[.!?]?|(?:expand|elaborate)(?: on (?:that|this|it))?[.!?]?)$/i.test(question.trim());

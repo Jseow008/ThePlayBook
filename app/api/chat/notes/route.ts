@@ -2,7 +2,7 @@ import { measureAskNotesPhase, withAskNotesTiming } from "@/lib/server/ask-notes
 import { withChatDeadline } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse } from "@/lib/server/ai-spending";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
-import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
+import { issueEvidenceCitations, priorEvidenceTokens, resolvePersonalFollowupReference } from "@/lib/server/evidence-citation";
 import { renderEvidenceExtractsWithRanges } from "@/lib/server/evidence-extract-response";
 import { generateEvidenceComparison, isEvidenceComparison, prependEvidenceComparison } from "@/lib/server/evidence-comparison";
 import { getNotesOutputTokenCap, NOTES_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
@@ -209,8 +209,9 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         }
         if (lastMessage.content.length > 2_000) return apiError("VALIDATION_ERROR", "Query must be between 1 and 2000 characters", 400, requestId);
         const questionContext = contextualizeUserQuestion(messages);
+        const priorTokens = questionContext.isContextual ? priorEvidenceTokens(parsed.data.messages) : undefined;
         return await withNotesReplayRequest({ client: supabase, userId: user.id, replay: parsed.data.replay, submittedQuestionId: parsed.data.messages.at(-1)?.id,
-            request: { messages, scope, protocol }, scope, signal }, async (rememberEvidence) => {
+            request: { messages, scope, protocol, ...(priorTokens ? { priorTokens } : {}) }, scope, signal }, async (rememberEvidence) => {
         if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, protocol);
 
         const quota = await measureAskNotesPhase("quota", () => admitAiUsage(user.id, "ask-notes", signal));
@@ -243,10 +244,14 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         const isComparison = isEvidenceComparison(lastMessage.content);
         let evidence;
         try {
+            const preferredEvidence = priorTokens ? await resolvePersonalFollowupReference({
+                messages: parsed.data.messages, userId: user.id, supabase, scope, signal,
+            }) : undefined;
             evidence = await retrievePersonalEvidence({
                 supabase, userId: user.id, scope, question: lastMessage.content,
                 semanticQuestion: questionContext.semanticQuestion, signal,
                 embeddingQuestion: questionContext.embeddingQuestion,
+                ...(preferredEvidence ? { preferredEvidence } : {}),
                 ...(isComparison ? { requiredComparisonActivity: notesComparisonActivity(lastMessage.content) } : {}),
             });
         } catch (error) {

@@ -40,13 +40,14 @@ interface CompletionCardProps {
     contentId: string;
     title: string;
     author: string | null;
+    chatSpeaker?: string | null;
     segmentCount: number;
     readerTheme?: ReaderTheme;
     celebrationRequested?: boolean;
     onCelebrationConsumed?: () => void;
 }
 
-export function CompletionCard({ contentRevision, contentId, title, author, segmentCount, readerTheme = "dark", celebrationRequested = false, onCelebrationConsumed }: CompletionCardProps) {
+export function CompletionCard({ contentRevision, contentId, title, author, chatSpeaker, segmentCount, readerTheme = "dark", celebrationRequested = false, onCelebrationConsumed }: CompletionCardProps) {
     const { completedIds, inProgressIds, myListIds, isLoaded, user } = useReadingProgress();
     const [showChat, setShowChat] = useState(false);
     const [showReflectionComposer, setShowReflectionComposer] = useState(false);
@@ -191,6 +192,7 @@ export function CompletionCard({ contentRevision, contentId, title, author, segm
                 <AuthorChat
                     contentId={contentId}
                     authorName={authorName}
+                    chatSpeaker={chatSpeaker}
                     contentTitle={title}
                     readerTheme={readerTheme}
                     onClose={() => setShowChat(false)}

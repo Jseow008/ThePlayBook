@@ -3,6 +3,7 @@ import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, 
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import type { PersonalEvidenceScope } from "@/lib/personal-evidence";
 import type { CitationLink, CitationResolution } from "@/lib/evidence-citation";
 import { ExportPassageSchema } from "@/lib/evidence-citation";
 import { formatRankedPersonalEvidence, type RankedPersonalEvidence } from "@/lib/server/personal-evidence-ranking";
@@ -107,24 +108,42 @@ function passages(reference: Reference, fields?: Partial<Record<Reference["spans
     });
 }
 
-/** The citation proves record identity only; quoted text is always loaded afresh through RLS. */
-export async function resolvePersonalQuotationReference(options: {
+type PersonalReferenceOptions = {
     messages: readonly { role: string; parts?: unknown[] }[];
-    field: "noteBody" | "reflectionText" | "highlightedText";
-    userId: string; supabase: Pick<SupabaseClient<Database>, "from">; signal: AbortSignal;
-}): Promise<RankedPersonalEvidence | null | undefined> {
-    const previous = options.messages.at(-2);
+    userId: string;
+    supabase: Pick<SupabaseClient<Database>, "from">;
+    signal: AbortSignal;
+};
+
+export function priorEvidenceTokens(messages: PersonalReferenceOptions["messages"]): string[] | null | undefined {
+    const previous = messages.at(-2);
     if (previous?.role !== "assistant" || !Array.isArray(previous.parts)) return undefined;
     const parts = previous.parts.filter((part): part is { type: string; data: unknown } =>
         Boolean(part && typeof part === "object" && "type" in part && part.type === "data-citations" && "data" in part));
     if (parts.length === 0) return undefined;
     if (parts.length !== 1 || !Array.isArray(parts[0].data) || parts[0].data.length === 0 || parts[0].data.length > 8) return null;
-    const references = new Map<string, Reference>();
+    const tokens: string[] = [];
     for (const citation of parts[0].data) {
         if (!citation || typeof citation !== "object" || typeof citation.href !== "string" || !citation.href.startsWith("/evidence#")) return null;
-        const reference = open(citation.href.slice("/evidence#".length), options.userId);
+        const token = citation.href.slice("/evidence#".length);
+        if (token.length > MAX_TOKEN) return null;
+        tokens.push(token);
+    }
+    return tokens;
+}
+
+async function loadPersonalReference(
+    options: PersonalReferenceOptions,
+    scope: PersonalEvidenceScope,
+    field?: "noteBody" | "reflectionText" | "highlightedText",
+) {
+    const tokens = priorEvidenceTokens(options.messages);
+    if (!tokens) return tokens;
+    const references = new Map<string, Reference>();
+    for (const token of tokens) {
+        const reference = open(token, options.userId);
         if (!reference) return null;
-        if (reference.type !== "source_segment" && reference.spans.some((span) => span.field === options.field)) {
+        if (reference.type !== "source_segment" && (!field || reference.spans.some((span) => span.field === field))) {
             references.set(`${reference.type}:${reference.id}`, reference);
         }
     }
@@ -134,13 +153,23 @@ export async function resolvePersonalQuotationReference(options: {
     let current;
     try {
         [current] = await loadSelectedPersonalEvidence({ supabase: options.supabase, userId: options.userId,
-            scope: { version: 1, itemType: "all" }, selected: [{ type: reference.type, id: reference.id }], signal: options.signal });
+            scope, selected: [{ type: reference.type, id: reference.id }], signal: options.signal });
     } catch (error) {
         if (error instanceof PersonalEvidenceRetrievalError && error.code === "STALE_EVIDENCE") return null;
         throw error;
     }
     if (!current || current.userId !== options.userId || current.contentItemId !== reference.contentItemId
         || current.fingerprint !== reference.fingerprint) return null;
+    return { current, reference };
+}
+
+/** The citation proves record identity only; quoted text is always loaded afresh through RLS. */
+export async function resolvePersonalQuotationReference(
+    options: PersonalReferenceOptions & { field: "noteBody" | "reflectionText" | "highlightedText" },
+): Promise<RankedPersonalEvidence | null | undefined> {
+    const resolved = await loadPersonalReference(options, { version: 1, itemType: "all" }, options.field);
+    if (!resolved) return resolved;
+    const { current } = resolved;
     const text = current.type === "highlight"
         ? options.field === "noteBody" ? current.noteBody : options.field === "highlightedText" ? current.highlightedText : null
         : options.field === "reflectionText" ? current.reflectionText : null;
@@ -148,6 +177,23 @@ export async function resolvePersonalQuotationReference(options: {
     const item: RankedPersonalEvidence = { evidence: current, exactQuote: text, score: 1,
         spans: [{ field: options.field, start: 0, end: text.length, text, score: 1 }] };
     return formatRankedPersonalEvidence([item]).items[0];
+}
+
+/** A signed prior passage can enter selection only while it still matches the current Notes scope. */
+export async function resolvePersonalFollowupReference(
+    options: PersonalReferenceOptions & { scope: PersonalEvidenceScope },
+): Promise<RankedPersonalEvidence | undefined> {
+    const resolved = await loadPersonalReference(options, options.scope);
+    if (!resolved) return undefined;
+    const { current, reference } = resolved;
+    const spans = reference.spans.flatMap((span) => {
+        if (span.field === "source") return [];
+        const text = current.type === "reflection"
+            ? span.field === "reflectionText" ? current.reflectionText : null
+            : span.field === "highlightedText" ? current.highlightedText : span.field === "noteBody" ? current.noteBody : null;
+        return text?.slice(span.start, span.end) === span.text ? [{ ...span, field: span.field, score: 1 }] : [];
+    });
+    return spans.length ? { evidence: current, spans, score: 1, exactQuote: null } : undefined;
 }
 
 /** Ordinary authenticated RLS client only. The encrypted reference never grants access. */

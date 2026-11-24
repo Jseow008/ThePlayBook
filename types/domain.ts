@@ -112,6 +112,7 @@ export interface ContentItemWithSegments {
     quick_mode_json: QuickMode | null;
     duration_seconds: number | null;
     author: string | null;
+    chatSpeaker?: string | null;
     cover_image_url: string | null;
     audio_url: string | null;
     series_id: string | null;

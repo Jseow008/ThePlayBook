@@ -19,6 +19,7 @@ import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 interface AuthorChatProps {
     contentId: string;
     authorName: string;
+    chatSpeaker?: string | null;
     contentTitle: string;
     hasCompletedReading?: boolean;
     readerTheme?: ReaderTheme;
@@ -79,6 +80,7 @@ function getDisplayErrorMessage(error: unknown): string {
 export function AuthorChat({
     contentId,
     authorName,
+    chatSpeaker,
     contentTitle,
     hasCompletedReading = true,
     readerTheme = "dark",
@@ -190,6 +192,9 @@ export function AuthorChat({
         .reverse()
         .find((message) => message.role === "assistant")?.id;
     const isEmptyState = displayMessages.length === 0;
+    const isSourceDiscussion = chatSpeaker === null;
+    const assistantName = chatSpeaker ?? (isSourceDiscussion ? "Source discussion" : authorName);
+    const chatTitle = isSourceDiscussion ? "Discuss this source" : `Chat with ${assistantName}`;
 
     if (!mounted) return null;
 
@@ -198,7 +203,7 @@ export function AuthorChat({
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label={`Chat with ${authorName} persona`}
+            aria-label={isSourceDiscussion ? chatTitle : `${chatTitle} persona`}
             tabIndex={-1}
             data-testid="author-chat-dialog"
             className={cn(
@@ -219,16 +224,16 @@ export function AuthorChat({
                             <BotMessageSquare className="size-4 text-primary" />
                         </div>
                         <div className="min-w-0">
-                            <h2 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">{authorName}</h2>
+                            <h2 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">{assistantName}</h2>
                             <p className="truncate text-xs text-foreground/80">{contentTitle}</p>
-                            <p className="author-chat-persona-meta mt-0.5 truncate text-[0.7rem] leading-none text-muted-foreground sm:text-[0.65rem]">Author Persona &middot; AI</p>
+                            <p className="author-chat-persona-meta mt-0.5 truncate text-[0.7rem] leading-none text-muted-foreground sm:text-[0.65rem]">{isSourceDiscussion ? "AI" : "Author Persona · AI"}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         {!isEmptyState && (
                             <ChatExportButton
-                                title={`Chat with ${authorName}`}
-                                assistantLabel={authorName}
+                                title={chatTitle}
+                                assistantLabel={assistantName}
                                 scopeSummary={contentTitle}
                                 messages={displayMessages}
                                 disabled={isStreaming || Boolean(error)}
@@ -410,7 +415,7 @@ export function AuthorChat({
                                         void onSubmit();
                                     }
                                 }}
-                                aria-label={`Ask ${authorName} a question`}
+                                aria-label={isSourceDiscussion ? "Ask a question about this source" : `Ask ${assistantName} a question`}
                             />
                             <div className="mb-2 mr-2">
                                 <button

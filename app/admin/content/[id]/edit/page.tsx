@@ -9,6 +9,8 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { fetchPublishedContentOptions } from "@/lib/server/content-requests";
 import { ContentVersionActions } from "@/components/admin/ContentVersionActions";
 import { ReplaceContentPanel } from "@/components/admin/ReplaceContentPanel";
+import { ContentContributors } from "@/components/admin/ContentContributors";
+import { isContributorRole } from "@/lib/content-contributors";
 import { ContentForm } from "@/components/admin/ContentForm";
 import { getAdminSeriesOptions } from "@/lib/server/admin-series";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
@@ -48,10 +50,14 @@ export default async function EditContentPage({ params, searchParams }: EditCont
     }
 
     const contentItem = contentItemRaw as any;
-    const [highlights, reflections] = await Promise.all([
+    const [highlights, reflections, credits] = await Promise.all([
         supabase.from("user_highlights").select("id", { count: "exact", head: true }).eq("content_item_id", id),
         supabase.from("user_reflections").select("id", { count: "exact", head: true }).eq("content_item_id", id),
+        supabase.from("content_contributor").select("id, name, role, is_default_speaker").eq("content_item_id", id).order("position"),
     ]);
+    if (credits.error) throw credits.error;
+    const contributors = (credits.data ?? []).flatMap((credit) =>
+        isContributorRole(credit.role) ? [{ ...credit, role: credit.role }] : []);
     if (highlights.error || reflections.error) throw highlights.error || reflections.error;
     const hasAnnotations = (highlights.count ?? 0) > 0 || (reflections.count ?? 0) > 0;
     const narrationJob = getNarrationJobState({
@@ -135,6 +141,7 @@ export default async function EditContentPage({ params, searchParams }: EditCont
                 narrationEstimate={narrationEstimate}
                 returnTo={resolvedSearchParams?.returnTo}
             />
+            <ContentContributors key={id + "-contributors"} contentId={id} initial={contributors} />
         </div>
     );
 }

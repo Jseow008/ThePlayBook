@@ -61,6 +61,17 @@ describe("AuthorChat", () => {
         vi.unstubAllGlobals();
     });
 
+    it("labels a panel as a discussion in place of the byline persona", () => {
+        render(<AuthorChat {...defaultProps} authorName="Nora with Kai and Amina" chatSpeaker={null} />);
+        expect(screen.getByRole("dialog", { name: "Discuss this source" })).toBeInTheDocument();
+        expect(screen.getByRole("textbox", { name: "Ask a question about this source" })).toBeInTheDocument();
+    });
+
+    it("labels the chat with its designated guest", () => {
+        render(<AuthorChat {...defaultProps} authorName="Steven Bartlett with Dana White" chatSpeaker="Dana White" />);
+        expect(screen.getByRole("dialog", { name: "Chat with Dana White persona" })).toBeInTheDocument();
+    });
+
     it("keeps the failed question retryable without presenting its partial answer as complete", async () => {
         const regenerate = vi.fn();
         const setMessages = vi.fn();

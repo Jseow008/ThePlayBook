@@ -460,6 +460,21 @@ describe("Notes chat API", () => {
         expect(retrieval.embeddingQuestion).toBe(`Explain my notes about sleep deprivation.\n${question}`);
         expect(streamText).not.toHaveBeenCalled();
     });
+    it("keeps the timer topic when a follow-up refers to that reading", async () => {
+        const earlier = "Find my reflection about using a seven-minute timer before evening reading.";
+        const question = "Did I record any change in how much I remembered from that reading?";
+        const response = await POST(new NextRequest("http://localhost/api/chat/notes", { method: "POST", body: JSON.stringify({
+            messages: [{ role: "user", content: earlier },
+                { role: "assistant", content: "Historical assistant text." }, { role: "user", content: question }],
+            scope: { version: 1, itemType: "reflection" },
+        }) }));
+        expect(response.status).toBe(200);
+        const retrieval = vi.mocked(retrievePersonalEvidence).mock.lastCall?.[0];
+        expect(retrieval?.embeddingQuestion).toBe(`${earlier}\n${question}`);
+        expect(retrieval?.semanticQuestion).toContain(earlier);
+        expect(retrieval?.semanticQuestion).not.toContain("Historical assistant text.");
+    });
+
     it("asks for an assistant-only theme before quota debit or provider work", async () => {
         const response = await POST(new NextRequest("http://localhost/api/chat/notes", { method: "POST", body: JSON.stringify({
             messages: [{ role: "user", content: "What patterns show up across these notes?" },
