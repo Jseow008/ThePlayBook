@@ -234,6 +234,13 @@ export type Database = {
             foreignKeyName: "content_contributor_content_item_id_fkey"
             columns: ["content_item_id"]
             isOneToOne: false
+            referencedRelation: "admin_content_workbench_readiness"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_contributor_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
             referencedRelation: "content_item"
             referencedColumns: ["id"]
           },
