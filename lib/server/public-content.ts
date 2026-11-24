@@ -1,4 +1,5 @@
 import "server-only";
+import { getContentChatSpeaker } from "@/lib/content-contributors";
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
@@ -26,6 +27,7 @@ const PREVIEW_SELECT =
     "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, created_at, series_id, series_order";
 const READ_SELECT = `
     id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, series_id, series_order, reading_revision, created_at, updated_at,
+    content_contributor(name, is_default_speaker),
     segments:segment(id, item_id, order_index, title, markdown_body, start_time_sec, end_time_sec, deleted_at),
     artifacts:artifact(id, type, payload_schema, version)
 `;
@@ -74,6 +76,7 @@ interface ReadContentRow {
     series_order: number | null;
     created_at: string;
     updated_at: string;
+    content_contributor: Array<{ name: string; is_default_speaker: boolean }>;
     segments: Array<{
         id: string;
         item_id: string;
@@ -335,6 +338,7 @@ async function readPublicReader(id: string): Promise<ContentItemWithSegments | n
         quick_mode_json: content.quick_mode_json,
         duration_seconds: content.duration_seconds,
         author: content.author,
+        chatSpeaker: getContentChatSpeaker(content),
         cover_image_url: content.cover_image_url,
         audio_url: content.audio_url,
         series_id: content.series_id,
@@ -368,7 +372,7 @@ export const getReadPageData = cache(async (id: string): Promise<ContentItemWith
     const cachedRead = unstable_cache(async (contentId: string) => {
         refresh = readPublicReader(contentId).then(item => ({ item, checkedAt: Date.now() }));
         return refresh;
-    }, ["public-reader-v1", process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""], {
+    }, ["public-reader-v2", process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""], {
         revalidate: PUBLIC_READER_MAX_AGE_MS / 1000,
         tags: [PUBLIC_READER_CACHE_TAG],
     });

@@ -1,7 +1,9 @@
 import { INTERACTIVE_AI_MODEL, INTERACTIVE_AI_PROVIDER_OPTIONS } from "@/lib/server/interactive-ai";
 import { withChatDeadline, CHAT_INCOMPLETE_MESSAGE } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse, reserveAiProviderCall } from "@/lib/server/ai-spending";
-import { isAuthSessionMissingError } from "@supabase/supabase-js";
+import { isAuthSessionMissingError, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
+import { getContentChatSpeaker } from "@/lib/content-contributors";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
@@ -252,8 +254,7 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
             return apiError("VALIDATION_ERROR", "Invalid chat payload", 400, requestId);
         }
 
-        const { contentId, authorName, messages: rawMessages } = parsed.data;
-        const contentTitle = parsed.data.contentTitle ?? parsed.data.bookTitle ?? "this source";
+        const { contentId, messages: rawMessages } = parsed.data;
 
         // --- Normalize messages from UI format to simple {role, content} ---
         const allMessages = normalizeMessages(rawMessages);
@@ -311,23 +312,34 @@ async function handlePost(req: NextRequest, signal: AbortSignal) {
         // --- Sliding Context Window: only keep last N messages ---
         const messages = allMessages.slice(-MAX_HISTORY_MESSAGES);
 
-        const { data: segments, error: segError } = await supabase
-            .from("segment")
-            .select("title, markdown_body, order_index")
-            .eq("item_id", contentId)
-            .order("order_index", { ascending: true })
-            .abortSignal(signal);
+        const questionContext = contextualizeUserQuestion(allMessages);
+        if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, "ui");
 
-        if (segError) {
-            logApiError({ requestId, route: "/api/chat/author", message: "Failed to fetch segments", error: segError });
+        const catalog = supabase as unknown as SupabaseClient<Database>;
+        const [{ data: source, error: sourceError }, { data: segments, error: segError }] = await Promise.all([
+            catalog.from("content_item")
+                .select("author, title, type, content_contributor(name, is_default_speaker)")
+                .eq("id", contentId).eq("status", "verified").is("deleted_at", null)
+                .abortSignal(signal).maybeSingle(),
+            catalog.from("segment")
+                .select("title, markdown_body, order_index")
+                .eq("item_id", contentId).is("deleted_at", null)
+                .order("order_index", { ascending: true })
+                .abortSignal(signal),
+        ]);
+
+        if (sourceError || segError) {
+            logApiError({ requestId, route: "/api/chat/author", message: "Failed to fetch source material", error: sourceError ?? segError });
             return apiError("INTERNAL_ERROR", "Failed to load source material.", 500, requestId);
         }
 
-        const segmentRows = (segments || []) as SourceSegment[];
-        const contextText = buildSourceContext(segmentRows, lastMsg.content);
-        if (!segmentRows.some((segment) => segment.markdown_body.trim())) {
+        const segmentRows = segments ?? [];
+        if (!source || !segmentRows.some((segment) => segment.markdown_body.trim())) {
             return retrievalTextResponse("I don't have source material for this work yet, so I can't answer from its text.", "ui");
         }
+        const contextText = buildSourceContext(segmentRows, questionContext.embeddingQuestion);
+        const contentTitle = source.title;
+        const authorName = getContentChatSpeaker(source) ?? "a neutral narrator of this source";
 
         if (!process.env.OPENAI_API_KEY) {
             logApiError({ requestId, route: "/api/chat/author", message: "API Keys not configured", error: new Error("Missing env") });
@@ -390,8 +402,6 @@ Rules:
         }
 
         signal.throwIfAborted();
-        const questionContext = contextualizeUserQuestion(allMessages);
-        if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, "ui");
         let unsupported: string | null;
         try {
             unsupported = await checkAuthorEvidence({ contentId, title: contentTitle, contextText,
@@ -415,7 +425,9 @@ Rules:
             maxRetries: 0,
             model: aiModel,
             system: systemPrompt,
-            messages,
+            messages: questionContext.isContextual
+                ? [...messages.slice(0, -1), { role: "user", content: questionContext.semanticQuestion }]
+                : messages,
             maxOutputTokens: MAX_OUTPUT_TOKENS,
             providerOptions: INTERACTIVE_AI_PROVIDER_OPTIONS,
             abortSignal: signal,

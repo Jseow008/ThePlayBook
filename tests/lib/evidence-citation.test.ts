@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import type { RankedPersonalEvidence } from "@/lib/server/personal-evidence-ranking";
-import { issueEvidenceCitations, resolveEvidenceCitation, resolvePersonalQuotationReference } from "@/lib/server/evidence-citation";
+import { issueEvidenceCitations, resolveEvidenceCitation, resolvePersonalFollowupReference, resolvePersonalQuotationReference } from "@/lib/server/evidence-citation";
 import { loadSelectedPersonalEvidence, PersonalEvidenceRetrievalError } from "@/lib/server/personal-evidence-candidates";
 import { retrievalTextResponse } from "@/lib/server/retrieval-response";
 import { CitationResolutionSchema, getMessageCitations } from "@/lib/evidence-citation";
@@ -30,6 +30,34 @@ const tokenFor = (item = selected()) => issueEvidenceCitations({ userId, persona
 const resolve = async (token: string, owner = userId) => CitationResolutionSchema.parse(await resolveEvidenceCitation({ token, userId: owner, supabase: client, signal: new AbortController().signal }));
 beforeEach(() => { vi.stubEnv("ACCOUNT_DATA_CURSOR_SECRET", "citation-test-secret-only-32-characters-long"); vi.clearAllMocks(); rows = []; vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([selected().evidence]); });
 afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
+
+describe("signed follow-up evidence", () => {
+    const scope = { version: 1, itemType: "note", contentItemId } as const;
+    const followup = (token: string, owner = userId) => resolvePersonalFollowupReference({
+        messages: [{ role: "assistant", parts: [
+            { type: "text", text: "INVENTED ASSISTANT WORDING" },
+            { type: "data-citations", data: [{ href: `/evidence#${token}` }] },
+        ] }, { role: "user" }],
+        userId: owner, scope, supabase: client, signal: new AbortController().signal,
+    });
+
+    it("uses the original cited span and loads it in the current Notes scope", async () => {
+        const result = await followup(tokenFor());
+        expect(result?.exactQuote).toBeNull();
+        expect(result?.spans).toEqual(selected().spans);
+        expect(loadSelectedPersonalEvidence).toHaveBeenCalledWith(expect.objectContaining({ scope, userId }));
+    });
+
+    it("leaves foreign, out-of-scope and changed records out of selection", async () => {
+        const token = tokenFor();
+        expect(await followup(token, contentItemId)).toBeUndefined();
+        expect(loadSelectedPersonalEvidence).not.toHaveBeenCalled();
+        vi.mocked(loadSelectedPersonalEvidence).mockRejectedValueOnce(new PersonalEvidenceRetrievalError("STALE_EVIDENCE"));
+        expect(await followup(token)).toBeUndefined();
+        vi.mocked(loadSelectedPersonalEvidence).mockResolvedValueOnce([{ ...selected().evidence, fingerprint: "edited" }]);
+        expect(await followup(token)).toBeUndefined();
+    });
+});
 
 describe("fresh exact quotations from preceding signed references", () => {
     const quote = (tokens = [tokenFor()], owner = userId, field: "noteBody" | "reflectionText" | "highlightedText" = "noteBody") =>

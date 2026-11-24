@@ -43,6 +43,10 @@ export function revalidatePaths(paths: Iterable<string | null | undefined>) {
     }
 }
 
+export function revalidateReaderContent(contentId: string) {
+    revalidatePaths([`/read/${contentId}`]);
+}
+
 export function revalidatePublicContentCollections() {
     revalidatePaths(PUBLIC_CONTENT_COLLECTION_PATHS);
 }

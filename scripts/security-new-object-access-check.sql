@@ -10,6 +10,9 @@ DECLARE
             ('ai_message_usage', 'authenticated'),
             ('artifact', 'anon'),
             ('artifact', 'authenticated'),
+            -- Public reader credits are SELECT-only and limited to published content by RLS.
+            ('content_contributor', 'anon'),
+            ('content_contributor', 'authenticated'),
             ('content_feedback', 'anon'),
             ('content_feedback', 'authenticated'),
             ('content_item', 'anon'),
@@ -300,7 +303,7 @@ DECLARE
     FROM pg_catalog.pg_class c
     JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
     CROSS JOIN (VALUES ('anon'),('authenticated')) r(role_name)
-    WHERE n.nspname='public' AND c.relname IN ('content_request_votes','reading_activity','ai_message_usage')
+    WHERE n.nspname='public' AND c.relname IN ('content_contributor','content_request_votes','reading_activity','ai_message_usage')
       AND (pg_catalog.has_table_privilege(r.role_name,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
         OR pg_catalog.has_any_column_privilege(r.role_name,c.oid,'INSERT,UPDATE,REFERENCES'))
 $catalog_query$;

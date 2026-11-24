@@ -78,6 +78,21 @@ describe('indexed personal retrieval orchestration', () => {
         expect(recheckPersonalEvidenceCandidates).toHaveBeenCalledWith(expect.objectContaining({ candidates: [reflection] }));
         expect(rpc).toHaveBeenCalledTimes(2);
     });
+    it('prioritizes a current signed reference when the vector search misses it', async () => {
+        abortSignal.mockResolvedValue({ data: { ...ready(), total_records: 1, ready_records: 1 }, error: null });
+        vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([]);
+        const result = await retrievePersonalEvidence({
+            ...request('Did that reading establish an effect?'),
+            preferredEvidence: {
+                evidence: reflection, exactQuote: null, score: 1,
+                spans: [{ field: 'reflectionText', start: 0, end: 14, text: 'Stored answer.', score: 1 }],
+            },
+        });
+        expect(result.items.map(item => item.evidence.evidenceId)).toEqual([reflection.evidenceId]);
+        expect(result.contextText).toContain('Stored answer.');
+        expect(recheckPersonalEvidenceCandidates).toHaveBeenCalledWith(expect.objectContaining({ candidates: [reflection] }));
+        expect(rpc).toHaveBeenCalledTimes(2);
+    });
     it.each(['pending', 'failed'] as const)('refuses %s indexing instead of returning incomplete or false-empty results', async (status) => {
         abortSignal.mockResolvedValue({ data: { ...ready(), status, total_records: 1, [status === 'pending' ? 'pending_records' : 'failed_records']: 1 }, error: null });
         await expect(retrievePersonalEvidence(request('Question'))).rejects.toBeInstanceOf(PersonalEvidenceIndexNotReady);

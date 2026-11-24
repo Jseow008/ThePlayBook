@@ -60,16 +60,25 @@ describe('Author Chat API', () => {
     const select = vi.fn();
     const eq = vi.fn();
     const order = vi.fn();
+    const source = vi.fn();
+    const sourceQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        abortSignal: vi.fn().mockReturnThis(),
+        maybeSingle: source,
+    };
 
     const queryBuilder = {
         select,
         eq,
+        is: vi.fn().mockReturnThis(),
         order: (...args: unknown[]) => ({ abortSignal: () => order(...args) }),
     };
 
     const mockSupabaseClient = {
         auth: { getUser: mockAuthUser },
-        from: vi.fn(() => queryBuilder),
+        from: vi.fn((table: string) => table === "content_item" ? sourceQuery : queryBuilder),
     };
 
     const validBody = {
@@ -98,6 +107,10 @@ describe('Author Chat API', () => {
 
         select.mockReturnValue(queryBuilder);
         eq.mockReturnValue(queryBuilder);
+        source.mockReturnValue({
+            data: { title: "Test Source", author: "Test Author", type: "book", content_contributor: [] },
+            error: null,
+        });
         order.mockReturnValue({
             data: [{ title: 'Intro', markdown_body: 'Segment body', order_index: 0 }],
             error: null,
@@ -485,6 +498,57 @@ describe('Author Chat API', () => {
         expect(options.system).toContain('Never fabricate quotations, examples, events, or views of the author');
         expect(options.system).toContain('I can help explore the arguments and applications of this source');
         expect(options.system).toContain('Do not use hyphen, en dash, or em dash characters');
+    });
+
+    it.each([
+        {
+            title: "Single guest",
+            byline: "Host with Kai",
+            credits: [{ name: "Host", is_default_speaker: false }, { name: "Kai", is_default_speaker: true }],
+            voice: "Kai",
+        },
+        {
+            title: "Multi-guest podcast",
+            byline: "Host with Kai and Amina",
+            credits: [{ name: "Host", is_default_speaker: false }, { name: "Kai", is_default_speaker: false },
+                { name: "Amina", is_default_speaker: false }],
+            voice: "a neutral narrator of this source",
+        },
+    ])("uses the catalog voice for $title", async ({ title, byline, credits, voice }) => {
+        source.mockReturnValueOnce({
+            data: { title, author: byline, type: "podcast", content_contributor: credits }, error: null,
+        });
+        const response = await POST(new NextRequest("http://localhost/api/chat/author", {
+            method: "POST", headers: { "x-evidence-protocol": "ui" },
+            body: JSON.stringify({ ...validBody, authorName: byline, contentTitle: "Client title" }),
+        }));
+        expect(response.status).toBe(200);
+        const system = vi.mocked(streamText).mock.lastCall?.[0]?.system;
+        expect(system).toEqual(expect.stringContaining(`You are ${voice}, speaking about "${title}".`));
+        expect(system).not.toEqual(expect.stringContaining(byline));
+        expect(system).not.toEqual(expect.stringContaining("Client title"));
+        expect(openai).toHaveBeenCalledWith("gpt-6-luna");
+    });
+
+    it.each([
+        "How can ego get in the way of doing that after a victory?",
+        "After a big win, what would stop someone from remaining that kind of learner?",
+    ])("grounds a natural follow-up before the evidence check", async (question) => {
+        const earlier = "What did you mean by the permanent student mindset?";
+        const response = await POST(new NextRequest("http://localhost/api/chat/author", {
+            method: "POST", headers: { "x-evidence-protocol": "ui" },
+            body: JSON.stringify({ ...validBody, messages: [
+                { role: "user", content: earlier },
+                { role: "assistant", content: "Previous unsupported wording" },
+                { role: "user", content: question },
+            ] }),
+        }));
+        expect(response.status).toBe(200);
+        expect(checkAuthorEvidence).toHaveBeenCalledWith(expect.objectContaining({
+            question: expect.stringContaining(earlier),
+            currentQuestion: question,
+        }));
+        expect(vi.mocked(checkAuthorEvidence).mock.lastCall?.[0]?.question).not.toContain("Previous unsupported wording");
     });
 
     it('balances oversized context across the source and prioritizes query relevant segments', async () => {

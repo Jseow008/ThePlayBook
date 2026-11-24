@@ -204,6 +204,48 @@ export type Database = {
           },
         ]
       }
+      content_contributor: {
+        Row: {
+          content_item_id: string
+          id: string
+          is_default_speaker: boolean
+          name: string
+          position: number
+          role: string
+        }
+        Insert: {
+          content_item_id: string
+          id?: string
+          is_default_speaker?: boolean
+          name: string
+          position: number
+          role: string
+        }
+        Update: {
+          content_item_id?: string
+          id?: string
+          is_default_speaker?: boolean
+          name?: string
+          position?: number
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_contributor_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "admin_content_workbench_readiness"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_contributor_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_item: {
         Row: {
           audio_url: string | null
@@ -1583,6 +1625,10 @@ export type Database = {
       queue_content_request_published_notifications: {
         Args: { p_request_id: string }
         Returns: number
+      }
+      replace_content_contributors: {
+        Args: { p_content_id: string; p_contributors: Json }
+        Returns: undefined
       }
       refresh_catalog_search_documents: {
         Args: { p_content_id: string }

@@ -1364,6 +1364,7 @@ export function ReaderView({ content, versionLink }: ReaderViewProps) {
                             contentId={content.id}
                             title={content.title}
                             author={content.author}
+                            chatSpeaker={content.chatSpeaker}
                             segmentCount={content.segments.length}
                             readerTheme={readerTheme}
                             celebrationRequested={celebrationRequest === celebrationScopeKey}
@@ -1428,6 +1429,7 @@ export function ReaderView({ content, versionLink }: ReaderViewProps) {
                 <AuthorChat
                     contentId={content.id}
                     authorName={authorName}
+                    chatSpeaker={content.chatSpeaker}
                     contentTitle={content.title}
                     hasCompletedReading={isBookCompleted}
                     readerTheme={readerTheme}

@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "date": "2026-11-24",
+  "candidateCodeCommit": "524b52515f70cc18e9dd9cd9293b8592ae723f5e",
+  "modelConfig": {
+    "version": "personal-evidence-selector-model-v4",
+    "promptVersion": "personal-evidence-selector-v4",
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "maxOutputTokens": 1600,
+    "maxRetries": 0,
+    "temperature": "provider default",
+    "reasoningEffort": "none",
+    "forceReasoning": true,
+    "store": false,
+    "responseAdapter": "explicit-final-phase-v1"
+  },
+  "promptTextUnchanged": true,
+  "hostedGatePassed": true,
+  "productionUnchanged": true,
+  "productionProjectRef": "xmuqsgfxuaaophxnwure",
+  "candidateProjectRef": "gtuwfveyyhhffeiwquqa",
+  "branchId": "99a86495-80d0-4773-a09c-e0c9a042e080",
+  "chatChecks": [
+    "library",
+    "notes",
+    "author"
+  ],
+  "codeHashes": {
+    "app/admin/content/[id]/edit/contributors.ts": "5ab96acc6685f2c164259c0dba86ad81f1ab0fed7bf6dbfa53601804bdb5a7db",
+    "app/admin/content/[id]/edit/page.tsx": "2146a5c2235165a6b0e479203c408d58e6a731a5b7ee3152ded8bd09dcd6cf1d",
+    "app/api/chat/author/route.ts": "f22b8c37d8436e8d23eec21bbcfabaa6b435826cbf2e61dba71a2aead8e10879",
+    "app/api/chat/notes/route.ts": "03c7e317f090de62c48527e3df4ffdc7e096ea05695c38de3bc843bf0b9c042f",
+    "app/api/chat/route.ts": "b1354e8d76383adf8a1f4f77806c8615d61049112aed78e4abeca506c723274e",
+    "app/api/library/highlights/[id]/route.ts": "c208e7f3f53a43f3a2361a794016c8f19cce67424b3698413400458e90a789df",
+    "app/api/library/highlights/route.ts": "710c62eca965be5007859e785654fc2484f504a680a8787beb1b71fe50ce8684",
+    "app/api/library/reflections/[id]/route.ts": "6bbbaf6d3ed21c0c8a3a0b318110344599f51a0595a399578c86806d93a1a0b7",
+    "app/api/library/reflections/route.ts": "5f63db3b2d672a7154a035df2c484511b30c28a572ea5c3e806078e7c27dafa2",
+    "components/admin/ContentContributors.tsx": "3ffa48d5584143ee6a4a45322e7fd8a886fc76768b852cf105372e1e100a33d8",
+    "components/reader/AuthorChat.tsx": "ef0f94c4938cfb41efe28bf91e7625ca3bf5bb1ebd15c64284ebb61eec5b6c19",
+    "components/reader/CompletionCard.tsx": "f85b412e33a577c404072e0f2fe2d0280c152b66efec9368163addc26da8a1ad",
+    "components/reader/ReaderView.tsx": "b825f882912342f019e7c1b7c4908aff1ed7b465e42add10307cbb84da3a040e",
+    "lib/content-contributors.ts": "76f2f6d32cc5f4ca194816eeb332327898d9bd79fb794f0df2b83790ec6fc1d4",
+    "lib/server/ai-spending.ts": "20c4471e27191ba61b2f562720877b528f736c7878b8acb32d838921d77fb5dc",
+    "lib/server/author-evidence.ts": "efb7a33ddb471af4ce2c2d987e5745a5bb1d7050bbb9d3c64457e58a095e4834",
+    "lib/server/evidence-citation.ts": "e881d26acc8e2d826dca8b6cc38fe30a0f44a505005b00c72284ca54928bcf2d",
+    "lib/server/evidence-comparison.ts": "0a2b99ec6b0d0916edc1583489fa718f3e6d87e87db7069e7c8e97e247d358e4",
+    "lib/server/health.ts": "5853d068f31a4ebf5828262237e5bc81a62d7b611639b4293e5a57e1b984a2db",
+    "lib/server/interactive-ai.ts": "e445e9e4c5ee3043893a8fedc130f4e63e6526eca2bbfb0fd50a6dee353d67ef",
+    "lib/server/library-evidence.ts": "16edb1e433e574d5ef43d8333c881c6f57b04afc4b75bb2e926d9319cfea2eaf",
+    "lib/server/library-followup-output.ts": "705d385c7f964a4339cbfc8f3e2cb8852b56ed4dca053ac622d007578c3abaaf",
+    "lib/server/luna-final-phase.ts": "2b0dd64411eeae2eba9e41c65a4c594e784c6e7c44ea17bb09355ea0a4fc7636",
+    "lib/server/notes-comparison-context.ts": "3f474c5cd700561edf8b5a3d6d43e1b3774f982f1ac9bddaeb8ecdbca8de3b5d",
+    "lib/server/notes-comparison-outcome.ts": "f00156f692408d5e96ab466099ef138b7d64795d7380b991293015df5c85d8e1",
+    "lib/server/notes-replay.ts": "55a780bcd9663ec3fda1913865ea2fc1f197628730f612bc0d26feb1bb77783a",
+    "lib/server/personal-evidence-indexer.ts": "ac6195f9fb2a7fee337b8b7de2f1607a29641ab5dead5ae1713dc8f036d2b10e",
+    "lib/server/personal-evidence-selector.ts": "932385f8eb4ae3ae77f39cd7a1f2f7fa6ad79f014979915fa33009d83b699696",
+    "lib/server/personal-retrieval.ts": "f9903d874acd154e8198477831a40ad0912f86892ca69968549a66417b3a0c33",
+    "lib/server/public-content.ts": "379fa3055da3fb4e3850648364f739817939f3def6df11ec2a27e56f27995fc8",
+    "lib/server/retrieval-generation.ts": "b1cb3925420a90c3d7eff44e26459255dcf05d22f0d86380202d60c351ab98b4",
+    "lib/server/retrieval-user-context.ts": "bf3ec95132155128f4df72eb9c4cec47834563a0d0a46e644b601b3dd90b2787",
+    "lib/server/revalidation.ts": "2f9c6170a60bf5b888cf3a40bf4af3a01ee23fe9ba667e218fa4ac9b744df658",
+    "lib/server/wake-personal-evidence-worker.ts": "589adf10c2562738b7b099449fd1736b457ba0a4ee9c63e5b6330be96af12eef",
+    "supabase/migrations/20261119100630_notes_comparison_replay_stage.sql": "60db9bfe23a82b9d91d213d81aaf99596c94120ece33c6ba92767146ca7d6cc5",
+    "supabase/migrations/20261124101137_content_contributors.sql": "7ff85b950d05d39c7881185b0e13d7516e46ee5779e47a4bc9eb6480ead38fef"
+  },
+  "databaseGate": {
+    "baselineSchemaCategoriesMatched": 14,
+    "baseline": {
+      "candidateProjectRef": "gtuwfveyyhhffeiwquqa",
+      "productionWrites": false,
+      "excludedItemCount": 0,
+      "restoredProductionDefaults": true,
+      "reason": "The preview starts with narrower postgres default function ACLs. Mirrored the production service-only narration trigger grant and default on the disposable branch."
+    },
+    "candidateMigrations": 128,
+    "cleanCandidateDryRun": true,
+    "productionDryRun": [
+      "20261124101137_content_contributors.sql"
+    ],
+    "productionBackupCompletedAt": "2026-11-23T23:53:51.463Z",
+    "expectedChangedSchemaCategories": [
+      "column_definition",
+      "constraint_definition",
+      "function_acl",
+      "function_definition",
+      "index_definition",
+      "policy_definition",
+      "relation_acl",
+      "relation_comment",
+      "relation_definition",
+      "trigger_definition"
+    ],
+    "aclChecksPassed": 5,
+    "db002HighlightPreservationPassed": true,
+    "advisers": {
+      "matchExisting": true,
+      "noNewWarnings": true,
+      "findings": {
+        "security": [
+          "rls_enabled_no_policy"
+        ],
+        "performance": [
+          "unused_index",
+          "auth_db_connections_absolute"
+        ]
+      }
+    },
+    "generatedTypes": {
+      "onlyPlatformMetadataAndExpectedAdditions": true,
+      "generatedFragmentsMatched": [
+        "content_contributor",
+        "replace_content_contributors"
+      ]
+    },
+    "roles": [
+      "service write and published read for single and multi-guest contributor lists",
+      "anonymous contributor mutation denied",
+      "duplicate speaker rejected without losing the prior contributor list",
+      "draft copies contributors but its credits stay private"
+    ]
+  },
+  "applicationSmoke": {
+    "buildPassed": true,
+    "startTime": "2026-11-24T10:23:15.271Z",
+    "duration": 6308.785,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0,
+    "readerChecks": [
+      {
+        "type": "single",
+        "width": 390,
+        "passed": true
+      },
+      {
+        "type": "panel",
+        "width": 390,
+        "passed": true
+      },
+      {
+        "type": "single",
+        "width": 1440,
+        "passed": true
+      },
+      {
+        "type": "panel",
+        "width": 1440,
+        "passed": true
+      }
+    ],
+    "chatCases": [
+      {
+        "id": "single-guest",
+        "status": 200,
+        "totalMs": 9694,
+        "citationsResolved": 0
+      },
+      {
+        "id": "multi-guest",
+        "status": 200,
+        "totalMs": 5695,
+        "citationsResolved": 0
+      },
+      {
+        "id": "author-anchor",
+        "status": 200,
+        "totalMs": 5532,
+        "citationsResolved": 0
+      },
+      {
+        "id": "author-followup-1",
+        "status": 200,
+        "totalMs": 4942,
+        "citationsResolved": 0
+      },
+      {
+        "id": "author-followup-2",
+        "status": 200,
+        "totalMs": 4944,
+        "citationsResolved": 0
+      },
+      {
+        "id": "notes-anchor",
+        "status": 200,
+        "totalMs": 4752,
+        "citationsResolved": 1
+      },
+      {
+        "id": "notes-followup-1",
+        "status": 200,
+        "totalMs": 4804,
+        "citationsResolved": 1
+      },
+      {
+        "id": "notes-followup-2",
+        "status": 200,
+        "totalMs": 4719,
+        "citationsResolved": 1
+      },
+      {
+        "id": "library-verbatim",
+        "status": 200,
+        "totalMs": 4715,
+        "citationsResolved": 1
+      }
+    ]
+  },
+  "providerAudit": {
+    "capUsd": 10,
+    "priorUpperUsd": 0.180702,
+    "hostedIncrementUpperUsd": 0.00401926,
+    "cumulativeUpperUsd": 0.18472126,
+    "lunaDispatches": 14,
+    "embeddingDispatches": 5
+  },
+  "fixtureCleanupVerified": true,
+  "fixtureCleanup": {
+    "syntheticAccounts": 1,
+    "syntheticSources": 3,
+    "remaining": {
+      "users": 0,
+      "sessions": 0,
+      "contributors": 0,
+      "replay_attempts": 0,
+      "evidence_index": 0,
+      "library": 0,
+      "reflections": 0,
+      "highlights": 0,
+      "content": 0,
+      "segments": 0
+    }
+  },
+  "candidateDeletionVerified": true,
+  "testServicesStopped": true,
+  "privateCredentialsScrubbed": true,
+  "limitations": [
+    "Hosted backing services used synthetic fixtures and the production build ran over isolated local HTTPS.",
+    "The first chat setup attempted a reflection save without its current published revision and was rejected before paid provider calls. The replay used the same frozen questions.",
+    "Generated relationship metadata for the new table was reconciled with candidate generation after the build. Typecheck passed."
+  ]
+}

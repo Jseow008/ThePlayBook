@@ -84,6 +84,7 @@ export async function retrievePersonalEvidence(options: {
     implicitHighlightQuote?: boolean;
     deferSelection?: boolean;
     requiredComparisonActivity?: readonly string[];
+    preferredEvidence?: RankedPersonalEvidence;
     selectionGenerator?: PersonalEvidenceSelectionGenerator;
 }) {
     const signal = AbortSignal.any([options.signal, AbortSignal.timeout(PERSONAL_RETRIEVAL_TIMEOUT_MS)]);
@@ -125,9 +126,15 @@ export async function retrievePersonalEvidence(options: {
         if (!relevant.length) throw new Error("Indexed evidence has no answer span");
         return { evidence, spans, score: Math.max(...relevant.map((span) => span.score)), exactQuote: null };
     }).sort((a, b) => b.score - a.score || a.evidence.evidenceId.localeCompare(b.evidence.evidenceId));
+    const preferred = !quoteField ? options.preferredEvidence : undefined;
+    const preferredId = preferred?.evidence.evidenceId;
+    const candidatesInOrder = preferred ? [
+        ranked.find((item) => item.evidence.evidenceId === preferredId) ?? preferred,
+        ...ranked.filter((item) => item.evidence.evidenceId !== preferredId),
+    ] : ranked;
     const activity = options.requiredComparisonActivity;
     const eligible = !quoteField && activity?.length
-        ? ranked.filter(item => hasNotesComparisonActivity(item, activity)) : ranked;
+        ? candidatesInOrder.filter(item => hasNotesComparisonActivity(item, activity)) : candidatesInOrder;
     const selection = options.deferSelection ? null : await measureAskNotesPhase("selection", () => selectPersonalEvidence({
         question: semanticQuestion, candidates: personalSelectionCandidates(eligible), exactQuote: Boolean(quoteField),
         signal, generate: options.selectionGenerator,
@@ -139,6 +146,9 @@ export async function retrievePersonalEvidence(options: {
     const current = await measureAskNotesPhase("revalidate_search", search);
     if (formatted.items.some((item) => {
         const previous = result.matches.find((match) => `${match.evidence_type}:${match.evidence_id}` === item.evidence.evidenceId);
+        // The signed record was loaded through the current scope and its
+        // fingerprint was rechecked above, even when it missed vector search.
+        if (!previous && preferredId === item.evidence.evidenceId) return false;
         return !current.matches.some((match) => match.evidence_type === previous?.evidence_type && match.evidence_id === previous.evidence_id && match.revision === previous.revision);
     })) throw new Error("Personal index changed during retrieval");
     const { data: { user }, error } = await measureAskNotesPhase("revalidate_auth", () => options.supabase.auth.getUser());
