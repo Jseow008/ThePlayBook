@@ -21,7 +21,8 @@ export function RecommendationsRow({
     showUserCompletionBadge?: boolean;
 }) {
     const { completedIds, inProgressIds, myListIds, isLoaded } = useReadingProgress();
-    const mostRecentId = completedIds[0] || inProgressIds[0] || null;
+    const latestCompletedId = completedIds[0];
+    const mostRecentId = latestCompletedId || inProgressIds[0] || null;
     const clusterIds = useMemo(
         () => Array.from(new Set([...completedIds, ...myListIds])),
         [completedIds, myListIds]
@@ -73,7 +74,7 @@ export function RecommendationsRow({
             {/* Lane 1: Specific Context */}
             {recentItems.length > 0 && (
                 <ContentLane
-                    title="Based on your recent reading"
+                    title={latestCompletedId ? "Based on your latest completed read" : "Based on your recent reading"}
                     items={recentItems}
                     cardTitleDensity={cardTitleDensity}
                     showMoreCardTitleLines={showMoreTitleLines}
